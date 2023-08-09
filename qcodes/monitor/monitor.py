@@ -28,9 +28,10 @@ import time
 import webbrowser
 from asyncio import CancelledError
 from collections import defaultdict
+from collections.abc import Awaitable, Sequence
 from contextlib import suppress
 from threading import Event, Thread
-from typing import Any, Awaitable, Callable, Sequence
+from typing import Any, Callable
 
 import websockets
 import websockets.exceptions

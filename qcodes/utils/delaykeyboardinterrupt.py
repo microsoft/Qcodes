@@ -2,7 +2,7 @@ import logging
 import signal
 import threading
 from types import FrameType, TracebackType
-from typing import Optional, Type, cast
+from typing import Optional, cast
 
 log = logging.getLogger(__name__)
 
@@ -50,9 +50,12 @@ class DelayedKeyboardInterrupt:
         frame = cast(FrameType, frame)
         signal.default_int_handler(sig, frame)
 
-    def __exit__(self, exception_type: Optional[Type[BaseException]],
-                 value: Optional[BaseException],
-                 traceback: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        exception_type: Optional[type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
         if self.old_handler is not None:
             signal.signal(signal.SIGINT, self.old_handler)
         if self.signal_received is not None:

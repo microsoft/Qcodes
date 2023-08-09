@@ -4,8 +4,9 @@ import logging
 import struct
 import sys
 import warnings
+from collections.abc import Sequence
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal, Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 

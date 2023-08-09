@@ -5,8 +5,9 @@ This is a driver for the Stahl power supplies
 import logging
 import re
 from collections import OrderedDict
+from collections.abc import Iterable
 from functools import partial
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 from pyvisa.resources.serial import SerialInstrument
@@ -197,7 +198,7 @@ class Stahl(VisaInstrument):
         return response
 
     @staticmethod
-    def parse_idn_string(idn_string: str) -> Dict[str, Any]:
+    def parse_idn_string(idn_string: str) -> dict[str, Any]:
         """
         Return:
              dict: The dict contains the following keys "model",
@@ -216,26 +217,28 @@ class Stahl(VisaInstrument):
                 "with a QCoDeS core developer"
             )
 
-        converters: Dict[str, Callable[..., Any]] = OrderedDict({
-            "model": str,
-            "serial_number": str,
-            "voltage_range": float,
-            "n_channels": int,
-            "output_type": {
-                "b": "bipolar",
-                "u": "unipolar",
-                "q": "quadrupole",
-                "s": "steerer",
-                "m": "bipolar milivolt"
-            }.get
-        })
+        converters: dict[str, Callable[..., Any]] = OrderedDict(
+            {
+                "model": str,
+                "serial_number": str,
+                "voltage_range": float,
+                "n_channels": int,
+                "output_type": {
+                    "b": "bipolar",
+                    "u": "unipolar",
+                    "q": "quadrupole",
+                    "s": "steerer",
+                    "m": "bipolar milivolt",
+                }.get,
+            }
+        )
 
         return {
             name: converter(value)
             for (name, converter), value in zip(converters.items(), result.groups())
         }
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         """
         The Stahl sends a uncommon IDN string which does not include a
         firmware version.

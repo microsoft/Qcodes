@@ -10,24 +10,13 @@ import io
 import logging
 import traceback as tb_module
 import warnings
+from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from copy import deepcopy
 from inspect import signature
 from numbers import Number
 from time import perf_counter
 from types import TracebackType
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast
 
 import numpy as np
 
@@ -70,10 +59,10 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-ActionType = Tuple[Callable[..., Any], Sequence[Any]]
-SubscriberType = Tuple[Callable[..., Any],
-                       Union[MutableSequence[Any],
-                             MutableMapping[Any, Any]]]
+ActionType = tuple[Callable[..., Any], Sequence[Any]]
+SubscriberType = tuple[
+    Callable[..., Any], Union[MutableSequence[Any], MutableMapping[Any, Any]]
+]
 
 
 class ParameterTypeError(Exception):
@@ -511,9 +500,12 @@ class Runner:
         extra_log_info: str = "",
         write_in_background: bool = False,
         shapes: Shapes | None = None,
-        in_memory_cache: bool = True,
+        in_memory_cache: bool | None = None,
         dataset_class: DataSetType = DataSetType.DataSet,
     ) -> None:
+        if in_memory_cache is None:
+            in_memory_cache = qc.config.dataset.in_memory_cache
+            in_memory_cache = cast(bool, in_memory_cache)
 
         self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(write_in_background,
@@ -1225,7 +1217,7 @@ class Measurement:
     def run(
         self,
         write_in_background: bool | None = None,
-        in_memory_cache: bool = True,
+        in_memory_cache: bool | None = True,
         dataset_class: DataSetType = DataSetType.DataSet,
     ) -> Runner:
         """

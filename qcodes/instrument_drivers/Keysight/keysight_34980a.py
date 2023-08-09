@@ -2,7 +2,7 @@ import logging
 import re
 import warnings
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
@@ -60,7 +60,7 @@ class Keysight34980A(VisaInstrument):
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self._total_slot = 8
-        self._system_slots_info_dict: Optional[Dict[int, Dict[str, str]]] = None
+        self._system_slots_info_dict: Optional[dict[int, dict[str, str]]] = None
         self.module = dict.fromkeys(self.system_slots_info.keys())
         self.scan_slots()
         self.connect_message()
@@ -134,12 +134,12 @@ class Keysight34980A(VisaInstrument):
                                 f'in slot {slot}')
 
     @property
-    def system_slots_info(self) -> Dict[int, Dict[str, str]]:
+    def system_slots_info(self) -> dict[int, dict[str, str]]:
         if self._system_slots_info_dict is None:
             self._system_slots_info_dict = self._system_slots_info()
         return self._system_slots_info_dict
 
-    def _system_slots_info(self) -> Dict[int, Dict[str, str]]:
+    def _system_slots_info(self) -> dict[int, dict[str, str]]:
         """
         the command SYST:CTYP? returns the following:
         Agilent Technologies,<Model Number>,<Serial Number>,<Firmware Rev>

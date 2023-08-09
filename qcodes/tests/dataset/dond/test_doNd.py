@@ -13,6 +13,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from pytest import FixtureRequest, LogCaptureFixture
 
+import qcodes as qc
 from qcodes import config, validators
 from qcodes.dataset import (
     ArraySweep,
@@ -91,6 +92,26 @@ def test_linear_sweep_get_setpoints(_param) -> None:
         sweep.get_setpoints(), np.linspace(start, stop, num_points)
     )
 
+
+@pytest.mark.usefixtures("experiment")
+@pytest.mark.usefixtures("default_config")
+@pytest.mark.parametrize("cache_config", [True, False])
+@pytest.mark.parametrize("cache_setting", [True, False, None])
+def test_cache_config(_param, _param_2, cache_config, cache_setting) -> None:
+    qc.config.dataset.in_memory_cache = cache_config
+    start = 0
+    stop = 1
+    num_points = 5
+    delay = 0
+    sweep = LinSweep(_param, start, stop, num_points, delay)
+
+    ds, _, _ = dond(sweep, _param_2, in_memory_cache=cache_setting)
+    assert isinstance(ds, DataSet)
+
+    if (cache_config and cache_setting is None) or cache_setting is True:
+        assert ds.cache.live is True
+    else:
+        assert ds.cache.live is None
 
 def test_linear_sweep_properties(_param, _param_complex) -> None:
     start = 0

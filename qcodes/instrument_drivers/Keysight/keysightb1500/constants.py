@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Sequence
 from enum import Enum, IntEnum, IntFlag
-from typing import Sequence, Union
+from typing import Union
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum

@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 
@@ -228,7 +228,7 @@ class KeysightB1500CVSweeper(InstrumentChannel):
         return cmd
 
     @staticmethod
-    def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
+    def _get_sweep_delays_parser(response: str) -> dict[str, float]:
         match = re.search('WTDCV(?P<hold_time>.+?),(?P<delay>.+?),'
                           '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
                           '(?P<measure_delay>.+?)(;|$)',
@@ -249,7 +249,7 @@ class KeysightB1500CVSweeper(InstrumentChannel):
         return cmd
 
     @staticmethod
-    def _get_sweep_steps_parser(response: str) -> Dict[str, Union[int, float]]:
+    def _get_sweep_steps_parser(response: str) -> dict[str, Union[int, float]]:
         match = re.search(r'WDCV(?P<_chan>.+?),(?P<sweep_mode>.+?),'
                           r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
                           r'(?P<sweep_steps>.+?)(;|$)',
@@ -259,7 +259,7 @@ class KeysightB1500CVSweeper(InstrumentChannel):
 
         resp_dict = match.groupdict()
 
-        out_dict: Dict[str, Union[int, float]] = {}
+        out_dict: dict[str, Union[int, float]] = {}
         out_dict['_chan'] = int(resp_dict['_chan'])
         out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
         out_dict['sweep_start'] = fixed_negative_float(
@@ -278,7 +278,7 @@ class KeysightB1500CVSweeper(InstrumentChannel):
         msg = MessageBuilder().wmdcv(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    def _get_sweep_auto_abort_settings(self) -> Dict[str, str]:
+    def _get_sweep_auto_abort_settings(self) -> dict[str, str]:
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -519,7 +519,7 @@ class KeysightB1520A(B1500Module):
             ),
         )
 
-    def _cv_sweep_voltages(self) -> Tuple[float, ...]:
+    def _cv_sweep_voltages(self) -> tuple[float, ...]:
         def sign(s: float) -> float:
             return s and (1, -1)[s < 0]
         start_value = self.cv_sweep.sweep_start()
@@ -536,18 +536,17 @@ class KeysightB1520A(B1500Module):
                     raise AssertionError("Polarity of start and end is not "
                                          "same.")
 
-        def linear_sweep(start: float, end: float, steps: int
-                         ) -> Tuple[float, ...]:
+        def linear_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             sweep_val = np.linspace(start, end, steps)
             return tuple(sweep_val)
 
-        def log_sweep(start: float, end: float, steps: int
-                      ) -> Tuple[float, ...]:
+        def log_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             sweep_val = np.logspace(np.log10(start), np.log10(end), steps)
             return tuple(sweep_val)
 
-        def linear_2way_sweep(start: float, end: float, steps: int
-                              ) -> Tuple[float, ...]:
+        def linear_2way_sweep(
+            start: float, end: float, steps: int
+        ) -> tuple[float, ...]:
             if steps % 2 == 0:
                 half_list = list(np.linspace(start, end, steps // 2))
                 sweep_val = half_list + half_list[::-1]
@@ -557,8 +556,7 @@ class KeysightB1520A(B1500Module):
                 sweep_val = half_list + [end] + half_list[::-1]
             return tuple(sweep_val)
 
-        def log_2way_sweep(start: float, end: float, steps: int
-                           ) -> Tuple[float, ...]:
+        def log_2way_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             if steps % 2 == 0:
                 half_list = list(np.logspace(np.log10(start), np.log10(end),
                                              steps // 2))
@@ -586,7 +584,7 @@ class KeysightB1520A(B1500Module):
 
         self.write(msg.message)
 
-    def _get_dcv(self) -> Dict[str, Union[str, float]]:
+    def _get_dcv(self) -> dict[str, Union[str, float]]:
         if not self.is_enabled():
             raise RuntimeError("The channels are disabled. Cannot get value.")
 
@@ -612,7 +610,7 @@ class KeysightB1520A(B1500Module):
 
         self.write(msg.message)
 
-    def _get_capacitance(self) -> Tuple[float, float]:
+    def _get_capacitance(self) -> tuple[float, float]:
         msg = MessageBuilder().tc(
             chnum=self.channels[0], mode=constants.RangingMode.AUTO
         )
@@ -679,7 +677,7 @@ class KeysightB1520A(B1500Module):
         return cmd
 
     @staticmethod
-    def _get_adc_mode_parser(response: str) -> Dict[str, int]:
+    def _get_adc_mode_parser(response: str) -> dict[str, int]:
         match = re.search(r'ACT(?P<adc_mode>.+?),(?P<adc_coef>.+?)$', response)
         if not match:
             raise ValueError('ADC mode and coef (ATC) not found.')
@@ -906,7 +904,7 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
         self.power_line_frequency: int = 50
         self._fudge: float = 1.5 # fudge factor for setting timeout
 
-    def get_raw(self) -> Tuple[Tuple[float, ...], Tuple[float, ...]]:
+    def get_raw(self) -> tuple[tuple[float, ...], tuple[float, ...]]:
         if not self.instrument.setup_fnc_already_run:
             raise Exception('Sweep setup has not yet been run successfully')
 

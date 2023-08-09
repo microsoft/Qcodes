@@ -1,18 +1,7 @@
 import re
 import textwrap
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-    overload,
-)
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
 import numpy as np
 from typing_extensions import NotRequired, TypedDict
@@ -374,7 +363,7 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         return cmd
 
     @staticmethod
-    def _get_sweep_delays_parser(response: str) -> Dict[str, float]:
+    def _get_sweep_delays_parser(response: str) -> dict[str, float]:
         match = re.search('WT(?P<hold_time>.+?),(?P<delay>.+?),'
                           '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
                           '(?P<measure_delay>.+?)(;|$)',
@@ -395,7 +384,7 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
-    def _get_sweep_auto_abort_setting(self) -> Dict[str, str]:
+    def _get_sweep_auto_abort_setting(self) -> dict[str, str]:
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -539,9 +528,11 @@ class _ParameterWithStatus(Parameter):
     def measurement_status(self) -> Optional[MeasurementStatus]:
         return self._measurement_status
 
-    def snapshot_base(self, update: Optional[bool] = True,
-                      params_to_skip_update: Optional[Sequence[str]] = None
-                      ) -> Dict[Any, Any]:
+    def snapshot_base(
+        self,
+        update: Optional[bool] = True,
+        params_to_skip_update: Optional[Sequence[str]] = None,
+    ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update
         )
@@ -662,12 +653,12 @@ class KeysightB1517A(B1500Module):
     ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
-        self._measure_config: Dict[str, Optional[Any]] = {
+        self._measure_config: dict[str, Optional[Any]] = {
             k: None for k in ("v_measure_range", "i_measure_range",)}
-        self._source_config: Dict[str, Optional[Any]] = {
+        self._source_config: dict[str, Optional[Any]] = {
             k: None for k in ("output_range", "compliance",
                               "compl_polarity", "min_compliance_range")}
-        self._timing_parameters: Dict[str, Optional[Any]] = {
+        self._timing_parameters: dict[str, Optional[Any]] = {
             k: None for k in ("h_bias", "interval", "number", "h_base")}
 
         # We want to snapshot these configuration dictionaries
@@ -678,49 +669,53 @@ class KeysightB1517A(B1500Module):
         self.setup_fnc_already_run: bool = False
         self.power_line_frequency: int = 50
         self._average_coefficient: int = 1
-        self._valid_v_measure_ranges: List[VMeasRange] = [VMeasRange.AUTO,
-                                                          VMeasRange.MIN_0V5,
-                                                          VMeasRange.MIN_2V,
-                                                          VMeasRange.MIN_5V,
-                                                          VMeasRange.MIN_20V,
-                                                          VMeasRange.MIN_40V,
-                                                          VMeasRange.MIN_100V,
-                                                          VMeasRange.FIX_0V5,
-                                                          VMeasRange.FIX_2V,
-                                                          VMeasRange.FIX_5V,
-                                                          VMeasRange.FIX_20V,
-                                                          VMeasRange.FIX_40V,
-                                                          VMeasRange.FIX_100V]
-        self._valid_i_measure_ranges: List[IMeasRange] = [IMeasRange.AUTO,
-                                                          IMeasRange.MIN_1pA,
-                                                          IMeasRange.MIN_10pA,
-                                                          IMeasRange.MIN_100pA,
-                                                          IMeasRange.MIN_1nA,
-                                                          IMeasRange.MIN_10nA,
-                                                          IMeasRange.MIN_100nA,
-                                                          IMeasRange.MIN_1uA,
-                                                          IMeasRange.MIN_10uA,
-                                                          IMeasRange.MIN_100uA,
-                                                          IMeasRange.MIN_1mA,
-                                                          IMeasRange.MIN_10mA,
-                                                          IMeasRange.MIN_100mA,
-                                                          IMeasRange.FIX_1pA,
-                                                          IMeasRange.FIX_10pA,
-                                                          IMeasRange.FIX_100pA,
-                                                          IMeasRange.FIX_1nA,
-                                                          IMeasRange.FIX_10nA,
-                                                          IMeasRange.FIX_100nA,
-                                                          IMeasRange.FIX_1uA,
-                                                          IMeasRange.FIX_10uA,
-                                                          IMeasRange.FIX_100uA,
-                                                          IMeasRange.FIX_1mA,
-                                                          IMeasRange.FIX_10mA,
-                                                          IMeasRange.FIX_100mA]
-        self._valid_v_output_ranges: List[VOutputRange] = [
+        self._valid_v_measure_ranges: list[VMeasRange] = [
+            VMeasRange.AUTO,
+            VMeasRange.MIN_0V5,
+            VMeasRange.MIN_2V,
+            VMeasRange.MIN_5V,
+            VMeasRange.MIN_20V,
+            VMeasRange.MIN_40V,
+            VMeasRange.MIN_100V,
+            VMeasRange.FIX_0V5,
+            VMeasRange.FIX_2V,
+            VMeasRange.FIX_5V,
+            VMeasRange.FIX_20V,
+            VMeasRange.FIX_40V,
+            VMeasRange.FIX_100V,
+        ]
+        self._valid_i_measure_ranges: list[IMeasRange] = [
+            IMeasRange.AUTO,
+            IMeasRange.MIN_1pA,
+            IMeasRange.MIN_10pA,
+            IMeasRange.MIN_100pA,
+            IMeasRange.MIN_1nA,
+            IMeasRange.MIN_10nA,
+            IMeasRange.MIN_100nA,
+            IMeasRange.MIN_1uA,
+            IMeasRange.MIN_10uA,
+            IMeasRange.MIN_100uA,
+            IMeasRange.MIN_1mA,
+            IMeasRange.MIN_10mA,
+            IMeasRange.MIN_100mA,
+            IMeasRange.FIX_1pA,
+            IMeasRange.FIX_10pA,
+            IMeasRange.FIX_100pA,
+            IMeasRange.FIX_1nA,
+            IMeasRange.FIX_10nA,
+            IMeasRange.FIX_100nA,
+            IMeasRange.FIX_1uA,
+            IMeasRange.FIX_10uA,
+            IMeasRange.FIX_100uA,
+            IMeasRange.FIX_1mA,
+            IMeasRange.FIX_10mA,
+            IMeasRange.FIX_100mA,
+        ]
+        self._valid_v_output_ranges: list[VOutputRange] = [
             VOutputRange.AUTO, VOutputRange.MIN_0V5, VOutputRange.MIN_2V,
             VOutputRange.MIN_5V, VOutputRange.MIN_20V, VOutputRange.MIN_40V,
             VOutputRange.MIN_100V]
-        self._valid_i_output_ranges: List[IOutputRange] = [
+        self._valid_i_output_ranges: list[IOutputRange] = [
             IOutputRange.AUTO, IOutputRange.MIN_1pA, IOutputRange.MIN_10pA,
             IOutputRange.MIN_100pA, IOutputRange.MIN_1nA, IOutputRange.MIN_10nA,
             IOutputRange.MIN_100nA, IOutputRange.MIN_1uA,
@@ -854,14 +849,18 @@ class KeysightB1517A(B1500Module):
                                   i_range=i_range)
         self.write(msg.message)
 
-    def _get_current_measurement_range(self) -> \
-            List[Tuple[constants.ChNr, constants.IMeasRange]]:
-        response = self.ask(MessageBuilder().lrn_query(
-            type_id=constants.LRN.Type.MEASUREMENT_RANGING_STATUS).message)
-        match = re.findall(r'RI (.+?),(.+?)($|;)', response)
-        response_list = [(constants.ChNr(int(i)),
-                          constants.IMeasRange(int(j)))
-                         for i, j, _ in match]
+    def _get_current_measurement_range(
+        self,
+    ) -> list[tuple[constants.ChNr, constants.IMeasRange]]:
+        response = self.ask(
+            MessageBuilder()
+            .lrn_query(type_id=constants.LRN.Type.MEASUREMENT_RANGING_STATUS)
+            .message
+        )
+        match = re.findall(r"RI (.+?),(.+?)($|;)", response)
+        response_list = [
+            (constants.ChNr(int(i)), constants.IMeasRange(int(j))) for i, j, _ in match
+        ]
         return response_list
 
     def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
@@ -878,14 +877,18 @@ class KeysightB1517A(B1500Module):
                         chnum=self.channels[0])
                    .message)
 
-    def _get_measurement_operation_mode(self) \
-            -> List[Tuple[constants.ChNr, constants.CMM.Mode]]:
-        response = self.ask(MessageBuilder().lrn_query(
-            type_id=constants.LRN.Type.SMU_MEASUREMENT_OPERATION).message)
-        match = re.findall(r'CMM (.+?),(.+?)($|;)', response)
-        response_list = [(constants.ChNr(int(i)),
-                          constants.CMM.Mode(int(j)))
-                         for i, j, _ in match]
+    def _get_measurement_operation_mode(
+        self,
+    ) -> list[tuple[constants.ChNr, constants.CMM.Mode]]:
+        response = self.ask(
+            MessageBuilder()
+            .lrn_query(type_id=constants.LRN.Type.SMU_MEASUREMENT_OPERATION)
+            .message
+        )
+        match = re.findall(r"CMM (.+?),(.+?)($|;)", response)
+        response_list = [
+            (constants.ChNr(int(i)), constants.CMM.Mode(int(j))) for i, j, _ in match
+        ]
         return response_list
 
     def _set_enable_filter(

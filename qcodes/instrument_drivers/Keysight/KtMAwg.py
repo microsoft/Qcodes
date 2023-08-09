@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from qcodes.instrument import Instrument, InstrumentChannel
 from qcodes.parameters import create_on_off_val_mapping
@@ -282,10 +282,10 @@ class KeysightM9336A(Instrument):
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         """generates the ``*IDN`` dictionary for qcodes"""
 
-        id_dict: Dict[str, Optional[str]] = {
+        id_dict: dict[str, Optional[str]] = {
             "firmware": self._get_firmware_revision(),
             "model": self._get_model(),
             "serial": self._get_serial_number(),
@@ -314,7 +314,7 @@ class KeysightM9336A(Instrument):
 
     # Query the driver for errors
 
-    def get_errors(self) -> Dict[int, str]:
+    def get_errors(self) -> dict[int, str]:
         error_code = ctypes.c_int(-1)
         error_message = ctypes.create_string_buffer(256)
         error_dict = dict()

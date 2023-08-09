@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import random
-from typing import Tuple, cast
+from typing import cast
 
 import pytest
 import websockets
@@ -27,7 +27,7 @@ def _make_inst_and_monitor():
                       set_cmd=None)
     param(1)
     monitor_parameters = cast(
-        Tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
+        tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
     )
     my_monitor = monitor.Monitor(*monitor_parameters, param, interval=0.1)
     try:

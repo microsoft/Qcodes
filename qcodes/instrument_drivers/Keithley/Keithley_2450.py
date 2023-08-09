@@ -1,5 +1,5 @@
 from types import TracebackType
-from typing import Any, List, Optional, Set, Type, Union, cast
+from typing import Any, Optional, Union, cast
 
 import numpy as np
 from typing_extensions import TypedDict
@@ -35,9 +35,9 @@ class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
     This customized class is used for the "sweep" parameter.
     """
 
-    _user_selected_data: Optional[List[Any]] = None
+    _user_selected_data: Optional[list[Any]] = None
 
-    def get_selected(self) -> Optional[List[Any]]:
+    def get_selected(self) -> Optional[list[Any]]:
         return self._user_selected_data
 
 
@@ -119,10 +119,10 @@ class Keithley2450Buffer(InstrumentChannel):
             docstring="List of buffer elements to read.",
         )
 
-    def from_name_to_scpi(self, element_names: List[str]) -> List[str]:
+    def from_name_to_scpi(self, element_names: list[str]) -> list[str]:
         return [self.buffer_elements[element] for element in element_names]
 
-    def from_scpi_to_name(self, element_scpis: List[str]) -> List[str]:
+    def from_scpi_to_name(self, element_scpis: list[str]) -> list[str]:
         if element_scpis is None:
             return []
         return [self.inverted_buffer_elements[element] for element in element_scpis]
@@ -132,14 +132,14 @@ class Keithley2450Buffer(InstrumentChannel):
 
     def __exit__(
         self,
-        exception_type: Optional[Type[BaseException]],
+        exception_type: Optional[type[BaseException]],
         value: Optional[BaseException],
         traceback: Optional[TracebackType],
     ) -> None:
         self.delete()
 
     @property
-    def available_elements(self) -> Set[str]:
+    def available_elements(self) -> set[str]:
         return set(self.buffer_elements.keys())
 
     def get_last_reading(self) -> str:
@@ -154,7 +154,7 @@ class Keithley2450Buffer(InstrumentChannel):
 
     def get_data(
         self, start_idx: int, end_idx: int, readings_only: bool = False
-    ) -> List[Any]:
+    ) -> list[Any]:
         """
         This command returns specified data elements from reading buffer.
 

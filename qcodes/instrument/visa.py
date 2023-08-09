@@ -1,15 +1,9 @@
 """Visa instrument driver based on pyvisa."""
 from __future__ import annotations
 
-import sys
-
-if sys.version_info >= (3, 9):
-    from importlib.resources import as_file, files
-else:
-    from importlib_resources import as_file, files
-
 import logging
 from collections.abc import Sequence
+from importlib.resources import as_file, files
 from typing import Any
 
 import pyvisa

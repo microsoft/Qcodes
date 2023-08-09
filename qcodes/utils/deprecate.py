@@ -1,7 +1,8 @@
 import types
 import warnings
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator, List, Optional, cast
+from typing import Any, Callable, Optional, cast
 
 import wrapt
 
@@ -104,7 +105,7 @@ def deprecate(
 
 
 @contextmanager
-def _catch_deprecation_warnings() -> Iterator[List[warnings.WarningMessage]]:
+def _catch_deprecation_warnings() -> Iterator[list[warnings.WarningMessage]]:
     with warnings.catch_warnings(record=True) as ws:
         warnings.simplefilter("ignore")
         warnings.filterwarnings("always", category=QCoDeSDeprecationWarning)

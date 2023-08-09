@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
 import numpy
 
@@ -78,7 +78,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
         convert_dummy_val_to_nan(self.data)
         return numpy.array(self.data.value)
 
-    def compliance(self) -> List[int]:
+    def compliance(self) -> list[int]:
         """
         check for the status other than "N" (normal) and output the
         number of data values which were not measured under "N" (normal)

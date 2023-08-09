@@ -7,7 +7,7 @@ of its C library in a python-friendly way.
 
 import ctypes
 from ctypes import POINTER
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Union
 
 # `ParameterBase` is needed because users may pass instrument parameters
 # that originate from `Instrument.parameters` dictionary which is typed
@@ -51,7 +51,7 @@ class AlazarATSAPI(WrappedDll):
 
     ## ACTUAL DLL API FUNCTIONS ##
 
-    signatures: Dict[str, Signature] = {}
+    signatures: dict[str, Signature] = {}
 
     def set_trigger_time_out(self,
                              handle: int,
@@ -419,7 +419,7 @@ class AlazarATSAPI(WrappedDll):
     def get_board_model(self, handle: int) -> str:
         return self.BOARD_NAMES[self.get_board_kind(handle)]
 
-    def get_channel_info_(self, handle: int) -> Tuple[int, int]:
+    def get_channel_info_(self, handle: int) -> tuple[int, int]:
         """
         A more convenient version of :meth:`get_channel_info` method
         (``AlazarGetChannelInfo``).

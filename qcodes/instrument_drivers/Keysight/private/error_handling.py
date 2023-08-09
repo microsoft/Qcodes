@@ -1,10 +1,10 @@
-from typing import Protocol, Tuple
+from typing import Protocol
 
 from qcodes.instrument.base import InstrumentProtocol
 
 
 class KeysightErrorProtocol(InstrumentProtocol, Protocol):
-    def error(self) -> Tuple[int, str]:
+    def error(self) -> tuple[int, str]:
         ...
 
 
@@ -16,7 +16,7 @@ class KeysightErrorQueueMixin:
     instruments (which inherit from VisaInstrument class).
     """
 
-    def error(self: KeysightErrorProtocol) -> Tuple[int, str]:
+    def error(self: KeysightErrorProtocol) -> tuple[int, str]:
         """
         Return the first error message in the queue. It also clears it from
         the error queue.

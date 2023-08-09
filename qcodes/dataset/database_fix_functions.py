@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, Sequence, cast
+from collections.abc import Sequence
+from typing import Any, cast
 
 from tqdm import tqdm
 
@@ -112,7 +113,7 @@ def _convert_run_describer_v1_like_dict_to_v0_like_dict(
     # The RunDescriber of the current version gets converted to a dictionary
     # that represents a RunDescriber object of version 0 - this is the one
     # that has InterDependencies object in it (not the InterDependencies_ one).
-    old_desc_dict = cast(Dict[str, Any], serial.to_dict_as_version(new_desc, 0))
+    old_desc_dict = cast(dict[str, Any], serial.to_dict_as_version(new_desc, 0))
     # Lastly, the "version" field is removed.
     old_desc_dict.pop('version')
     return old_desc_dict

@@ -27,8 +27,10 @@ class Model_372(LakeshoreBase):
     Note that interaction with the control input (referred to as 'A' in the
     Computer Interface Operation section of the manual) is not implemented.
     """
-    channel_name_command: Dict[str, str] = {f'ch{i:02}': str(i)
-                                            for i in range(1, 1 + _n_channels)}
+
+    channel_name_command: dict[str, str] = {
+        f"ch{i:02}": str(i) for i in range(1, 1 + _n_channels)
+    }
     input_channel_parameter_values_to_channel_name_on_instrument = {
         i: f'ch{i:02}' for i in range(1, 1 + _n_channels)
     }

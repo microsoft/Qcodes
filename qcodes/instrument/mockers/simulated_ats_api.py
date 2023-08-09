@@ -8,7 +8,7 @@ any functionality whatsoever.
 
 
 import ctypes
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import numpy as np
 
@@ -41,7 +41,7 @@ class SimulatedATS9360API(AlazarATSAPI):
         # alazar driver, when loading the dll
         self._buffer_generator = (
             buffer_generator or _default_buffer_generator)
-        self.buffers: Dict[int, np.ndarray] = {}
+        self.buffers: dict[int, np.ndarray] = {}
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> None:
         _mark_params_as_updated(*args)
@@ -58,7 +58,7 @@ class SimulatedATS9360API(AlazarATSAPI):
     def get_board_model(self, handle: int) -> str:
         return 'ATS9360'
 
-    def get_channel_info_(self, handle: int) -> Tuple[int, int]:
+    def get_channel_info_(self, handle: int) -> tuple[int, int]:
         return 4294967294, 12
 
     def get_cpld_version_(self, handle: int) -> str:

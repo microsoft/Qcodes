@@ -7,10 +7,11 @@ from __future__ import annotations
 import inspect
 import logging
 import os
+from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import partial
 from textwrap import wrap
-from typing import TYPE_CHECKING, Any, List, Literal, Optional, Sequence, Tuple, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 import numpy as np
 
@@ -39,10 +40,10 @@ DB = qc.config["core"]["db_location"]
 _DEFAULT_COLORMAP = "viridis"
 # NamedData is the structure _get_data_from_ds returns and that plot_by_id
 # uses internally
-NamedData = List[List[DSPlotData]]
+NamedData = list[list[DSPlotData]]
 
-AxesTuple = Tuple["Axes", "Colorbar"]
-AxesTupleList = Tuple[List["Axes"], List[Optional["Colorbar"]]]
+AxesTuple = tuple["Axes", "Colorbar"]
+AxesTupleList = tuple[list["Axes"], list[Optional["Colorbar"]]]
 
 
 @contextmanager
@@ -203,7 +204,7 @@ def plot_dataset(
     if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
     else:
-        axeslist = cast(List[matplotlib.axes.Axes], axes)
+        axeslist = cast(list[matplotlib.axes.Axes], axes)
     if isinstance(colorbars, matplotlib.colorbar.Colorbar):
         colorbars = [colorbars]
 

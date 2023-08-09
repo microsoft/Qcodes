@@ -1,6 +1,10 @@
 """Set up the main qcodes namespace."""
 
-# flake8: noqa (we don't need the "<...> imported but unused" error)
+# ruff: noqa: F401, E402
+# This module still contains a lot of short hand imports
+# since these imports are discouraged and they are officially
+# added elsewhere under their respective submodules we cannot add
+# them to __all__ here so silence the warning.
 
 # config
 import warnings

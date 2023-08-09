@@ -4,11 +4,12 @@ import copy
 import cProfile
 import os
 import tempfile
+from collections.abc import Generator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, Generator, Mapping, Sequence, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec

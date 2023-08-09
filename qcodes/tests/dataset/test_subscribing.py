@@ -1,7 +1,7 @@
 # Test some subscription scenarios
 import logging
 from numbers import Number
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import pytest
 from numpy import ndarray
@@ -14,7 +14,7 @@ from qcodes.tests.common import retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
 
-VALUE = Union[str, Number, List[Any], ndarray, bool]
+VALUE = Union[str, Number, list[Any], ndarray, bool]
 
 
 class MockSubscriber():
@@ -31,9 +31,10 @@ class MockSubscriber():
         self.lg = lg
         self.ds = ds
 
-    def __call__(self, results: List[Tuple[VALUE]],
-                 length: int, state: Dict[Any, Any]) -> None:
-        log.debug(f'got log {self.lg} and dataset {self.ds.completed}.')
+    def __call__(
+        self, results: list[tuple[VALUE]], length: int, state: dict[Any, Any]
+    ) -> None:
+        log.debug(f"got log {self.lg} and dataset {self.ds.completed}.")
         state[length] = results
 
 
@@ -52,8 +53,7 @@ def basic_subscriber():
     state
     """
 
-    def subscriber(results: List[Tuple[VALUE]], length: int,
-                   state: Dict) -> None:
+    def subscriber(results: list[tuple[VALUE]], length: int, state: dict) -> None:
         state[length] = results
 
     return subscriber

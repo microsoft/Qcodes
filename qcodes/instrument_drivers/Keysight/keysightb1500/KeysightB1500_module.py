@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 import numpy as np
 from typing_extensions import TypedDict
@@ -56,7 +56,7 @@ def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
     return data
 
 
-def parse_module_query_response(response: str) -> Dict[SlotNr, str]:
+def parse_module_query_response(response: str) -> dict[SlotNr, str]:
     """
     Extract installed module information from the given string and return the
     information as a dictionary.
@@ -86,8 +86,7 @@ _pattern_lrn = re.compile(
 )
 
 
-def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str,
-                                                                     float]]:
+def parse_dcv_measurement_response(response: str) -> dict[str, Union[str, float]]:
     """
     Extract status, channel number, value  and accompanying metadata from
     the string and return them as a dictionary.
@@ -101,7 +100,7 @@ def parse_dcv_measurement_response(response: str) -> Dict[str, Union[str,
         raise ValueError(f"{response!r} didn't match {_pattern_lrn!r} pattern")
 
     dd = match.groupdict()
-    d = cast(Dict[str, Union[str, float]], dd)
+    d = cast(dict[str, Union[str, float]], dd)
     return d
 
 
@@ -210,7 +209,7 @@ def format_dcorr_response(r: _DCORRResponse) -> str:
 
 def get_name_label_unit_of_impedance_model(
         mode: constants.IMP.MeasurementMode
-) -> Tuple[Tuple[str, str], Tuple[str, str], Tuple[str, str]]:
+) -> tuple[tuple[str, str], tuple[str, str], tuple[str, str]]:
     params = mode.name.split('_')
 
     param1 = params[0]
@@ -294,7 +293,7 @@ class B1500Module(InstrumentChannel):
     ):
         # self.channels will be populated in the concrete module subclasses
         # because channel count is module specific
-        self.channels: Tuple[ChNr, ...]
+        self.channels: tuple[ChNr, ...]
         self.slot_nr = SlotNr(slot_nr)
 
         if name is None:
@@ -365,8 +364,8 @@ class StatusMixin:
     def __init__(self) -> None:
         self.names = tuple(['param1', 'param2'])
 
-    def status_summary(self) -> Dict[str, str]:
-        return_dict: Dict[str, str] = {}
+    def status_summary(self) -> dict[str, str]:
+        return_dict: dict[str, str] = {}
 
         for name_index, name in enumerate(self.names):
             param_data: _FMTResponse = getattr(self, f"param{name_index+1}")

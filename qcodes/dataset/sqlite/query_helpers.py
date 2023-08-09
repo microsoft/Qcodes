@@ -6,7 +6,8 @@ from __future__ import annotations
 
 import itertools
 import sqlite3
-from typing import Any, List, Mapping, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Union
 
 import numpy as np
 from numpy import ndarray
@@ -22,7 +23,7 @@ from qcodes.dataset.sqlite.settings import SQLiteSettings
 from qcodes.utils import deprecate
 
 # represent the type of  data we can/want map to sqlite column
-VALUE = Union[str, complex, List, ndarray, bool, None]
+VALUE = Union[str, complex, list, ndarray, bool, None]
 VALUES = Sequence[VALUE]
 
 

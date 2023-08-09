@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Callable, Iterable, Iterator
-from typing import Any, List, MutableSequence, Sequence, TypeVar, Union, cast, overload
+from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
+from typing import Any, TypeVar, Union, cast, overload
 
 from qcodes.metadatable import MetadatableWithName
 from qcodes.parameters import (
@@ -450,14 +450,14 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
                 "Slicing is currently not " "supported for MultiParameters"
             )
         parameters = cast(
-            List[Union[Parameter, ArrayParameter]],
+            list[Union[Parameter, ArrayParameter]],
             [chan.parameters[name] for chan in self._channels],
         )
         names = tuple(f"{chan.name}_{name}" for chan in self._channels)
         labels = tuple(parameter.label for parameter in parameters)
         units = tuple(parameter.unit for parameter in parameters)
         if isinstance(parameters[0], ArrayParameter):
-            arrayparameters = cast(List[ArrayParameter], parameters)
+            arrayparameters = cast(list[ArrayParameter], parameters)
             shapes = tuple(parameter.shape for parameter in arrayparameters)
             if arrayparameters[0].setpoints:
                 setpoints = tuple(parameter.setpoints for parameter in arrayparameters)

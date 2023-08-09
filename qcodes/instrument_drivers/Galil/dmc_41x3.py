@@ -3,7 +3,7 @@ This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers.
 
 Colloquially known as the "stepper motors".
 """
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -54,12 +54,12 @@ class GalilMotionController(Instrument):
         """
         self.g.GOpen(self._address + " --direct -s ALL")
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         """
         Get Galil motion controller hardware information
         """
         data = self.g.GInfo().split(" ")
-        idparts: List[Optional[str]] = [
+        idparts: list[Optional[str]] = [
             "Galil Motion Control, Inc.",
             data[1],
             data[4],
@@ -502,7 +502,7 @@ class GalilDMC4133Controller(GalilMotionController):
         """
         self.write("TM 1000")
 
-    def _get_absolute_position(self) -> Dict[str, int]:
+    def _get_absolute_position(self) -> dict[str, int]:
         """
         gets absolution position of the motors from the defined origin
         """
@@ -607,9 +607,9 @@ class GalilDMC4133Arm:
 
         # initialization (all these points will have values in quadrature
         # counts)
-        self._left_bottom_position: Optional[Tuple[int, int, int]] = None
-        self._left_top_position: Optional[Tuple[int, int, int]] = None
-        self._right_top_position: Optional[Tuple[int, int, int]] = None
+        self._left_bottom_position: Optional[tuple[int, int, int]] = None
+        self._left_top_position: Optional[tuple[int, int, int]] = None
+        self._right_top_position: Optional[tuple[int, int, int]] = None
 
         # motion directions (all these values are in quadrature counts)
         self._a: np.ndarray  # right_top - left_bottom
@@ -651,15 +651,15 @@ class GalilDMC4133Arm:
         return self._current_pad
 
     @property
-    def left_bottom_position(self) -> Optional[Tuple[int, int, int]]:
+    def left_bottom_position(self) -> Optional[tuple[int, int, int]]:
         return self._left_bottom_position
 
     @property
-    def left_top_position(self) -> Optional[Tuple[int, int, int]]:
+    def left_top_position(self) -> Optional[tuple[int, int, int]]:
         return self._left_top_position
 
     @property
-    def right_top_position(self) -> Optional[Tuple[int, int, int]]:
+    def right_top_position(self) -> Optional[tuple[int, int, int]]:
         return self._right_top_position
 
     @property

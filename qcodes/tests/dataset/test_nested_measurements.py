@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import Union
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -12,7 +12,7 @@ from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.tests.common import retry_until_does_not_throw
 
-VALUE = Union[str, float, List, np.ndarray, bool]
+VALUE = Union[str, float, list, np.ndarray, bool]
 
 
 @pytest.mark.usefixtures("experiment")
@@ -162,8 +162,7 @@ def basic_subscriber():
     state
     """
 
-    def subscriber(results: List[Tuple[VALUE]], length: int,
-                   state: Dict) -> None:
+    def subscriber(results: list[tuple[VALUE]], length: int, state: dict) -> None:
         state[length] = results
 
     return subscriber

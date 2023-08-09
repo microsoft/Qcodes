@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, Union
 
 import numpy as np
 import pytest
@@ -18,7 +18,7 @@ def test_type() -> None:
 
 def test_elt_vals() -> None:
     list_validator = Lists(Ints(max_value=10))
-    v1: List[Union[int, np.integer, bool]] = [0, 1, 5]
+    v1: list[Union[int, np.integer, bool]] = [0, 1, 5]
     list_validator.validate(v1)
 
     v2 = [0, 1, 11]

@@ -1,7 +1,7 @@
 import logging
 from collections import namedtuple
 from itertools import chain
-from typing import Any, List, Tuple
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class CommandHandler:
     def make_idn_string(self) -> str:
         return f'0, QuantumDesign, {self.inst_type}, N/A, N/A'
 
-    def preparser(self, cmd_str: str) -> Tuple[CmdArgs, bool]:
+    def preparser(self, cmd_str: str) -> tuple[CmdArgs, bool]:
         """
         Parse the raw SCPI-like input string into a CmdArgs tuple containing
         the corresponding MultiVu API function and a boolean indicating whether
@@ -110,7 +110,7 @@ class CommandHandler:
 
         if cmd_head not in set(self._gets.keys()).union(set(self._sets.keys())):
             cmd = err_func
-            args: List[Any] = []
+            args: list[Any] = []
             is_query = False
 
         elif cmd_str.endswith('?'):
@@ -125,7 +125,7 @@ class CommandHandler:
         return CmdArgs(cmd=cmd, args=args), is_query
 
     @staticmethod
-    def postparser(error_code: int, vals: List[Any]) -> str:
+    def postparser(error_code: int, vals: list[Any]) -> str:
         """
         Parse the output of the MultiVu API call into a string that the server
         can send back to the client

@@ -4,7 +4,7 @@ import re
 import time
 import warnings
 from contextlib import ExitStack
-from typing import List
+from typing import Any, TypedDict
 
 import numpy as np
 import pytest
@@ -410,7 +410,7 @@ def test_measured(current_driver, set_target) -> None:
     assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
 
 
-def get_ramp_down_order(messages: List[str]) -> List[str]:
+def get_ramp_down_order(messages: list[str]) -> list[str]:
     order = []
 
     for msg in messages:
@@ -1043,8 +1043,13 @@ def test_current_and_field_params_interlink__permutations_of_tests(ami430) -> No
         )
 
 
-def _parametrization_kwargs():
-    kwargs = {"argvalues": [], "ids": []}
+class PDict(TypedDict):
+    argvalues: list[Any]
+    ids: list[str]
+
+
+def _parametrization_kwargs() -> PDict:
+    kwargs: PDict = {"argvalues": [], "ids": []}
 
     for type_constructor, type_name in zip(
         (

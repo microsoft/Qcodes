@@ -2,7 +2,7 @@ import ctypes as ct
 import logging
 from enum import IntEnum
 from time import sleep
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import numpy as np
 
@@ -638,7 +638,7 @@ class SignalHoundUSBSA124B(Instrument):
 
     ########################################################################
 
-    def QuerySweep(self) -> Tuple[int, float, float]:
+    def QuerySweep(self) -> tuple[int, float, float]:
         """
         Queries the sweep for information on the parameters that defines the
             x axis of the sweep
@@ -741,8 +741,8 @@ class SignalHoundUSBSA124B(Instrument):
                 msg = msg + f"\n Extra info: {extrainfo}"
             log.info(msg)
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
-        output: Dict[str, Optional[str]] = {}
+    def get_idn(self) -> dict[str, Optional[str]]:
+        output: dict[str, Optional[str]] = {}
         output["vendor"] = "Signal Hound"
         output["model"] = self._get_device_type()
         serialnumber = ct.c_int32()

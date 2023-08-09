@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import io
 from collections.abc import Iterator, Sequence
-from typing import Any, Tuple, cast
+from typing import Any, cast
 
 import numpy as np
 
@@ -56,7 +56,7 @@ def is_sequence_of(
         if len(obj) != shape[0]:
             return False
 
-        next_shape = cast(Tuple[int, ...], shape[1:])
+        next_shape = cast(tuple[int, ...], shape[1:])
 
     for item in obj:
         if depth > 1:

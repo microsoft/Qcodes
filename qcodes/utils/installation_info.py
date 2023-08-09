@@ -7,7 +7,7 @@ import json
 import logging
 import subprocess
 import sys
-from typing import Dict, Optional
+from typing import Optional
 
 if sys.version_info >= (3, 10):
     # distribution.name used below became part of the
@@ -54,7 +54,7 @@ def get_qcodes_version() -> str:
     return __version__
 
 
-def get_all_installed_package_versions() -> Dict[str, str]:
+def get_all_installed_package_versions() -> dict[str, str]:
     """
     Return a dictionary of the currently installed packages and their versions.
     """

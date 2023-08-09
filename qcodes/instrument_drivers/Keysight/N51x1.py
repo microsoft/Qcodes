@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from qcodes.instrument import VisaInstrument
 from qcodes.parameters import create_on_off_val_mapping
@@ -92,10 +92,10 @@ class N51x1(VisaInstrument):
 
         self.connect_message()
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         IDN_str = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN_str.split(','))
-        IDN: Dict[str, Optional[str]] = {
+        IDN: dict[str, Optional[str]] = {
             'vendor': vendor, 'model': model,
             'serial': serial, 'firmware': firmware}
         return IDN

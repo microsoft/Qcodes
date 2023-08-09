@@ -7,8 +7,9 @@ import struct
 import time
 import xml.etree.ElementTree as ET
 import zipfile as zf
+from collections.abc import Mapping, Sequence
 from functools import partial
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema

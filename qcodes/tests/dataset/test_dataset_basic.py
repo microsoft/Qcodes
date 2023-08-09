@@ -1,8 +1,9 @@
 import io
 import random
 import re
+from collections.abc import Sequence
 from copy import copy
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Optional
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -320,7 +321,7 @@ def test_add_experiments(experiment_name, sample_name, dataset_name) -> None:
 @pytest.mark.usefixtures("experiment")
 def test_dependent_parameters() -> None:
 
-    pss: List[ParamSpecBase] = []
+    pss: list[ParamSpecBase] = []
 
     for n in range(5):
         pss.append(ParamSpecBase(f'ps{n}', paramtype='numeric'))
@@ -881,7 +882,7 @@ def test_get_parameter_data(scalar_dataset, start, end) -> None:
 
     expected_names = {}
     expected_names["param_3"] = ["param_3", "param_0", "param_1", "param_2"]
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_shapes["param_3"] = [(10**3,)] * 4
     expected_values = {}
     expected_values["param_3"] = [np.arange(30000, 31000)] + [
@@ -905,7 +906,7 @@ def test_get_scalar_parameter_data_no_nulls(scalar_dataset_with_nulls) -> None:
     expected_names = {}
     expected_names["first_value"] = ["first_value", "setpoint"]
     expected_names["second_value"] = ["second_value", "setpoint"]
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_shapes["first_value"] = [(1,), (1,)]
     expected_shapes["second_value"] = [(1,), (1,)]
     expected_values = {}
@@ -932,7 +933,7 @@ def test_get_array_parameter_data_no_nulls(array_dataset_with_nulls) -> None:
     expected_values = {}
 
     if "array" in types:
-        shape: Tuple[int, ...] = (1, 5)
+        shape: tuple[int, ...] = (1, 5)
     else:
         shape = (5,)
 
@@ -962,7 +963,7 @@ def test_get_array_parameter_data(array_dataset) -> None:
 
     expected_names = {}
     expected_names[par_name] = [par_name, setpoint_name]
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_len = 5
     expected_shapes[par_name] = [(expected_len,), (expected_len,)]
     expected_values = {}
@@ -993,7 +994,7 @@ def test_get_multi_parameter_data(multi_dataset) -> None:
     expected_names = {}
     expected_names["this"] = ["this"] + sp_names
     expected_names["that"] = ["that"] + sp_names
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_values = {}
     shape_1 = 5
     shape_2 = 3
@@ -1046,7 +1047,7 @@ def test_get_array_in_scalar_param_data(array_in_scalar_dataset, start, end) -> 
 
     expected_names = {}
     expected_names[par_name] = [par_name, "scalarparam", setpoint_name]
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
 
     shape_1 = 9
     shape_2 = 5
@@ -1085,7 +1086,7 @@ def test_get_varlen_array_in_scalar_param_data(varlen_array_in_scalar_dataset) -
 
     expected_names = {}
     expected_names[par_name] = [par_name, "scalarparam", setpoint_name]
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
 
     n = 9
     n_points = (n * (n + 1)) // 2
@@ -1130,7 +1131,7 @@ def test_get_array_in_scalar_param_unrolled(
 
     expected_names = {}
     expected_names[par_name] = [par_name, "scalarparam", setpoint_name]
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
 
     shape_1 = 9
     shape_2 = 5
@@ -1172,7 +1173,7 @@ def test_get_array_in_str_param_data(array_in_str_dataset) -> None:
 
     expected_names = {}
     expected_names[par_name] = [par_name, "textparam", setpoint_name]
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
 
     shape_1 = 3
     shape_2 = 5
@@ -1223,7 +1224,7 @@ def test_get_parameter_data_independent_parameters(
     expected_names["param_2"] = ["param_2"]
     expected_names["param_3"] = ["param_3", "param_0"]
 
-    expected_shapes: Dict[str, List[Tuple[int, ...]]] = {}
+    expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_shapes["param_1"] = [(10**3,)]
     expected_shapes["param_2"] = [(10**3,)]
     expected_shapes["param_3"] = [(10**3,)] * 2
@@ -1244,9 +1245,9 @@ def test_get_parameter_data_independent_parameters(
 def parameter_test_helper(
     ds: DataSet,
     toplevel_names: Sequence[str],
-    expected_names: Dict[str, List[str]],
-    expected_shapes: Dict[str, List[Tuple[int, ...]]],
-    expected_values: Dict[str, List[np.ndarray]],
+    expected_names: dict[str, list[str]],
+    expected_shapes: dict[str, list[tuple[int, ...]]],
+    expected_values: dict[str, list[np.ndarray]],
     start: Optional[int] = None,
     end: Optional[int] = None,
 ):

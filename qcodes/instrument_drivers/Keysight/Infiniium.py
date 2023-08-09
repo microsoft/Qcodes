@@ -1,5 +1,6 @@
 import re
-from typing import Any, Literal, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Literal, Optional, Union
 
 import numpy as np
 from pyvisa import VisaIOError

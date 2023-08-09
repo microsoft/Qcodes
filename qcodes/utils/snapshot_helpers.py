@@ -1,4 +1,4 @@
-from typing import Any, Dict, NamedTuple, Tuple, TypeVar, Union
+from typing import Any, NamedTuple, TypeVar, Union
 
 T = TypeVar("T")
 
@@ -6,10 +6,10 @@ ParameterKey = Union[
     # Unbound parameters
     str,
     # Instrument parameters
-    Tuple[str, str],
+    tuple[str, str],
 ]
-ParameterDict = Dict[ParameterKey, T]
-Snapshot = Dict[str, Any]
+ParameterDict = dict[ParameterKey, T]
+Snapshot = dict[str, Any]
 
 
 class ParameterDiff(NamedTuple):
@@ -17,10 +17,10 @@ class ParameterDiff(NamedTuple):
     # https://stackoverflow.com/questions/50530959/generic-namedtuple-in-python-3-6
     left_only: ParameterDict[Any]
     right_only: ParameterDict[Any]
-    changed: ParameterDict[Tuple[Any, Any]]
+    changed: ParameterDict[tuple[Any, Any]]
 
 
-def extract_param_values(snapshot: Snapshot) -> Dict[ParameterKey, Any]:
+def extract_param_values(snapshot: Snapshot) -> dict[ParameterKey, Any]:
     """
     Given a snapshot, returns a dictionary from
     instrument and parameter names onto parameter values.

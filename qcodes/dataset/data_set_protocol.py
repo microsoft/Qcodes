@@ -12,21 +12,10 @@ else:
 import logging
 import os
 import warnings
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Protocol,
-    Sequence,
-    Tuple,
-    Union,
-    runtime_checkable,
-)
+from typing import TYPE_CHECKING, Any, Callable, Protocol, Union, runtime_checkable
 
 import numpy as np
 from typing_extensions import TypeAlias
@@ -69,14 +58,14 @@ scalar_res_types: TypeAlias = Union[
     str, complex, np.integer, np.floating, np.complexfloating
 ]
 values_type: TypeAlias = Union[scalar_res_types, np.ndarray, Sequence[scalar_res_types]]
-res_type: TypeAlias = Tuple[Union["ParameterBase", str], values_type]
+res_type: TypeAlias = tuple[Union["ParameterBase", str], values_type]
 setpoints_type: TypeAlias = Sequence[Union[str, "ParameterBase"]]
-SPECS: TypeAlias = List[ParamSpec]
+SPECS: TypeAlias = list[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
 SpecsOrInterDeps: TypeAlias = Union[SPECS, InterDependencies_]
-ParameterData: TypeAlias = Dict[str, Dict[str, np.ndarray]]
+ParameterData: TypeAlias = dict[str, dict[str, np.ndarray]]
 
 LOG = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ mean a physical instrument channel, but rather an instrument sub-module.
 """
 
 import re
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import pytest
 
@@ -24,7 +24,7 @@ class MockBackendBase:
     expressions and on match the corresponding callable is called.
     """
     def __init__(self) -> None:
-        self._command_dict: Dict[str, Callable[..., Any]] = {}
+        self._command_dict: dict[str, Callable[..., Any]] = {}
 
     def send(self, cmd: str) -> Any:
         """
@@ -69,7 +69,7 @@ class MockBackend(MockBackendBase):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._channel_catalog: List[str] = ["1", "2", "4", "5"]  # Pre-existing
+        self._channel_catalog: list[str] = ["1", "2", "4", "5"]  # Pre-existing
         # channels
         self._greetings = {chn: "Hello" for chn in self._channel_catalog}
 
@@ -97,7 +97,8 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _discover_from_instrument(
-            cls, parent: Instrument, **kwargs) -> List[Dict[Any, Any]]:
+        cls, parent: Instrument, **kwargs
+    ) -> list[dict[Any, Any]]:
         """
         New channels need `name` and `channel` keyword arguments.
         """
@@ -126,7 +127,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
     @classmethod
     def _get_new_instance_kwargs(
             cls, parent: Optional[Instrument] = None, **kwargs
-    ) -> Dict[Any, Any]:
+    ) -> dict[Any, Any]:
         """
         Find the smallest channel number not yet occupied. An optional keyword
         `greeting` is extracted from the kwargs. The default is "Hello"

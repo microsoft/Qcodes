@@ -6,7 +6,6 @@ import re
 import time
 import unicodedata
 from contextlib import contextmanager
-from typing import Dict, Tuple
 from unittest.mock import patch
 
 import hypothesis.strategies as hst
@@ -234,7 +233,7 @@ def test_get_dependents(experiment) -> None:
     z = ParamSpecBase("z", "numeric")
 
     deps_param_tree = {y: (x, t), z: (x_cooked,)}
-    inferred_param_tree: Dict[ParamSpecBase, Tuple[ParamSpecBase, ...]] = {
+    inferred_param_tree: dict[ParamSpecBase, tuple[ParamSpecBase, ...]] = {
         x_cooked: (x_raw,)
     }
     interdeps = InterDependencies_(

@@ -75,7 +75,8 @@
         "export_type": null,
         "export_prefix": "qcodes_",
         "export_path": "{db_location}",
-        "export_name_elements": ["captured_run_id", "guid"]
+        "export_name_elements": ["captured_run_id", "guid"],
+        "in_memory_cache": true
     },
     "telemetry":
     {

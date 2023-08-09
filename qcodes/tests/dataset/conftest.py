@@ -4,8 +4,8 @@ import gc
 import os
 import shutil
 import tempfile
+from collections.abc import Generator, Iterator
 from contextlib import contextmanager
-from typing import Generator, Iterator
 
 import numpy as np
 import pytest

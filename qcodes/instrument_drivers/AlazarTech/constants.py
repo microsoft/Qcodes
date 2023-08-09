@@ -7,7 +7,7 @@ convenient to find the uesful constants here based on the Alazar SDK manual.
 
 
 from enum import IntEnum, IntFlag
-from typing import Dict, NewType, Tuple
+from typing import NewType
 
 ReturnCode = NewType('ReturnCode', int)
 
@@ -19,127 +19,159 @@ max_buffer_size = 64 * 1024 * 1024
 # in bytes. see docs of AlazarBeforeAsyncRead
 # http://www.alazartech.com/Support/Download%20Files/ATS-SDK-Guide-7.2.3.pdf#section*.110
 
-ERROR_CODES: Dict[ReturnCode, str] = {ReturnCode(code): msg for code, msg in {
-    513: 'ApiFailed',
-    514: 'ApiAccessDenied',
-    515: 'ApiDmaChannelUnavailable',
-    516: 'ApiDmaChannelInvalid',
-    517: 'ApiDmaChannelTypeError',
-    518: 'ApiDmaInProgress',
-    519: 'ApiDmaDone',
-    520: 'ApiDmaPaused',
-    521: 'ApiDmaNotPaused',
-    522: 'ApiDmaCommandInvalid',
-    523: 'ApiDmaManReady',
-    524: 'ApiDmaManNotReady',
-    525: 'ApiDmaInvalidChannelPriority',
-    526: 'ApiDmaManCorrupted',
-    527: 'ApiDmaInvalidElementIndex',
-    528: 'ApiDmaNoMoreElements',
-    529: 'ApiDmaSglInvalid',
-    530: 'ApiDmaSglQueueFull',
-    531: 'ApiNullParam',
-    532: 'ApiInvalidBusIndex',
-    533: 'ApiUnsupportedFunction',
-    534: 'ApiInvalidPciSpace',
-    535: 'ApiInvalidIopSpace',
-    536: 'ApiInvalidSize',
-    537: 'ApiInvalidAddress',
-    538: 'ApiInvalidAccessType',
-    539: 'ApiInvalidIndex',
-    540: 'ApiMuNotReady',
-    541: 'ApiMuFifoEmpty',
-    542: 'ApiMuFifoFull',
-    543: 'ApiInvalidRegister',
-    544: 'ApiDoorbellClearFailed',
-    545: 'ApiInvalidUserPin',
-    546: 'ApiInvalidUserState',
-    547: 'ApiEepromNotPresent',
-    548: 'ApiEepromTypeNotSupported',
-    549: 'ApiEepromBlank',
-    550: 'ApiConfigAccessFailed',
-    551: 'ApiInvalidDeviceInfo',
-    552: 'ApiNoActiveDriver',
-    553: 'ApiInsufficientResources',
-    554: 'ApiObjectAlreadyAllocated',
-    555: 'ApiAlreadyInitialized',
-    556: 'ApiNotInitialized',
-    557: 'ApiBadConfigRegEndianMode',
-    558: 'ApiInvalidPowerState',
-    559: 'ApiPowerDown',
-    560: 'ApiFlybyNotSupported',
-    561: 'ApiNotSupportThisChannel',
-    562: 'ApiNoAction',
-    563: 'ApiHSNotSupported',
-    564: 'ApiVPDNotSupported',
-    565: 'ApiVpdNotEnabled',
-    566: 'ApiNoMoreCap',
-    567: 'ApiInvalidOffset',
-    568: 'ApiBadPinDirection',
-    569: 'ApiPciTimeout',
-    570: 'ApiDmaChannelClosed',
-    571: 'ApiDmaChannelError',
-    572: 'ApiInvalidHandle',
-    573: 'ApiBufferNotReady',
-    574: 'ApiInvalidData',
-    575: 'ApiDoNothing',
-    576: 'ApiDmaSglBuildFailed',
-    577: 'ApiPMNotSupported',
-    578: 'ApiInvalidDriverVersion',
-    579: ('ApiWaitTimeout: operation did not finish during '
-          'timeout interval. Check your trigger.'),
-    580: 'ApiWaitCanceled',
-    581: 'ApiBufferTooSmall',
-    582: ('ApiBufferOverflow: rate of acquiring data > rate of '
-          'transferring data to local memory. Try reducing sample rate, '
-          'reducing number of enabled channels, increasing size of each '
-          'DMA buffer or increase number of DMA buffers.'),
-    583: 'ApiInvalidBuffer',
-    584: 'ApiInvalidRecordsPerBuffer',
-    585: ('ApiDmaPending: Async I/O operation was successfully started, '
-          'it will be completed when sufficient trigger events are '
-          'supplied to fill the buffer.'),
-    586: ('ApiLockAndProbePagesFailed:Driver or operating system was '
-          'unable to prepare the specified buffer for DMA transfer. '
-          'Try reducing buffer size or total number of buffers.'),
-    587: 'ApiWaitAbandoned',
-    588: 'ApiWaitFailed',
-    589: ('ApiTransferComplete: This buffer is last in the current '
-          'acquisition.'),
-    590: 'ApiPllNotLocked: hardware error, contact AlazarTech',
-    591: ('ApiNotSupportedInDualChannelMode:Requested number of samples '
-          'per channel is too large to fit in on-board memory. Try '
-          'reducing number of samples per channel, or switch to '
-          'single channel mode.'),
-    592: ('ApiNotSupportedInQuadChannelMode: The requested number of '
-          'samples per channel is too large to fit in onboard memory. '
-          'Try reducing the num'),
-    593: 'ApiFileIoError: A file read or write error occurred.',
-    594: ('ApiInvalidClockFrequency: The requested ADC clock frequency is '
-          'not supported.'),
-    595: 'ApiInvalidSkipTable',
-    596: 'ApiInvalidDspModule',
-    597: 'ApiDESOnlySupportedInSingleChannelMode',
-    598: 'ApiInconsistentChannel',
-    599: 'ApiDspFiniteRecordsPerAcquisition',
-    600: 'ApiNotEnoughNptFooters',
-    601: 'ApiInvalidNptFooter',
-    602: ('ApiOCTIgnoreBadClockNotSupported: OCT ignore bad clock is not '
-          'supported.'),
-    603: ('ApiError: The requested number of records in a single-port '
-          'acquisition exceeds the maximum supported by the digitizer. '
-          'Use dual-ported AutoDMA to acquire more records per acquisition.'),
-    604: ('ApiError: The requested number of records in a single-port '
-          'acquisition exceeds the maximum supported by the digitizer.'),
-    605: ('ApiOCTNoTriggerDetected: No trigger is detected for OCT ignore '
-          'bad clock feature.'),
-    606: ('ApiOCTTriggerTooFast: Trigger detected is too fast for OCT ignore '
-          'bad clock feature.'),
-    607: ('ApiNetworkError: There was an issue related to network. Make sure '
-          'that the network connection and settings are correct.'),
-    608: ('ApiFftSizeTooLarge: The on-FPGA FFT cannot support FFT that '
-          'large. Try reducing the FFT size.'),
-}.items()}
+ERROR_CODES: dict[ReturnCode, str] = {
+    ReturnCode(code): msg
+    for code, msg in {
+        513: "ApiFailed",
+        514: "ApiAccessDenied",
+        515: "ApiDmaChannelUnavailable",
+        516: "ApiDmaChannelInvalid",
+        517: "ApiDmaChannelTypeError",
+        518: "ApiDmaInProgress",
+        519: "ApiDmaDone",
+        520: "ApiDmaPaused",
+        521: "ApiDmaNotPaused",
+        522: "ApiDmaCommandInvalid",
+        523: "ApiDmaManReady",
+        524: "ApiDmaManNotReady",
+        525: "ApiDmaInvalidChannelPriority",
+        526: "ApiDmaManCorrupted",
+        527: "ApiDmaInvalidElementIndex",
+        528: "ApiDmaNoMoreElements",
+        529: "ApiDmaSglInvalid",
+        530: "ApiDmaSglQueueFull",
+        531: "ApiNullParam",
+        532: "ApiInvalidBusIndex",
+        533: "ApiUnsupportedFunction",
+        534: "ApiInvalidPciSpace",
+        535: "ApiInvalidIopSpace",
+        536: "ApiInvalidSize",
+        537: "ApiInvalidAddress",
+        538: "ApiInvalidAccessType",
+        539: "ApiInvalidIndex",
+        540: "ApiMuNotReady",
+        541: "ApiMuFifoEmpty",
+        542: "ApiMuFifoFull",
+        543: "ApiInvalidRegister",
+        544: "ApiDoorbellClearFailed",
+        545: "ApiInvalidUserPin",
+        546: "ApiInvalidUserState",
+        547: "ApiEepromNotPresent",
+        548: "ApiEepromTypeNotSupported",
+        549: "ApiEepromBlank",
+        550: "ApiConfigAccessFailed",
+        551: "ApiInvalidDeviceInfo",
+        552: "ApiNoActiveDriver",
+        553: "ApiInsufficientResources",
+        554: "ApiObjectAlreadyAllocated",
+        555: "ApiAlreadyInitialized",
+        556: "ApiNotInitialized",
+        557: "ApiBadConfigRegEndianMode",
+        558: "ApiInvalidPowerState",
+        559: "ApiPowerDown",
+        560: "ApiFlybyNotSupported",
+        561: "ApiNotSupportThisChannel",
+        562: "ApiNoAction",
+        563: "ApiHSNotSupported",
+        564: "ApiVPDNotSupported",
+        565: "ApiVpdNotEnabled",
+        566: "ApiNoMoreCap",
+        567: "ApiInvalidOffset",
+        568: "ApiBadPinDirection",
+        569: "ApiPciTimeout",
+        570: "ApiDmaChannelClosed",
+        571: "ApiDmaChannelError",
+        572: "ApiInvalidHandle",
+        573: "ApiBufferNotReady",
+        574: "ApiInvalidData",
+        575: "ApiDoNothing",
+        576: "ApiDmaSglBuildFailed",
+        577: "ApiPMNotSupported",
+        578: "ApiInvalidDriverVersion",
+        579: (
+            "ApiWaitTimeout: operation did not finish during "
+            "timeout interval. Check your trigger."
+        ),
+        580: "ApiWaitCanceled",
+        581: "ApiBufferTooSmall",
+        582: (
+            "ApiBufferOverflow: rate of acquiring data > rate of "
+            "transferring data to local memory. Try reducing sample rate, "
+            "reducing number of enabled channels, increasing size of each "
+            "DMA buffer or increase number of DMA buffers."
+        ),
+        583: "ApiInvalidBuffer",
+        584: "ApiInvalidRecordsPerBuffer",
+        585: (
+            "ApiDmaPending: Async I/O operation was successfully started, "
+            "it will be completed when sufficient trigger events are "
+            "supplied to fill the buffer."
+        ),
+        586: (
+            "ApiLockAndProbePagesFailed:Driver or operating system was "
+            "unable to prepare the specified buffer for DMA transfer. "
+            "Try reducing buffer size or total number of buffers."
+        ),
+        587: "ApiWaitAbandoned",
+        588: "ApiWaitFailed",
+        589: (
+            "ApiTransferComplete: This buffer is last in the current " "acquisition."
+        ),
+        590: "ApiPllNotLocked: hardware error, contact AlazarTech",
+        591: (
+            "ApiNotSupportedInDualChannelMode:Requested number of samples "
+            "per channel is too large to fit in on-board memory. Try "
+            "reducing number of samples per channel, or switch to "
+            "single channel mode."
+        ),
+        592: (
+            "ApiNotSupportedInQuadChannelMode: The requested number of "
+            "samples per channel is too large to fit in onboard memory. "
+            "Try reducing the num"
+        ),
+        593: "ApiFileIoError: A file read or write error occurred.",
+        594: (
+            "ApiInvalidClockFrequency: The requested ADC clock frequency is "
+            "not supported."
+        ),
+        595: "ApiInvalidSkipTable",
+        596: "ApiInvalidDspModule",
+        597: "ApiDESOnlySupportedInSingleChannelMode",
+        598: "ApiInconsistentChannel",
+        599: "ApiDspFiniteRecordsPerAcquisition",
+        600: "ApiNotEnoughNptFooters",
+        601: "ApiInvalidNptFooter",
+        602: (
+            "ApiOCTIgnoreBadClockNotSupported: OCT ignore bad clock is not "
+            "supported."
+        ),
+        603: (
+            "ApiError: The requested number of records in a single-port "
+            "acquisition exceeds the maximum supported by the digitizer. "
+            "Use dual-ported AutoDMA to acquire more records per acquisition."
+        ),
+        604: (
+            "ApiError: The requested number of records in a single-port "
+            "acquisition exceeds the maximum supported by the digitizer."
+        ),
+        605: (
+            "ApiOCTNoTriggerDetected: No trigger is detected for OCT ignore "
+            "bad clock feature."
+        ),
+        606: (
+            "ApiOCTTriggerTooFast: Trigger detected is too fast for OCT ignore "
+            "bad clock feature."
+        ),
+        607: (
+            "ApiNetworkError: There was an issue related to network. Make sure "
+            "that the network connection and settings are correct."
+        ),
+        608: (
+            "ApiFftSizeTooLarge: The on-FPGA FFT cannot support FFT that "
+            "large. Try reducing the FFT size."
+        ),
+    }.items()
+}
 
 
 BOARD_NAMES = {
@@ -185,7 +217,7 @@ BOARD_NAMES = {
 
 # See table 4 Input Channel Configurations
 # on page 241 of the Alazar SDK manual
-_NUMBER_OF_CHANNELS_TO_BYTE_REPR: Dict[int, Tuple[int, ...]] = {
+_NUMBER_OF_CHANNELS_TO_BYTE_REPR: dict[int, tuple[int, ...]] = {
     1:  tuple(2**i for i in range(16)),
     2:  (3, 5, 6, 9, 10, 12),
     4:  (15,),
@@ -195,7 +227,7 @@ _NUMBER_OF_CHANNELS_TO_BYTE_REPR: Dict[int, Tuple[int, ...]] = {
 
 # See table 4 Input Channel Configurations
 # on page 241 of the Alazar SDK manual
-NUMBER_OF_CHANNELS_FROM_BYTE_REPR: Dict[int, int] = {
+NUMBER_OF_CHANNELS_FROM_BYTE_REPR: dict[int, int] = {
     byte_repr: n_ch
         for n_ch, byte_reprs in _NUMBER_OF_CHANNELS_TO_BYTE_REPR.items()
         for byte_repr in byte_reprs

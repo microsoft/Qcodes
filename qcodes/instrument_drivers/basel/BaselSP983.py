@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from qcodes.instrument import Instrument
 from qcodes.parameters import DelegateParameter, Parameter
@@ -66,7 +66,7 @@ class BaselSP983(Instrument):
             parameter_class=DelegateParameter,
         )
 
-    def get_idn(self) -> Dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, Optional[str]]:
         vendor = "Physics Basel"
         model = "SP 983"
         serial = None

@@ -1,5 +1,6 @@
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, List, Sequence, Tuple, Union
+from typing import Any, Union
 
 
 class DelegateAttributes:
@@ -16,19 +17,19 @@ class DelegateAttributes:
         3. Attributes of each object in ``delegate_attr_objects`` (in order).
     """
 
-    delegate_attr_dicts: List[str] = []
+    delegate_attr_dicts: list[str] = []
     """
     A list of names (strings) of dictionaries
     which are (or will be) attributes of ``self``, whose keys should
     be treated as attributes of ``self``.
     """
-    delegate_attr_objects: List[str] = []
+    delegate_attr_objects: list[str] = []
     """
     A list of names (strings) of objects
     which are (or will be) attributes of ``self``, whose attributes
     should be passed through to ``self``.
     """
-    omit_delegate_attrs: List[str] = []
+    omit_delegate_attrs: list[str] = []
     """
     A list of attribute names (strings)
     to *not* delegate to any other dictionary or object.
@@ -77,7 +78,7 @@ class DelegateAttributes:
             )
         )
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> list[str]:
         names = list(super().__dir__())
         for name in self.delegate_attr_dicts:
             d = getattr(self, name, None)
@@ -113,7 +114,7 @@ def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
 
 
 def checked_getattr(
-    instance: Any, attribute: str, expected_type: Union[type, Tuple[type, ...]]
+    instance: Any, attribute: str, expected_type: Union[type, tuple[type, ...]]
 ) -> Any:
     """
     Like ``getattr`` but raises type error if not of expected type.

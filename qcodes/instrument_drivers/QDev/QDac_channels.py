@@ -2,8 +2,9 @@
 
 import logging
 import time
+from collections.abc import Sequence
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 
 import pyvisa
 import pyvisa.constants
@@ -104,7 +105,7 @@ class QDevQDacChannel(InstrumentChannel):
             self,
             update: Optional[bool] = False,
             params_to_skip_update: Optional[Sequence[str]] = None
-    ) -> Dict[Any, Any]:
+    ) -> dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
             self._parent._update_cache(readcurrents=update_currents)
@@ -135,7 +136,7 @@ class QDevQDacMultiChannelParameter(MultiChannelInstrumentParameter):
             **kwargs: Any):
         super().__init__(channels, param_name, *args, **kwargs)
 
-    def get_raw(self) -> Tuple[ParamRawDataType, ...]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...]:
         """
         Return a tuple containing the data from each of the channels in the
         list.
@@ -217,12 +218,12 @@ class QDevQDac(VisaInstrument):
         self.num_chans = num_chans
 
         # Assigned slopes. Entries will eventually be [chan, slope]
-        self._slopes: List[Tuple[int, Union[str, float]]] = []
+        self._slopes: list[tuple[int, Union[str, float]]] = []
         # Function generators (used in _set_voltage)
         self._fgs = set(range(1, 9))
-        self._assigned_fgs: Dict[int, int] = {}  # {chan: fg}
+        self._assigned_fgs: dict[int, int] = {}  # {chan: fg}
         # Sync channels
-        self._syncoutputs: List[Tuple[int, int]] = []  # Entries: [chan, syncchannel]
+        self._syncoutputs: list[tuple[int, int]] = []  # Entries: [chan, syncchannel]
 
         self.chan_range = range(1, 1 + self.num_chans)
         self.channel_validator = vals.Ints(1, self.num_chans)
@@ -276,7 +277,7 @@ class QDevQDac(VisaInstrument):
             self,
             update: Optional[bool] = False,
             params_to_skip_update: Optional[Sequence[str]] = None
-    ) -> Dict[Any, Any]:
+    ) -> dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:
             self._update_cache(readcurrents=update_currents)
@@ -445,7 +446,7 @@ class QDevQDac(VisaInstrument):
             if headers != expected_headers:
                 raise ValueError('unrecognized header line: ' + header_line)
 
-        def parse_line(line: str) -> Tuple[int, int, int, float]:
+        def parse_line(line: str) -> tuple[int, int, int, float]:
             i_range_trans = {'hi cur': 1, 'lo cur': 0}
             v_range_trans = {'X 1': 0, 'X 0.1': 1}
 

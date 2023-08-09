@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import pytest
 
@@ -65,7 +64,7 @@ def test_no_interdeps_raises_in_prepare(experiment) -> None:
 def test_prepare_twice_raises(experiment) -> None:
     ds = DataSetInMem._create_new_run(name="foo")
 
-    pss: List[ParamSpecBase] = []
+    pss: list[ParamSpecBase] = []
     for n in range(3):
         pss.append(ParamSpecBase(f"ps{n}", paramtype="numeric"))
 
@@ -87,7 +86,7 @@ def test_timestamps(experiment) -> None:
     assert ds.completed_timestamp() is None
     assert ds.completed_timestamp_raw is None
 
-    pss: List[ParamSpecBase] = []
+    pss: list[ParamSpecBase] = []
     for n in range(3):
         pss.append(ParamSpecBase(f"ps{n}", paramtype="numeric"))
 

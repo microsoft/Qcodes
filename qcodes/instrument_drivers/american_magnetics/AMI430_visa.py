@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, Tuple, TypeVar, cast
+from typing import Any, Callable, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -917,8 +917,8 @@ class AMIModel4303D(Instrument):
     def _raise_if_not_same_field_and_ramp_rate_units(self) -> tuple[str, str]:
         instruments = (self._instrument_x, self._instrument_y, self._instrument_z)
 
-        field_units_of_instruments = defaultdict(set)
-        ramp_rate_units_of_instruments = defaultdict(set)
+        field_units_of_instruments: defaultdict[str, set[str]] = defaultdict(set)
+        ramp_rate_units_of_instruments: defaultdict[str, set[str]] = defaultdict(set)
 
         for instrument in instruments:
             ramp_rate_units_of_instruments[instrument.ramp_rate_units.cache.get()].add(
@@ -1193,7 +1193,7 @@ class AMIModel4303D(Instrument):
             set_point.set_component(**kwargs)
 
         setpoint_values = cast(
-            Tuple[float, float, float], set_point.get_components("x", "y", "z")
+            tuple[float, float, float], set_point.get_components("x", "y", "z")
         )
         self._adjust_child_instruments(setpoint_values)
 

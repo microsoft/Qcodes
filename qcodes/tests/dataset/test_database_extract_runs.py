@@ -5,7 +5,7 @@ import uuid
 from contextlib import contextmanager
 from os.path import getmtime
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -110,7 +110,7 @@ def test_basic_extraction(two_empty_temp_db_connections, some_interdeps) -> None
     source_path = path_to_dbfile(source_conn)
     target_path = path_to_dbfile(target_conn)
 
-    type_casters: Dict[str, Callable] = {
+    type_casters: dict[str, Callable] = {
         "numeric": float,
         "array": (lambda x: np.array(x) if hasattr(x, "__iter__") else np.array([x])),
         "text": str,
@@ -637,6 +637,7 @@ def test_combine_runs(
         assert guid_comp["work_station"] == int(mydict["work_station"])
 
 
+@pytest.mark.usefixtures("default_config")
 def test_copy_datasets_and_add_new(
     two_empty_temp_db_connections, some_interdeps
 ) -> None:

@@ -2,11 +2,10 @@
 This file holds scaling logic for axis that is independent of plotting backend
 """
 from collections import OrderedDict
-from typing import Dict, Set, Tuple
 
 import numpy as np
 
-_UNITS_FOR_RESCALING: Set[str] = {
+_UNITS_FOR_RESCALING: set[str] = {
     # SI units (without some irrelevant ones like candela)
     # 'kg' is not included because it is 'kilo' and rarely used
     "m",
@@ -36,7 +35,7 @@ _UNITS_FOR_RESCALING: Set[str] = {
     "g",
 }
 
-_ENGINEERING_PREFIXES: Dict[int, str] = OrderedDict(
+_ENGINEERING_PREFIXES: dict[int, str] = OrderedDict(
     {
         -24: "y",
         -21: "z",
@@ -58,12 +57,12 @@ _ENGINEERING_PREFIXES: Dict[int, str] = OrderedDict(
     }
 )
 
-_THRESHOLDS: Dict[float, int] = OrderedDict(
+_THRESHOLDS: dict[float, int] = OrderedDict(
     {10 ** (scale + 3): scale for scale in _ENGINEERING_PREFIXES.keys()}
 )
 
 
-def find_scale_and_prefix(data: np.ndarray, unit: str) -> Tuple[str, int]:
+def find_scale_and_prefix(data: np.ndarray, unit: str) -> tuple[str, int]:
     """
     Given a numpy array of data and a unit find the best engineering prefix
     and matching scale that best describes the data.

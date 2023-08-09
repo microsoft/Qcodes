@@ -1,4 +1,4 @@
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
@@ -15,7 +15,7 @@ _n_channels = 16
 class LakeshoreModel372Output(BaseOutput):
     """An InstrumentChannel for control outputs (heaters) of Lakeshore Model 372"""
 
-    MODES: ClassVar[Dict[str, int]] = {
+    MODES: ClassVar[dict[str, int]] = {
         "off": 0,
         "monitor_out": 1,
         "open_loop": 2,
@@ -24,8 +24,8 @@ class LakeshoreModel372Output(BaseOutput):
         "closed_loop": 5,
         "warm_up": 6,
     }
-    POLARITIES: ClassVar[Dict[str, int]] = {"unipolar": 0, "bipolar": 1}
-    RANGES: ClassVar[Dict[str, int]] = {
+    POLARITIES: ClassVar[dict[str, int]] = {"unipolar": 0, "bipolar": 1}
+    RANGES: ClassVar[dict[str, int]] = {
         "off": 0,
         "31.6μA": 1,
         "100μA": 2,
@@ -37,7 +37,7 @@ class LakeshoreModel372Output(BaseOutput):
         "100mA": 8,
     }
 
-    _input_channel_parameter_kwargs: ClassVar[Dict[str, Any]] = {
+    _input_channel_parameter_kwargs: ClassVar[dict[str, Any]] = {
         "get_parser": int,
         "vals": vals.Numbers(1, _n_channels),
     }
@@ -288,7 +288,7 @@ class LakeshoreModel372(LakeshoreBase):
     Computer Interface Operation section of the manual) is not implemented.
     """
 
-    channel_name_command: Dict[str, str] = {
+    channel_name_command: dict[str, str] = {
         f"ch{i:02}": str(i) for i in range(1, 1 + _n_channels)
     }
     input_channel_parameter_values_to_channel_name_on_instrument = {
