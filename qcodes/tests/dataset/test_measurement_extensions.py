@@ -93,7 +93,7 @@ def default_database_and_experiment_(tmp_path):
 
 
 def test_context(default_params, default_database_and_experiment):
-    experiment = default_database_and_experiment
+    _ = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
     dataset_definition = [
         DataSetDefinition(name="dataset_1", independent=[set1], dependent=[meas1]),
@@ -103,7 +103,7 @@ def test_context(default_params, default_database_and_experiment):
     ]
     outer_val_range = 5
     inner_val_range = 5
-    with datasaver_builder(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition) as datasavers:
         for val in range(outer_val_range):
             set1(val)
             meas1_val = meas1()
@@ -167,7 +167,7 @@ def test_dond_into(default_params, default_database_and_experiment):
 
 
 def test_dond_into_and_context(default_params, default_database_and_experiment):
-    experiment = default_database_and_experiment
+    _ = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
 
     dataset_definition = [
@@ -178,7 +178,7 @@ def test_dond_into_and_context(default_params, default_database_and_experiment):
             name="dataset_2", independent=[set1, set3], dependent=[meas1, meas3]
         ),
     ]
-    with datasaver_builder(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
             sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
@@ -200,7 +200,7 @@ def test_dond_into_and_context(default_params, default_database_and_experiment):
 
 
 def test_linsweeper(default_params, default_database_and_experiment):
-    experiment = default_database_and_experiment
+    _ = default_database_and_experiment
     set1, set2, _, meas1, meas2, _ = default_params
 
     dataset_definition = [
@@ -208,7 +208,7 @@ def test_linsweeper(default_params, default_database_and_experiment):
             name="dataset_1", independent=[set1, set2], dependent=[meas1, meas2]
         )
     ]
-    with datasaver_builder(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
             dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
@@ -224,10 +224,10 @@ def test_linsweeper(default_params, default_database_and_experiment):
 
 
 def test_context_with_pws(pws_params, default_database_and_experiment):
-    experiment = default_database_and_experiment
+    _ = default_database_and_experiment
     pws1, set1 = pws_params
     dataset_definition = [DataSetDefinition("dataset_1", [set1], [pws1])]
-    with datasaver_builder(dataset_definition, experiment) as datasavers:
+    with datasaver_builder(dataset_definition) as datasavers:
         for _ in LinSweeper(set1, 0, 10, 11, 0.001):
             dond_into(datasavers[0], pws1, additional_setpoints=(set1,))
 
@@ -318,3 +318,137 @@ def test_dond_into_fails_with_groups(default_params, default_database_and_experi
                 [meas2],  # pyright: ignore [reportGeneralTypeIssues]
             )
             _ = datasaver.dataset
+
+
+def test_context_with_multiple_experiments(
+    default_params, default_database_and_experiment
+):
+    experiment = default_database_and_experiment
+    experiment2 = load_or_create_experiment("other_experiment")
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_1",
+            independent=[set1, set2],
+            dependent=[meas1, meas2],
+            experiment=experiment,
+        ),
+        DataSetDefinition(
+            name="dataset_2",
+            independent=[set1, set3],
+            dependent=[meas1, meas3],
+            experiment=experiment2,
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
+            sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
+            dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
+            dond_into(datasavers[1], sweep2, meas1, meas3, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert len(datasets) == 2
+    assert_dataset_as_expected(
+        datasets[0],
+        dims_dict={set1.name: 11, set2.name: 11},
+        data_vars=(meas1.name, meas2.name),
+    )
+    assert_dataset_as_expected(
+        datasets[1],
+        dims_dict={set1.name: 11, set3.name: 11},
+        data_vars=(meas1.name, meas3.name),
+    )
+
+    assert datasets[0].exp_id != datasets[1].exp_id
+    assert datasets[0].exp_name == experiment.name
+    assert datasets[1].exp_name == experiment2.name
+
+
+def test_context_with_no_experiment(default_params, default_database_and_experiment):
+    _ = default_database_and_experiment
+    experiment2 = load_or_create_experiment("other_experiment")
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_1",
+            independent=[set1, set2],
+            dependent=[meas1, meas2],
+        ),
+        DataSetDefinition(
+            name="dataset_2",
+            independent=[set1, set3],
+            dependent=[meas1, meas3],
+        ),
+    ]
+    with datasaver_builder(dataset_definition) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
+            sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
+            dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
+            dond_into(datasavers[1], sweep2, meas1, meas3, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert len(datasets) == 2
+    assert_dataset_as_expected(
+        datasets[0],
+        dims_dict={set1.name: 11, set2.name: 11},
+        data_vars=(meas1.name, meas2.name),
+    )
+    assert_dataset_as_expected(
+        datasets[1],
+        dims_dict={set1.name: 11, set3.name: 11},
+        data_vars=(meas1.name, meas3.name),
+    )
+
+    assert datasets[0].exp_name == experiment2.name
+    assert datasets[1].exp_name == experiment2.name
+
+
+def test_context_with_override_experiment(
+    default_params, default_database_and_experiment
+):
+    experiment = default_database_and_experiment
+    experiment2 = load_or_create_experiment("other_experiment")
+    set1, set2, set3, meas1, meas2, meas3 = default_params
+
+    dataset_definition = [
+        DataSetDefinition(
+            name="dataset_1",
+            independent=[set1, set2],
+            dependent=[meas1, meas2],
+            experiment=experiment,
+        ),
+        DataSetDefinition(
+            name="dataset_2",
+            independent=[set1, set3],
+            dependent=[meas1, meas3],
+            experiment=experiment,
+        ),
+    ]
+    with datasaver_builder(
+        dataset_definition, override_experiment=experiment2
+    ) as datasavers:
+        for _ in LinSweeper(set1, 0, 10, 11, 0.001):
+            sweep1 = LinSweep(set2, 0, 10, 11, 0.001)
+            sweep2 = LinSweep(set3, -10, 0, 11, 0.001)
+            dond_into(datasavers[0], sweep1, meas1, meas2, additional_setpoints=(set1,))
+            dond_into(datasavers[1], sweep2, meas1, meas3, additional_setpoints=(set1,))
+        datasets = [datasaver.dataset for datasaver in datasavers]
+
+    assert len(datasets) == 2
+    assert_dataset_as_expected(
+        datasets[0],
+        dims_dict={set1.name: 11, set2.name: 11},
+        data_vars=(meas1.name, meas2.name),
+    )
+    assert_dataset_as_expected(
+        datasets[1],
+        dims_dict={set1.name: 11, set3.name: 11},
+        data_vars=(meas1.name, meas3.name),
+    )
+
+    assert datasets[0].exp_name == experiment2.name
+    assert datasets[1].exp_name == experiment2.name

@@ -28,10 +28,12 @@ class DataSetDefinition:
     dependent: Sequence[ParameterBase]
     """A sequence of dependent parameters in the Measurement and dataset
     Note: All dependent parameters will depend on all independent parameters"""
+    experiment: Experiment | None = None
 
 
 def setup_measurement_instances(
-    dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
+    dataset_definitions: Sequence[DataSetDefinition],
+    override_experiment: Experiment | None = None,
 ) -> list[Measurement]:
     """Creates a set of Measurement instances and registers parameters
 
@@ -44,7 +46,12 @@ def setup_measurement_instances(
     """
     measurements: list[Measurement] = []
     for ds_def in dataset_definitions:
-        meas = Measurement(name=ds_def.name, exp=experiment)
+        ds_experiment = (
+            override_experiment
+            if override_experiment is not None
+            else ds_def.experiment
+        )
+        meas = Measurement(name=ds_def.name, exp=ds_experiment)
         for param in ds_def.independent:
             meas.register_parameter(param)
         for param in ds_def.dependent:
@@ -55,7 +62,9 @@ def setup_measurement_instances(
 
 @contextmanager
 def datasaver_builder(
-    dataset_definitions: Sequence[DataSetDefinition], experiment: Experiment
+    dataset_definitions: Sequence[DataSetDefinition],
+    *,
+    override_experiment: Experiment | None = None,
 ) -> Generator[list[DataSaver], Any, None]:
     """
     A utility context manager intended to simplify the creation of datasavers
@@ -70,7 +79,9 @@ def datasaver_builder(
     Yields:
         A list of generated datasavers with parameters registered
     """
-    measurement_instances = setup_measurement_instances(dataset_definitions, experiment)
+    measurement_instances = setup_measurement_instances(
+        dataset_definitions, override_experiment
+    )
     with catch_interrupts() as _, ExitStack() as stack:
         datasavers = [
             stack.enter_context(measurement.run())
