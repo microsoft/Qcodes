@@ -38,7 +38,8 @@ def setup_measurement_instances(
     """Creates a set of Measurement instances and registers parameters
 
     Args:
-        dataset_definitions: A set of DataSetDefinitions to create and register parameters for
+        dataset_definitions: A set of DataSetDefinitions to create and register
+            parameters for
         experiment: The Experiment all Measurement objects will be part of
 
     Returns:
@@ -69,11 +70,12 @@ def datasaver_builder(
     """
     A utility context manager intended to simplify the creation of datasavers
 
-    The datasaver builder can be used to streamline the creation of multiple datasavers where all
-    dependent parameters depend on all independent parameters.
+    The datasaver builder can be used to streamline the creation of multiple datasavers
+    where all dependent parameters depend on all independent parameters.
 
     Args:
-        dataset_definitions: A set of DataSetDefinitions to create and register parameters for
+        dataset_definitions: A set of DataSetDefinitions to create and register
+            parameters for
         experiment: The Experiment for all datasaver objects
 
     Yields:
@@ -132,8 +134,9 @@ def dond_into(
     """
     A doNd-like utility function that writes gridded data to the supplied DataSaver
 
-    dond_into accepts AbstractSweep objects and measurement parameters or callables. It executes
-    the specified Sweeps, reads the measurement parameters, and stores the resulting data in the datasaver.
+    dond_into accepts AbstractSweep objects and measurement parameters or callables.
+    It executes the specified Sweeps, reads the measurement parameters, and stores
+    the resulting data in the datasaver.
 
     Args:
         datasaver: The datasaver to write data to
@@ -146,8 +149,8 @@ def dond_into(
                 LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),
                 param_meas_1, param_meas_2, ..., param_meas_m
 
-        additional_setpoints: A list of setpoint parameters to be registered in the measurement but
-            not scanned/swept-over.
+        additional_setpoints: A list of setpoint parameters to be registered in the
+            measurement but not scanned/swept-over.
     """
     sweep_instances, params_meas = parse_dond_into_args(*params)
     sweeper = _Sweeper(sweep_instances, additional_setpoints)
