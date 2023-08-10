@@ -1,0 +1,3 @@
+The InstrumentLoggerAdapter has been updated to store the `instrument_name` and `instrument_type`
+as fields on log records rather than the instrument it self. This enables opentelemetry to attache
+the fields to a transmitted LogRecord for better filtering.
