@@ -29,6 +29,8 @@ class DataSetDefinition:
     """A sequence of dependent parameters in the Measurement and dataset
     Note: All dependent parameters will depend on all independent parameters"""
     experiment: Experiment | None = None
+    """An optional argument specifying which Experiment this dataset should be
+    written to"""
 
 
 def setup_measurement_instances(
@@ -76,7 +78,9 @@ def datasaver_builder(
     Args:
         dataset_definitions: A set of DataSetDefinitions to create and register
             parameters for
-        experiment: The Experiment for all datasaver objects
+        override_experiment: Sets the Experiment for all datasets to be written
+            to. This argument overrides any experiments provided in the
+            DataSetDefinition
 
     Yields:
         A list of generated datasavers with parameters registered
@@ -89,10 +93,7 @@ def datasaver_builder(
             stack.enter_context(measurement.run())
             for measurement in measurement_instances
         ]
-        try:
-            yield datasavers
-        except Exception as e:
-            raise e
+        yield datasavers
 
 
 def parse_dond_into_args(
