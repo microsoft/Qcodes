@@ -11,7 +11,7 @@ asttokens~=2.2.0
 attrs~=23.1.0
 autodocsumm==0.2.11
 azure-core~=1.29.0
-azure-identity~=1.13.0
+azure-identity~=1.14.0
 Babel~=2.12.1
 backcall==0.2.0
 beautifulsoup4~=4.12.0
@@ -73,7 +73,7 @@ matplotlib-inline==0.1.6
 mistune~=3.0.1
 msal~=1.23.0
 msal-extensions~=1.0.0
-mypy~=1.4.0
+mypy~=1.5.0
 mypy-extensions~=1.0.0
 nbclient==0.8.0
 nbconvert~=7.7.1
@@ -158,7 +158,7 @@ tinycss2~=1.2.1
 tomli~=2.0.1
 tornado~=6.2
 towncrier~=23.6.0
-tqdm~=4.65.0
+tqdm~=4.66.1
 traitlets~=5.9.0
 types-requests~=2.31.0
 types-setuptools~=68.0.0
