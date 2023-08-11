@@ -16,11 +16,11 @@ from qcodes import config
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.dond.do_nd_utils import (
     BreakConditionInterrupt,
-    _catch_interrupts,
     _handle_plotting,
     _register_actions,
     _register_parameters,
     _set_write_period,
+    catch_interrupts,
 )
 from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
@@ -75,6 +75,7 @@ class _Sweeper:
         self._setpoints = self._make_setpoints_tuples()
         self._setpoints_dict = self._make_setpoints_dict()
         self._shape = self._make_shape(sweeps, additional_setpoints)
+        self._iter_index = 0
 
     @property
     def setpoints_dict(self) -> dict[str, list[Any]]:
@@ -90,7 +91,6 @@ class _Sweeper:
         )
 
     def _make_single_point_setpoints_dict(self, index: int) -> dict[str, SweepVarType]:
-
         setpoint_dict = {}
         values = self._setpoints[index]
         for sweep, subvalues in zip(self._sweeps, values):
@@ -102,7 +102,6 @@ class _Sweeper:
         return setpoint_dict
 
     def _make_setpoints_dict(self) -> dict[str, list[Any]]:
-
         setpoint_dict: dict[str, list[SweepVarType]] = {}
 
         for sweep in self._sweeps:
@@ -204,7 +203,6 @@ class _Sweeper:
         return self._shape
 
     def __getitem__(self, index: int) -> tuple[ParameterSetEvent, ...]:
-
         setpoints = self._make_single_point_setpoints_dict(index)
 
         if index == 0:
@@ -217,7 +215,6 @@ class _Sweeper:
         parameter_set_events = []
 
         for sweep in self.all_sweeps:
-
             new_value = setpoints[sweep.param.full_name]
             old_value = previous_setpoints[sweep.param.full_name]
             if old_value is None or old_value != new_value:
@@ -237,6 +234,17 @@ class _Sweeper:
 
     def __len__(self) -> int:
         return int(np.prod(self.shape))
+
+    def __iter__(self) -> _Sweeper:
+        return self
+
+    def __next__(self) -> tuple[ParameterSetEvent, ...]:
+        if self._iter_index < len(self):
+            return_val = self[self._iter_index]
+            self._iter_index += 1
+            return return_val
+        else:
+            raise StopIteration
 
 
 class _Measurements:
@@ -408,7 +416,6 @@ class _Measurements:
         experiments: Experiment | Sequence[Experiment] | None,
         meas_names: str | Sequence[str],
     ) -> tuple[_SweepMeasGroup, ...]:
-
         setpoints = self._sweeper.all_setpoint_params
 
         groups = []
@@ -700,7 +707,7 @@ def dond(
         [], KeyboardInterrupt | BreakConditionInterrupt | None
     ] = lambda: None
     try:
-        with _catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
+        with catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
             datasavers = [
                 stack.enter_context(
                     group.measurement_cxt.run(in_memory_cache=in_memory_cache)
@@ -708,12 +715,7 @@ def dond(
                 for group in measurements.groups
             ]
             additional_setpoints_data = process_params_meas(additional_setpoints)
-            # _Sweeper is not considered an Iterable since it does not
-            # implement __iter__. However, it does implement __getitem__
-            # and is therefor safe to iterate over.
-            # https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable
-            # https://github.com/python/cpython/issues/86992#issuecomment-1093897307
-            for set_events in tqdm(sweeper, disable=not show_progress):  # type: ignore[call-overload]
+            for set_events in tqdm(sweeper, disable=not show_progress):
                 LOG.debug("Processing set events: %s", set_events)
                 results: dict[ParameterBase, Any] = {}
                 for set_event in set_events:  # pyright: ignore[reportGeneralTypeIssues]
@@ -747,7 +749,6 @@ def dond(
                     if break_condition():
                         raise BreakConditionInterrupt("Break condition was met.")
     finally:
-
         for datasaver in datasavers:
             ds, plot_axis, plot_color = _handle_plotting(
                 datasaver.dataset, do_plot, interrupted()
