@@ -934,10 +934,11 @@ def load_from_file(
     Returns:
         The loaded dataset.
     """
+    path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"File {path} not found.")
 
-    if DataExportType.NETCDF.value == path.suffix:
+    if DataExportType.NETCDF.value == path.suffix.replace(".", ""):
         return DataSetInMem._load_from_netcdf(path=path, path_to_db=path_to_db)
 
     else:
