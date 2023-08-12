@@ -34,13 +34,11 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
 from qcodes.dataset.export_config import (
-    get_data_export_name_elements,
-    get_data_export_path,
-    get_data_export_prefix,
     get_data_export_type,
 )
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
+from qcodes.dataset.load_config import get_data_load_from_file
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
@@ -1830,42 +1828,35 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
         raise NameError(f"No run with GUID: {guid} found in database.")
-    export_file_path = _get_datasetprotocol_export_file_path(run_id=run_id, guid=guid)
-    if export_file_path.is_file():
-        d: DataSetInMem = load_from_file(export_file_path)
+
+    if get_data_load_from_file():
+        export_info = _get_datasetprotocol_export_info(run_id=run_id, conn=conn)
+        export_type = get_data_export_type()
+        export_file_path = export_info.export_paths.get(export_type.value)
+        if export_file_path is not None:
+            try:
+                d: DataSetInMem = load_from_file(export_file_path)
+
+            except (ValueError, FileNotFoundError) as e:
+                log.warning(f"Cannot load data from file: {e!s}")
+
+            else:
+                return d
+
+    result_table_name = _get_result_table_name_by_guid(conn, guid)
+    if _check_if_table_found(conn, result_table_name):
+        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
     else:
-        result_table_name = _get_result_table_name_by_guid(conn, guid)
-        if _check_if_table_found(conn, result_table_name):
-            d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
-        else:
-            d = DataSetInMem._load_from_db(conn=conn, guid=guid)
+        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
+
     return d
 
 
-def _get_datasetprotocol_export_file_path(run_id: str, guid: str, **kwargs) -> Path:
-    export_path = get_data_export_path()
-    file_name = _get_datasetprotocol_export_file_name(run_id=run_id, guid=guid, **kwargs)
-
-    return export_path / file_name
-
-
-def _get_datasetprotocol_export_file_name(run_id: str, guid: str, **kwargs) -> str:
-    """Get export file name"""
-    if "captured_run_id" not in kwargs:
-        kwargs.update(dict(captured_run_id=run_id))
-    kwargs.update(dict(guid=guid))
-
-    export_type = get_data_export_type()
-    prefix = get_data_export_prefix()
-    name_elements = get_data_export_name_elements()
-
-    if export_type is None:
-        return ""
-
-    extension = export_type.value
-    post_fix = "_".join([str(kwargs.get(name, "")) for name in name_elements])
-
-    return f"{prefix}{post_fix}.{extension}"
+def _get_datasetprotocol_export_info(run_id: str, conn: ConnectionPlus) -> ExportInfo:
+    metadata = get_metadata_from_run_id(conn=conn, run_id=run_id)
+    export_info_str = metadata.get("export_info", "")
+    export_info = ExportInfo.from_str(export_info_str)
+    return export_info
 
 
 def new_data_set(

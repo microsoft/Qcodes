@@ -11,6 +11,7 @@ import xarray as xr
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
 
+import qcodes
 from qcodes.dataset import load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem
 from qcodes.dataset.data_set_protocol import DataSetType
@@ -445,6 +446,37 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     assert "export_info" in loaded_ds.metadata.keys()
     assert "metadata_added_after_export" in loaded_ds.metadata.keys()
     assert loaded_ds.metadata["metadata_added_after_export"] == 69
+
+    compare_datasets(ds, loaded_ds)
+
+
+def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
+    qcodes.config["dataset"]["export_path"] = tmp_path
+    qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
+    qcodes.config["dataset"]["export_type"] = "netcdf"
+    qcodes.config["dataset"]["export_automatic"] = True
+    qcodes.config["dataset"]["load_from_file"] = True
+
+    Station(DAC, DMM)
+    with meas_with_registered_param.run(
+        dataset_class=DataSetType.DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    ds = datasaver.dataset
+    ds.add_metadata("metadata_added_after_export", "foo")
+
+    loaded_ds = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds, DataSetInMem)
+    assert loaded_ds.snapshot == ds.snapshot
+    assert loaded_ds.export_info == ds.export_info
+    assert loaded_ds.metadata == ds.metadata
+
+    assert "export_info" in loaded_ds.metadata.keys()
+    assert "metadata_added_after_export" not in loaded_ds.metadata.keys()
 
     compare_datasets(ds, loaded_ds)
 

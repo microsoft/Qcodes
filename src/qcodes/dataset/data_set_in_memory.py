@@ -23,6 +23,7 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
@@ -41,7 +42,6 @@ from qcodes.dataset.sqlite.queries import (
     update_parent_datasets,
     update_run_description,
 )
-from qcodes.dataset.export_config import DataExportType
 from qcodes.utils import NumpyJSONEncoder
 
 from .data_set_cache import DataSetCacheInMem
@@ -934,5 +934,15 @@ def load_from_file(
     Returns:
         The loaded dataset.
     """
+    if not path.is_file():
+        raise FileNotFoundError(f"File {path} not found.")
+
     if DataExportType.NETCDF.value == path.suffix:
         return DataSetInMem._load_from_netcdf(path=path, path_to_db=path_to_db)
+
+    else:
+        raise ValueError(
+            f"Loading file of type {path.suffix} is not supported."
+            "Please refer to https://github.com/QCoDeS/Qcodes/issues"
+            "to find existing or create a new feature request."
+        )
