@@ -33,6 +33,12 @@ from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
+from qcodes.dataset.export_config import (
+    get_data_export_name_elements,
+    get_data_export_path,
+    get_data_export_prefix,
+    get_data_export_type,
+)
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
@@ -84,7 +90,7 @@ from qcodes.utils import (
 )
 
 from .data_set_cache import DataSetCacheWithDBBackend
-from .data_set_in_memory import DataSetInMem
+from .data_set_in_memory import DataSetInMem, load_from_file
 from .descriptions.versioning import serialization as serial
 from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
@@ -1788,6 +1794,8 @@ def load_by_counter(
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+    If the raw data is exported to netcdf this will be loaded from file
+    as a :class:`DataSetInMemory`.
     If the raw data is in the database this will be loaded as a
     :class:`qcodes.dataset.data_set.DataSet`
     otherwise it will be loaded as a :class:`.DataSetInMemory`
@@ -1822,12 +1830,42 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
         raise NameError(f"No run with GUID: {guid} found in database.")
-    result_table_name = _get_result_table_name_by_guid(conn, guid)
-    if _check_if_table_found(conn, result_table_name):
-        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
+    export_file_path = _get_datasetprotocol_export_file_path(run_id=run_id, guid=guid)
+    if export_file_path.is_file():
+        d: DataSetInMem = load_from_file(export_file_path)
     else:
-        d = DataSetInMem._load_from_db(conn=conn, guid=guid)
+        result_table_name = _get_result_table_name_by_guid(conn, guid)
+        if _check_if_table_found(conn, result_table_name):
+            d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
+        else:
+            d = DataSetInMem._load_from_db(conn=conn, guid=guid)
     return d
+
+
+def _get_datasetprotocol_export_file_path(run_id: str, guid: str, **kwargs) -> Path:
+    export_path = get_data_export_path()
+    file_name = _get_datasetprotocol_export_file_name(run_id=run_id, guid=guid, **kwargs)
+
+    return export_path / file_name
+
+
+def _get_datasetprotocol_export_file_name(run_id: str, guid: str, **kwargs) -> str:
+    """Get export file name"""
+    if "captured_run_id" not in kwargs:
+        kwargs.update(dict(captured_run_id=run_id))
+    kwargs.update(dict(guid=guid))
+
+    export_type = get_data_export_type()
+    prefix = get_data_export_prefix()
+    name_elements = get_data_export_name_elements()
+
+    if export_type is None:
+        return ""
+
+    extension = export_type.value
+    post_fix = "_".join([str(kwargs.get(name, "")) for name in name_elements])
+
+    return f"{prefix}{post_fix}.{extension}"
 
 
 def new_data_set(
