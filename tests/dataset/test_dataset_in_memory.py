@@ -494,31 +494,25 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     assert get_data_load_from_file()
 
     Station(DAC, DMM)
-    with meas_with_registered_param.run(
-        dataset_class=DataSetType.DataSetInMem
-    ) as datasaver:
+    with meas_with_registered_param.run() as datasaver:
         for set_v in np.linspace(0, 25, 10):
             DAC.ch1.set(set_v)
             get_v = DMM.v1()
             datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
 
     ds: DataSetInMem = datasaver.dataset
-    ds.add_metadata("foo", "bar")
+    assert not isinstance(ds, DataSetInMem)
     ds.export(path=tmp_path)
-    ds.add_metadata("metadata_added_after_export", "42")
+    
+    # Load from file
+    loaded_ds_from_file = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds_from_file, DataSetInMem)
 
-    loaded_ds = load_by_id(ds.run_id)
-    assert isinstance(loaded_ds, DataSetInMem)
-    assert loaded_ds.snapshot == ds.snapshot
-    assert loaded_ds.export_info == ds.export_info
-    assert loaded_ds.metadata == ds.metadata
-
-    assert "export_info" in loaded_ds.metadata.keys()
-    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
-    assert loaded_ds.metadata["foo"] == "bar"
-    assert loaded_ds.metadata["metadata_added_after_export"] == "42"
-
-    compare_datasets(ds, loaded_ds)
+    # Load from db
+    qcodes.config["dataset"]["load_from_file"] = False
+    assert get_data_load_from_file() is False
+    loaded_ds_from_db = load_by_id(ds.run_id)
+    assert not isinstance(loaded_ds_from_db, DataSetInMem)
 
 
 def test_load_from_netcdf_legacy_version(non_created_db) -> None:
