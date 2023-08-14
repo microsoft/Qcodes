@@ -17,7 +17,7 @@ class OxfordTriton(IPInstrument):
     Args:
         name (str): name of the cryostat.
         address (str, optional): IP-address of the fridge computer. Defaults to None.
-        port (int, optional): port of the oxford program running on the fridge computer. 
+        port (int, optional): port of the oxford program running on the fridge computer.
             The relevant port can be found in the manual for the fridge or looked up on the fridge computer.
             Defaults to None.
         terminator (str): Defaults to '\r\n'
@@ -91,19 +91,19 @@ class OxfordTriton(IPInstrument):
                            unit='K',
                            get_cmd=partial(self._get_control_param, 'TSET'),
                            set_cmd=partial(self._set_control_param, 'TSET'))
-        
+
         self.add_parameter(name='pid_p',
                            label='PID proportionality',
                            get_cmd=partial(self._get_control_param, 'P'),
                            set_cmd=partial(self._set_control_param, 'P'),
                            vals=Numbers(0, 1e3))
-        
+
         self.add_parameter(name='pid_i',
                            label='PID intergral',
                            get_cmd=partial(self._get_control_param, 'I'),
                            set_cmd=partial(self._set_control_param, 'I'),
                            vals=Numbers(0, 1e3))
-        
+
         self.add_parameter(name='pid_d',
                            label='PID derivative',
                            get_cmd=partial(self._get_control_param, 'D'),
