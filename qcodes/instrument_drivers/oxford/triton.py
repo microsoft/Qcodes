@@ -15,11 +15,17 @@ class OxfordTriton(IPInstrument):
     Triton Driver
 
     Args:
-        tmpfile: Optional: an exported windows registry file from the registry
+        name (str): name of the cryostat.
+        address (str, optional): IP-address of the fridge computer. Defaults to None.
+        port (int, optional): port of the oxford program running on the fridge computer. 
+            The relevant port can be found in the manual for the fridge or looked up on the fridge computer.
+            Defaults to None.
+        terminator (str): Defaults to '\r\n'
+        tmpfile (str, optional): an exported windows registry file from the registry
             path:
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
             and is used to extract the available temperature channels.
-
+        timeout (float, optional):
 
     Status: beta-version.
         TODO:
