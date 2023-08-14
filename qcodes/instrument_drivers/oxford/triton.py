@@ -17,9 +17,9 @@ class OxfordTriton(IPInstrument):
     Args:
         name (str): name of the cryostat.
         address (str, optional): IP-address of the fridge computer. Defaults to None.
-        port (int, optional): port of the oxford program running on the fridge computer. 
-            The relevant port can be found in the manual for the fridge or looked up on the fridge computer.
-            Defaults to None.
+        port (int, optional): port of the oxford program running on the fridge computer.
+            The relevant port can be found in the manual for the fridge 
+            or looked up on the fridge computer. Defaults to None.
         terminator (str): Defaults to '\r\n'
         tmpfile (str, optional): an exported windows registry file from the registry
             path:
@@ -344,24 +344,24 @@ class OxfordTriton(IPInstrument):
         allchans_str = self.ask('READ:SYS:DR:CHAN')
         allchans = allchans_str.replace('STAT:SYS:DR:CHAN:', '', 1).split(':')
         for ch in allchans:
-            msg = 'READ:SYS:DR:CHAN:%s' % ch
+            msg = f'READ:SYS:DR:CHAN:{ch}'
             rep = self.ask(msg)
             if 'INVALID' not in rep and 'NONE' not in rep:
                 alias, chan = rep.split(':')[-2:]
                 self.chan_alias[alias] = chan
                 self.add_parameter(name=alias,
                                    unit='K',
-                                   get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
+                                   get_cmd=f'READ:DEV:{chan}:TEMP:SIG:TEMP',
                                    get_parser=self._parse_temp)
 
     def _get_pressure_channels(self) -> None:
         chan_pressure_list = []
         for i in range(1, 7):
-            chan = 'P%d' % i
+            chan = f'P{i}'
             chan_pressure_list.append(chan)
             self.add_parameter(name=chan,
                                unit='bar',
-                               get_cmd='READ:DEV:%s:PRES:SIG:PRES' % chan,
+                               get_cmd=f'READ:DEV:{chan}:PRES:SIG:PRES',
                                get_parser=self._parse_pres)
         self.chan_pressure = set(chan_pressure_list)
 
@@ -385,11 +385,11 @@ class OxfordTriton(IPInstrument):
     def _get_temp_channels(self) -> None:
         chan_temps_list = []
         for i in range(1, 17):
-            chan = 'T%d' % i
+            chan = f'T{i}'
             chan_temps_list.append(chan)
             self.add_parameter(name=chan,
                                unit='K',
-                               get_cmd='READ:DEV:%s:TEMP:SIG:TEMP' % chan,
+                               get_cmd=f'READ:DEV:{chan}:TEMP:SIG:TEMP',
                                get_parser=self._parse_temp)
         self.chan_temps = set(chan_temps_list)
 
@@ -444,7 +444,7 @@ class OxfordTriton(IPInstrument):
             self.add_parameter(
                 name=pump.lower() + "_state",
                 label=self.pump_label_dict[pump] + " state",
-                get_cmd="READ:DEV:%s:PUMP:SIG:STATE" % pump,
+                get_cmd=f"READ:DEV:{pump}:PUMP:SIG:STATE",
                 get_parser=partial(self._get_parser_state, "STATE"),
                 set_cmd=partial(self._set_pump_state, pump),
                 val_mapping={"on": "ON", "off": "OFF"},
@@ -460,11 +460,11 @@ class OxfordTriton(IPInstrument):
 
     def _add_temp_state(self) -> None:
         for i in range(1, 17):
-            chan = "T%d" % i
+            chan = f"T{i}"
             self.add_parameter(
                 name=chan + "_state",
                 label=f"Temperature ch{i} state",
-                get_cmd="READ:DEV:%s:TEMP:MEAS:ENAB" % chan,
+                get_cmd=f"READ:DEV:{chan}:TEMP:MEAS:ENAB",
                 get_parser=partial(self._get_parser_state, "ENAB"),
                 set_cmd=partial(self._set_temp_state, chan),
                 val_mapping={"on": "ON", "off": "OFF"},
