@@ -25,7 +25,7 @@ class OxfordTriton(IPInstrument):
             path:
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
             and is used to extract the available temperature channels.
-        timeout (float, optional):
+        timeout (float, optional): Defaults to 20.
 
     Status: beta-version.
         TODO:
