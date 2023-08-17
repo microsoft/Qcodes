@@ -15,9 +15,9 @@ import qcodes
 from qcodes.dataset import load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
+from qcodes.dataset.load_config import get_data_load_from_file
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.station import Station
-from qcodes.dataset.load_config import get_data_load_from_file
 
 
 def test_dataset_in_memory_reload_from_db(
@@ -503,7 +503,7 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     ds: DataSetInMem = datasaver.dataset
     assert not isinstance(ds, DataSetInMem)
     ds.export(path=tmp_path)
-    
+
     # Load from file
     loaded_ds_from_file = load_by_id(ds.run_id)
     assert isinstance(loaded_ds_from_file, DataSetInMem)
