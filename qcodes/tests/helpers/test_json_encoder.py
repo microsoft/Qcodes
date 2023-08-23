@@ -22,12 +22,10 @@ def test_python_types() -> None:
 
     # test basic python types
     od = OrderedDict()
-    od['a'] = 0
-    od['b'] = 1
-    testinput = [None, True, False, 10, float(10.), 'hello',
-                 od]
-    testoutput = ['null', 'true', 'false', '10', '10.0', '"hello"',
-                  '{"a": 0, "b": 1}']
+    od["a"] = 0
+    od["b"] = 1
+    testinput = [None, True, False, 10, 10.0, "hello", od]
+    testoutput = ["null", "true", "false", "10", "10.0", '"hello"', '{"a": 0, "b": 1}']
 
     for d, r in zip(testinput, testoutput):
         v = e.encode(d)

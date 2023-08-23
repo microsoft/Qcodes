@@ -3,7 +3,7 @@ This contains an alias of the Lakeshore Model 336 driver.
 It will eventually be deprecated and removed
 """
 
-from typing import Any, ClassVar, Dict
+from typing import Any, ClassVar
 
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter

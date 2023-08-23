@@ -2,7 +2,6 @@ import logging
 from collections import namedtuple
 from operator import attrgetter
 from traceback import format_exc
-from typing import Set
 
 from qcodes.utils import issue_deprecation_warning
 

@@ -220,10 +220,8 @@ class Strings(Validator[str]):
         vallen = len(value)
         if vallen < self._min_length or vallen > self._max_length:
             raise ValueError(
-                "{} is invalid: length must be between "
-                "{} and {} inclusive; {}".format(
-                    repr(value), self._min_length, self._max_length, context
-                )
+                f"{repr(value)} is invalid: length must be between "
+                f"{self._min_length} and {self._max_length} inclusive; {context}"
             )
 
     def __repr__(self) -> str:
@@ -292,10 +290,8 @@ class Numbers(Validator[numbertypes]):
 
         if not (self._min_value <= value <= self._max_value):
             raise ValueError(
-                "{} is invalid: must be between "
-                "{} and {} inclusive; {}".format(
-                    repr(value), self._min_value, self._max_value, context
-                )
+                f"{repr(value)} is invalid: must be between "
+                f"{self._min_value} and {self._max_value} inclusive; {context}"
             )
 
     is_numeric = True
@@ -366,10 +362,8 @@ class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
 
         if not (self._min_value <= value <= self._max_value):
             raise ValueError(
-                "{} is invalid: must be between "
-                "{} and {} inclusive; {}".format(
-                    repr(value), self._min_value, self._max_value, context
-                )
+                f"{repr(value)} is invalid: must be between "
+                f"{self._min_value} and {self._max_value} inclusive; {context}"
             )
 
     is_numeric = True
@@ -417,8 +411,7 @@ class PermissiveInts(Ints):
                 castvalue = intrepr
             else:
                 raise TypeError(
-                    "{} is not an int or close to an int"
-                    "; {}".format(repr(value), context)
+                    f"{repr(value)} is not an int or close to an int" f"; {context}"
                 )
         else:
             castvalue = value
@@ -480,16 +473,12 @@ class Enum(Validator[Hashable]):
         try:
             if value not in self._values:
                 raise ValueError(
-                    "{} is not in {}; {}".format(
-                        repr(value), repr(self._values), context
-                    )
+                    f"{repr(value)} is not in {repr(self._values)}; {context}"
                 )
 
         except TypeError as e:  # in case of unhashable (mutable) type
             e.args = e.args + (
-                "error looking for {} in {}; {}".format(
-                    repr(value), repr(self._values), context
-                ),
+                f"error looking for {repr(value)} in {repr(self._values)}; {context}",
             )
             raise
 
@@ -551,9 +540,7 @@ class Multiples(Ints):
         super().validate(value=value, context=context)
         if not value % self._divisor == 0:
             raise ValueError(
-                "{} is not a multiple of {}; {}".format(
-                    repr(value), repr(self._divisor), context
-                )
+                f"{repr(value)} is not a multiple of {repr(self._divisor)}; {context}"
             )
 
     def __repr__(self) -> str:
@@ -974,20 +961,16 @@ class Arrays(Validator[np.ndarray]):
         if self._max_value != (float("inf")) and self._max_value is not None:
             if not (np.max(value) <= self._max_value):
                 raise ValueError(
-                    "{} is invalid: all values must be between "
-                    "{} and {} inclusive; {}".format(
-                        repr(value), self._min_value, self._max_value, context
-                    )
+                    f"{repr(value)} is invalid: all values must be between "
+                    f"{self._min_value} and {self._max_value} inclusive; {context}"
                 )
 
         # Only check if min is not -inf as it can be expensive for large arrays
         if self._min_value != (-float("inf")) and self._min_value is not None:
             if not (self._min_value <= np.min(value)):
                 raise ValueError(
-                    "{} is invalid: all values must be between "
-                    "{} and {} inclusive; {}".format(
-                        repr(value), self._min_value, self._max_value, context
-                    )
+                    f"{repr(value)} is invalid: all values must be between "
+                    f"{self._min_value} and {self._max_value} inclusive; {context}"
                 )
 
     is_numeric = True
@@ -1184,8 +1167,8 @@ class Dict(Validator[dict[Hashable, Any]]):
             forbidden_keys = [key for key in value if key not in allowed_keys]
             if forbidden_keys:
                 raise SyntaxError(
-                    "Dictionary keys {} are not in allowed keys "
-                    "{}".format(forbidden_keys, allowed_keys)
+                    f"Dictionary keys {forbidden_keys} are not in allowed keys "
+                    f"{allowed_keys}"
                 )
 
     def __repr__(self) -> str:

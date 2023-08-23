@@ -27,96 +27,102 @@ class RigolDP8xxChannel(InstrumentChannel):
         def strstrip(s: str) -> str:
             return str(s).strip()
 
-        self.add_parameter("set_voltage",
-                           label='Target voltage output',
-                           set_cmd="{} :SOURce:VOLTage:LEVel:IMMediate:AMPLitude {}".format(
-                               select_cmd, '{}'),
-                           get_cmd="{} :SOURce:VOLTage:LEVel:IMMediate:AMPLitude?".format(
-                               select_cmd),
-                           get_parser=float,
-                           unit='V',
-                           vals=vals.Numbers(min(0, self.vmax), max(0, self.vmax))
-                          )
-        self.add_parameter("set_current",
-                           label='Target current output',
-                           set_cmd="{} :SOURce:CURRent:LEVel:IMMediate:AMPLitude {}".format(
-                               select_cmd, '{}'),
-                           get_cmd="{} :SOURce:CURRent:LEVel:IMMediate:AMPLitude?".format(
-                               select_cmd),
-                           get_parser=float,
-                           unit='A',
-                           vals=vals.Numbers(0, self.imax)
-                           )
-        self.add_parameter('state',
-                           label='Output enabled',
-                           set_cmd='{} :OUTPut:STATe {}'.format(select_cmd, '{}'),
-                           get_cmd=f'{select_cmd} :OUTPut:STATe?',
-                           get_parser=strstrip,
-                           vals=vals.OnOff()
-                           )
-        self.add_parameter('mode',
-                           label='Get the output mode',
-                           get_cmd=f'{select_cmd} :OUTPut:MODE?',
-                           get_parser=strstrip,
-                           val_mapping={'ConstantVoltage': 'CV',
-                                        'ConstantCurrent': 'CC',
-                                        'Unregulated': 'UR'}
-                          )
-        self.add_parameter("voltage",
-                           label='Measured voltage',
-                           get_cmd="{} :MEASure:VOLTage:DC?".format(
-                               select_cmd),
-                           get_parser=float,
-                           unit='V',
-                          )
-        self.add_parameter("current",
-                           label='Measured current',
-                           get_cmd="{} :MEASure:CURRent:DC?".format(
-                               select_cmd),
-                           get_parser=float,
-                           unit='A',
-                           )
-        self.add_parameter("power",
-                           label='Measured power',
-                           get_cmd="{} :MEASure:POWer?".format(
-                               select_cmd),
-                           get_parser=float,
-                           unit='W',
-                           )
-        self.add_parameter("ovp_value",
-                           label='Over Voltage Protection value',
-                           set_cmd="{} :VOLTage:PROTection:LEVel {}".format(
-                               select_cmd, '{}'),
-                           get_cmd="{} :VOLTage:PROTection:LEVel?".format(
-                               select_cmd),
-                           get_parser=float,
-                           unit='V',
-                           vals=vals.Numbers(self.ovp_range[0], self.ovp_range[1])
-                           )
-        self.add_parameter('ovp_state',
-                           label='Over Voltage Protection status',
-                           set_cmd='{} :VOLTage:PROTection:STATe {}'.format(select_cmd, '{}'),
-                           get_cmd=f'{select_cmd} :VOLTage:PROTection:STATe?',
-                           get_parser=strstrip,
-                           vals=vals.OnOff()
-                           )
-        self.add_parameter("ocp_value",
-                           label='Over Current Protection value',
-                           set_cmd="{} :CURRent:PROTection:LEVel {}".format(
-                               select_cmd, '{}'),
-                           get_cmd="{} :CURRent:PROTection:LEVel?".format(
-                               select_cmd),
-                           get_parser=float,
-                           unit='A',
-                           vals=vals.Numbers(self.ocp_range[0], self.ocp_range[1])
-                           )
-        self.add_parameter('ocp_state',
-                           label='Over Current Protection status',
-                           set_cmd='{} :CURRent:PROTection:STATe {}'.format(select_cmd, '{}'),
-                           get_cmd=f'{select_cmd} :CURRent:PROTection:STATe?',
-                           get_parser=strstrip,
-                           vals=vals.OnOff()
-                           )
+        self.add_parameter(
+            "set_voltage",
+            label="Target voltage output",
+            set_cmd="{} :SOURce:VOLTage:LEVel:IMMediate:AMPLitude {}".format(
+                select_cmd, "{}"
+            ),
+            get_cmd=f"{select_cmd} :SOURce:VOLTage:LEVel:IMMediate:AMPLitude?",
+            get_parser=float,
+            unit="V",
+            vals=vals.Numbers(min(0, self.vmax), max(0, self.vmax)),
+        )
+        self.add_parameter(
+            "set_current",
+            label="Target current output",
+            set_cmd="{} :SOURce:CURRent:LEVel:IMMediate:AMPLitude {}".format(
+                select_cmd, "{}"
+            ),
+            get_cmd=f"{select_cmd} :SOURce:CURRent:LEVel:IMMediate:AMPLitude?",
+            get_parser=float,
+            unit="A",
+            vals=vals.Numbers(0, self.imax),
+        )
+        self.add_parameter(
+            "state",
+            label="Output enabled",
+            set_cmd="{} :OUTPut:STATe {}".format(select_cmd, "{}"),
+            get_cmd=f"{select_cmd} :OUTPut:STATe?",
+            get_parser=strstrip,
+            vals=vals.OnOff(),
+        )
+        self.add_parameter(
+            "mode",
+            label="Get the output mode",
+            get_cmd=f"{select_cmd} :OUTPut:MODE?",
+            get_parser=strstrip,
+            val_mapping={
+                "ConstantVoltage": "CV",
+                "ConstantCurrent": "CC",
+                "Unregulated": "UR",
+            },
+        )
+        self.add_parameter(
+            "voltage",
+            label="Measured voltage",
+            get_cmd=f"{select_cmd} :MEASure:VOLTage:DC?",
+            get_parser=float,
+            unit="V",
+        )
+        self.add_parameter(
+            "current",
+            label="Measured current",
+            get_cmd=f"{select_cmd} :MEASure:CURRent:DC?",
+            get_parser=float,
+            unit="A",
+        )
+        self.add_parameter(
+            "power",
+            label="Measured power",
+            get_cmd=f"{select_cmd} :MEASure:POWer?",
+            get_parser=float,
+            unit="W",
+        )
+        self.add_parameter(
+            "ovp_value",
+            label="Over Voltage Protection value",
+            set_cmd="{} :VOLTage:PROTection:LEVel {}".format(select_cmd, "{}"),
+            get_cmd=f"{select_cmd} :VOLTage:PROTection:LEVel?",
+            get_parser=float,
+            unit="V",
+            vals=vals.Numbers(self.ovp_range[0], self.ovp_range[1]),
+        )
+        self.add_parameter(
+            "ovp_state",
+            label="Over Voltage Protection status",
+            set_cmd="{} :VOLTage:PROTection:STATe {}".format(select_cmd, "{}"),
+            get_cmd=f"{select_cmd} :VOLTage:PROTection:STATe?",
+            get_parser=strstrip,
+            vals=vals.OnOff(),
+        )
+        self.add_parameter(
+            "ocp_value",
+            label="Over Current Protection value",
+            set_cmd="{} :CURRent:PROTection:LEVel {}".format(select_cmd, "{}"),
+            get_cmd=f"{select_cmd} :CURRent:PROTection:LEVel?",
+            get_parser=float,
+            unit="A",
+            vals=vals.Numbers(self.ocp_range[0], self.ocp_range[1]),
+        )
+        self.add_parameter(
+            "ocp_state",
+            label="Over Current Protection status",
+            set_cmd="{} :CURRent:PROTection:STATe {}".format(select_cmd, "{}"),
+            get_cmd=f"{select_cmd} :CURRent:PROTection:STATe?",
+            get_parser=strstrip,
+            vals=vals.OnOff(),
+        )
 
 
 class _RigolDP8xx(VisaInstrument):

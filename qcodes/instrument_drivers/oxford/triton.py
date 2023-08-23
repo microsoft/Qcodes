@@ -240,8 +240,7 @@ class OxfordTriton(IPInstrument):
 
     def _set_control_channel(self, channel: int) -> None:
         self._control_channel = channel
-        self.write('SET:DEV:T{}:TEMP:LOOP:HTR:H1'.format(
-            self._get_control_channel()))
+        self.write(f"SET:DEV:T{self._get_control_channel()}:TEMP:LOOP:HTR:H1")
 
     def _get_control_param(
             self,

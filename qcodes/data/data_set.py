@@ -6,7 +6,7 @@ import time
 from collections import OrderedDict
 from copy import deepcopy
 from traceback import format_exc
-from typing import TYPE_CHECKING, Any, Callable, Dict
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 

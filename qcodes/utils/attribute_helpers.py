@@ -38,9 +38,7 @@ class DelegateAttributes:
     def __getattr__(self, key: str) -> Any:
         if key in self.omit_delegate_attrs:
             raise AttributeError(
-                "'{}' does not delegate attribute {}".format(
-                    self.__class__.__name__, key
-                )
+                f"'{self.__class__.__name__}' does not delegate attribute {key}"
             )
 
         for name in self.delegate_attr_dicts:

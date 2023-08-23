@@ -3,7 +3,7 @@ This contains an alias of the Lakeshore Model 372 driver.
 It will eventually be deprecated and removed
 """
 
-from typing import Any, Dict
+from typing import Any
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (

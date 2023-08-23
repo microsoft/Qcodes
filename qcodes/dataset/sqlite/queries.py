@@ -1752,8 +1752,7 @@ def _validate_table_name(table_name: str) -> bool:
     for i in table_name:
         if unicodedata.category(i) not in _unicode_categories:
             valid = False
-            raise RuntimeError("Invalid table name "
-                               "{} starting at {}".format(table_name, i))
+            raise RuntimeError("Invalid table name " f"{table_name} starting at {i}")
     return valid
 
 

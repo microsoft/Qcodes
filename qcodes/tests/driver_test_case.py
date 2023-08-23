@@ -57,8 +57,8 @@ class DriverTestCase(unittest.TestCase):
             print(f"***** found one {name}, testing *****")
         else:
             print(
-                "***** found {} instances of {}; "
-                "testing the last one *****".format(len(instances), name)
+                f"***** found {len(instances)} instances of {name}; "
+                "testing the last one *****"
             )
 
         cls.instrument = instances[-1]

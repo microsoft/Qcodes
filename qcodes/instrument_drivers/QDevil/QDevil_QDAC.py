@@ -470,8 +470,7 @@ class QDac(VisaInstrument):
             # SYNCing happens inside ramp_voltages
             self.ramp_voltages([chan], [v_start], [v_set], duration)
         else:  # Should not be necessary to wav here.
-            self.write('wav {ch} 0 0 0;set {ch} {voltage:.6f}'
-                       .format(ch=chan, voltage=v_set))
+            self.write(f"wav {chan} 0 0 0;set {chan} {v_set:.6f}")
 
     def _set_mode(self, chan: int, new_mode: Mode) -> None:
         """
@@ -500,12 +499,11 @@ class QDac(VisaInstrument):
             if int(gen) > 0:
                 # The amplitude must be set to zero to avoid potential overflow
                 # Assuming that voltage range is not changed during a ramp
-                return 'wav {} {} {:.6f} {:.6f}'\
-                        .format(chan, int(gen), 0, new_voltage)
+                return f"wav {chan} {int(gen)} {0:.6f} {new_voltage:.6f}"
             else:
-                return f'set {chan} {new_voltage:.6f}'
+                return f"set {chan} {new_voltage:.6f}"
 
-        old_mode = self.channels[chan-1].mode.cache()
+        old_mode = self.channels[chan - 1].mode.cache()
         new_vrange = new_mode.value.v
         old_vrange = old_mode.value.v
         new_irange = new_mode.value.i
@@ -709,9 +707,8 @@ class QDac(VisaInstrument):
 
         if slope == 'Inf':
             # Set the channel in DC mode
-            v_set = self.channels[chan-1].v.get()
-            self.write('set {ch} {voltage:.6f};wav {ch} 0 0 0'
-                       .format(ch=chan, voltage=v_set))
+            v_set = self.channels[chan - 1].v.get()
+            self.write(f"set {chan} {v_set:.6f};wav {chan} 0 0 0")
 
             # Now release the function generator and fg trigger (if possible)
             try:
@@ -808,9 +805,8 @@ class QDac(VisaInstrument):
         Usually, the response to `*IDN?` is printed. Here, the
         software version is printed.
         """
-        self.visa_handle.write('version')
-        LOG.info('Connected to QDAC on {}, {}'.format(
-                                    self._address, self.visa_handle.read()))
+        self.visa_handle.write("version")
+        LOG.info(f"Connected to QDAC on {self._address}, {self.visa_handle.read()}")
 
     def _get_firmware_version(self) -> float:
         """
@@ -912,9 +908,8 @@ class QDac(VisaInstrument):
                 self._assigned_fgs.pop(oldchan)
                 self._assigned_fgs[chan] = Generator(fg)
                 # Set the old channel in DC mode
-                v_set = self.channels[oldchan-1].v.cache()
-                self.write('set {ch} {voltage:.6f};wav {ch} 0 0 0'
-                           .format(ch=oldchan, voltage=v_set))
+                v_set = self.channels[oldchan - 1].v.cache()
+                self.write(f"set {oldchan} {v_set:.6f};wav {oldchan} 0 0 0")
             else:
                 raise RuntimeError('''
                 Trying to ramp more channels than there are generators
@@ -952,8 +947,9 @@ class QDac(VisaInstrument):
         """
 
         if ramptime < 0.002:
-            LOG.warning('Ramp time too short: {:.3f} s. Ramp time set to 2 ms.'
-                        .format(ramptime))
+            LOG.warning(
+                f"Ramp time too short: {ramptime:.3f} s. Ramp time set to 2 ms."
+            )
             ramptime = 0.002
         steps = int(ramptime*1000)
         return self.ramp_voltages_2d(

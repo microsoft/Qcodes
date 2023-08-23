@@ -5,7 +5,6 @@ import logging
 import sys
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
-from typing import DefaultDict
 
 from tqdm import tqdm
 
@@ -35,7 +34,7 @@ def _2to3_get_result_tables(conn: ConnectionPlus) -> dict[int, str]:
     return results
 
 
-def _2to3_get_layout_ids(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
+def _2to3_get_layout_ids(conn: ConnectionPlus) -> defaultdict[int, list[int]]:
     query = """
             select runs.run_id, layouts.layout_id
             FROM layouts
@@ -46,7 +45,7 @@ def _2to3_get_layout_ids(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     data = cur.fetchall()
     cur.close()
 
-    results: DefaultDict[int, list[int]] = defaultdict(list)
+    results: defaultdict[int, list[int]] = defaultdict(list)
 
     for run_id, layout_id in data:
         results[run_id].append(layout_id)
@@ -54,7 +53,7 @@ def _2to3_get_layout_ids(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     return results
 
 
-def _2to3_get_indeps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
+def _2to3_get_indeps(conn: ConnectionPlus) -> defaultdict[int, list[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -65,7 +64,7 @@ def _2to3_get_indeps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     cur.execute(query)
     data = cur.fetchall()
     cur.close()
-    results: DefaultDict[int, list[int]] = defaultdict(list)
+    results: defaultdict[int, list[int]] = defaultdict(list)
 
     for run_id, layout_id in data:
         results[run_id].append(layout_id)
@@ -73,7 +72,7 @@ def _2to3_get_indeps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     return results
 
 
-def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
+def _2to3_get_deps(conn: ConnectionPlus) -> defaultdict[int, list[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -84,7 +83,7 @@ def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     cur.execute(query)
     data = cur.fetchall()
     cur.close()
-    results: DefaultDict[int, list[int]] = defaultdict(list)
+    results: defaultdict[int, list[int]] = defaultdict(list)
 
     for run_id, layout_id in data:
         results[run_id].append(layout_id)
@@ -92,7 +91,7 @@ def _2to3_get_deps(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     return results
 
 
-def _2to3_get_dependencies(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
+def _2to3_get_dependencies(conn: ConnectionPlus) -> defaultdict[int, list[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -102,7 +101,7 @@ def _2to3_get_dependencies(conn: ConnectionPlus) -> DefaultDict[int, list[int]]:
     cur.execute(query)
     data = cur.fetchall()
     cur.close()
-    results: DefaultDict[int, list[int]] = defaultdict(list)
+    results: defaultdict[int, list[int]] = defaultdict(list)
 
     if len(data) == 0:
         return results

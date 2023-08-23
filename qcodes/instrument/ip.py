@@ -114,8 +114,7 @@ class IPInstrument(Instrument):
         try:
             log.info("Opening socket")
             self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            log.info("Connecting socket to {}:{}".format(self._address,
-                                                         self._port))
+            log.info(f"Connecting socket to {self._address}:{self._port}")
             self._socket.connect((self._address, self._port))
             self.set_timeout(self._timeout)
         except ConnectionRefusedError:
