@@ -1,7 +1,7 @@
 [build-system]
 requires = [
-    "setuptools >= 61.2",
-    "versioningit ~= 2.0.1",
+    "setuptools >= 68.1.0",
+    "versioningit >= 2.0.1",
 ]
 build-backend = 'setuptools.build_meta'
 
@@ -310,6 +310,28 @@ ignore = ["E501"]
 
 "qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
 "qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = false
+
+[tool.setuptools.packages]
+find = {namespaces = false}
+
+[tool.setuptools.package-data]
+qcodes = [
+    "monitor/dist/*",
+    "monitor/dist/js/*",
+    "monitor/dist/css/*",
+    "configuration/*.json",
+    "instrument/sims/*.yaml",
+    "tests/dataset/fixtures/data_2018_01_17/*/*",
+    "tests/delegate/data/*.yml",
+    "tests/drivers/auxiliary_files/*",
+    "py.typed",
+    "dist/schemas/*",
+    "dist/tests/station/*",
+]
 
 [tool.towncrier]
 package = "qcodes"
