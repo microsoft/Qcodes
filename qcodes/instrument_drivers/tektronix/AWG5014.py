@@ -632,7 +632,7 @@ class TektronixAWG5014(VisaInstrument):
             goto_to_index_no: The target index number
 
         """
-        self.write("SEQuence:" + f"ELEMent{element_no}:GOTO:INDex {goto_to_index_no}")
+        self.write(f"SEQuence:ELEMent{element_no}:GOTO:INDex {goto_to_index_no}")
 
     def set_sqel_goto_state(self, element_no: int, goto_state: int) -> None:
         """

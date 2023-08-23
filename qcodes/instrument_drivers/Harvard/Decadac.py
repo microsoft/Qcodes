@@ -36,8 +36,7 @@ class DacReader:
         """
         if volt < self.min_val or volt >= self.max_val:
             raise ValueError(
-                f"Cannot convert voltage {volt} V "
-                + "to a voltage code, value out of range "
+                f"Cannot convert voltage {volt} V to a voltage code, value out of range "
                 f"({self.min_val} V - {self.max_val} V)."
             )
 

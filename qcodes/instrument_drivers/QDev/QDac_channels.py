@@ -631,7 +631,7 @@ class QDevQDac(VisaInstrument):
             ramptime = 0
             log.warning(
                 "Cancelled a ramp with a ramptime of "
-                f"{ramptime} s" + ". Voltage not changed."
+                f"{ramptime} s. Voltage not changed."
             )
 
         offset = v_start

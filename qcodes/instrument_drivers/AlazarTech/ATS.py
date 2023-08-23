@@ -137,7 +137,7 @@ class AlazarTech_ATS(Instrument):
 
         if not self._handle:
             raise Exception(
-                "AlazarTech_ATS not found at " f"system {system_id}, board {board_id}"
+                f"AlazarTech_ATS not found at system {system_id}, board {board_id}"
             )
 
         self.capability = CapabilityHelper(self.api, self._handle)

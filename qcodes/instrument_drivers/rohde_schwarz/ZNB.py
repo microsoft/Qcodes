@@ -703,7 +703,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         # exact value provided.
         start = self.start()
         if abs(val - start) >= 1:
-            log.warning(f"Could not set start to {val} setting it to " f"{start}")
+            log.warning(f"Could not set start to {val} setting it to {start}")
         self.update_lin_traces()
 
     def _set_stop(self, val: float) -> None:
@@ -717,7 +717,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         # exact value provided.
         stop = self.stop()
         if abs(val - stop) >= 1:
-            log.warning(f"Could not set stop to {val} setting it to " f"{stop}")
+            log.warning(f"Could not set stop to {val} setting it to {stop}")
         self.update_lin_traces()
 
     def _set_npts(self, val: int) -> None:
