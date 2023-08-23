@@ -115,7 +115,9 @@ def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def connect(name: str | Path, debug: bool = False, version: int = -1) -> ConnectionPlus:
+def connect(
+    name: str | Path, debug: bool = False, version: int = -1, read_only: bool = False
+) -> ConnectionPlus:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -126,6 +128,7 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
         debug: should tracing be turned on.
         version: which version to create. We count from 0. -1 means 'latest'.
             Should always be left at -1 except when testing.
+        read_only: Should the database be opened in read only mode.
 
     Returns:
         connection object to the database (note, it is
@@ -137,8 +140,14 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
     # register binary(TEXT) -> numpy converter
     sqlite3.register_converter("array", _convert_array)
 
-    sqlite3_conn = sqlite3.connect(name, detect_types=sqlite3.PARSE_DECLTYPES,
-                                   check_same_thread=True)
+    path = f"file:{str(name)}"
+
+    if read_only:
+        path = path + "?ro"
+
+    sqlite3_conn = sqlite3.connect(
+        path, detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=True, uri=True
+    )
     conn = ConnectionPlus(sqlite3_conn)
 
     latest_supported_version = _latest_available_version()
