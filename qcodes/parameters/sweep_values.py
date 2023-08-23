@@ -65,9 +65,7 @@ def make_sweep(
             raise ValueError(
                 "Could not find an integer number of points for "
                 "the the given `start`, `stop`, and `step` "
-                "values. \nNumber of points is {:d} or {:d}.".format(
-                    steps_lo + 1, steps_hi + 1
-                )
+                f"values. \nNumber of points is {steps_lo + 1:d} or {steps_hi + 1:d}."
             )
         num_steps = steps_lo + 1
     elif num is not None:

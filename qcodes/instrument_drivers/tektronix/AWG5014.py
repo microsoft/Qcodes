@@ -632,9 +632,7 @@ class TektronixAWG5014(VisaInstrument):
             goto_to_index_no: The target index number
 
         """
-        self.write('SEQuence:' +
-                   'ELEMent{}:GOTO:INDex {}'.format(element_no,
-                                                    goto_to_index_no))
+        self.write(f"SEQuence:ELEMent{element_no}:GOTO:INDex {goto_to_index_no}")
 
     def set_sqel_goto_state(self, element_no: int, goto_state: int) -> None:
         """
@@ -651,8 +649,7 @@ class TektronixAWG5014(VisaInstrument):
             log.warning(('{} not recognized as a valid goto' +
                          ' state. Setting to 0 (OFF).').format(goto_state))
             goto_state = 0
-        self.write('SEQuence:ELEMent{}:GOTO:STATe {}'.format(element_no,
-                                                             int(goto_state)))
+        self.write(f"SEQuence:ELEMent{element_no}:GOTO:STATe {int(goto_state)}")
 
     def set_sqel_loopcnt_to_inf(self,
                                 element_no: int,
@@ -674,8 +671,7 @@ class TektronixAWG5014(VisaInstrument):
                          '  state. Setting to 0 (OFF).').format(state))
             state = 0
 
-        self.write('SEQuence:ELEMent{}:LOOP:INFinite {}'.format(element_no,
-                                                                int(state)))
+        self.write(f"SEQuence:ELEMent{element_no}:LOOP:INFinite {int(state)}")
 
     def get_sqel_loopcnt(self, element_no: int = 1) -> str:
         """
@@ -698,8 +694,7 @@ class TektronixAWG5014(VisaInstrument):
                 The maximal possible number is 65536, beyond that: infinity.
             element_no: The sequence element number. Default: 1.
         """
-        self.write('SEQuence:ELEMent{}:LOOP:COUNt {}'.format(element_no,
-                                                             loopcount))
+        self.write(f"SEQuence:ELEMent{element_no}:LOOP:COUNt {loopcount}")
 
     def set_sqel_waveform(
             self,
@@ -717,9 +712,7 @@ class TektronixAWG5014(VisaInstrument):
             channel: The output channel (1-4)
             element_no: The sequence element number. Default: 1.
         """
-        self.write('SEQuence:ELEMent{}:WAVeform{} "{}"'.format(element_no,
-                                                               channel,
-                                                               waveform_name))
+        self.write(f'SEQuence:ELEMent{element_no}:WAVeform{channel} "{waveform_name}"')
 
     def get_sqel_waveform(
             self,
@@ -737,8 +730,7 @@ class TektronixAWG5014(VisaInstrument):
         Returns:
             The name of the waveform.
         """
-        return self.ask('SEQuence:ELEMent{}:WAVeform{}?'.format(element_no,
-                                                                channel))
+        return self.ask(f"SEQuence:ELEMent{element_no}:WAVeform{channel}?")
 
     def set_sqel_trigger_wait(
             self,
@@ -785,8 +777,7 @@ class TektronixAWG5014(VisaInstrument):
                                          element_no: int,
                                          jtar_index_no: int) -> None:
         """Duplicate of set_sqel_event_target_index"""
-        self.write('SEQuence:ELEMent{}:JTARget:INDex {}'.format(element_no,
-                                                                jtar_index_no))
+        self.write(f"SEQuence:ELEMent{element_no}:JTARget:INDex {jtar_index_no}")
 
     def set_sqel_event_jump_type(
             self,
@@ -809,8 +800,7 @@ class TektronixAWG5014(VisaInstrument):
             jtar_state: The jump target type. Must be either 'INDEX',
                 'NEXT', or 'OFF'.
         """
-        self.write('SEQuence:ELEMent{}:JTARget:TYPE {}'.format(element_no,
-                                                               jtar_state))
+        self.write(f"SEQuence:ELEMent{element_no}:JTARget:TYPE {jtar_state}")
 
     def get_sq_mode(self) -> str:
         """

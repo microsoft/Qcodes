@@ -65,7 +65,7 @@ class Keithley6500(VisaInstrument):
         if command_set != "SCPI":
             error_msg = (
                 "This driver only compatible with the 'SCPI' command "
-                "set, not '{}' set".format(command_set)
+                f"set, not '{command_set}' set"
             )
             raise Keithley6500CommandSetError(error_msg)
 

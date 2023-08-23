@@ -138,9 +138,9 @@ class _Agilent344xxA(VisaInstrument):
         res_fac_strs = [f"{v * rang:.1e}" for v in self._resolution_factor]
         if f"{value:.1e}" not in res_fac_strs:
             raise ValueError(
-                "Resolution setting {:.1e} ({} at range {}) "
+                f"Resolution setting {value:.1e} ({value} at range {rang}) "
                 "does not exist. "
-                "Possible values are {}".format(value, value, rang, res_fac_strs)
+                f"Possible values are {res_fac_strs}"
             )
         self.write(f"VOLT:DC:RES {value:.1e}")
         # NPLC settings change with resolution

@@ -629,8 +629,10 @@ class QDevQDac(VisaInstrument):
         # can jump to its max voltage
         if ramptime <= 0.002:
             ramptime = 0
-            log.warning('Cancelled a ramp with a ramptime of '
-                        '{} s'.format(ramptime) + '. Voltage not changed.')
+            log.warning(
+                "Cancelled a ramp with a ramptime of "
+                f"{ramptime} s. Voltage not changed."
+            )
 
         offset = v_start
         amplitude = setvoltage-v_start
@@ -638,17 +640,13 @@ class QDevQDac(VisaInstrument):
             offset *= 10
             amplitude *= 10
 
-        chanmssg = 'wav {} {} {} {}'.format(chan, fg,
-                                            amplitude,
-                                            offset)
+        chanmssg = f"wav {chan} {fg} {amplitude} {offset}"
 
         if chan in [syn[0] for syn in self._syncoutputs]:
             sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
-            sync_duration = 1000*self.channels[chan-1].sync_duration.get()
-            sync_delay = 1000*self.channels[chan-1].sync_delay.get()
-            self.write('syn {} {} {} {}'.format(sync, fg,
-                                                sync_delay,
-                                                sync_duration))
+            sync_duration = 1000 * self.channels[chan - 1].sync_duration.get()
+            sync_delay = 1000 * self.channels[chan - 1].sync_delay.get()
+            self.write(f"syn {sync} {fg} {sync_delay} {sync_duration}")
 
         typedict = {'SINE': 1, 'SQUARE': 2, 'RAMP': 3}
 
@@ -657,9 +655,7 @@ class QDevQDac(VisaInstrument):
         # s -> ms
         periodval = ramptime*1e3
         repval = 1
-        funmssg = 'fun {} {} {} {} {}'.format(fg,
-                                              typeval, periodval,
-                                              dutyval, repval)
+        funmssg = f"fun {fg} {typeval} {periodval} {dutyval} {repval}"
         self.write(chanmssg)
         self.write(funmssg)
 
@@ -701,8 +697,7 @@ class QDevQDac(VisaInstrument):
         """
         self.visa_handle.write('status')
 
-        log.info('Connected to QDac on {}, {}'.format(self._address,
-                                                      self.visa_handle.read()))
+        log.info(f"Connected to QDac on {self._address}, {self.visa_handle.read()}")
 
         # take care of the rest of the output
         for _ in range(self._output_n_lines):

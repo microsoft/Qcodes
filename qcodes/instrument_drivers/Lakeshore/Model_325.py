@@ -6,7 +6,7 @@ It will eventually be deprecated and removed
 from collections.abc import Iterable
 from enum import IntFlag
 from itertools import takewhile
-from typing import Any, Dict, List, Optional, TextIO, Tuple, cast
+from typing import Any, Optional, TextIO, cast
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter

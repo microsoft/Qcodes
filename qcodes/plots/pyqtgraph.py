@@ -4,7 +4,7 @@ Live plotting using pyqtgraph
 import logging
 import warnings
 from collections import deque, namedtuple
-from typing import Deque, Dict, List, Optional, Tuple, Union, cast
+from typing import Optional, Union, cast
 
 import numpy as np
 import pyqtgraph as pg

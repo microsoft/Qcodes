@@ -35,10 +35,10 @@ class DacReader:
         Midrange is 32768.
         """
         if volt < self.min_val or volt >= self.max_val:
-            raise ValueError(f'Cannot convert voltage {volt} V ' +
-                             'to a voltage code, value out of range '
-                             '({} V - {} V).'.format(self.min_val,
-                                                     self.max_val))
+            raise ValueError(
+                f"Cannot convert voltage {volt} V to a voltage code, value out of range "
+                f"({self.min_val} V - {self.max_val} V)."
+            )
 
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
         val = int(round(frac * 65536))
@@ -543,9 +543,10 @@ class HarvardDecadac(VisaInstrument, DacReader):
         # heed our request to return all 4 fields.
         t = time() - (begin_time or self._t0)
 
-        con_msg = ("Connected to Harvard DecaDAC "
-                   "(hw ver: {}, serial: {}) in {:.2f}s".format(
-                    self.version, self.serial_no, t))
+        con_msg = (
+            "Connected to Harvard DecaDAC "
+            f"(hw ver: {self.version}, serial: {self.serial_no}) in {t:.2f}s"
+        )
         print(con_msg)
 
     def __repr__(self):

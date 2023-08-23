@@ -564,7 +564,7 @@ class YokogawaGS200(VisaInstrument):
             if abs(output_level) > abs(self_range):
                 raise ValueError(
                     "Desired output level not in range"
-                    " [-{self_range:.3}, {self_range:.3}]".format(self_range=self_range)
+                    f" [-{self_range:.3}, {self_range:.3}]"
                 )
 
         if auto_enabled:

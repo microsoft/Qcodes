@@ -15,12 +15,10 @@ class KeysightB2962AChannel(InstrumentChannel):
             chan: The number of the channel in question (1-2)
         """
         # Sanity Check inputs
-        if name not in ['ch1', 'ch2']:
-            raise ValueError("Invalid Channel: {}, expected 'ch1' or 'ch2'"
-                             .format(name))
+        if name not in ["ch1", "ch2"]:
+            raise ValueError(f"Invalid Channel: {name}, expected 'ch1' or 'ch2'")
         if chan not in [1, 2]:
-            raise ValueError("Invalid Channel: {}, expected '1' or '2'"
-                             .format(chan))
+            raise ValueError(f"Invalid Channel: {chan}, expected '1' or '2'")
 
         super().__init__(parent, name)
 

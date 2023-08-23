@@ -10,7 +10,7 @@ from .ats_api import AlazarATSAPI
 from .constants import Capability
 
 
-class CapabilityHelper():
+class CapabilityHelper:
     """
     A helper class providing convenient methods for various useful
     'query capability' (``AlazarQueryCapability``) calls for a given

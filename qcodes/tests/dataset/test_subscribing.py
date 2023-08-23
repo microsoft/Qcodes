@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 VALUE = Union[str, Number, list[Any], ndarray, bool]
 
 
-class MockSubscriber():
+class MockSubscriber:
     """
     A basic subscriber factory that creates a subscriber, that
     just puts results and length into state.

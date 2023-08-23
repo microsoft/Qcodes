@@ -4,7 +4,7 @@ Please do not import from this in any new code
 """
 import logging
 from collections.abc import Hashable
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 # for backwards compatibility since this module used
 # to contain logic that would abstract between yaml
