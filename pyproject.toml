@@ -249,7 +249,10 @@ filterwarnings = [
 
 [tool.ruff]
 # Enable Pyflakes `E` and `F` codes by default.
-select = ["E", "F", "PT025", "UP"]
+# UP pyupgrade
+# PT025 invalid use of pytest fixtures in other fixtures
+# RUF200 validate pyproject.toml
+select = ["E", "F", "PT025", "UP", "RUF200"]
 # darker will fix this as code is
 # reformatted when it is changed.
 ignore = ["E501"]
