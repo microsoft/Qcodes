@@ -676,8 +676,10 @@ class Runner:
                                           file=stream)
                 exception_string = stream.getvalue()
                 log.warning(
-                    "An exception occurred in measurement with guid: "
-                    f"{self.ds.guid};\nTraceback:\n{exception_string}"
+                    "An exception occurred in measurement with guid: %s;"
+                    "\nTraceback:\n%s",
+                    self.ds.guid,
+                    exception_string,
                 )
                 self._span.set_status(trace.Status(trace.StatusCode.ERROR))
                 if isinstance(exception_value, Exception):
