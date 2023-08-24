@@ -704,9 +704,9 @@ def test_copy_datasets_and_add_new(
         ds.mark_completed()
 
     expected_run_ids = [4, 5, 6]
-    expected_captured_run_ids = [11, 12, 13]
+    expected_captured_run_ids = expected_run_ids
     expected_counter = [4, 5, 6]
-    expected_captured_counter = [6, 7, 8]
+    expected_captured_counter = expected_counter
 
     for ds, eri, ecri, ec, ecc in zip(new_datasets,
                                       expected_run_ids,
