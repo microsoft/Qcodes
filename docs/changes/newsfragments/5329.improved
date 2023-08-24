@@ -1,0 +1,3 @@
+In the QCoDeS DataSetProtocol newly created dataset now always have a captured_run_id / captured_counter
+that matches the run_id / result_counter that they are assigned on creation. Previously these could be
+out of sync if datasets measured elsewhere had been inserted into the database.
