@@ -6,6 +6,8 @@ from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from opentelemetry import trace
+
 from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.dataset.dond.do_nd_utils import ParamMeasT, catch_interrupts
 from qcodes.dataset.dond.sweeps import AbstractSweep, LinSweep, TogetherSweep
@@ -13,6 +15,8 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.dataset.threading import process_params_meas
 from qcodes.parameters.parameter_base import ParameterBase
+
+TRACER = trace.get_tracer(__name__)
 
 
 @dataclass
@@ -85,12 +89,16 @@ def datasaver_builder(
     Yields:
         A list of generated datasavers with parameters registered
     """
+
     measurement_instances = setup_measurement_instances(
         dataset_definitions, override_experiment
     )
-    with catch_interrupts() as _, ExitStack() as stack:
+    with TRACER.start_as_current_span(
+        "qcodes.dataset.datasaver_builder"
+    ), catch_interrupts() as _, ExitStack() as stack:
+        datasaver_builder_span = trace.get_current_span()
         datasavers = [
-            stack.enter_context(measurement.run())
+            stack.enter_context(measurement.run(parent_span=datasaver_builder_span))
             for measurement in measurement_instances
         ]
         yield datasavers
@@ -153,31 +161,40 @@ def dond_into(
         additional_setpoints: A list of setpoint parameters to be registered in the
             measurement but not scanned/swept-over.
     """
-    sweep_instances, params_meas = parse_dond_into_args(*params)
-    sweeper = _Sweeper(sweep_instances, additional_setpoints)
-    for set_events in sweeper:
-        results: dict[ParameterBase, Any] = {}
-        additional_setpoints_data = process_params_meas(additional_setpoints)
-        for set_event in set_events:
-            if set_event.should_set:
-                set_event.parameter(set_event.new_value)
-                for act in set_event.actions:
-                    act()
-                time.sleep(set_event.delay)
+    # at this stage multiple measurement context managers may be in run state
+    # as datasavers. Here we ensure we bind the parent span to the correct
+    # datasaver.
+    if datasaver._span is not None:
+        context = trace.set_span_in_context(datasaver._span)
+    else:
+        context = None
 
-            if set_event.get_after_set:
-                results[set_event.parameter] = set_event.parameter()
-            else:
-                results[set_event.parameter] = set_event.new_value
+    with TRACER.start_as_current_span("qcodes.dataset.dond_into", context=context):
+        sweep_instances, params_meas = parse_dond_into_args(*params)
+        sweeper = _Sweeper(sweep_instances, additional_setpoints)
+        for set_events in sweeper:
+            results: dict[ParameterBase, Any] = {}
+            additional_setpoints_data = process_params_meas(additional_setpoints)
+            for set_event in set_events:
+                if set_event.should_set:
+                    set_event.parameter(set_event.new_value)
+                    for act in set_event.actions:
+                        act()
+                    time.sleep(set_event.delay)
 
-        meas_value_pair = process_params_meas(params_meas)
-        for meas_param, value in meas_value_pair:
-            results[meas_param] = value
+                if set_event.get_after_set:
+                    results[set_event.parameter] = set_event.parameter()
+                else:
+                    results[set_event.parameter] = set_event.new_value
 
-        datasaver.add_result(
-            *list(results.items()),
-            *additional_setpoints_data,
-        )
+            meas_value_pair = process_params_meas(params_meas)
+            for meas_param, value in meas_value_pair:
+                results[meas_param] = value
+
+            datasaver.add_result(
+                *list(results.items()),
+                *additional_setpoints_data,
+            )
 
 
 class LinSweeper(LinSweep):

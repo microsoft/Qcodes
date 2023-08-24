@@ -84,7 +84,9 @@ class DataSaver:
         dataset: DataSetProtocol,
         write_period: float,
         interdeps: InterDependencies_,
+        span: trace.Span,
     ) -> None:
+        self._span = span
         self._dataset = dataset
         if (
             DataSaver.default_callback is not None
@@ -504,6 +506,7 @@ class Runner:
         shapes: Shapes | None = None,
         in_memory_cache: bool | None = None,
         dataset_class: DataSetType = DataSetType.DataSet,
+        parent_span: trace.Span | None = None,
     ) -> None:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
@@ -529,6 +532,7 @@ class Runner:
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
         self._in_memory_cache = in_memory_cache
+        self._parent_span = parent_span
         self.ds: DataSetProtocol
 
     @staticmethod
@@ -549,10 +553,21 @@ class Runner:
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
+        # multiple runners can be active at the same time.
+        # If we just activate them in order the first one
+        # would be the parent of the next one but that is wrong
+        # since they are siblings that should coexist with the
+        # same parent.
+        if self._parent_span is not None:
+            context = trace.set_span_in_context(self._parent_span)
+        else:
+            context = None
         # We want to enter the opentelemetry span here
         # and end it in the `__exit__` of this context manger
         # so here we capture it in a exitstack that we keep around.
-        self._span = TRACER.start_span("qcodes.dataset.Measurement.run")
+        self._span = TRACER.start_span(
+            "qcodes.dataset.Measurement.run", context=context
+        )
         with ExitStack() as stack:
             stack.enter_context(trace.use_span(self._span, end_on_exit=True))
 
@@ -649,6 +664,7 @@ class Runner:
             dataset=self.ds,
             write_period=self.write_period,
             interdeps=self._interdependencies,
+            span=self._span,
         )
 
         return self.datasaver
@@ -1248,6 +1264,7 @@ class Measurement:
         write_in_background: bool | None = None,
         in_memory_cache: bool | None = True,
         dataset_class: DataSetType = DataSetType.DataSet,
+        parent_span: trace.Span | None = None,
     ) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1281,4 +1298,5 @@ class Measurement:
             shapes=self._shapes,
             in_memory_cache=in_memory_cache,
             dataset_class=dataset_class,
+            parent_span=parent_span,
         )
