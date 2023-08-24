@@ -623,11 +623,10 @@ class Runner:
                 self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
         self._span.set_attributes(
             {
-                "guid": self.ds.guid,
+                "qcodes_guid": self.ds.guid,
                 "run_id": self.ds.run_id,
-                "captured_run_id": self.ds.captured_run_id,
                 "exp_name": self.ds.exp_name,
-                "sample_name": self.ds.sample_name,
+                "SN": self.ds.sample_name,
                 "ds_name": self.ds.name,
                 "write_in_background": self._write_in_background,
                 "extra_log_info": self._extra_log_info,
