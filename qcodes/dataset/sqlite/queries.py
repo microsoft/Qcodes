@@ -1338,12 +1338,22 @@ def _insert_run(
                                                    where_value=exp_id)
     assert isinstance(run_counter, int)
     assert isinstance(format_string, str)
+    newly_created_run = False
+
+    if (captured_run_id is not None and captured_counter is None) or (
+        captured_counter is not None and captured_run_id is None
+    ):
+        raise ValueError(
+            "Either both of captured_counter and captured_run_id should be set or none of them."
+        )
+
     run_counter += 1
     if captured_counter is None:
+        newly_created_run = True
         with atomic(conn) as conn:
             query = """
             SELECT
-                max(captured_counter)
+                max(result_counter)
             FROM
                 runs
             WHERE
@@ -1354,6 +1364,21 @@ def _insert_run(
                 captured_counter = existing_captured_counter + 1
             else:
                 captured_counter = run_counter
+
+    if captured_run_id is None:
+        with atomic(conn) as conn:
+            query = """
+            SELECT
+                max(run_id)
+            FROM
+                runs"""
+            curr = transaction(conn, query)
+            existing_captured_run_id = one(curr, 0)
+        if existing_captured_run_id is not None:
+            captured_run_id = existing_captured_run_id + 1
+        else:
+            captured_run_id = 1
+
     formatted_name = format_table_name(format_string, "results", exp_id, run_counter)
     table = "runs"
 
@@ -1366,20 +1391,6 @@ def _insert_run(
     # table and parameter column in the same order as data_set.add_parameter does
     # specifically dependencies should come before the dependent parameters for links
     # in the layout table to work correctly
-
-    if captured_run_id is None:
-        with atomic(conn) as conn:
-            query = """
-            SELECT
-                max(captured_run_id)
-            FROM
-                runs"""
-            curr = transaction(conn, query)
-            existing_captured_run_id = one(curr, 0)
-        if existing_captured_run_id is not None:
-            captured_run_id = existing_captured_run_id + 1
-        else:
-            captured_run_id = 1
 
     with atomic(conn) as conn:
 
@@ -1456,6 +1467,15 @@ def _insert_run(
     run_id = curr.lastrowid
     if run_id is None:
         raise RuntimeError(f"Creation of run with guid: {guid} failed")
+    if newly_created_run:
+        if captured_run_id != run_id:
+            warnings.warn(
+                "captured_run_id was not equal to run_id, this is unexpected and will be an error in the future."
+            )
+        if captured_counter != run_counter:
+            warnings.warn(
+                "captured_counter was not equal to result_counter, this is unexpected and will be an error in the future."
+            )
     return run_counter, formatted_name, run_id
 
 
