@@ -84,7 +84,7 @@ class DataSaver:
         dataset: DataSetProtocol,
         write_period: float,
         interdeps: InterDependencies_,
-        span: trace.Span,
+        span: trace.Span | None = None,
     ) -> None:
         self._span = span
         self._dataset = dataset
