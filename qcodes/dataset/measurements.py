@@ -645,6 +645,7 @@ class Runner:
                 "ds_name": self.ds.name,
                 "write_in_background": self._write_in_background,
                 "extra_log_info": self._extra_log_info,
+                "dataset_class": self._dataset_class.name,
             }
         )
         print(
