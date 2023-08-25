@@ -11,6 +11,7 @@ import logging
 import traceback as tb_module
 import warnings
 from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
+from contextlib import ExitStack
 from copy import deepcopy
 from inspect import signature
 from numbers import Number
@@ -19,6 +20,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast
 
 import numpy as np
+from opentelemetry import trace
 
 import qcodes as qc
 import qcodes.validators as vals
@@ -57,7 +59,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import ConnectionPlus
 
 log = logging.getLogger(__name__)
-
+TRACER = trace.get_tracer(__name__)
 
 ActionType = tuple[Callable[..., Any], Sequence[Any]]
 SubscriberType = tuple[
@@ -82,7 +84,9 @@ class DataSaver:
         dataset: DataSetProtocol,
         write_period: float,
         interdeps: InterDependencies_,
+        span: trace.Span | None = None,
     ) -> None:
+        self._span = span
         self._dataset = dataset
         if (
             DataSaver.default_callback is not None
@@ -502,6 +506,7 @@ class Runner:
         shapes: Shapes | None = None,
         in_memory_cache: bool | None = None,
         dataset_class: DataSetType = DataSetType.DataSet,
+        parent_span: trace.Span | None = None,
     ) -> None:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
@@ -527,6 +532,7 @@ class Runner:
         self._extra_log_info = extra_log_info
         self._write_in_background = write_in_background
         self._in_memory_cache = in_memory_cache
+        self._parent_span = parent_span
         self.ds: DataSetProtocol
 
     @staticmethod
@@ -547,9 +553,28 @@ class Runner:
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
+        # multiple runners can be active at the same time.
+        # If we just activate them in order the first one
+        # would be the parent of the next one but that is wrong
+        # since they are siblings that should coexist with the
+        # same parent.
+        if self._parent_span is not None:
+            context = trace.set_span_in_context(self._parent_span)
+        else:
+            context = None
+        # We want to enter the opentelemetry span here
+        # and end it in the `__exit__` of this context manger
+        # so here we capture it in a exitstack that we keep around.
+        self._span = TRACER.start_span(
+            "qcodes.dataset.Measurement.run", context=context
+        )
+        with ExitStack() as stack:
+            stack.enter_context(trace.use_span(self._span, end_on_exit=True))
+
+            self._exit_stack = stack.pop_all()
+
         # TODO: should user actions really precede the dataset?
         # first do whatever bootstrapping the user specified
-
         for func, args in self.enteractions:
             func(*args)
 
@@ -605,13 +630,24 @@ class Runner:
 
         # register all subscribers
         if isinstance(self.ds, DataSet):
-            for (callble, state) in self.subscribers:
+            for callble, state in self.subscribers:
                 # We register with minimal waiting time.
                 # That should make all subscribers be called when data is flushed
                 # to the database
                 log.debug(f"Subscribing callable {callble} with state {state}")
                 self.ds.subscribe(callble, min_wait=0, min_count=1, state=state)
-
+        self._span.set_attributes(
+            {
+                "qcodes_guid": self.ds.guid,
+                "run_id": self.ds.run_id,
+                "exp_name": self.ds.exp_name,
+                "SN": self.ds.sample_name,
+                "ds_name": self.ds.name,
+                "write_in_background": self._write_in_background,
+                "extra_log_info": self._extra_log_info,
+                "dataset_class": self._dataset_class.name,
+            }
+        )
         print(
             f"Starting experimental run with id: {self.ds.captured_run_id}."
             f" {self._extra_log_info}"
@@ -626,9 +662,11 @@ class Runner:
         log.info(f"Using background writing: {self._write_in_background}")
 
         self.datasaver = DataSaver(
-                            dataset=self.ds,
-                            write_period=self.write_period,
-                            interdeps=self._interdependencies)
+            dataset=self.ds,
+            write_period=self.write_period,
+            interdeps=self._interdependencies,
+            span=self._span,
+        )
 
         return self.datasaver
 
@@ -654,8 +692,15 @@ class Runner:
                                           traceback,
                                           file=stream)
                 exception_string = stream.getvalue()
-                log.warning('An exception occured in measurement with guid: '
-                            f'{self.ds.guid};\nTraceback:\n{exception_string}')
+                log.warning(
+                    "An exception occurred in measurement with guid: %s;"
+                    "\nTraceback:\n%s",
+                    self.ds.guid,
+                    exception_string,
+                )
+                self._span.set_status(trace.Status(trace.StatusCode.ERROR))
+                if isinstance(exception_value, Exception):
+                    self._span.record_exception(exception_value)
                 self.ds.add_metadata("measurement_exception", exception_string)
 
             # and finally mark the dataset as closed, thus
@@ -669,6 +714,7 @@ class Runner:
                      f'{self._extra_log_info}')
             if isinstance(self.ds, DataSet):
                 self.ds.unsubscribe_all()
+            self._exit_stack.close()
 
 
 T = TypeVar('T', bound='Measurement')
@@ -1219,6 +1265,7 @@ class Measurement:
         write_in_background: bool | None = None,
         in_memory_cache: bool | None = True,
         dataset_class: DataSetType = DataSetType.DataSet,
+        parent_span: trace.Span | None = None,
     ) -> Runner:
         """
         Returns the context manager for the experimental run
@@ -1252,4 +1299,5 @@ class Measurement:
             shapes=self._shapes,
             in_memory_cache=in_memory_cache,
             dataset_class=dataset_class,
+            parent_span=parent_span,
         )

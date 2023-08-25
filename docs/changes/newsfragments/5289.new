@@ -1,0 +1,7 @@
+The QCoDeS Measurement Context manager, DataSaverBuilder and DoND functions have been instrumented as OpenTelemetry traces.
+This enables users to correlate log messages with the the measurement that they were performed within.
+See the `OpenTelemetry <https://opentelemetry.io/>`_ documentation for examples of how this can be used.
+
+The log exporting using OpenCensus within QCoDeS is expected to be deprecated and eventually removed in line
+with OpenCensus being discontinued. Users that are interested in gathering telemetry of their setups are encouraged
+to provide their own solution based on OpenTelemetry.

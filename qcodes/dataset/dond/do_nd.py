@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Union, cast
 
 import numpy as np
+from opentelemetry import trace
 from tqdm.auto import tqdm
 from typing_extensions import TypedDict
 
@@ -47,6 +48,8 @@ if TYPE_CHECKING:
     )
 
 SweepVarType = Any
+
+TRACER = trace.get_tracer(__name__)
 
 
 class ParameterGroup(TypedDict):
@@ -565,6 +568,7 @@ class _SweepMeasGroup:
         return self._parameters
 
 
+@TRACER.start_as_current_span("qcodes.dataset.dond")
 def dond(
     *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
     write_period: float | None = None,

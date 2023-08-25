@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, cast
 
+from opentelemetry import trace
+
 from qcodes import config
 from qcodes.parameters import ParameterBase
 
@@ -13,11 +15,13 @@ from ..threading import process_params_meas
 from .do_nd_utils import _handle_plotting, _register_parameters, _set_write_period
 
 LOG = logging.getLogger(__name__)
+TRACER = trace.get_tracer(__name__)
 
 if TYPE_CHECKING:
     from ..descriptions.versioning.rundescribertypes import Shapes
     from .do_nd_utils import AxesTupleListWithDataSet, ParamMeasT
 
+@TRACER.start_as_current_span("qcodes.dataset.do0d")
 def do0d(
     *param_meas: ParamMeasT,
     write_period: float | None = None,

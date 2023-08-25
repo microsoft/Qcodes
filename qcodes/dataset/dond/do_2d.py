@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
+from opentelemetry import trace
 from tqdm.auto import tqdm
 
 from qcodes import config
@@ -29,6 +30,8 @@ from qcodes.dataset.threading import (
 from qcodes.parameters import ParameterBase
 
 LOG = logging.getLogger(__name__)
+TRACER = trace.get_tracer(__name__)
+
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
@@ -39,7 +42,7 @@ if TYPE_CHECKING:
         ParamMeasT,
     )
 
-
+@TRACER.start_as_current_span("qcodes.dataset.do2d")
 def do2d(
     param_set1: ParameterBase,
     start1: float,
