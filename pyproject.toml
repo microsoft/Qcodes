@@ -137,10 +137,8 @@ exclude_lines = [
 ]
 
 [tool.darker]
-isort = true
-
-[tool.isort]
-profile = "black"
+# done via ruff
+isort = false
 
 [tool.mypy]
 strict_optional = true
@@ -253,7 +251,8 @@ filterwarnings = [
 # UP pyupgrade
 # PT025 invalid use of pytest fixtures in other fixtures
 # RUF200 validate pyproject.toml
-select = ["E", "F", "PT025", "UP", "RUF200"]
+# I isort
+select = ["E", "F", "PT025", "UP", "RUF200", "I"]
 # darker will fix this as code is
 # reformatted when it is changed.
 ignore = ["E501"]
