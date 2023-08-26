@@ -13,21 +13,10 @@ repos:
     - id: debug-statements
     - id: mixed-line-ending
       args: ['--fix=no']
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
   - repo: https://github.com/akaihola/darker
     rev: 1.7.2
     hooks:
       - id: darker
-        args: [-i]
-        additional_dependencies: [isort]
-  - repo: https://github.com/nbQA-dev/nbQA
-    rev: 1.7.0
-    hooks:
-        - id: nbqa-isort
-          additional_dependencies: [isort]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
     rev: 'v0.0.285'
