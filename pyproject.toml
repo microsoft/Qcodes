@@ -258,6 +258,9 @@ select = ["E", "F", "PT025", "UP", "RUF200"]
 # reformatted when it is changed.
 ignore = ["E501"]
 
+extend-include = ["*.ipynb"]
+
+
 [tool.ruff.per-file-ignores]
 # deprecated modules left
 # for backwards compatibility
@@ -311,6 +314,9 @@ ignore = ["E501"]
 
 "qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
 "qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
+
+# This triggeres in notebooks even with a md cell at the top
+"*.ipynb" = ["E402"]
 
 [tool.setuptools]
 zip-safe = false
