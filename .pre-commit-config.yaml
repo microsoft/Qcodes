@@ -22,3 +22,4 @@ repos:
     rev: 'v0.0.285'
     hooks:
       - id: ruff
+        types_or: [python, pyi, jupyter, toml]
