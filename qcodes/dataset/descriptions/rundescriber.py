@@ -13,8 +13,7 @@ from .versioning.rundescribertypes import (
     RunDescriberV3Dict,
     Shapes,
 )
-
-from.versioning.v0 import InterDependencies
+from .versioning.v0 import InterDependencies
 
 
 class RunDescriber:

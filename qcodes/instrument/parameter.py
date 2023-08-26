@@ -7,9 +7,6 @@ from qcodes.parameters import (
     MultiParameter,
     ParamDataType,
     Parameter,
-)
-from qcodes.parameters import ParameterBase as _BaseParameter
-from qcodes.parameters import (
     ParameterWithSetpoints,
     ParamRawDataType,
     ScaledParameter,
@@ -18,6 +15,7 @@ from qcodes.parameters import (
     expand_setpoints_helper,
     invert_val_mapping,
 )
+from qcodes.parameters import ParameterBase as _BaseParameter
 from qcodes.parameters.parameter_base import GetLatest
 
 __all__ = [

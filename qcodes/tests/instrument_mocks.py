@@ -16,9 +16,8 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     ParamRawDataType,
 )
-from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff
+from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff, Strings
 from qcodes.validators import Sequence as ValidatorSequence
-from qcodes.validators import Strings
 
 log = logging.getLogger(__name__)
 
