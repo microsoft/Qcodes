@@ -26,9 +26,6 @@ repos:
   - repo: https://github.com/nbQA-dev/nbQA
     rev: 1.7.0
     hooks:
-        - id: nbqa-pyupgrade
-          args: ['--py39-plus']
-          additional_dependencies: [pyupgrade]
         - id: nbqa-isort
           additional_dependencies: [isort]
   - repo: https://github.com/astral-sh/ruff-pre-commit
