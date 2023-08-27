@@ -335,11 +335,11 @@ class AMIModel430(VisaInstrument):
         Check the current state of the magnet to see if we can start ramping
         """
         if self.is_quenched():
-            logging.error(__name__ + ": Could not ramp because of quench")
+            logging.error(f"{__name__}: Could not ramp because of quench")
             return False
 
         if self.switch_heater.in_persistent_mode():
-            logging.error(__name__ + ": Could not ramp because persistent")
+            logging.error(f"{__name__}: Could not ramp because persistent")
             return False
 
         state = self.ramping_state()
@@ -352,7 +352,7 @@ class AMIModel430(VisaInstrument):
         elif state in ["holding", "paused", "at zero current"]:
             return True
 
-        logging.error(__name__ + f": Could not ramp, state: {state}")
+        logging.error(f"{__name__}: Could not ramp, state: {state}")
         return False
 
     def set_field(

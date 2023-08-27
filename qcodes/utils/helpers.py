@@ -37,8 +37,10 @@ from .spyder_utils import add_to_spyder_UMR_excludelist
 # on longer in used but left for backwards compatibility until
 # module is removed.
 def warn_units(class_name: str, instance: object) -> None:
-    logging.warning('`units` is deprecated for the `' + class_name +
-                    '` class, use `unit` instead. ' + repr(instance))
+    logging.warning(
+        f"`units` is deprecated for the ` {class_name} "
+        f"` class, use `unit` instead. {repr(instance)}"
+    )
 
 
 @deprecate("Internal function no longer part of the public qcodes api")

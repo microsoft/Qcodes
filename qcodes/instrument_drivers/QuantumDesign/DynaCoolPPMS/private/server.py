@@ -56,8 +56,9 @@ def run_server() -> None:
             if sock == server_socket:
                 sock_fd, address = server_socket.accept()
                 socket_dict[sock_fd] = address
-                print('Client ({}, {}) connected.'.format(*address))
-                log.info('Client ({}, {}) connected.'.format(*address))
+                msg_str = f"Client ({address[0]}, {address[1]}) connected."
+                print(msg_str)
+                log.info(msg_str)
 
             # Incoming message from existing connection
             else:
@@ -82,8 +83,9 @@ def run_server() -> None:
                     # send an error code, since the driver expects that for all
                     # commands
                     sock.send(b'0')
-                    print('Client ({}, {}) disconnected.'.format(*socket_dict[sock]))
-                    log.info('Client ({}, {}) disconnected.'.format(*socket_dict[sock]))
+                    msg_str = f"Client ({socket_dict[sock][0]}, {socket_dict[sock][1]}) disconnected."
+                    print(msg_str)
+                    log.info(msg_str)
                     socket_dict.pop(sock, None)
                     sock.close()
                 else:

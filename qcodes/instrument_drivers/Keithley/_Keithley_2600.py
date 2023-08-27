@@ -615,7 +615,7 @@ class Keithley2600Channel(InstrumentChannel):
         """
         self.write(f"{self.channel}.reset()")
         # remember to update all the metadata
-        log.debug(f"Reset channel {self.channel}." + "Updating settings...")
+        log.debug(f"Reset channel {self.channel}. Updating settings...")
         self.snapshot(update=True)
 
     def doFastSweep(self, start: float, stop: float, steps: int, mode: str) -> DataSet:

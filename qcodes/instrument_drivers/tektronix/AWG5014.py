@@ -548,17 +548,15 @@ class TektronixAWG5014(VisaInstrument):
         dircheck = '%s, DIR' % folder
         if dircheck in self.get_folder_contents():
             self.change_folder(folder)
-            log.debug('Directory already exists')
-            log.warning(('Directory already exists, ' +
-                         'changed path to {}').format(folder))
-            log.info('Contents of folder is ' +
-                     '{}'.format(self.ask('MMEMory:cat?')))
+            log.debug("Directory already exists")
+            log.warning(f"Directory already exists, changed path to {folder}")
+            content = self.ask("MMEMory:cat?")
+            log.info("Contents of folder is %s", content)
         elif self.get_current_folder_name() == f'"\\{folder}"':
-            log.info('Directory already set to ' +
-                     f'{folder}')
+            log.info(f"Directory already set to {folder}")
         else:
-            self.write('MMEMory:MDIRectory "%s"' % folder)
-            self.write('MMEMory:CDIRectory "%s"' % folder)
+            self.write(f'MMEMory:MDIRectory "{folder}"')
+            self.write(f'MMEMory:CDIRectory "{folder}"')
 
         return self.get_folder_contents()
 
@@ -646,8 +644,10 @@ class TektronixAWG5014(VisaInstrument):
         """
         allowed_states = [0, 1]
         if goto_state not in allowed_states:
-            log.warning(('{} not recognized as a valid goto' +
-                         ' state. Setting to 0 (OFF).').format(goto_state))
+            log.warning(
+                f"{goto_state} not recognized as a valid goto"
+                " state. Setting to 0 (OFF)."
+            )
             goto_state = 0
         self.write(f"SEQuence:ELEMent{element_no}:GOTO:STATe {int(goto_state)}")
 
@@ -667,8 +667,9 @@ class TektronixAWG5014(VisaInstrument):
         """
         allowed_states = [0, 1]
         if state not in allowed_states:
-            log.warning(('{} not recognized as a valid loop' +
-                         '  state. Setting to 0 (OFF).').format(state))
+            log.warning(
+                f"{state} not recognized as a valid loop state. Setting to 0 (OFF)."
+            )
             state = 0
 
         self.write(f"SEQuence:ELEMent{element_no}:LOOP:INFinite {int(state)}")
@@ -1128,8 +1129,7 @@ class TektronixAWG5014(VisaInstrument):
                 head_str.write(self._pack_record(k, sequence_cfg[k],
                                                  self.AWG_FILE_FORMAT_HEAD[k]))
             else:
-                log.warning('AWG: ' + k +
-                            ' not recognized as valid AWG setting')
+                log.warning(f"AWG: {k} not recognized as valid AWG setting")
         # channel settings
         ch_record_str = BytesIO()
         for k in list(channel_cfg.keys()):
@@ -1140,8 +1140,7 @@ class TektronixAWG5014(VisaInstrument):
                 ch_record_str.write(pack)
 
             else:
-                log.warning('AWG: ' + k +
-                            ' not recognized as valid AWG channel setting')
+                log.warning(f"AWG: {k} not recognized as valid AWG channel setting")
 
         # waveforms
         ii = 21
