@@ -13,8 +13,8 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
-    import numpy.typing as npt
     import numpy as np
+    import numpy.typing as npt
     import pandas as pd
 
 from .logger import (

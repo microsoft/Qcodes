@@ -137,10 +137,8 @@ exclude_lines = [
 ]
 
 [tool.darker]
-isort = true
-
-[tool.isort]
-profile = "black"
+# done via ruff
+isort = false
 
 [tool.mypy]
 strict_optional = true
@@ -253,10 +251,14 @@ filterwarnings = [
 # UP pyupgrade
 # PT025 invalid use of pytest fixtures in other fixtures
 # RUF200 validate pyproject.toml
-select = ["E", "F", "PT025", "UP", "RUF200"]
+# I isort
+select = ["E", "F", "PT025", "UP", "RUF200", "I"]
 # darker will fix this as code is
 # reformatted when it is changed.
 ignore = ["E501"]
+
+extend-include = ["*.ipynb"]
+
 
 [tool.ruff.per-file-ignores]
 # deprecated modules left
@@ -311,6 +313,9 @@ ignore = ["E501"]
 
 "qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
 "qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
+
+# This triggeres in notebooks even with a md cell at the top
+"*.ipynb" = ["E402"]
 
 [tool.setuptools]
 zip-safe = false
