@@ -135,7 +135,7 @@ class ParameterWithSetpoints(Parameter):
                 f"setpoints. Output is shape {output_shape} and "
                 f"setpoints are shape {setpoints_shape}"
             )
-        LOG.info(
+        LOG.debug(
             f"For parameter {self.full_name} verified "
             f"that {output_shape} matches {setpoints_shape}"
         )
