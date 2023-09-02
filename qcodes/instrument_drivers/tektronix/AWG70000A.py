@@ -794,11 +794,16 @@ class AWG70000A(VisaInstrument):
         dsc = ET.SubElement(hdr, 'DataSetsCollection')
         dsc.set("xmlns", "http://www.tektronix.com")
         dsc.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-        dsc.set("xsi:schemaLocation", (r"http://www.tektronix.com file:///" +
-                                       r"C:\Program%20Files\Tektronix\AWG70000" +
-                                       r"\AWG\Schemas\awgDataSets.xsd"))
-        datasets = ET.SubElement(dsc, 'DataSets')
-        datasets.set('version', '1')
+        dsc.set(
+            "xsi:schemaLocation",
+            (
+                r"http://www.tektronix.com file:///"
+                r"C:\Program%20Files\Tektronix\AWG70000"
+                r"\AWG\Schemas\awgDataSets.xsd"
+            ),
+        )
+        datasets = ET.SubElement(dsc, "DataSets")
+        datasets.set("version", "1")
         datasets.set("xmlns", "http://www.tektronix.com")
 
         # Description of the data
@@ -1327,11 +1332,16 @@ class AWG70000A(VisaInstrument):
         dsc = ET.SubElement(datafile, 'DataSetsCollection')
         dsc.set("xmlns", "http://www.tektronix.com")
         dsc.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-        dsc.set("xsi:schemaLocation", (r"http://www.tektronix.com file:///" +
-                                       r"C:\Program%20Files\Tektronix\AWG70000" +
-                                       r"\AWG\Schemas\awgSeqDataSets.xsd"))
-        datasets = ET.SubElement(dsc, 'DataSets')
-        datasets.set('version', '1')
+        dsc.set(
+            "xsi:schemaLocation",
+            (
+                r"http://www.tektronix.com file:///"
+                r"C:\Program%20Files\Tektronix\AWG70000"
+                r"\AWG\Schemas\awgSeqDataSets.xsd"
+            ),
+        )
+        datasets = ET.SubElement(dsc, "DataSets")
+        datasets.set("version", "1")
         datasets.set("xmlns", "http://www.tektronix.com")
 
         # Description of the data

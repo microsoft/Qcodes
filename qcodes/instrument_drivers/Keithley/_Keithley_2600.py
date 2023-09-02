@@ -132,9 +132,9 @@ class TimeTrace(ParameterWithSetpoints):
         if nplc * plc > dt:
             warnings.warn(
                 f"Integration time of {nplc*plc*1000:.1f} "
-                + f"ms is longer than {dt*1000:.1f} ms set "
-                + "as measurement interval. Consider lowering "
-                + "NPLC or increasing interval.",
+                f"ms is longer than {dt*1000:.1f} ms set "
+                "as measurement interval. Consider lowering "
+                "NPLC or increasing interval.",
                 UserWarning,
                 2,
             )

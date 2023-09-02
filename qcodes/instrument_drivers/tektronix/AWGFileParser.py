@@ -385,11 +385,11 @@ def _getendingnumber(string: str) -> tuple[int, str]:
     return int(num[::-1]), string[:-len(num)]
 
 
-awgfilepath = ('/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/' +
-               'customawgfile.awg')
+awgfilepath = "/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/customawgfile.awg"
 
-awgfilepath2 = ('/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/' +
-                'machinemadefortest.awg')
+awgfilepath2 = (
+    "/Users/william/AuxiliaryQCoDeS/AWGhelpers/awgfiles/machinemadefortest.awg"
+)
 
 
 def _parser1(

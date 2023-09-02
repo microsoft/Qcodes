@@ -582,8 +582,8 @@ class QDevQDac(VisaInstrument):
             rampchans = ", ".join(str(c[0]) for c in self._slopes)
             raise ValueError(
                 "Can not assign finite slope to more than "
-                + "8 channels. Assign 'Inf' to at least one of "
-                + f"the following channels: {rampchans}"
+                "8 channels. Assign 'Inf' to at least one of "
+                f"the following channels: {rampchans}"
             )
 
         self._slopes.append((chan, slope))
