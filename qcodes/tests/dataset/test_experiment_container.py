@@ -299,11 +299,13 @@ def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db) -
     exp1 = Experiment(exp_id=None, name='exp', sample_name='sss')
     exp2 = Experiment(exp_id=None, name='exp', sample_name='sss')
 
-    repr_str = f"Many experiments matching your request found:\n" \
-               f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) " \
-               f"started at ({exp1.started_at})\n" \
-               f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) " \
-               f"started at ({exp2.started_at})"
+    repr_str = (
+        f"Many experiments matching your request found:\n"
+        f"exp_id:{exp1.exp_id} ({exp1.name}-{exp1.sample_name}) "
+        f"started at ({exp1.started_at})\n"
+        f"exp_id:{exp2.exp_id} ({exp2.name}-{exp2.sample_name}) "
+        f"started at ({exp2.started_at})"
+    )
     repr_str_regex = re.escape(repr_str)
 
     with pytest.raises(ValueError, match=repr_str_regex):

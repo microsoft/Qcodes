@@ -103,8 +103,9 @@ def test_get_capacitance(cmu) -> None:
 
     assert pytest.approx((-1.45713E-06, -3.05845E-03)) == cmu.capacitance()
 
-    mainframe.ask.return_value = "NCC-1.55713E-06,NCD-3.15845E-03," \
-                                 "NCV-1.52342E-03,NCV+0.14235E-03"
+    mainframe.ask.return_value = (
+        "NCC-1.55713E-06,NCD-3.15845E-03,NCV-1.52342E-03,NCV+0.14235E-03"
+    )
 
     assert pytest.approx((-1.55713E-06, -3.15845E-03)) == cmu.capacitance()
 
@@ -234,9 +235,11 @@ def test_run_sweep(cmu) -> None:
     end = 1.0
     steps = 5
 
-    return_string = f'WMDCV2,2;WTDCV0.00,0.0000,0.2250,0.0000,' \
-                    f'0.0000;WDCV3,' \
-                    f'1,{start},{end},{steps};ACT0,1'
+    return_string = (
+        f"WMDCV2,2;WTDCV0.00,0.0000,0.2250,0.0000,"
+        f"0.0000;WDCV3,"
+        f"1,{start},{end},{steps};ACT0,1"
+    )
     mainframe.ask.return_value = return_string
     cmu.setup_fnc_already_run = True
     cmu.impedance_model(constants.IMP.MeasurementMode.G_X)
@@ -420,10 +423,12 @@ def test_perform_and_enable_correction(cmu) -> None:
     response = cmu.correction.perform_and_enable(
         constants.CalibrationType.OPEN)
 
-    expected_response = f'Correction status ' \
-                        f'{constants.CORR.Response.SUCCESSFUL.name} and ' \
-                        f'Enable ' \
-                        f'{constants.CORRST.Response.ON.name}'
+    expected_response = (
+        f"Correction status "
+        f"{constants.CORR.Response.SUCCESSFUL.name} and "
+        f"Enable "
+        f"{constants.CORRST.Response.ON.name}"
+    )
     assert response == expected_response
 
 

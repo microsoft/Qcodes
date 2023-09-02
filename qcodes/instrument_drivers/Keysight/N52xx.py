@@ -310,12 +310,16 @@ class KeysightPNATrace(InstrumentChannel):
             msg = "User abort detected. "
             source = root_instr.trigger_source()
             if source == "MAN":
-                msg += "The trigger source is manual. Are you sure this is " \
-                       "correct? Please set the correct source with the " \
-                       "'trigger_source' parameter"
+                msg += (
+                    "The trigger source is manual. Are you sure this is "
+                    "correct? Please set the correct source with the "
+                    "'trigger_source' parameter"
+                )
             elif source == "EXT":
-                msg += "The trigger source is external. Is the trigger " \
-                       "source functional?"
+                msg += (
+                    "The trigger source is external. Is the trigger "
+                    "source functional?"
+                )
             self.log.warning(msg)
             raise
 

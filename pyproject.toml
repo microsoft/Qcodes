@@ -252,8 +252,8 @@ filterwarnings = [
 # PT025 invalid use of pytest fixtures in other fixtures
 # RUF200 validate pyproject.toml
 # I isort
-# ISC001: single-line-implicit-string-concatenation
-select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC001", "ISC003"]
+# ISC flake8-implicit-str-concat
+select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # We have a lot of use of f strings in log messages

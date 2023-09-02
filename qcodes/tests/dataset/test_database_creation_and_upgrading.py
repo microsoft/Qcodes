@@ -880,8 +880,10 @@ def test_cannot_connect_to_newer_db() -> None:
     current_version = get_user_version(conn)
     set_user_version(conn, current_version+1)
     conn.close()
-    err_msg = f'is version {current_version + 1} but this version of QCoDeS ' \
-        f'supports up to version {current_version}'
+    err_msg = (
+        f"is version {current_version + 1} but this version of QCoDeS "
+        f"supports up to version {current_version}"
+    )
     with pytest.raises(RuntimeError, match=err_msg):
         conn = connect(qc.config["core"]["db_location"],
                        qc.config["core"]["db_debug"])

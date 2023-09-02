@@ -199,11 +199,11 @@ def format_dcorr_response(r: _DCORRResponse) -> str:
     primary = labels_units['primary']
     secondary = labels_units['secondary']
 
-    result_str = \
-        f"Mode: {r.mode.name}, " \
-        f"Primary {primary['label']}: {r.primary} {primary['unit']}, " \
+    result_str = (
+        f"Mode: {r.mode.name}, "
+        f"Primary {primary['label']}: {r.primary} {primary['unit']}, "
         f"Secondary {secondary['label']}: {r.secondary} {secondary['unit']}"
-
+    )
     return result_str
 
 
