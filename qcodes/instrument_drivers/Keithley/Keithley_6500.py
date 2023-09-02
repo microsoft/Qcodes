@@ -174,7 +174,7 @@ class Keithley6500(VisaInstrument):
         for trigger in range(1, 5):
             self.add_parameter(
                 "trigger%i_delay" % trigger,
-                docstring="Set and read trigger delay for " "timer %i." % trigger,
+                docstring="Set and read trigger delay for timer %i." % trigger,
                 get_parser=float,
                 get_cmd="TRIG:TIM%i:DEL?" % trigger,
                 set_cmd="TRIG:TIM%i:DEL {}" % trigger,
@@ -184,7 +184,7 @@ class Keithley6500(VisaInstrument):
 
             self.add_parameter(
                 "trigger%i_source" % trigger,
-                docstring="Set the trigger source for " "timer %i." % trigger,
+                docstring="Set the trigger source for timer %i." % trigger,
                 get_cmd="TRIG:TIM%i:STAR:STIM?" % trigger,
                 set_cmd="TRIG:TIM%i:STAR:STIM {}" % trigger,
                 val_mapping={

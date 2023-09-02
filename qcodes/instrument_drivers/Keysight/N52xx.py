@@ -84,9 +84,7 @@ class FormattedSweep(ParameterWithSetpoints):
         Overwrite setpoint parameter to ask the PNA what type of sweep
         """
         if self.instrument is None:
-            raise RuntimeError(
-                "Cannot return setpoints if not attached " "to instrument"
-            )
+            raise RuntimeError("Cannot return setpoints if not attached to instrument")
         root_instrument: "PNABase" = self.root_instrument  # type: ignore[assignment]
         sweep_type = root_instrument.sweep_type()
         if sweep_type == "LIN":

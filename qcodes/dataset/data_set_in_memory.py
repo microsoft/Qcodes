@@ -718,7 +718,7 @@ class DataSetInMem(BaseDataSet):
         """
         if not isinstance(interdeps, InterDependencies_):
             raise TypeError(
-                "Wrong input type. Expected InterDepencies_, " f"got {type(interdeps)}"
+                f"Wrong input type. Expected InterDepencies_, got {type(interdeps)}"
             )
 
         if not self.pristine:
@@ -772,7 +772,7 @@ class DataSetInMem(BaseDataSet):
             )
         if self.completed:
             raise CompletedError(
-                "This DataSet is complete, no further " "results can be added to it."
+                "This DataSet is complete, no further results can be added to it."
             )
 
     def __len__(self) -> int:

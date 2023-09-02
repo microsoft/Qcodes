@@ -116,7 +116,7 @@ class Model_336_Mock(MockVisaInstrument, Model_336):
     @query("OUTMODE?")
     def outmodeq(self, arg):
         heater = self.heaters[arg]
-        return f"{heater.mode},{heater.input_channel}," f"{heater.powerup_enable}"
+        return f"{heater.mode},{heater.input_channel},{heater.powerup_enable}"
 
     @command("OUTMODE")
     @split_args()

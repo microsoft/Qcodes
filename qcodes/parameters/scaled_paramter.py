@@ -118,7 +118,7 @@ class ScaledParameter(Parameter):
     def _multiplier(self) -> Parameter:
         if self._multiplier_parameter is None:
             raise RuntimeError(
-                "Cannot get multiplier when multiplier " "parameter in unknown."
+                "Cannot get multiplier when multiplier parameter in unknown."
             )
         return self._multiplier_parameter
 

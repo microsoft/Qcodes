@@ -447,7 +447,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         # to construct a multiparameter from a list of multi parameters
         if isinstance(self._channels[0].parameters[name], MultiParameter):
             raise NotImplementedError(
-                "Slicing is currently not " "supported for MultiParameters"
+                "Slicing is currently not supported for MultiParameters"
             )
         parameters = cast(
             list[Union[Parameter, ArrayParameter]],

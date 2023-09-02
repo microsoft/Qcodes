@@ -3682,7 +3682,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WM {_abort}'
@@ -3704,7 +3704,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WMACV {_abort}'
@@ -3753,7 +3753,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WMDCV {_abort}'
@@ -3775,7 +3775,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WMFC {_abort}'

@@ -176,7 +176,7 @@ class MultiParameter(ParameterBase):
 
         if not is_sequence_of(shapes, int, depth=2) or len(shapes) != len(names):
             raise ValueError(
-                "shapes must be a tuple of tuples " "of ints, not " + repr(shapes)
+                "shapes must be a tuple of tuples of ints, not " + repr(shapes)
             )
         self.shapes = shapes
 

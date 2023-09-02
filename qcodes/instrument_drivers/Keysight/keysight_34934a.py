@@ -25,22 +25,21 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
 
         super().__init__(parent, name, slot)
 
-        self.add_parameter(name='protection_mode',
-                           get_cmd=self._get_relay_protection_mode,
-                           set_cmd=self._set_relay_protection_mode,
-                           vals=validators.Enum('AUTO100',
-                                                 'AUTO0',
-                                                 'FIX',
-                                                 'ISO'),
-                           docstring='get and set the relay protection mode.'
-                                     'The fastest switching speeds for relays'
-                                     'in a given signal path are achieved using'
-                                     'the FIXed or ISOlated modes, followed'
-                                     'by the AUTO100 and AUTO0 modes.'
-                                     'There may be a maximum of 200 Ohm of'
-                                     'resistance, which can only be bypassed'
-                                     'by "AUTO0" mode. See manual and'
-                                     'programmer''s reference for detail.')
+        self.add_parameter(
+            name="protection_mode",
+            get_cmd=self._get_relay_protection_mode,
+            set_cmd=self._set_relay_protection_mode,
+            vals=validators.Enum("AUTO100", "AUTO0", "FIX", "ISO"),
+            docstring="get and set the relay protection mode."
+            "The fastest switching speeds for relays"
+            "in a given signal path are achieved using"
+            "the FIXed or ISOlated modes, followed"
+            "by the AUTO100 and AUTO0 modes."
+            "There may be a maximum of 200 Ohm of"
+            "resistance, which can only be bypassed"
+            'by "AUTO0" mode. See manual and'
+            "programmer's reference for detail.",
+        )
 
         layout = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
         self._is_locked = (layout == 'NONE')

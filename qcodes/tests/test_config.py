@@ -199,7 +199,7 @@ def test_missing_config_file(config) -> None:
 
 @pytest.mark.skipif(
     Path.cwd() == Path.home(),
-    reason="This test requires that " "working dir is different from homedir.",
+    reason="This test requires that working dir is different from homedir.",
 )
 def test_default_config_files(config, load_config) -> None:
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)

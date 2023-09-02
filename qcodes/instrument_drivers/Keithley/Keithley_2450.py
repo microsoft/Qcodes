@@ -170,7 +170,7 @@ class Keithley2450Buffer(InstrumentChannel):
         """
         if (not self.elements()) or readings_only:
             raw_data = self.ask(
-                f":TRACe:DATA? {start_idx}, {end_idx}, " f"'{self.buffer_name}'"
+                f":TRACe:DATA? {start_idx}, {end_idx}, '{self.buffer_name}'"
             )
             return [float(i) for i in raw_data.split(",")]
         elements = [self.buffer_elements[element] for element in self.elements()]
@@ -347,12 +347,12 @@ class Keithley2450Sense(InstrumentChannel):
         self.write(f":TRACe:CLEar '{buffer_name}'")
 
     def _get_user_delay(self) -> str:
-        get_cmd = f":SENSe:{self._proper_function}:DELay:USER" f"{self.user_number()}?"
+        get_cmd = f":SENSe:{self._proper_function}:DELay:USER{self.user_number()}?"
         return self.ask(get_cmd)
 
     def _set_user_delay(self, value: float) -> None:
         set_cmd = (
-            f":SENSe:{self._proper_function}:DELay:USER" f"{self.user_number()} {value}"
+            f":SENSe:{self._proper_function}:DELay:USER{self.user_number()} {value}"
         )
         self.write(set_cmd)
 
@@ -527,7 +527,7 @@ class Keithley2450Source(InstrumentChannel):
         self._sweep_arguments = None
 
     def _get_user_delay(self) -> float:
-        get_cmd = f":SOURce:{self._proper_function}:DELay:USER" f"{self.user_number()}?"
+        get_cmd = f":SOURce:{self._proper_function}:DELay:USER{self.user_number()}?"
         return float(self.ask(get_cmd))
 
     def _set_user_delay(self, value: float) -> None:

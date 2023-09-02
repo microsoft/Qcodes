@@ -29,7 +29,7 @@ class TraceParameter(Parameter):
     def set_raw(self, value: Any) -> None:  # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
-                "TraceParameter only works with " "'SignalHound_USB_SA124B'"
+                "TraceParameter only works with 'SignalHound_USB_SA124B'"
             )
         self.instrument._parameters_synced = False
 
@@ -64,7 +64,7 @@ class ScaleParameter(TraceParameter):
     def set_raw(self, value: str) -> None:  # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
-                "ScaleParameter only works with " "'SignalHound_USB_SA124B'"
+                "ScaleParameter only works with 'SignalHound_USB_SA124B'"
             )
         if value in ("log-scale", "log-full-scale"):
             unit = "dBm"
@@ -89,7 +89,7 @@ class SweepTraceParameter(TraceParameter):
     def set_raw(self, value: Any) -> None:  # pylint: disable=method-hidden
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
-                "SweepTraceParameter only works with " "'SignalHound_USB_SA124B'"
+                "SweepTraceParameter only works with 'SignalHound_USB_SA124B'"
             )
         self.instrument._trace_updated = False
         super().set_raw(value)
@@ -148,7 +148,7 @@ class FrequencySweep(ArrayParameter):
         """
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
-                "'FrequencySweep' is only implemented" "for 'SignalHound_USB_SA124B'"
+                "'FrequencySweep' is only implementedfor 'SignalHound_USB_SA124B'"
             )
         end_freq = start_freq + stepsize * (sweep_len - 1)
         freq_points = tuple(np.linspace(start_freq, end_freq, sweep_len))
@@ -158,10 +158,10 @@ class FrequencySweep(ArrayParameter):
 
     def get_raw(self) -> np.ndarray:
         if self.instrument is None:
-            raise RuntimeError("No instrument is attached to" "'FrequencySweep'")
+            raise RuntimeError("No instrument is attached to'FrequencySweep'")
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
-                "'FrequencySweep' is only implemented" "for 'SignalHound_USB_SA124B'"
+                "'FrequencySweep' is only implementedfor 'SignalHound_USB_SA124B'"
             )
         if not self.instrument._trace_updated:
             raise RuntimeError("trace not updated, run configure to update")
@@ -321,7 +321,7 @@ class SignalHoundUSBSA124B(Instrument):
             initial_value=True,
             parameter_class=TraceParameter,
             get_cmd=None,
-            docstring="Apply software filter to remove " "undersampling mirroring",
+            docstring="Apply software filter to remove undersampling mirroring",
             vals=vals.Bool(),
         )
         self.add_parameter(
@@ -567,7 +567,7 @@ class SignalHoundUSBSA124B(Instrument):
         """
         Close connection to the instrument.
         """
-        log.info("Closing Device with handle num: " f"{self.deviceHandle.value}")
+        log.info(f"Closing Device with handle num: {self.deviceHandle.value}")
 
         try:
             self.abort()

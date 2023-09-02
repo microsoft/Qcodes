@@ -347,7 +347,7 @@ def load_experiment_by_name(
             e = exp  # pyright: ignore
         else:
             raise ValueError(
-                f"Many experiments matching your request" f" found:\n{_repr_str}"
+                f"Many experiments matching your request found:\n{_repr_str}"
             )
     else:
         e = Experiment(exp_id=exp_ids[0], conn=conn)

@@ -576,7 +576,7 @@ class AlazarTech_ATS(Instrument):
                 records_per_sec,
             )
             self.log.debug(
-                "Transferred %d bytes (%f " "bytes per sec)",
+                "Transferred %d bytes (%f bytes per sec)",
                 bytes_transferred,
                 bytes_per_sec,
             )

@@ -382,7 +382,7 @@ class AMIModel430(VisaInstrument):
         # Check we can ramp
         if not self._can_start_ramping():
             raise AMI430Exception(
-                f"Cannot ramp in current state: " f"state is {self.ramping_state()}"
+                f"Cannot ramp in current state: state is {self.ramping_state()}"
             )
 
         # Then, do the actual ramp

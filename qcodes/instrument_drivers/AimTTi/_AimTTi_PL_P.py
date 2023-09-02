@@ -177,7 +177,7 @@ class AimTTiChannel(InstrumentChannel):
         store specified by the numbers 0-9.
         """
         if slot not in self.set_up_store_slots:
-            raise RuntimeError("Slote number should be an integer between" "0 adn 9.")
+            raise RuntimeError("Slote number should be an integer between 0 and 9.")
 
         channel_id = self.channel
         self.write(f"SAV{channel_id} {slot}")
@@ -188,7 +188,7 @@ class AimTTiChannel(InstrumentChannel):
         store specified by the numbers 0-9.
         """
         if slot not in self.set_up_store_slots:
-            raise RuntimeError("Slote number should be an integer between" "0 adn 9.")
+            raise RuntimeError("Slote number should be an integer between 0 and 9.")
 
         channel_id = self.channel
         self.write(f"RCL{channel_id} {slot}")
@@ -237,7 +237,7 @@ class AimTTi(VisaInstrument):
         _model = self.get_idn()["model"]
 
         if (_model not in self._numOutputChannels.keys()) or (_model is None):
-            raise NotKnownModel("Unknown model, connection cannot be " "established.")
+            raise NotKnownModel("Unknown model, connection cannot be established.")
 
         self.numOfChannels = self._numOutputChannels[_model]
         for i in range(1, self.numOfChannels + 1):

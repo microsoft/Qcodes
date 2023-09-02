@@ -54,7 +54,7 @@ class GroupParameter(Parameter):
 
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
             raise ValueError(
-                "A GroupParameter does not use 'set_cmd' or " "'get_cmd' kwarg"
+                "A GroupParameter does not use 'set_cmd' or 'get_cmd' kwarg"
             )
 
         self._group: Group | None = None
