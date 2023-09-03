@@ -850,9 +850,11 @@ class QDac(VisaInstrument):
                 self.channels[ii].slope.cache(), self.channels[ii].slope.unit
             )
             if self.channels[ii].sync.cache() > 0:
-                line += f"    Sync Out: {self.channels[ii].sync.cache()}, "
-                "Delay: {self.channels[ii].sync_delay.cache()} ({self.channels[ii].sync_delay.unit}), "
-                "Duration: {self.channels[ii].sync_duration.cache()} ({self.channels[ii].sync_duration.unit}).\n"
+                line += (
+                    f"    Sync Out: {self.channels[ii].sync.cache()}, "
+                    "Delay: {self.channels[ii].sync_delay.cache()} ({self.channels[ii].sync_delay.unit}), "
+                    "Duration: {self.channels[ii].sync_duration.cache()} ({self.channels[ii].sync_duration.unit}).\n"
+                )
 
             print(line)
 
