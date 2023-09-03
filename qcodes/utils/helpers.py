@@ -38,8 +38,8 @@ from .spyder_utils import add_to_spyder_UMR_excludelist
 # module is removed.
 def warn_units(class_name: str, instance: object) -> None:
     logging.warning(
-        f"`units` is deprecated for the ` {class_name} "
-        f"` class, use `unit` instead. {repr(instance)}"
+        f"`units` is deprecated for the `{class_name}` "
+        f"class, use `unit` instead. {instance!r}"
     )
 
 

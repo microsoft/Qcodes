@@ -148,7 +148,7 @@ class FrequencySweep(ArrayParameter):
         """
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
-                "'FrequencySweep' is only implementedfor 'SignalHound_USB_SA124B'"
+                "'FrequencySweep' is only implemented for 'SignalHound_USB_SA124B'"
             )
         end_freq = start_freq + stepsize * (sweep_len - 1)
         freq_points = tuple(np.linspace(start_freq, end_freq, sweep_len))

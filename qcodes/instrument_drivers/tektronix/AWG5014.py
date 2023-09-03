@@ -438,7 +438,7 @@ class TektronixAWG5014(VisaInstrument):
         elif state.startswith('2'):
             return 'Running'
         else:
-            raise ValueError(f'__name__ : AWG in undefined state "{state}"')
+            raise ValueError(f'{__name__} : AWG in undefined state "{state}"')
 
     def start(self) -> str:
         """Convenience function, identical to self.run()"""
