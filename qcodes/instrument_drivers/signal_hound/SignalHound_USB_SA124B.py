@@ -158,10 +158,10 @@ class FrequencySweep(ArrayParameter):
 
     def get_raw(self) -> np.ndarray:
         if self.instrument is None:
-            raise RuntimeError("No instrument is attached to'FrequencySweep'")
+            raise RuntimeError("No instrument is attached to 'FrequencySweep'")
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
-                "'FrequencySweep' is only implementedfor 'SignalHound_USB_SA124B'"
+                "'FrequencySweep' is only implemented for 'SignalHound_USB_SA124B'"
             )
         if not self.instrument._trace_updated:
             raise RuntimeError("trace not updated, run configure to update")
