@@ -262,6 +262,7 @@ ignore = ["E501", "G004"]
 
 extend-include = ["*.ipynb"]
 
+extend-exclude = ["typings"]
 
 [tool.ruff.per-file-ignores]
 # deprecated modules left
