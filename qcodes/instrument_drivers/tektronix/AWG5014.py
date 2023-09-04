@@ -368,11 +368,9 @@ class TektronixAWG5014(VisaInstrument):
 
             # Marker channels
             for j in range(1, 3):
-                m_del_cmd = f'SOURce{i}:MARKer{j}:DELay'
-                m_high_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
-                              'LEVel:IMMediate:HIGH').format(i, j)
-                m_low_cmd = ('SOURce{}:MARKer{}:VOLTage:' +
-                             'LEVel:IMMediate:LOW').format(i, j)
+                m_del_cmd = f"SOURce{i}:MARKer{j}:DELay"
+                m_high_cmd = f"SOURce{i}:MARKer{j}:VOLTage:LEVel:IMMediate:HIGH"
+                m_low_cmd = f"SOURce{i}:MARKer{j}:VOLTage:LEVel:IMMediate:LOW"
 
                 self.add_parameter(
                     f'ch{i}_m{j}_del',
@@ -440,8 +438,7 @@ class TektronixAWG5014(VisaInstrument):
         elif state.startswith('2'):
             return 'Running'
         else:
-            raise ValueError(__name__ + (' : AWG in undefined ' +
-                                         'state "{}"').format(state))
+            raise ValueError(f'{__name__} : AWG in undefined state "{state}"')
 
     def start(self) -> str:
         """Convenience function, identical to self.run()"""
@@ -548,17 +545,15 @@ class TektronixAWG5014(VisaInstrument):
         dircheck = '%s, DIR' % folder
         if dircheck in self.get_folder_contents():
             self.change_folder(folder)
-            log.debug('Directory already exists')
-            log.warning(('Directory already exists, ' +
-                         'changed path to {}').format(folder))
-            log.info('Contents of folder is ' +
-                     '{}'.format(self.ask('MMEMory:cat?')))
+            log.debug("Directory already exists")
+            log.warning(f"Directory already exists, changed path to {folder}")
+            content = self.ask("MMEMory:cat?")
+            log.info("Contents of folder is %s", content)
         elif self.get_current_folder_name() == f'"\\{folder}"':
-            log.info('Directory already set to ' +
-                     f'{folder}')
+            log.info(f"Directory already set to {folder}")
         else:
-            self.write('MMEMory:MDIRectory "%s"' % folder)
-            self.write('MMEMory:CDIRectory "%s"' % folder)
+            self.write(f'MMEMory:MDIRectory "{folder}"')
+            self.write(f'MMEMory:CDIRectory "{folder}"')
 
         return self.get_folder_contents()
 
@@ -606,8 +601,7 @@ class TektronixAWG5014(VisaInstrument):
             element_no: The sequence element number
             index: The index to set the target to
         """
-        self.write('SEQuence:' +
-                   f'ELEMent{element_no}:JTARGet:INDex {index}')
+        self.write(f"SEQuence:ELEMent{element_no}:JTARGet:INDex {index}")
 
     def set_sqel_goto_target_index(
             self,
@@ -646,8 +640,10 @@ class TektronixAWG5014(VisaInstrument):
         """
         allowed_states = [0, 1]
         if goto_state not in allowed_states:
-            log.warning(('{} not recognized as a valid goto' +
-                         ' state. Setting to 0 (OFF).').format(goto_state))
+            log.warning(
+                f"{goto_state} not recognized as a valid goto"
+                " state. Setting to 0 (OFF)."
+            )
             goto_state = 0
         self.write(f"SEQuence:ELEMent{element_no}:GOTO:STATe {int(goto_state)}")
 
@@ -667,8 +663,9 @@ class TektronixAWG5014(VisaInstrument):
         """
         allowed_states = [0, 1]
         if state not in allowed_states:
-            log.warning(('{} not recognized as a valid loop' +
-                         '  state. Setting to 0 (OFF).').format(state))
+            log.warning(
+                f"{state} not recognized as a valid loop state. Setting to 0 (OFF)."
+            )
             state = 0
 
         self.write(f"SEQuence:ELEMent{element_no}:LOOP:INFinite {int(state)}")
@@ -889,24 +886,28 @@ class TektronixAWG5014(VisaInstrument):
             'TRIGGER_SOURCE':   1 if
             self.get('trigger_source').startswith('EXT') else 2,
             # External | Internal
-            'TRIGGER_INPUT_IMPEDANCE': (1 if self.get('trigger_impedance') ==
-                                        50. else 2),  # 50 ohm | 1 kohm
-            'TRIGGER_INPUT_SLOPE': (1 if self.get('trigger_slope').startswith(
-                                    'POS') else 2),  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': (1 if self.ask('TRIGger:' +
-                                                     'POLarity?').startswith(
-                                       'POS') else 2),  # Positive | Negative
-            'TRIGGER_INPUT_THRESHOLD':  self.get('trigger_level'),  # V
-            'EVENT_INPUT_IMPEDANCE':   (1 if self.get('event_impedance') ==
-                                        50. else 2),  # 50 ohm | 1 kohm
-            'EVENT_INPUT_POLARITY':  (1 if self.get('event_polarity').startswith(
-                                      'POS') else 2),  # Positive | Negative
-            'EVENT_INPUT_THRESHOLD':   self.get('event_level'),  # V
-            'JUMP_TIMING':   (1 if
-                              self.get('event_jump_timing').startswith('SYNC')
-                              else 2),  # Sync | Async
-            'RUN_MODE':   4,  # Continuous | Triggered | Gated | Sequence
-            'RUN_STATE':  0,  # On | Off
+            "TRIGGER_INPUT_IMPEDANCE": (
+                1 if self.get("trigger_impedance") == 50.0 else 2
+            ),  # 50 ohm | 1 kohm
+            "TRIGGER_INPUT_SLOPE": (
+                1 if self.get("trigger_slope").startswith("POS") else 2
+            ),  # Positive | Negative
+            "TRIGGER_INPUT_POLARITY": (
+                1 if self.ask("TRIGger:POLarity?").startswith("POS") else 2
+            ),  # Positive | Negative
+            "TRIGGER_INPUT_THRESHOLD": self.get("trigger_level"),  # V
+            "EVENT_INPUT_IMPEDANCE": (
+                1 if self.get("event_impedance") == 50.0 else 2
+            ),  # 50 ohm | 1 kohm
+            "EVENT_INPUT_POLARITY": (
+                1 if self.get("event_polarity").startswith("POS") else 2
+            ),  # Positive | Negative
+            "EVENT_INPUT_THRESHOLD": self.get("event_level"),  # V
+            "JUMP_TIMING": (
+                1 if self.get("event_jump_timing").startswith("SYNC") else 2
+            ),  # Sync | Async
+            "RUN_MODE": 4,  # Continuous | Triggered | Gated | Sequence
+            "RUN_STATE": 0,  # On | Off
         }
         return AWG_sequence_cfg
 
@@ -1128,8 +1129,7 @@ class TektronixAWG5014(VisaInstrument):
                 head_str.write(self._pack_record(k, sequence_cfg[k],
                                                  self.AWG_FILE_FORMAT_HEAD[k]))
             else:
-                log.warning('AWG: ' + k +
-                            ' not recognized as valid AWG setting')
+                log.warning(f"AWG: {k} not recognized as valid AWG setting")
         # channel settings
         ch_record_str = BytesIO()
         for k in list(channel_cfg.keys()):
@@ -1140,8 +1140,7 @@ class TektronixAWG5014(VisaInstrument):
                 ch_record_str.write(pack)
 
             else:
-                log.warning('AWG: ' + k +
-                            ' not recognized as valid AWG channel setting')
+                log.warning(f"AWG: {k} not recognized as valid AWG channel setting")
 
         # waveforms
         ii = 21
@@ -1402,8 +1401,7 @@ class TektronixAWG5014(VisaInstrument):
             preservechannelsettings=preservechannelsettings)
 
         # by default, an unusable directory is targeted on the AWG
-        self.visa_handle.write('MMEMory:CDIRectory ' +
-                               '"C:\\Users\\OEM\\Documents"')
+        self.visa_handle.write('MMEMory:CDIRectory "C:\\Users\\OEM\\Documents"')
 
         self.send_awg_file(filename, awg_file)
         currentdir = self.visa_handle.query('MMEMory:CDIRectory?')
@@ -1524,14 +1522,17 @@ class TektronixAWG5014(VisaInstrument):
         if (not((len(wf) == len(m1)) and (len(m1) == len(m2)))):
             raise Exception('error: sizes of the waveforms do not match')
         if np.min(wf) < -1 or np.max(wf) > 1:
-            raise TypeError('Waveform values out of bonds.' +
-                            ' Allowed values: -1 to 1 (inclusive)')
+            raise TypeError(
+                "Waveform values out of bonds. Allowed values: -1 to 1 (inclusive)"
+            )
         if not np.all(np.in1d(m1, np.array([0, 1]))):
-            raise TypeError('Marker 1 contains invalid values.' +
-                            ' Only 0 and 1 are allowed')
+            raise TypeError(
+                "Marker 1 contains invalid values. Only 0 and 1 are allowed"
+            )
         if not np.all(np.in1d(m2, np.array([0, 1]))):
-            raise TypeError('Marker 2 contains invalid values.' +
-                            ' Only 0 and 1 are allowed')
+            raise TypeError(
+                "Marker 2 contains invalid values. Only 0 and 1 are allowed"
+            )
 
         # Note: we use np.trunc here rather than np.round
         # as it is an order of magnitude faster
@@ -1662,14 +1663,17 @@ class TektronixAWG5014(VisaInstrument):
         if (not((len(w) == len(m1)) and (len(m1) == len(m2)))):
             raise Exception('error: sizes of the waveforms do not match')
         if min(w) < -1 or max(w) > 1:
-            raise TypeError('Waveform values out of bonds.' +
-                            ' Allowed values: -1 to 1 (inclusive)')
+            raise TypeError(
+                "Waveform values out of bonds. Allowed values: -1 to 1 (inclusive)"
+            )
         if (list(m1).count(0) + list(m1).count(1)) != len(m1):
-            raise TypeError('Marker 1 contains invalid values.' +
-                            ' Only 0 and 1 are allowed')
+            raise TypeError(
+                "Marker 1 contains invalid values. Only 0 and 1 are allowed"
+            )
         if (list(m2).count(0) + list(m2).count(1)) != len(m2):
-            raise TypeError('Marker 2 contains invalid values.' +
-                            ' Only 0 and 1 are allowed')
+            raise TypeError(
+                "Marker 2 contains invalid values. Only 0 and 1 are allowed"
+            )
 
         self._values['files'][wfmname] = self._file_dict(w, m1, m2, None)
 

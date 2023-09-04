@@ -269,7 +269,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             timeout = self.sweep_time() + self.root_instrument._additional_wait
             with self.root_instrument.timeout.set_to(timeout):
                 data_str = self.ask(
-                    f":READ:" f"{self.root_instrument.measurement()}" f"{trace_num}?"
+                    f":READ:{self.root_instrument.measurement()}{trace_num}?"
                 )
                 data = np.array(data_str.rstrip().split(",")).astype("float64")
         except TimeoutError as e:
@@ -409,7 +409,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
 
         if abs(val - start_offset) >= 1:
             self.log.warning(
-                f"Could not set start offset to {val} setting it to " f"{start_offset}"
+                f"Could not set start offset to {val} setting it to {start_offset}"
             )
         if val >= stop_offset or abs(val - stop_offset) < 10:
             self.log.warning(
@@ -430,7 +430,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
 
         if abs(val - stop_offset) >= 1:
             self.log.warning(
-                f"Could not set stop offset to {val} setting it to " f"{stop_offset}"
+                f"Could not set stop offset to {val} setting it to {stop_offset}"
             )
 
         if val <= start_offset or abs(val - start_offset) < 10:
@@ -457,7 +457,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
 
         try:
             data_str = self.ask(
-                f":READ:{self.root_instrument.measurement()}" f"{trace_num}?"
+                f":READ:{self.root_instrument.measurement()}{trace_num}?"
             )
             data = np.array(data_str.rstrip().split(",")).astype("float64")
         except TimeoutError as e:

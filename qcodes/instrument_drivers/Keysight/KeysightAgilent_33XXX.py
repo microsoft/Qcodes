@@ -232,18 +232,20 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
                            vals=vals.Enum('NORM', 'INV')
                            )
 
-        self.add_parameter('burst_int_period',
-                           label=(f'Channel {channum}' +
-                                  ' burst internal period'),
-                           set_cmd=f'SOURce{channum}:BURSt:INTernal:PERiod {{}}',
-                           get_cmd=f'SOURce{channum}:BURSt:INTernal:PERiod?',
-                           unit='s',
-                           vals=vals.Numbers(1e-6, 8e3),
-                           get_parser=float,
-                           docstring=('The burst period is the time '
-                                      'between the starts of consecutive '
-                                      'bursts when trigger is immediate.')
-                           )
+        self.add_parameter(
+            "burst_int_period",
+            label=(f"Channel {channum} burst internal period"),
+            set_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod {{}}",
+            get_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod?",
+            unit="s",
+            vals=vals.Numbers(1e-6, 8e3),
+            get_parser=float,
+            docstring=(
+                "The burst period is the time "
+                "between the starts of consecutive "
+                "bursts when trigger is immediate."
+            ),
+        )
 
 
 OutputChannel = Keysight33xxxOutputChannel

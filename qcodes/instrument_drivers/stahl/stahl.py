@@ -107,8 +107,10 @@ class StahlChannel(InstrumentChannel):
             [0, 1]
         )
 
-        send_string = f"{self.parent.identifier} CH{self._channel_string} " \
+        send_string = (
+            f"{self.parent.identifier} CH{self._channel_string} "
             f"{voltage_normalized:.5f}"
+        )
         response = self.ask(send_string)
 
         if response != self.acknowledge_reply:

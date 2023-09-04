@@ -350,13 +350,12 @@ class TektronixTPS2012(VisaInstrument):
         self.add_submodule("channels", channels.to_channel_tuple())
 
         # Necessary settings for parsing the binary curve data
-        self.visa_handle.encoding = 'latin-1'
-        log.info('Set VISA encoding to latin-1')
-        self.write('DATa:ENCdg RPBinary')
-        log.info('Set TPS2012 data encoding to RPBinary' +
-                 ' (Positive Integer Binary)')
-        self.write('DATa:WIDTh 2')
-        log.info('Set TPS2012 data width to 2')
+        self.visa_handle.encoding = "latin-1"
+        log.info("Set VISA encoding to latin-1")
+        self.write("DATa:ENCdg RPBinary")
+        log.info("Set TPS2012 data encoding to RPBinary (Positive Integer Binary)")
+        self.write("DATa:WIDTh 2")
+        log.info("Set TPS2012 data width to 2")
         # Note: using data width 2 has been tested to not add
         # significantly to transfer times. The maximal length
         # of an array in one transfer is 2500 points.

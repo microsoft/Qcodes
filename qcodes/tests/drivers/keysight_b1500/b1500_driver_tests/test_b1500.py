@@ -274,7 +274,9 @@ def test_error_message_is_called_after_setting_a_parameter(b1500) -> None:
     mock_ask.return_value = '+200, "Output channel not enabled"'
     with pytest.raises(Exception) as e_info:
         b1500.enable_smu_filters(True)
-    mock_ask.assert_called_once_with('ERRX?')
-    error_string = 'While setting this parameter received error: +200, ' \
-                  '"Output channel not enabled"'
+    mock_ask.assert_called_once_with("ERRX?")
+    error_string = (
+        "While setting this parameter received error: +200, "
+        '"Output channel not enabled"'
+    )
     assert e_info.value.args[0] == error_string

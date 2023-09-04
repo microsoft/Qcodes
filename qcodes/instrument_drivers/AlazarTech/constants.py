@@ -114,9 +114,7 @@ ERROR_CODES: dict[ReturnCode, str] = {
         ),
         587: "ApiWaitAbandoned",
         588: "ApiWaitFailed",
-        589: (
-            "ApiTransferComplete: This buffer is last in the current " "acquisition."
-        ),
+        589: ("ApiTransferComplete: This buffer is last in the current acquisition."),
         590: "ApiPllNotLocked: hardware error, contact AlazarTech",
         591: (
             "ApiNotSupportedInDualChannelMode:Requested number of samples "

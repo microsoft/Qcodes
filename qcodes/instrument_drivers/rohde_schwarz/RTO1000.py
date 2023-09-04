@@ -60,7 +60,7 @@ class ScopeTrace(ArrayParameter):
 
         # now get setpoints
 
-        hdr = self.root_instrument.ask(f"CHANnel{self.channum}:" "DATA:HEADER?")
+        hdr = self.root_instrument.ask(f"CHANnel{self.channum}:DATA:HEADER?")
         hdr_vals = list(map(float, hdr.split(",")))
         t_start = hdr_vals[0]
         t_stop = hdr_vals[1]

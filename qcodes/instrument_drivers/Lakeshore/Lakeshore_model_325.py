@@ -151,7 +151,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
         """
         if cls.temperature_key not in data_dict:
             raise ValueError(
-                f"At least {cls.temperature_key} needed in the " f"data dictionary"
+                f"At least {cls.temperature_key} needed in the data dictionary"
             )
 
         sensor_units = [i for i in data_dict.keys() if i != cls.temperature_key]

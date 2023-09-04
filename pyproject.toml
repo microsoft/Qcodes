@@ -252,13 +252,17 @@ filterwarnings = [
 # PT025 invalid use of pytest fixtures in other fixtures
 # RUF200 validate pyproject.toml
 # I isort
-select = ["E", "F", "PT025", "UP", "RUF200", "I"]
+# ISC flake8-implicit-str-concat
+select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC"]
 # darker will fix this as code is
 # reformatted when it is changed.
-ignore = ["E501"]
+# We have a lot of use of f strings in log messages
+# so disable that lint for now
+ignore = ["E501", "G004"]
 
 extend-include = ["*.ipynb"]
 
+extend-exclude = ["typings"]
 
 [tool.ruff.per-file-ignores]
 # deprecated modules left

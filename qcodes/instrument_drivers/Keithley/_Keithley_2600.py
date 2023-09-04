@@ -132,9 +132,9 @@ class TimeTrace(ParameterWithSetpoints):
         if nplc * plc > dt:
             warnings.warn(
                 f"Integration time of {nplc*plc*1000:.1f} "
-                + f"ms is longer than {dt*1000:.1f} ms set "
-                + "as measurement interval. Consider lowering "
-                + "NPLC or increasing interval.",
+                f"ms is longer than {dt*1000:.1f} ms set "
+                "as measurement interval. Consider lowering "
+                "NPLC or increasing interval.",
                 UserWarning,
                 2,
             )
@@ -425,7 +425,7 @@ class Keithley2600Channel(InstrumentChannel):
             set_cmd=f"{channel}.measure.nplc={{}}",
             get_cmd=f"{channel}.measure.nplc",
             get_parser=float,
-            docstring="Number of power line cycles, used " "to perform measurements",
+            docstring="Number of power line cycles, used to perform measurements",
             vals=vals.Numbers(0.001, 25),
         )
         # volt range
@@ -615,7 +615,7 @@ class Keithley2600Channel(InstrumentChannel):
         """
         self.write(f"{self.channel}.reset()")
         # remember to update all the metadata
-        log.debug(f"Reset channel {self.channel}." + "Updating settings...")
+        log.debug(f"Reset channel {self.channel}. Updating settings...")
         self.snapshot(update=True)
 
     def doFastSweep(self, start: float, stop: float, steps: int, mode: str) -> DataSet:

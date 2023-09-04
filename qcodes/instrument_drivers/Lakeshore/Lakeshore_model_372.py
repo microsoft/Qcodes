@@ -52,14 +52,14 @@ class LakeshoreModel372Output(BaseOutput):
         self.add_parameter(
             "polarity",
             label="Output polarity",
-            docstring="Specifies output polarity (not " "applicable to warm-up heater)",
+            docstring="Specifies output polarity (not applicable to warm-up heater)",
             val_mapping=self.POLARITIES,
             parameter_class=GroupParameter,
         )
         self.add_parameter(
             "use_filter",
             label="Use filter for readings",
-            docstring="Specifies controlling on unfiltered or " "filtered readings",
+            docstring="Specifies controlling on unfiltered or filtered readings",
             val_mapping={True: 1, False: 0},
             parameter_class=GroupParameter,
         )
@@ -67,7 +67,7 @@ class LakeshoreModel372Output(BaseOutput):
             "delay",
             label="Delay",
             unit="s",
-            docstring="Delay in seconds for setpoint change " "during Autoscanning",
+            docstring="Delay in seconds for setpoint change during Autoscanning",
             vals=vals.Ints(0, 255),
             get_parser=int,
             parameter_class=GroupParameter,
@@ -129,7 +129,7 @@ class LakeshoreModel372Channel(BaseSensorChannel):
         self.add_parameter(
             "dwell",
             label="Dwell",
-            docstring="Specifies a value for the autoscanning " "dwell time.",
+            docstring="Specifies a value for the autoscanning dwell time.",
             unit="s",
             get_parser=int,
             vals=vals.Numbers(1, 200),
@@ -138,7 +138,7 @@ class LakeshoreModel372Channel(BaseSensorChannel):
         self.add_parameter(
             "pause",
             label="Change pause time",
-            docstring="Specifies a value for " "the change pause time",
+            docstring="Specifies a value for the change pause time",
             unit="s",
             get_parser=int,
             vals=vals.Numbers(3, 200),

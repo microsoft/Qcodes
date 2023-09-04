@@ -34,7 +34,7 @@ class ElapsedTimeParameter(Parameter):
 
         for hck in hardcoded_kwargs:
             if hck in kwargs:
-                raise ValueError(f'Can not set "{hck}" for an ' "ElapsedTimeParameter.")
+                raise ValueError(f'Can not set "{hck}" for an ElapsedTimeParameter.')
 
         super().__init__(name=name, label=label, unit="s", set_cmd=False, **kwargs)
 

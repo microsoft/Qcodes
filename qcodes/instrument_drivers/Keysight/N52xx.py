@@ -84,9 +84,7 @@ class FormattedSweep(ParameterWithSetpoints):
         Overwrite setpoint parameter to ask the PNA what type of sweep
         """
         if self.instrument is None:
-            raise RuntimeError(
-                "Cannot return setpoints if not attached " "to instrument"
-            )
+            raise RuntimeError("Cannot return setpoints if not attached to instrument")
         root_instrument: "PNABase" = self.root_instrument  # type: ignore[assignment]
         sweep_type = root_instrument.sweep_type()
         if sweep_type == "LIN":
@@ -312,12 +310,16 @@ class KeysightPNATrace(InstrumentChannel):
             msg = "User abort detected. "
             source = root_instr.trigger_source()
             if source == "MAN":
-                msg += "The trigger source is manual. Are you sure this is " \
-                       "correct? Please set the correct source with the " \
-                       "'trigger_source' parameter"
+                msg += (
+                    "The trigger source is manual. Are you sure this is "
+                    "correct? Please set the correct source with the "
+                    "'trigger_source' parameter"
+                )
             elif source == "EXT":
-                msg += "The trigger source is external. Is the trigger " \
-                       "source functional?"
+                msg += (
+                    "The trigger source is external. Is the trigger "
+                    "source functional?"
+                )
             self.log.warning(msg)
             raise
 

@@ -1119,8 +1119,10 @@ class KeysightB1500Correction(InstrumentChannel):
         self.enable(corr=corr)
 
         is_enabled = self.is_enabled(corr=corr)
-        response_out = f'Correction status {correction_status.name} and ' \
-                       f'Enable {is_enabled.name}'
+        response_out = (
+            f"Correction status {correction_status.name} and "
+            f"Enable {is_enabled.name}"
+        )
         return response_out
 
 

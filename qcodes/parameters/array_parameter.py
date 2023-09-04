@@ -136,7 +136,7 @@ class ArrayParameter(ParameterBase):
 
         if self.settable:
             # TODO (alexcjohnson): can we support, ala Combine?
-            raise AttributeError("ArrayParameters do not support set " "at this time.")
+            raise AttributeError("ArrayParameters do not support set at this time.")
 
         self._meta_attrs.extend(
             ["setpoint_names", "setpoint_labels", "setpoint_units", "label", "unit"]

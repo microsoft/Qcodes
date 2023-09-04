@@ -254,7 +254,7 @@ class HP8753D(VisaInstrument):
         with self.timeout.set_to(new_timeout):
             log.debug(
                 f"Making {N} blocking sweeps."
-                + f" Setting VISA timeout to {new_timeout} s."
+                f" Setting VISA timeout to {new_timeout} s."
             )
 
             self.ask(f"OPC?;NUMG{N}")

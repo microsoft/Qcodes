@@ -464,7 +464,7 @@ class GalilDMC4133Controller(GalilMotionController):
             get_cmd=None,
             set_cmd="PF 10.{}",
             vals=Ints(0, 4),
-            docstring="sets number of decimals in the format " "of the position",
+            docstring="sets number of decimals in the format of the position",
         )
 
         self.add_parameter(
@@ -472,7 +472,7 @@ class GalilDMC4133Controller(GalilMotionController):
             get_cmd=self._get_absolute_position,
             set_cmd=None,
             unit="quadrature counts",
-            docstring="gets absolute position of the motors " "from the set origin",
+            docstring="gets absolute position of the motors from the set origin",
         )
 
         self.add_parameter(

@@ -89,7 +89,7 @@ def parse_init_function_from_str(
     init_funcs = find_init_func(classes[0])
     if len(init_funcs) > 1:
         LOGGER.warning(
-            f"Found more than one init function for {classname}: " f"Found {init_funcs}"
+            f"Found more than one init function for {classname}: Found {init_funcs}"
         )
         return None
     if len(init_funcs) == 0:

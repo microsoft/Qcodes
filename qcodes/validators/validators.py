@@ -197,7 +197,7 @@ class Strings(Validator[str]):
             self._max_length = max_length
         else:
             raise TypeError(
-                "max_length must be a positive integer " "no smaller than min_length"
+                "max_length must be a positive integer no smaller than min_length"
             )
         self._valid_values = ("." * min_length,)
 
@@ -411,7 +411,7 @@ class PermissiveInts(Ints):
                 castvalue = intrepr
             else:
                 raise TypeError(
-                    f"{repr(value)} is not an int or close to an int" f"; {context}"
+                    f"{repr(value)} is not an int or close to an int; {context}"
                 )
         else:
             castvalue = value
@@ -604,7 +604,7 @@ class PermissiveMultiples(Validator[numbertypes]):
                 raise ValueError(f"{value} is not a multiple" + f" of {self._divisor}.")
 
     def __repr__(self) -> str:
-        repr_str = "<PermissiveMultiples, Multiples of " "{} to within {}>".format(
+        repr_str = "<PermissiveMultiples, Multiples of {} to within {}>".format(
             self._divisor, self._precision
         )
         return repr_str
@@ -896,7 +896,7 @@ class Arrays(Validator[np.ndarray]):
 
         if not isinstance(shape, abc.Sequence) and shape is not None:
             raise ValueError(
-                f"Shape must be a sequence (List, Tuple ...) " f"got a {type(shape)}"
+                f"Shape must be a sequence (List, Tuple ...) got a {type(shape)}"
             )
         self._shape: shape_tuple_type = None
         if shape is not None:

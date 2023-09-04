@@ -247,13 +247,13 @@ class RigolDG4000(VisaInstrument):
             # to implement in here
             self.add_function(
                 ch + "custom",
-                call_cmd=source + "APPL:CUST " "{:.6e},{:.6e},{:.6e},{:.6e}",
+                call_cmd=source + "APPL:CUST {:.6e},{:.6e},{:.6e},{:.6e}",
                 args=[Numbers(1e-6, arb_freq), Numbers(), Numbers(), Numbers(0, 360)],
             )
 
             self.add_function(
                 ch + "harmonic",
-                call_cmd=source + "APPL:HARM " "{:.6e},{:.6e},{:.6e},{:.6e}",
+                call_cmd=source + "APPL:HARM {:.6e},{:.6e},{:.6e},{:.6e}",
                 args=[
                     Numbers(1e-6, harmonic_freq),
                     Numbers(),
@@ -270,25 +270,25 @@ class RigolDG4000(VisaInstrument):
 
             self.add_function(
                 ch + "pulse",
-                call_cmd=source + "APPL:PULS " "{:.6e},{:.6e},{:.6e},{:.6e}",
+                call_cmd=source + "APPL:PULS {:.6e},{:.6e},{:.6e},{:.6e}",
                 args=[Numbers(1e-6, pulse_freq), Numbers(), Numbers(), Numbers(0)],
             )
 
             self.add_function(
                 ch + "ramp",
-                call_cmd=source + "APPL:RAMP " "{:.6e},{:.6e},{:.6e},{:.6e}",
+                call_cmd=source + "APPL:RAMP {:.6e},{:.6e},{:.6e},{:.6e}",
                 args=[Numbers(1e-6, ramp_freq), Numbers(), Numbers(), Numbers(0, 360)],
             )
 
             self.add_function(
                 ch + "sinusoid",
-                call_cmd=source + "APPL:SIN " "{:.6e},{:.6e},{:.6e},{:.6e}",
+                call_cmd=source + "APPL:SIN {:.6e},{:.6e},{:.6e},{:.6e}",
                 args=[Numbers(1e-6, sine_freq), Numbers(), Numbers(), Numbers(0, 360)],
             )
 
             self.add_function(
                 ch + "square",
-                call_cmd=source + "APPL:SQU " "{:.6e},{:.6e},{:.6e},{:.6e}",
+                call_cmd=source + "APPL:SQU {:.6e},{:.6e},{:.6e},{:.6e}",
                 args=[
                     Numbers(1e-6, square_freq),
                     Numbers(),
@@ -299,7 +299,7 @@ class RigolDG4000(VisaInstrument):
 
             self.add_function(
                 ch + "user",
-                call_cmd=source + "APPL:USER " "{:.6e},{:.6e},{:.6e},{:.6e}",
+                call_cmd=source + "APPL:USER {:.6e},{:.6e},{:.6e},{:.6e}",
                 args=[Numbers(1e-6, arb_freq), Numbers(), Numbers(), Numbers(0, 360)],
             )
 

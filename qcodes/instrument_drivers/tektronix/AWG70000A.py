@@ -794,11 +794,16 @@ class AWG70000A(VisaInstrument):
         dsc = ET.SubElement(hdr, 'DataSetsCollection')
         dsc.set("xmlns", "http://www.tektronix.com")
         dsc.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-        dsc.set("xsi:schemaLocation", (r"http://www.tektronix.com file:///" +
-                                       r"C:\Program%20Files\Tektronix\AWG70000" +
-                                       r"\AWG\Schemas\awgDataSets.xsd"))
-        datasets = ET.SubElement(dsc, 'DataSets')
-        datasets.set('version', '1')
+        dsc.set(
+            "xsi:schemaLocation",
+            (
+                r"http://www.tektronix.com file:///"
+                r"C:\Program%20Files\Tektronix\AWG70000"
+                r"\AWG\Schemas\awgDataSets.xsd"
+            ),
+        )
+        datasets = ET.SubElement(dsc, "DataSets")
+        datasets.set("version", "1")
         datasets.set("xmlns", "http://www.tektronix.com")
 
         # Description of the data
@@ -892,12 +897,12 @@ class AWG70000A(VisaInstrument):
             binary_marker = struct.pack(fmt, *markers)
 
         if wfm.max() > channel_max or wfm.min() < channel_min:
-            log.warning('Waveform exceeds specified channel range.'
-                        ' The resulting waveform will be clipped. '
-                        'Waveform min.: {} (V), waveform max.: {} (V),'
-                        'Channel min.: {} (V), channel max.: {} (V)'
-                        ''.format(wfm.min(), wfm.max(), channel_min,
-                                  channel_max))
+            log.warning(
+                f"Waveform exceeds specified channel range."
+                f" The resulting waveform will be clipped. "
+                f"Waveform min.: {wfm.min()} (V), waveform max.: {wfm.max()} (V),"
+                f"Channel min.: {channel_min} (V), channel max.: {channel_max} (V)"
+            )
 
         # the data must be such that channel_max becomes 1 and
         # channel_min becomes -1
@@ -1327,11 +1332,16 @@ class AWG70000A(VisaInstrument):
         dsc = ET.SubElement(datafile, 'DataSetsCollection')
         dsc.set("xmlns", "http://www.tektronix.com")
         dsc.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-        dsc.set("xsi:schemaLocation", (r"http://www.tektronix.com file:///" +
-                                       r"C:\Program%20Files\Tektronix\AWG70000" +
-                                       r"\AWG\Schemas\awgSeqDataSets.xsd"))
-        datasets = ET.SubElement(dsc, 'DataSets')
-        datasets.set('version', '1')
+        dsc.set(
+            "xsi:schemaLocation",
+            (
+                r"http://www.tektronix.com file:///"
+                r"C:\Program%20Files\Tektronix\AWG70000"
+                r"\AWG\Schemas\awgSeqDataSets.xsd"
+            ),
+        )
+        datasets = ET.SubElement(dsc, "DataSets")
+        datasets.set("version", "1")
         datasets.set("xmlns", "http://www.tektronix.com")
 
         # Description of the data

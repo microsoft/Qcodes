@@ -560,7 +560,7 @@ class ParameterBase(MetadatableWithName):
         @wraps(get_function)
         def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             if not self.gettable:
-                raise TypeError("Trying to get a parameter" " that is not gettable.")
+                raise TypeError("Trying to get a parameter that is not gettable.")
             if self.abstract:
                 raise NotImplementedError(
                     f"Trying to get an abstract parameter: {self.full_name}"
@@ -589,9 +589,7 @@ class ParameterBase(MetadatableWithName):
         def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
             try:
                 if not self.settable:
-                    raise TypeError(
-                        "Trying to set a parameter" " that is not settable."
-                    )
+                    raise TypeError("Trying to set a parameter that is not settable.")
                 if self.abstract:
                     raise NotImplementedError(
                         f"Trying to set an abstract parameter: {self.full_name}"

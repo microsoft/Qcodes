@@ -293,9 +293,7 @@ class RigolDG1062Channel(InstrumentChannel):
         if param in params_dict:
             params_dict[param] = value
         else:
-            log.warning(
-                f"Warning, unable to set '{param}' for the current " f"waveform"
-            )
+            log.warning(f"Warning, unable to set '{param}' for the current waveform")
             return
 
         return self._set_waveform_params(**params_dict)
@@ -318,7 +316,7 @@ class RigolDG1062Channel(InstrumentChannel):
 
         if not set(param_names).issubset(params_dict.keys()):
             raise ValueError(
-                f"Waveform {waveform} needs at least parameters " f"{param_names}"
+                f"Waveform {waveform} needs at least parameters {param_names}"
             )
 
         string = f":SOUR{self.channel}:APPL:{waveform} "

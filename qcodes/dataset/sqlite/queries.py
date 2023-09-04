@@ -1668,7 +1668,7 @@ def set_run_timestamp(
             if timestamp is None:
                 timestamp = time.time()
             c.execute(cmd, (timestamp, run_id))
-            log.info(f"Set the run_timestamp of run_id {run_id} to " f"{timestamp}")
+            log.info(f"Set the run_timestamp of run_id {run_id} to {timestamp}")
 
 
 def add_parameter(
@@ -1772,7 +1772,7 @@ def _validate_table_name(table_name: str) -> bool:
     for i in table_name:
         if unicodedata.category(i) not in _unicode_categories:
             valid = False
-            raise RuntimeError("Invalid table name " f"{table_name} starting at {i}")
+            raise RuntimeError(f"Invalid table name {table_name} starting at {i}")
     return valid
 
 

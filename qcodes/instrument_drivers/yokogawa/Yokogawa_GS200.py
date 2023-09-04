@@ -215,14 +215,14 @@ class YokogawaGS200Program(InstrumentChannel):
         self.add_parameter(
             "save",
             set_cmd=":PROG:SAVE '{}'",
-            docstring="save the program to the system memory " "(.csv file)",
+            docstring="save the program to the system memory (.csv file)",
         )
 
         self.add_parameter(
             "load",
             get_cmd=":PROG:LOAD?",
             set_cmd=":PROG:LOAD '{}'",
-            docstring="load the program (.csv file) from the " "system memory",
+            docstring="load the program (.csv file) from the system memory",
         )
 
         self.add_parameter(

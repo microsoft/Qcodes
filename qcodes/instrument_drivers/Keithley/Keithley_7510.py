@@ -148,7 +148,7 @@ class Keithley7510Buffer(InstrumentChannel):
             "first_index",
             get_cmd=f":TRACe:ACTual:STARt? '{self.short_name}'",
             get_parser=int,
-            docstring="Get the starting index of readings in the reading " "buffer.",
+            docstring="Get the starting index of readings in the reading buffer.",
         )
 
         self.add_parameter(
@@ -564,12 +564,12 @@ class Keithley7510Sense(InstrumentChannel):
         )
 
     def _get_user_delay(self) -> str:
-        get_cmd = f":SENSe:{self._proper_function}:DELay:USER" f"{self.user_number()}?"
+        get_cmd = f":SENSe:{self._proper_function}:DELay:USER{self.user_number()}?"
         return self.ask(get_cmd)
 
     def _set_user_delay(self, value: float) -> None:
         set_cmd = (
-            f":SENSe:{self._proper_function}:DELay:USER" f"{self.user_number()} {value}"
+            f":SENSe:{self._proper_function}:DELay:USER{self.user_number()} {value}"
         )
         self.write(set_cmd)
 

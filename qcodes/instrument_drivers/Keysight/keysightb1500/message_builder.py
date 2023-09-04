@@ -1276,18 +1276,21 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def corrdt(self,
-               chnum: Union[constants.ChNr, int],
-               freq: float,
-               open_r: float,
-               open_i: float,
-               short_r: float,
-               short_i: float,
-               load_r: float,
-               load_i: float
-               ) -> 'MessageBuilder':
-        cmd = f'CORRDT {chnum},{freq},{open_r},{open_i},{short_r},' \
-              f'{short_i},{load_r},{load_i}'
+    def corrdt(
+        self,
+        chnum: Union[constants.ChNr, int],
+        freq: float,
+        open_r: float,
+        open_i: float,
+        short_r: float,
+        short_i: float,
+        load_r: float,
+        load_i: float,
+    ) -> "MessageBuilder":
+        cmd = (
+            f"CORRDT {chnum},{freq},{open_r},{open_i},{short_r},"
+            f"{short_i},{load_r},{load_i}"
+        )
 
         self._msg.append(cmd)
         return self
@@ -1321,15 +1324,15 @@ class MessageBuilder:
         return self
 
     @final_command
-    def corrser_query(self,
-                      chnum: Union[constants.ChNr, int],
-                      use_immediately: bool,
-                      delay: float,
-                      interval: float,
-                      count: int
-                      ) -> 'MessageBuilder':
-        cmd = f'CORRSER? {chnum},{int(use_immediately)},{delay},{interval},' \
-              f'{count}'
+    def corrser_query(
+        self,
+        chnum: Union[constants.ChNr, int],
+        use_immediately: bool,
+        delay: float,
+        interval: float,
+        count: int,
+    ) -> "MessageBuilder":
+        cmd = f"CORRSER? {chnum},{int(use_immediately)},{delay},{interval},{count}"
 
         self._msg.append(cmd)
         return self
@@ -2744,12 +2747,13 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def qsl(self,
-            enable_data_output: bool,
-            enable_leakage_current_compensation: bool
-            ) -> 'MessageBuilder':
-        cmd = f'QSL {int(enable_data_output)},' \
-              f'{int(enable_leakage_current_compensation)}'
+    def qsl(
+        self, enable_data_output: bool, enable_leakage_current_compensation: bool
+    ) -> "MessageBuilder":
+        cmd = (
+            f"QSL {int(enable_data_output)},"
+            f"{int(enable_leakage_current_compensation)}"
+        )
 
         self._msg.append(cmd)
         return self
@@ -3682,7 +3686,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WM {_abort}'
@@ -3704,7 +3708,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WMACV {_abort}'
@@ -3753,7 +3757,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WMDCV {_abort}'
@@ -3775,7 +3779,7 @@ class MessageBuilder:
             _abort = abort
         else:
             raise TypeError(
-                "`abort` argument has to be of type `bool` or " "`constants.Abort`."
+                "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
         cmd = f'WMFC {_abort}'

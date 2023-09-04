@@ -494,11 +494,11 @@ def test_set_run_timestamp_explicit(dataset) -> None:
     assert dataset.completed_timestamp_raw is None
 
     with pytest.raises(
-        RuntimeError, match="Rolling back due to unhandled " "exception"
+        RuntimeError, match="Rolling back due to unhandled exception"
     ) as ei:
         mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
-    assert error_caused_by(ei, "Can not set run_timestamp; it has already " "been set")
+    assert error_caused_by(ei, "Can not set run_timestamp; it has already been set")
 
 
 def test_mark_run_complete(dataset) -> None:

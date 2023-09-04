@@ -850,14 +850,11 @@ class QDac(VisaInstrument):
                 self.channels[ii].slope.cache(), self.channels[ii].slope.unit
             )
             if self.channels[ii].sync.cache() > 0:
-                line += '    Sync Out: {}, Delay: {} ({}), '\
-                        'Duration: {} ({}).\n'.format(
-                            self.channels[ii].sync.cache(),
-                            self.channels[ii].sync_delay.cache(),
-                            self.channels[ii].sync_delay.unit,
-                            self.channels[ii].sync_duration.cache(),
-                            self.channels[ii].sync_duration.unit,
-                        )
+                line += (
+                    f"    Sync Out: {self.channels[ii].sync.cache()}, "
+                    "Delay: {self.channels[ii].sync_delay.cache()} ({self.channels[ii].sync_delay.unit}), "
+                    "Duration: {self.channels[ii].sync_duration.cache()} ({self.channels[ii].sync_duration.unit}).\n"
+                )
 
             print(line)
 
@@ -1006,8 +1003,10 @@ class QDac(VisaInstrument):
         step_length_ms = int(step_length*1000)
 
         if step_length < 0.001:
-            LOG.warning('step_length too short: {:.3f} s. \nstep_length set to'
-                        .format(step_length_ms) + ' minimum (1ms).')
+            LOG.warning(
+                f"step_length too short: {step_length_ms:.3f} s. \n"
+                "step_length set to minimum (1ms)."
+            )
             step_length_ms = 1
 
         if any([ch in fast_chans for ch in slow_chans]):

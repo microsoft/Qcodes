@@ -150,7 +150,7 @@ class DacReader:
         val = int(val)
         if val < 0 or val >= 2**32:
             raise HarvardDecadacException(
-                f"Writing invalid value " f"({val}) to address {addr}."
+                f"Writing invalid value ({val}) to address {addr}."
             )
 
         # Choose a poke command depending on whether we are querying a

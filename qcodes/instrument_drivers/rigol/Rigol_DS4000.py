@@ -110,7 +110,7 @@ class ScopeArray(ArrayParameter):
                     # Wait some time to have the buffer re-filled
                     time.sleep(0.3)
                 log.info(
-                    "chucks read: %d, last chuck points: " "%g, total read size: %g",
+                    "chucks read: %d, last chuck points: %g, total read size: %g",
                     i,
                     len(data_chuck),
                     len(data_bin),

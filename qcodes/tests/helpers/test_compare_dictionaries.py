@@ -68,10 +68,10 @@ def test_val_diff_seq() -> None:
     match, err = compare_dictionaries(a, b)
 
     assert not match
-    assert 'Value of "d1[a]" ("[1, {2: 3}, 4]", ' \
-           'type"<class \'list\'>") not same' in err
-    assert '"d2[a]" ("[1, {5: 6}, 4]", type"<class \'list\'>")' in \
-           err
+    assert (
+        'Value of "d1[a]" ("[1, {2: 3}, 4]", type"<class \'list\'>") not same'
+    ) in err
+    assert '"d2[a]" ("[1, {5: 6}, 4]", type"<class \'list\'>")' in err
 
 
 def test_nested_key_diff() -> None:

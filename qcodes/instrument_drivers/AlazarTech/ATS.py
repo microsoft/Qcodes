@@ -565,14 +565,21 @@ class AlazarTech_ATS(Instrument):
             records_per_sec = (records_per_buffer *
                                buffers_completed / transfer_time_sec)
         if self.log.isEnabledFor(logging.DEBUG):
-            self.log.debug("Captured %d buffers (%f buffers per sec)" %
-                           (buffers_completed, buffers_per_sec))
-            self.log.debug("Captured %d records (%f records per sec)" %
-                           (records_per_buffer * buffers_completed,
-                            records_per_sec))
-            self.log.debug("Transferred {:g} bytes ({:g} "
-                           "bytes per sec)".format(bytes_transferred,
-                                                   bytes_per_sec))
+            self.log.debug(
+                "Captured %d buffers (%f buffers per sec)",
+                buffers_completed,
+                buffers_per_sec,
+            )
+            self.log.debug(
+                "Captured %d records (%f records per sec)",
+                records_per_buffer * buffers_completed,
+                records_per_sec,
+            )
+            self.log.debug(
+                "Transferred %d bytes (%f bytes per sec)",
+                bytes_transferred,
+                bytes_per_sec,
+            )
             self.log.debug(f"Pre setup took {presetup_time}")
             self.log.debug(f"Pre capture setup took {setup_time}")
             self.log.debug(f"Capture took {capture_time}")
