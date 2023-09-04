@@ -129,7 +129,7 @@ def test_visa_gc_closes_connection(caplog) -> None:
         use_magnet()
         gc.collect()
     # at this stage the instrument created in use_magnet has gone out of scope
-    # and we have triggered an explicit gc so the finalize method has been triggered/
+    # and we have triggered an explicit gc so the weakref.finalize function has been triggered
     # We test this
     # and the instrument should no longer be in the instrument registry
     assert list(Instrument._all_instruments.keys()) == []
