@@ -19,6 +19,12 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     strategy:
+      # don't stop other jobs if one fails
+      # this is often due to network issues
+      # and or flaky tests
+      # and the time lost in such cases
+      # is bigger than the gain from canceling the job
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.9", "3.10", "3.11"]
