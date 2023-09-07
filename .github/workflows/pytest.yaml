@@ -59,7 +59,7 @@ jobs:
         pip install .[test] -c requirements.txt
     - uses: jakebailey/pyright-action@v1.7.0
       with:
-        version: 1.1.318
+        version: 1.1.326
     - name: Run Mypy
       run: mypy -p qcodes
     - name: Run parallel tests

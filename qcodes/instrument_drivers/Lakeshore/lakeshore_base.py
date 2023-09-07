@@ -287,6 +287,7 @@ class BaseOutput(InstrumentChannel):
                 `wait_equilibration_time` parameter is used
         """
         wait_cycle_time = wait_cycle_time or self.wait_cycle_time.get_latest()
+        assert wait_cycle_time is not None
         tolerance = wait_tolerance or self.wait_tolerance.get_latest()
         equilibration_time = (wait_equilibration_time or
                                    self.wait_equilibration_time.get_latest())
