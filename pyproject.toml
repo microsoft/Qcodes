@@ -234,7 +234,8 @@ filterwarnings = [
 # RUF200 validate pyproject.toml
 # I isort
 # ISC flake8-implicit-str-concat
-select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC"]
+# TID253 banned-module-level-imports
+select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC", "TID253"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # We have a lot of use of f strings in log messages
@@ -282,6 +283,17 @@ extend-exclude = ["typings"]
 
 # This triggeres in notebooks even with a md cell at the top
 "*.ipynb" = ["E402"]
+
+# these imports are fine at module level
+# in tests and examples
+"docs/*" = ["TID253"]
+"qcodes/tests/*" = ["TID253"]
+
+[tool.ruff.flake8-tidy-imports]
+# There modules are relatively slow to import
+# and only required in specific places so
+# don't import them at module level
+banned-module-level-imports = ["xarray", "pandas", "opencensus"]
 
 [tool.setuptools]
 zip-safe = false
