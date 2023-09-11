@@ -140,7 +140,6 @@ class VisaInstrument(Instrument):
         self.set_terminator(terminator)
         self.timeout.set(timeout)
 
-
     def _connect_and_handle_error(
         self, address: str, visalib: str | None
     ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
