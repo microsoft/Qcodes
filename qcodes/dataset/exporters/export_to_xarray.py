@@ -31,15 +31,26 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
     for name, subdict in datadict.items():
         index = _generate_pandas_index(subdict)
-        if index is not None and len(index.unique()) != len(index):
-            for _name in subdict:
-                data_xrdarray_dict[_name] = _data_to_dataframe(
-                    subdict, index).reset_index().to_xarray()[_name]
-        else:
+
+        if index is None:
             xrdarray: xr.DataArray = (
-                _data_to_dataframe(subdict, index).to_xarray().get(name, xr.DataArray())
+                _data_to_dataframe(subdict, index=index)
+                .to_xarray()
+                .get(name, xr.DataArray())
             )
             data_xrdarray_dict[name] = xrdarray
+        else:
+            index_unique = len(index.unique()) == len(index)
+
+            df = _data_to_dataframe(subdict, index)
+
+            if not index_unique:
+                xrdata_temp = df.reset_index().to_xarray()
+                for _name in subdict:
+                    data_xrdarray_dict[_name] = xrdata_temp[_name]
+            else:
+                xrdarray: xr.DataArray = df.to_xarray().get(name, xr.DataArray())
+                data_xrdarray_dict[name] = xrdarray
 
     return data_xrdarray_dict
 

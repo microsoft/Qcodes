@@ -468,7 +468,7 @@ def test_export_to_xarray_non_unique_dependent_parameter(
     mock_dataset_nonunique,
 ) -> None:
     """When x (the dependent parameter) contains non unique values it cannot be used
-    as coordinates in xarray so check that we fall back to using an index"""
+    as coordinates in xarray so check that we fall back to using an counter as index"""
     ds = mock_dataset_nonunique.to_xarray_dataset()
     assert len(ds) == 3
     assert "index" in ds.coords
