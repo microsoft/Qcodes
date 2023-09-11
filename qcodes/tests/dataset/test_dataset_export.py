@@ -626,6 +626,19 @@ def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None
     assert xr_ds.identical(xr_ds_reimported)
 
 
+def test_export_non_grid_dataset_xarray(
+    tmp_path_factory, mock_dataset_non_grid: DataSet
+) -> None:
+    xr_ds = mock_dataset_non_grid.to_xarray_dataset()
+    assert len(xr_ds.coords) == 3  # dims + 1 multi index
+    assert "x" in xr_ds.coords
+    assert len(xr_ds.coords["x"].attrs) == 8
+    assert "y" in xr_ds.coords
+    assert len(xr_ds.coords["y"].attrs) == 8
+    assert "multi_index" in xr_ds.coords
+    assert len(xr_ds.coords["multi_index"].attrs) == 0
+
+
 def test_export_non_grid_dataset(
     tmp_path_factory, mock_dataset_non_grid: DataSet
 ) -> None:

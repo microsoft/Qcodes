@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Hashable, Mapping
+from math import prod
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -17,9 +18,42 @@ from .export_to_pandas import (
 )
 
 if TYPE_CHECKING:
+    import pandas as pd
     import xarray as xr
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
+
+
+def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
+    # heavily inspired by xarray.core.dataset.from_dataframe
+    import pandas as pd
+    from xarray.core.indexes import PandasIndex, remove_unused_levels_categories
+    from xarray.core.variable import Variable, calculate_dimensions
+
+    idx = remove_unused_levels_categories(idx)
+
+    if isinstance(idx, pd.MultiIndex) and not idx.is_unique:
+        raise ValueError(
+            "cannot convert a DataFrame with a non-unique MultiIndex into xarray"
+        )
+    index_vars: dict[Hashable, Variable] = {}
+
+    if isinstance(idx, pd.MultiIndex):
+        dims = tuple(
+            name if name is not None else "level_%i" % n
+            for n, name in enumerate(idx.names)
+        )
+        for dim, lev in zip(dims, idx.levels):
+            xr_idx = PandasIndex(lev, dim)
+            index_vars.update(xr_idx.create_variables())
+    else:
+        index_name = idx.name if idx.name is not None else "index"
+        dims = (index_name,)
+        xr_idx = PandasIndex(idx, index_name)
+        index_vars.update(xr_idx.create_variables())
+
+    expanded_shape = calculate_dimensions(index_vars)
+    return expanded_shape
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
@@ -45,11 +79,22 @@ def _load_to_xarray_dataarray_dict_no_metadata(
             df = _data_to_dataframe(subdict, index)
 
             if not index_unique:
+                # index is not unique so we fallback to using a counter as index
+                # and store the index as a variable
                 xrdata_temp = df.reset_index().to_xarray()
                 for _name in subdict:
                     data_xrdarray_dict[_name] = xrdata_temp[_name]
             else:
-                xrdarray: xr.DataArray = df.to_xarray().get(name, xr.DataArray())
+                calc_index = _calculate_index_shape(index)
+                index_prod = prod(calc_index.values())
+                # if the product of the len of individual index dims == len(total_index)
+                # we are on a grid
+                on_grid = index_prod == len(index)
+                if not on_grid:
+                    xrdarray = xr.DataArray(df[name], [("multi_index", df.index)])
+                else:
+                    xrdarray: xr.DataArray = df.to_xarray().get(name, xr.DataArray())
+
                 data_xrdarray_dict[name] = xrdarray
 
     return data_xrdarray_dict
@@ -126,7 +171,7 @@ def _add_param_spec_to_xarray_coords(
     dataset: DataSetProtocol, xrdataset: xr.Dataset | xr.DataArray
 ) -> None:
     for coord in xrdataset.coords:
-        if coord != "index":
+        if coord not in ("index", "multi_index"):
             paramspec_dict = _paramspec_dict_with_extras(dataset, str(coord))
             xrdataset.coords[str(coord)].attrs.update(paramspec_dict.items())
 
