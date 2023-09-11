@@ -111,17 +111,25 @@ class VisaInstrument(Instrument):
                         f"file {pyvisa_sim_file} from module: {module}"
                     )
                 visalib = f"{str(sim_visalib_path)}@sim"
-                visa_handle, visabackend = self._connect_and_handle_error(
-                    address, visalib
-                )
+                (
+                    visa_handle,
+                    visabackend,
+                    resource_manager,
+                ) = self._connect_and_handle_error(address, visalib)
         else:
-            visa_handle, visabackend = self._connect_and_handle_error(address, visalib)
+            visa_handle, visabackend, resource_manager = self._connect_and_handle_error(
+                address, visalib
+            )
         finalize(self, _close_visa_handle, visa_handle, str(self.name))
 
         self.visabackend: str = visabackend
         self.visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
         """
         The VISA resource used by this instrument.
+        """
+        self.resource_manager = resource_manager
+        """
+        The VISA resource manager used by this instrument.
         """
         self.visalib: str | None = visalib
         self._address = address
@@ -135,18 +143,20 @@ class VisaInstrument(Instrument):
 
     def _connect_and_handle_error(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str]:
+    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
         try:
-            visa_handle, visabackend = self._open_resource(address, visalib)
+            visa_handle, visabackend, resource_manager = self._open_resource(
+                address, visalib
+            )
         except Exception as e:
             self.visa_log.exception(f"Could not connect at {address}")
             self.close()
             raise e
-        return visa_handle, visabackend
+        return visa_handle, visabackend, resource_manager
 
     def _open_resource(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str]:
+    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
 
         # in case we're changing the address - close the old handle first
         if getattr(self, "visa_handle", None):
@@ -169,7 +179,7 @@ class VisaInstrument(Instrument):
             resource.close()
             raise TypeError("QCoDeS only support MessageBasedResource Visa resources")
 
-        return resource, visabackend
+        return resource, visabackend, resource_manager
 
     def set_address(self, address: str) -> None:
         """
