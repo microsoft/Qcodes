@@ -113,26 +113,30 @@ def _make_mock_visa():
 
 
 def test_visa_gc_closes_connection(caplog) -> None:
-    def use_magnet():
-        _ = AMIModel430(
+    def use_magnet() -> pyvisa.ResourceManager:
+        x = AMIModel430(
             "x",
             address="GPIB::1::INSTR",
             pyvisa_sim_file="AMI430.yaml",
             terminator="\n",
         )
         assert list(Instrument._all_instruments.keys()) == ["x"]
+        assert len(x.resource_manager.list_opened_resources()) == 1
+        assert x.resource_manager.list_opened_resources() == [x.visa_handle]
+        return x.resource_manager
 
     # ensure that any unused instruments that have not been gced are gced before running
     gc.collect()
     caplog.clear()
     with caplog.at_level(logging.INFO, logger="qcodes.instrument.visa"):
-        use_magnet()
+        rm = use_magnet()
         gc.collect()
     # at this stage the instrument created in use_magnet has gone out of scope
     # and we have triggered an explicit gc so the weakref.finalize function
     # has been triggered. We test this
     # and the instrument should no longer be in the instrument registry
     assert len(Instrument._all_instruments) == 0
+    assert len(rm.list_opened_resources()) == 0
     assert (
         caplog.records[-1].message == "Closing VISA handle to x as there are no non "
         "weak references to the instrument."
