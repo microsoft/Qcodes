@@ -27,7 +27,9 @@ def _close_visa_handle(
     handle: pyvisa.resources.MessageBasedResource, name: str
 ) -> None:
     log.info(
-        f"Closing VISA handle to {name} as there are no non weak references to the instrument."
+        "Closing VISA handle to %s as there are no non weak "
+        "references to the instrument.",
+        name,
     )
     handle.close()
 
@@ -114,6 +116,7 @@ class VisaInstrument(Instrument):
                 )
         else:
             visa_handle, visabackend = self._connect_and_handle_error(address, visalib)
+        finalize(self, _close_visa_handle, visa_handle, str(self.name))
 
         self.visabackend: str = visabackend
         self.visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
@@ -128,7 +131,7 @@ class VisaInstrument(Instrument):
 
         self.set_terminator(terminator)
         self.timeout.set(timeout)
-        finalize(self, _close_visa_handle, self.visa_handle, str(self.name))
+
 
     def _connect_and_handle_error(
         self, address: str, visalib: str | None

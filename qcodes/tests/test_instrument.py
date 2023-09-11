@@ -434,10 +434,10 @@ def test_instrument_without_ref_is_gced():
         _ = Instrument("SomeInstrument")
         assert list(Instrument._all_instruments.keys()) == ["SomeInstrument"]
 
-    assert list(Instrument._all_instruments.keys()) == []
+    assert len(Instrument._all_instruments) == 0
     use_some_instrument()
     gc.collect()
-    assert list(Instrument._all_instruments.keys()) == []
+    assert len(Instrument._all_instruments) == 0
 
 def test_snapshot_and_meta_attrs() -> None:
     """Test snapshot of InstrumentBase contains _meta_attrs attributes"""
