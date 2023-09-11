@@ -191,10 +191,13 @@ class VisaInstrument(Instrument):
                 change the backend for VISA, use the self.visalib attribute
                 (and then call this function).
         """
-        resource, visabackend = self._open_resource(address, self.visalib)
+        resource, visabackend, resource_manager = self._open_resource(
+            address, self.visalib
+        )
         self.visa_handle = resource
         self._address = address
         self.visabackend = visabackend
+        self.resource_manager = resource_manager
 
     def device_clear(self) -> None:
         """Clear the buffers of the device"""
