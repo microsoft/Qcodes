@@ -1,3 +1,5 @@
+import gc
+import logging
 import re
 from pathlib import Path
 
@@ -6,7 +8,8 @@ import pyvisa
 import pyvisa.constants
 from pytest import FixtureRequest
 
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import Instrument, VisaInstrument
+from qcodes.instrument_drivers.american_magnetics import AMIModel430
 from qcodes.validators import Numbers
 
 
@@ -19,7 +22,7 @@ class MockVisa(VisaInstrument):
                            vals=Numbers(-20, 20))
 
     def _open_resource(self, address: str, visalib):
-        return MockVisaHandle(), visalib
+        return MockVisaHandle(), visalib, pyvisa.ResourceManager("@sim")
 
 
 class MockVisaHandle(pyvisa.resources.MessageBasedResource):
@@ -107,6 +110,37 @@ def _make_mock_visa():
         yield mv
     finally:
         mv.close()
+
+
+def test_visa_gc_closes_connection(caplog) -> None:
+    def use_magnet() -> pyvisa.ResourceManager:
+        x = AMIModel430(
+            "x",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+        )
+        assert list(Instrument._all_instruments.keys()) == ["x"]
+        assert len(x.resource_manager.list_opened_resources()) == 1
+        assert x.resource_manager.list_opened_resources() == [x.visa_handle]
+        return x.resource_manager
+
+    # ensure that any unused instruments that have not been gced are gced before running
+    gc.collect()
+    caplog.clear()
+    with caplog.at_level(logging.INFO, logger="qcodes.instrument.visa"):
+        rm = use_magnet()
+        gc.collect()
+    # at this stage the instrument created in use_magnet has gone out of scope
+    # and we have triggered an explicit gc so the weakref.finalize function
+    # has been triggered. We test this
+    # and the instrument should no longer be in the instrument registry
+    assert len(Instrument._all_instruments) == 0
+    assert len(rm.list_opened_resources()) == 0
+    assert (
+        caplog.records[-1].message == "Closing VISA handle to x as there are no non "
+        "weak references to the instrument."
+    )
 
 
 def test_ask_write_local(mock_visa) -> None:

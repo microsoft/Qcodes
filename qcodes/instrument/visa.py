@@ -5,6 +5,7 @@ import logging
 from collections.abc import Sequence
 from importlib.resources import as_file, files
 from typing import Any
+from weakref import finalize
 
 import pyvisa
 import pyvisa.constants as vi_const
@@ -21,6 +22,16 @@ VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
 log = logging.getLogger(__name__)
 
+
+def _close_visa_handle(
+    handle: pyvisa.resources.MessageBasedResource, name: str
+) -> None:
+    log.info(
+        "Closing VISA handle to %s as there are no non weak "
+        "references to the instrument.",
+        name,
+    )
+    handle.close()
 
 class VisaInstrument(Instrument):
 
@@ -100,16 +111,25 @@ class VisaInstrument(Instrument):
                         f"file {pyvisa_sim_file} from module: {module}"
                     )
                 visalib = f"{str(sim_visalib_path)}@sim"
-                visa_handle, visabackend = self._connect_and_handle_error(
-                    address, visalib
-                )
+                (
+                    visa_handle,
+                    visabackend,
+                    resource_manager,
+                ) = self._connect_and_handle_error(address, visalib)
         else:
-            visa_handle, visabackend = self._connect_and_handle_error(address, visalib)
+            visa_handle, visabackend, resource_manager = self._connect_and_handle_error(
+                address, visalib
+            )
+        finalize(self, _close_visa_handle, visa_handle, str(self.name))
 
         self.visabackend: str = visabackend
         self.visa_handle: pyvisa.resources.MessageBasedResource = visa_handle
         """
         The VISA resource used by this instrument.
+        """
+        self.resource_manager = resource_manager
+        """
+        The VISA resource manager used by this instrument.
         """
         self.visalib: str | None = visalib
         self._address = address
@@ -122,18 +142,20 @@ class VisaInstrument(Instrument):
 
     def _connect_and_handle_error(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str]:
+    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
         try:
-            visa_handle, visabackend = self._open_resource(address, visalib)
+            visa_handle, visabackend, resource_manager = self._open_resource(
+                address, visalib
+            )
         except Exception as e:
             self.visa_log.exception(f"Could not connect at {address}")
             self.close()
             raise e
-        return visa_handle, visabackend
+        return visa_handle, visabackend, resource_manager
 
     def _open_resource(
         self, address: str, visalib: str | None
-    ) -> tuple[pyvisa.resources.MessageBasedResource, str]:
+    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
 
         # in case we're changing the address - close the old handle first
         if getattr(self, "visa_handle", None):
@@ -156,7 +178,7 @@ class VisaInstrument(Instrument):
             resource.close()
             raise TypeError("QCoDeS only support MessageBasedResource Visa resources")
 
-        return resource, visabackend
+        return resource, visabackend, resource_manager
 
     def set_address(self, address: str) -> None:
         """
@@ -168,10 +190,13 @@ class VisaInstrument(Instrument):
                 change the backend for VISA, use the self.visalib attribute
                 (and then call this function).
         """
-        resource, visabackend = self._open_resource(address, self.visalib)
+        resource, visabackend, resource_manager = self._open_resource(
+            address, self.visalib
+        )
         self.visa_handle = resource
         self._address = address
         self.visabackend = visabackend
+        self.resource_manager = resource_manager
 
     def device_clear(self) -> None:
         """Clear the buffers of the device"""
@@ -231,6 +256,13 @@ class VisaInstrument(Instrument):
         """Disconnect and irreversibly tear down the instrument."""
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
+
+        if getattr(self, "visabackend", None) == "sim" and getattr(
+            self, "resource_manager", None
+        ):
+            # work around for https://github.com/QCoDeS/Qcodes/issues/5356 and
+            # https://github.com/pyvisa/pyvisa-sim/issues/82
+            self.resource_manager.close()
         super().close()
 
     def write_raw(self, cmd: str) -> None:
