@@ -256,6 +256,13 @@ class VisaInstrument(Instrument):
         """Disconnect and irreversibly tear down the instrument."""
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
+
+        if getattr(self, "visabackend", None) == "sim" and getattr(
+            self, "resource_manager", None
+        ):
+            # work around for https://github.com/QCoDeS/Qcodes/issues/5356 and
+            # https://github.com/pyvisa/pyvisa-sim/issues/82
+            self.resource_manager.close()
         super().close()
 
     def write_raw(self, cmd: str) -> None:

@@ -22,7 +22,7 @@ class MockVisa(VisaInstrument):
                            vals=Numbers(-20, 20))
 
     def _open_resource(self, address: str, visalib):
-        return MockVisaHandle(), visalib
+        return MockVisaHandle(), visalib, pyvisa.ResourceManager("@sim")
 
 
 class MockVisaHandle(pyvisa.resources.MessageBasedResource):
