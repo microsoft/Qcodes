@@ -199,13 +199,19 @@ def _paramspec_dict_with_extras(
 def xarray_to_h5netcdf_with_complex_numbers(
     xarray_dataset: xr.Dataset, file_path: str | Path
 ) -> None:
+    import cf_xarray as cfxr
+
+    if "multi_index" in xarray_dataset.coords:
+        # as of xarray 2023.8.0 there is no native support
+        # for multi index so use cf_xarray for that
+        internal_ds = cfxr.encode_multi_index_as_compress(xarray_dataset, "multi_index")
+    else:
+        internal_ds = xarray_dataset
+
     data_var_kinds = [
-        xarray_dataset.data_vars[data_var].dtype.kind
-        for data_var in xarray_dataset.data_vars
+        internal_ds.data_vars[data_var].dtype.kind for data_var in internal_ds.data_vars
     ]
-    coord_kinds = [
-        xarray_dataset.coords[coord].dtype.kind for coord in xarray_dataset.coords
-    ]
+    coord_kinds = [internal_ds.coords[coord].dtype.kind for coord in internal_ds.coords]
     if "c" in data_var_kinds or "c" in coord_kinds:
         # see http://xarray.pydata.org/en/stable/howdoi.html
         # for how to export complex numbers
@@ -216,8 +222,8 @@ def xarray_to_h5netcdf_with_complex_numbers(
                 message="You are writing invalid netcdf features",
                 category=UserWarning,
             )
-            xarray_dataset.to_netcdf(
+            internal_ds.to_netcdf(
                 path=file_path, engine="h5netcdf", invalid_netcdf=True
             )
     else:
-        xarray_dataset.to_netcdf(path=file_path, engine="h5netcdf")
+        internal_ds.to_netcdf(path=file_path, engine="h5netcdf")

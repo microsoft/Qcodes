@@ -567,14 +567,19 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
 
 def figure_out_index(dataframe):
     # heavily inspired by xarray.core.dataset.from_dataframe
+    if not dataframe.columns.is_unique:
+        raise ValueError("cannot convert DataFrame with non-unique columns")
+
+    return figure_out_index_index(dataframe.index)
+
+
+def figure_out_index_index(idx):
+    # heavily inspired by xarray.core.dataset.from_dataframe
     import pandas as pd
     from xarray.core.indexes import PandasIndex, remove_unused_levels_categories
     from xarray.core.variable import Variable, calculate_dimensions
 
-    if not dataframe.columns.is_unique:
-        raise ValueError("cannot convert DataFrame with non-unique columns")
-
-    idx = remove_unused_levels_categories(dataframe.index)
+    idx = remove_unused_levels_categories(idx)
 
     if isinstance(idx, pd.MultiIndex) and not idx.is_unique:
         raise ValueError(
@@ -639,6 +644,9 @@ def test_export_non_grid_dataset_xarray(
     assert len(xr_ds.coords["multi_index"].attrs) == 0
 
 
+# test combination of multi_index and regular
+# both inside out and outside in
+# test 2 or more multiindexes?
 def test_export_non_grid_dataset(
     tmp_path_factory, mock_dataset_non_grid: DataSet
 ) -> None:
@@ -652,7 +660,10 @@ def test_export_non_grid_dataset(
     pdf.to_xarray()
 
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
-    assert xr_ds["z"].dims == ("x", "y")
+    assert len(xr_ds.coords) == 3
+    assert "multi_index" in xr_ds.coords
+    assert "x" in xr_ds.coords
+    assert "y" in xr_ds.coords
 
     expected_path = f"qcodes_{mock_dataset_non_grid.captured_run_id}_{mock_dataset_non_grid.guid}.nc"
     assert os.listdir(path) == [expected_path]
@@ -661,7 +672,10 @@ def test_export_non_grid_dataset(
 
     xr_ds_reimported = ds.to_xarray_dataset()
 
-    assert xr_ds_reimported["z"].dims == ("x", "y")
+    assert len(xr_ds_reimported.coords) == 3
+    assert "multi_index" in xr_ds_reimported.coords
+    assert "x" in xr_ds_reimported.coords
+    assert "y" in xr_ds_reimported.coords
     assert xr_ds.identical(xr_ds_reimported)
 
 

@@ -227,10 +227,15 @@ class DataSetInMem(BaseDataSet):
         # in the code below floats and ints loaded from attributes are explicitly casted
         # this is due to some older versions of qcodes writing them with a different backend
         # reading them back results in a numpy array of one element
-
+        import cf_xarray as cfxr
         import xarray as xr
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
+
+        if "multi_index" in loaded_data.coords:
+            loaded_data = cfxr.decode_compress_to_multi_index(
+                loaded_data, "multi_index"
+            )
 
         parent_dataset_links = str_to_links(
             loaded_data.attrs.get("parent_dataset_links", "[]")
@@ -394,6 +399,8 @@ class DataSetInMem(BaseDataSet):
             data = xr_data[datavar]
             output[str(datavar)][str(datavar)] = data.data
             coords_unexpanded = []
+            # this logic only applies if gridded
+            # for multi_index we want to skip that one and
             for coord_name in data.dims:
                 coords_unexpanded.append(xr_data[coord_name].data)
             coords_arrays = np.meshgrid(*coords_unexpanded, indexing="ij")
