@@ -23,7 +23,7 @@ def test_aliases_dict() -> None:
     ])
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="function")
 def s46_six():
     """
     A six channel-per-relay instrument
@@ -38,7 +38,7 @@ def s46_six():
         driver.close()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="function")
 def s46_four():
     """
     A four channel-per-relay instrument
