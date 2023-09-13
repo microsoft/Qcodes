@@ -232,6 +232,8 @@ class DataSetInMem(BaseDataSet):
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
 
+        # todo replace with check that type(xr_ds.indexes["multi_index"])
+        # is a MultiIndex
         if "multi_index" in loaded_data.coords:
             loaded_data = cfxr.coding.decode_compress_to_multi_index(
                 loaded_data, "multi_index"
@@ -398,14 +400,28 @@ class DataSetInMem(BaseDataSet):
             output[str(datavar)] = {}
             data = xr_data[datavar]
             output[str(datavar)][str(datavar)] = data.data
-            coords_unexpanded = []
-            # this logic only applies if gridded
-            # for multi_index we want to skip that one and
-            for coord_name in data.dims:
-                coords_unexpanded.append(xr_data[coord_name].data)
-            coords_arrays = np.meshgrid(*coords_unexpanded, indexing="ij")
-            for coord_name, coord_array in zip(data.dims, coords_arrays):
-                output[str(datavar)][str(coord_name)] = coord_array
+
+            all_coords = []
+            for index_name in data.dims:
+                index = data.indexes[index_name]
+
+                coords = {name: data.coords[name] for name in index.names}
+                all_coords.append(coords)
+
+            if len(all_coords) > 1:
+                coords_unexpanded = []
+                # this logic only applies if gridded
+                # for multi_index we want to skip that one and
+                for coord_name in data.dims:
+                    coords_unexpanded.append(xr_data[coord_name].data)
+                coords_arrays = np.meshgrid(*coords_unexpanded, indexing="ij")
+                for coord_name, coord_array in zip(data.dims, coords_arrays):
+                    output[str(datavar)][str(coord_name)] = coord_array
+            else:
+                coords = all_coords[0]
+                for coord_name, coord in coords.items():
+                    output[str(datavar)][str(coord_name)] = coord.data
+
         return output
 
     def prepare(
