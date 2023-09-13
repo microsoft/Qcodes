@@ -126,6 +126,51 @@ def test_init_four(s46_four: S46) -> None:
             assert not hasattr(s46_four, alias)
 
 
+def test_init_four_and_six(
+    s46_four: S46, s46_six: S46, caplog: LogCaptureFixture
+) -> None:
+    """
+    Test that we can use one both instruments and close one of them
+    and still use the other.
+    """
+    assert len(s46_four.available_channels) == 18
+
+    closed_channel_numbers = [1, 8]
+    assert s46_four.closed_channels() == [
+        S46.aliases[i] for i in closed_channel_numbers
+    ]
+
+    # A four channel instrument will have channels missing
+    for relay in ["A", "B", "C", "D"]:
+        for index in [5, 6]:
+            alias = f"{relay}{index}"
+            assert not hasattr(s46_four, alias)
+
+    assert len(s46_six.available_channels) == 26
+
+    closed_channel_numbers = [1, 8, 13]
+    assert s46_six.closed_channels() == [S46.aliases[i] for i in closed_channel_numbers]
+
+    with caplog.at_level(logging.DEBUG):
+        s46_six.open_all_channels()
+        assert ":open (@1)" in caplog.text
+        assert ":open (@8)" in caplog.text
+        assert ":open (@13)" in caplog.text
+
+        assert s46_six.A1._lock._locked_by is None
+        assert s46_six.B1._lock._locked_by is None
+        assert s46_six.C1._lock._locked_by is None
+
+    assert s46_six.A1() == "close"
+    s46_six.A1("open")
+    assert s46_six.A1() == "open"
+
+    s46_four.close()
+
+    assert s46_six.A1() == "close"
+    s46_six.A1("open")
+    assert s46_six.A1() == "open"
+
 def test_channel_number_invariance(s46_four: S46, s46_six: S46) -> None:
     """
     Regardless of the channel layout (that is, number of channels per relay),
