@@ -233,7 +233,7 @@ class DataSetInMem(BaseDataSet):
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
 
         if "multi_index" in loaded_data.coords:
-            loaded_data = cfxr.decode_compress_to_multi_index(
+            loaded_data = cfxr.coding.decode_compress_to_multi_index(
                 loaded_data, "multi_index"
             )
 

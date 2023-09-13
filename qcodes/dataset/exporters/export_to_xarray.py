@@ -93,7 +93,7 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 if not on_grid:
                     xrdarray = xr.DataArray(df[name], [("multi_index", df.index)])
                 else:
-                    xrdarray: xr.DataArray = df.to_xarray().get(name, xr.DataArray())
+                    xrdarray = df.to_xarray().get(name, xr.DataArray())
 
                 data_xrdarray_dict[name] = xrdarray
 
@@ -204,7 +204,9 @@ def xarray_to_h5netcdf_with_complex_numbers(
     if "multi_index" in xarray_dataset.coords:
         # as of xarray 2023.8.0 there is no native support
         # for multi index so use cf_xarray for that
-        internal_ds = cfxr.encode_multi_index_as_compress(xarray_dataset, "multi_index")
+        internal_ds = cfxr.coding.encode_multi_index_as_compress(
+            xarray_dataset, "multi_index"
+        )
     else:
         internal_ds = xarray_dataset
 
