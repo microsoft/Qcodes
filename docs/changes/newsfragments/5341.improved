@@ -1,4 +1,0 @@
-The `pyvisa.ResourceManager` of a VISA instrument is now exposed
-as `instr.resource_manager`. All VISA instruments will now use `weakref.finalize`
-to close the visa resource on shutdown of the instrument. This should reduce the
-chance that an instrument resource is not cleanup correctly on exit.
