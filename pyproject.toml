@@ -74,7 +74,7 @@ qtplot = ["pyqtgraph>=0.11.0"]
 slack = ["slack-sdk>=3.4.2"]
 # can be removed once deprecated slack are removed
 zurichinstruments = ["zhinst-qcodes>=0.3"]
-loop = ["qcodes_loop>=0.1.1"]
+loop = ["qcodes_loop>=0.1.2"]
 test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
