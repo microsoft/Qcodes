@@ -417,7 +417,7 @@ class DataSetInMem(BaseDataSet):
                 coords_arrays = np.meshgrid(*coords_unexpanded, indexing="ij")
                 for coord_name, coord_array in zip(data.dims, coords_arrays):
                     output[str(datavar)][str(coord_name)] = coord_array
-            else:
+            elif len(all_coords) == 1:
                 coords = all_coords[0]
                 for coord_name, coord in coords.items():
                     output[str(datavar)][str(coord_name)] = coord.data
