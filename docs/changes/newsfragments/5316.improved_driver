@@ -1,2 +1,0 @@
-Parameters controlling the pid-values, pumps and state of the temperature channels have been added to OxfordTriton.
-This allows temperature sweeps from base temperature to several Kelvin to be fully automatic. Code to create such sweeps can be found at https://github.com/qdev-dk/MeasFunc/blob/main/measfunc/temperature_sweep.py.
