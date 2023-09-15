@@ -634,13 +634,24 @@ def test_export_non_grid_in_grid_dataset_xarray(
     tmp_path_factory: TempPathFactory, mock_dataset_non_grid_in_grid: DataSet
 ) -> None:
     xr_ds = mock_dataset_non_grid_in_grid.to_xarray_dataset()
+    # this is a dataset where we sweep x from 1 -> 9
+    # for each x we measure 50 points as a function of random values of y1 and y2
+
     assert len(xr_ds.coords) == 4  # dims + 1 multi index
-    # assert "x" in xr_ds.coords
-    # assert len(xr_ds.coords["x"].attrs) == 8
-    # assert "y" in xr_ds.coords
-    # assert len(xr_ds.coords["y"].attrs) == 8
-    # assert "multi_index" in xr_ds.coords
-    # assert len(xr_ds.coords["multi_index"].attrs) == 0
+    assert xr_ds.dims == {"multi_index": 450}
+    # ideally we would probably expect this to be {x: 9, multi_index: 50}
+    # however at the moment we do not store the "multiindexed" parameters
+    # severalty from the "regular" index parameters when there is a multiindex
+    # parameter
+
+    assert "x" in xr_ds.coords
+    assert len(xr_ds.coords["x"].attrs) == 8
+    assert "y1" in xr_ds.coords
+    assert len(xr_ds.coords["y1"].attrs) == 8
+    assert "y2" in xr_ds.coords
+    assert len(xr_ds.coords["y2"].attrs) == 8
+    assert "multi_index" in xr_ds.coords
+    assert len(xr_ds.coords["multi_index"].attrs) == 0
 
 
 # test combination of multi_index and regular
