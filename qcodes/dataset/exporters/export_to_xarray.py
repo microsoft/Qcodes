@@ -200,12 +200,18 @@ def xarray_to_h5netcdf_with_complex_numbers(
     xarray_dataset: xr.Dataset, file_path: str | Path
 ) -> None:
     import cf_xarray as cfxr
+    from pandas import MultiIndex
 
-    if "multi_index" in xarray_dataset.coords:
+    has_multi_index = any(
+        isinstance(xarray_dataset.indexes[index_name], MultiIndex)
+        for index_name in xarray_dataset.indexes
+    )
+
+    if has_multi_index:
         # as of xarray 2023.8.0 there is no native support
         # for multi index so use cf_xarray for that
         internal_ds = cfxr.coding.encode_multi_index_as_compress(
-            xarray_dataset, "multi_index"
+            xarray_dataset,
         )
     else:
         internal_ds = xarray_dataset
