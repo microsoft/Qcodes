@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from collections.abc import Hashable
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +15,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.export_config import DataExportType
+from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
 from qcodes.dataset.linked_datasets.links import links_to_str
 
 
@@ -565,45 +565,6 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
         for spec_name, spec_value in expected_param_spec_attrs.items():
             assert xr_da.attrs[spec_name] == spec_value
 
-def figure_out_index(dataframe):
-    # heavily inspired by xarray.core.dataset.from_dataframe
-    if not dataframe.columns.is_unique:
-        raise ValueError("cannot convert DataFrame with non-unique columns")
-
-    return figure_out_index_index(dataframe.index)
-
-
-def figure_out_index_index(idx):
-    # heavily inspired by xarray.core.dataset.from_dataframe
-    import pandas as pd
-    from xarray.core.indexes import PandasIndex, remove_unused_levels_categories
-    from xarray.core.variable import Variable, calculate_dimensions
-
-    idx = remove_unused_levels_categories(idx)
-
-    if isinstance(idx, pd.MultiIndex) and not idx.is_unique:
-        raise ValueError(
-            "cannot convert a DataFrame with a non-unique MultiIndex into xarray"
-        )
-    index_vars: dict[Hashable, Variable] = {}
-
-    if isinstance(idx, pd.MultiIndex):
-        dims = tuple(
-            name if name is not None else "level_%i" % n
-            for n, name in enumerate(idx.names)
-        )
-        for dim, lev in zip(dims, idx.levels):
-            xr_idx = PandasIndex(lev, dim)
-            index_vars.update(xr_idx.create_variables())
-    else:
-        index_name = idx.name if idx.name is not None else "index"
-        dims = (index_name,)
-        xr_idx = PandasIndex(idx, index_name)
-        index_vars.update(xr_idx.create_variables())
-
-    expanded_shape = calculate_dimensions(index_vars)
-    return expanded_shape
-
 
 def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
@@ -611,7 +572,7 @@ def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
     pdf = mock_dataset_grid.to_pandas_dataframe()
-    dims = figure_out_index(pdf)
+    dims = _calculate_index_shape(pdf.index)
     assert dims == {"x": 10, "y": 5}
     pdf.to_xarray()
 
@@ -655,7 +616,7 @@ def test_export_non_grid_dataset(
     mock_dataset_non_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
     pdf = mock_dataset_non_grid.to_pandas_dataframe()
-    dims = figure_out_index(pdf)
+    dims = _calculate_index_shape(pdf.index)
     assert dims == {"x": 50, "y": 50}
     pdf.to_xarray()
 
