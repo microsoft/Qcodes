@@ -74,7 +74,7 @@ qtplot = ["pyqtgraph>=0.11.0"]
 slack = ["slack-sdk>=3.4.2"]
 # can be removed once deprecated slack are removed
 zurichinstruments = ["zhinst-qcodes>=0.3"]
-loop = ["qcodes_loop>=0.1.1"]
+loop = ["qcodes_loop>=0.1.2"]
 test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
@@ -90,7 +90,6 @@ test = [
     "pytest-rerunfailures>=10.0",
     "pytest-xdist>=2.0.0",
     "PyVisa-sim>=0.4.0",
-    "slack-sdk>=3.4.2", # can be dropped when deprecated slack ext is deleted
     "sphinx>=4.5.0",  # sphinx extension tests
     "types-jsonschema>=4.16.0",
     "types_requests>=0.1.8",
@@ -177,14 +176,6 @@ module = [
     "qcodes.instrument.mockers.ami430",
     "qcodes.instrument_drivers.Harvard.*",
     "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
-    # deprecated non typed modules
-    "qcodes.actions.*",
-    "qcodes.data.*",
-    "qcodes.loops",
-    "qcodes.measure",
-    "qcodes.plots.*",
-    "qcodes.utils.magic",
-    "qcodes.extensions.slack",
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
@@ -204,7 +195,6 @@ module = [
     "mcl_RF_Switch_Controller_NET45",
     "opencensus.ext.azure.*",
     "pywinusb.*",
-    "pyqtgraph.*", # can be droped once deprecated plots module is deleted
     "ruamel",
     "spyder.utils.site",
     "spyder_kernels.customize",
@@ -218,15 +208,6 @@ ignore_missing_imports = true
 include = ["qcodes"]
 ignore = [
     "qcodes/instrument_drivers/Harvard/Decadac.py",
-    # deprecated non typed modules
-    "qcodes/actions.py",
-    "qcodes/data",
-    "qcodes/loops.py",
-    "qcodes/measure.py",
-    "qcodes/plots/pyqtgraph.py",
-    "qcodes/plots/qcmatplotlib.py",
-    "qcodes/plots/base.py",
-    "qcodes/extensions/slack.py"
     ]
 reportMissingTypeStubs = true
 
@@ -268,30 +249,11 @@ extend-exclude = ["typings"]
 [tool.ruff.per-file-ignores]
 # deprecated modules left
 # for backwards compatibility
-"qcodes/actions.py" = ["F401"]
-"qcodes/data/__init__.py" = ["F401"]
-"qcodes/data/data_array.py" = ["F401"]
-"qcodes/data/data_set.py" = ["F401"]
-"qcodes/data/format.py" = ["F401"]
-"qcodes/data/gnuplot_format.py" = ["F401"]
-"qcodes/data/hdf5_format.py" = ["F401"]
-"qcodes/data/hdf5_format_hickle.py" = ["F401"]
-"qcodes/data/io.py" = ["F401"]
-"qcodes/data/location.py" = ["F401"]
-"qcodes/plots/pyqtgraph.py" = ["F401"]
-"qcodes/plots/qcmatplotlib.py" = ["F401"]
-"qcodes/loops.py" = ["F401"]
-"qcodes/measure.py" = ["F401"]
-"qcodes/plots/base.py" = ["F401"]
-"qcodes/plots/colors.py" = ["F401"]
 "qcodes/utils/validators.py" = ["F401"]
 "qcodes/utils/threading.py" = ["F401"]
-"qcodes/utils/qt_helpers.py" = ["F401"]
 "qcodes/utils/plotting.py" = ["F401"]
 "qcodes/utils/metadata.py" = ["F401"]
-"qcodes/utils/magic.py" = ["F401"]
 "qcodes/utils/helpers.py" = ["F401"]
-"qcodes/extensions/slack.py" = ["F401"]
 "qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
 "qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
 "qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
