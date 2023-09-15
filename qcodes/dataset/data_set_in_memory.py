@@ -232,12 +232,7 @@ class DataSetInMem(BaseDataSet):
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
 
-        # todo replace with check that type(xr_ds.indexes["multi_index"])
-        # is a MultiIndex
-        if "multi_index" in loaded_data.coords:
-            loaded_data = cfxr.coding.decode_compress_to_multi_index(
-                loaded_data, "multi_index"
-            )
+        loaded_data = cfxr.coding.decode_compress_to_multi_index(loaded_data)
 
         parent_dataset_links = str_to_links(
             loaded_data.attrs.get("parent_dataset_links", "[]")
