@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from pytest import LogCaptureFixture
+from pytest import LogCaptureFixture, TempPathFactory
 
 import qcodes
 from qcodes.dataset import get_data_export_path, load_from_netcdf, new_data_set
@@ -137,6 +137,31 @@ def _make_mock_dataset_non_grid(experiment) -> DataSet:
     for x, y in zip(x_vals, y_vals):
         results = [{"x": x, "y": y, "z": x + y}]
         dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_grid_in_grid")
+def _make_mock_dataset_non_grid_in_grid(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    y1param = ParamSpecBase("y1", "numeric")
+    y2param = ParamSpecBase("y2", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={zparam: (xparam, y1param, y2param)})
+    dataset.set_interdependencies(idps)
+
+    num_samples = 50
+
+    rng = np.random.default_rng()
+
+    dataset.mark_started()
+    for x in range(1, 10):
+        y1_vals = rng.random(num_samples) * 10
+        y2_vals = 20 + rng.random(num_samples) * 5
+        for y1, y2 in zip(y1_vals, y2_vals):
+            results = [{"x": x, "y1": y1, "y2": y2, "z": x + y1 + y2}]
+            dataset.add_results(results)
     dataset.mark_completed()
     return dataset
 
@@ -593,7 +618,7 @@ def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None
 
 
 def test_export_non_grid_dataset_xarray(
-    tmp_path_factory, mock_dataset_non_grid: DataSet
+    tmp_path_factory: TempPathFactory, mock_dataset_non_grid: DataSet
 ) -> None:
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
     assert len(xr_ds.coords) == 3  # dims + 1 multi index
@@ -603,6 +628,19 @@ def test_export_non_grid_dataset_xarray(
     assert len(xr_ds.coords["y"].attrs) == 8
     assert "multi_index" in xr_ds.coords
     assert len(xr_ds.coords["multi_index"].attrs) == 0
+
+
+def test_export_non_grid_in_grid_dataset_xarray(
+    tmp_path_factory: TempPathFactory, mock_dataset_non_grid_in_grid: DataSet
+) -> None:
+    xr_ds = mock_dataset_non_grid_in_grid.to_xarray_dataset()
+    assert len(xr_ds.coords) == 4  # dims + 1 multi index
+    # assert "x" in xr_ds.coords
+    # assert len(xr_ds.coords["x"].attrs) == 8
+    # assert "y" in xr_ds.coords
+    # assert len(xr_ds.coords["y"].attrs) == 8
+    # assert "multi_index" in xr_ds.coords
+    # assert len(xr_ds.coords["multi_index"].attrs) == 0
 
 
 # test combination of multi_index and regular
