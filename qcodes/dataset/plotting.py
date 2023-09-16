@@ -14,6 +14,7 @@ from textwrap import wrap
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 import numpy as np
+from matplotlib.figure import Figure
 
 if TYPE_CHECKING:
     import matplotlib
@@ -350,6 +351,7 @@ def plot_and_save_image(
     os.makedirs(png_dir, exist_ok=True)
     os.makedirs(pdf_dif, exist_ok=True)
     for i, ax in enumerate(axes):
+        assert isinstance(ax.figure, Figure)
         if save_pdf:
             full_path = os.path.join(pdf_dif, f"{dataid}_{i}.pdf")
             ax.figure.savefig(full_path, dpi=500, bbox_inches="tight")
@@ -591,8 +593,11 @@ def plot_2d_scatterplot(
         name = getattr(cmap, "name", _DEFAULT_COLORMAP)
         cmap = matplotlib.cm.get_cmap(name, len(z_strings))
 
-    mappable = ax.scatter(x=x, y=y, c=z, rasterized=rasterized, cmap=cmap, **kwargs)
+    # according to the docs the c argument should support an ndarray
+    # but that fails type checking
+    mappable = ax.scatter(x=x, y=y, c=z, rasterized=rasterized, cmap=cmap, **kwargs)  # type: ignore[arg-type]
 
+    assert ax.figure is not None
     if colorbar is not None:
         colorbar = ax.figure.colorbar(mappable, ax=ax, cax=colorbar.ax)
     else:
@@ -705,6 +710,7 @@ def plot_on_a_plain_grid(
         ax.set_yticks(np.arange(len(np.unique(y_strings))))
         ax.set_yticklabels(y_strings)
 
+    assert ax.figure is not None
     if colorbar is not None:
         colorbar = ax.figure.colorbar(colormesh, ax=ax, cax=colorbar.ax)
     else:
