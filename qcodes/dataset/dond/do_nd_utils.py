@@ -35,7 +35,7 @@ AxesTupleListWithDataSet = tuple[
 ]
 MultiAxesTupleListWithDataSet = tuple[
     tuple[DataSetProtocol, ...],
-    tuple[tuple["matplotlib.axes.Axes", ...], ...],
+    tuple[tuple[Optional["matplotlib.axes.Axes"], ...], ...],
     tuple[tuple[Optional["matplotlib.colorbar.Colorbar"], ...], ...],
 ]
 

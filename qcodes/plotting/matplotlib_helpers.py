@@ -46,7 +46,7 @@ def _set_colorbar_extend(
         "min": slice(1, None),
         "max": slice(0, -1),
     }
-    colorbar._inside = _slice_dict[extend]  # pyright: ignore[reportGeneralTypeIssues]
+    colorbar._inside = _slice_dict[extend]  # type: ignore[attr-defined]
 
 
 def apply_color_scale_limits(
