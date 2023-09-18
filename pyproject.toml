@@ -45,7 +45,7 @@ dependencies = [
     "versioningit>=2.0.1",
     "websockets>=9.1",
     "wrapt>=1.13.2",
-    "xarray>=0.20.0",
+    "xarray>=2022.06.0",
     "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.15.0",
     # transitive dependencies. We list these explicitly to",
