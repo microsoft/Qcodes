@@ -15,7 +15,7 @@ from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
-from typing_extensions import TypedDict
+from typing_extensions import Literal, TypedDict
 
 import qcodes as qc
 from qcodes import config
@@ -52,7 +52,17 @@ from qcodes.utils import deprecate, list_of_data_to_maybe_ragged_nd_array
 log = logging.getLogger(__name__)
 
 
-_unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
+_unicode_categories: tuple[
+    Literal["Lu"],
+    Literal["Ll"],
+    Literal["Lt"],
+    Literal["Lm"],
+    Literal["Lo"],
+    Literal["Nd"],
+    Literal["Pc"],
+    Literal["Pd"],
+    Literal["Zs"],
+] = ("Lu", "Ll", "Lt", "Lm", "Lo", "Nd", "Pc", "Pd", "Zs")
 
 
 # in the current version, these are the standard columns of the "runs" table
