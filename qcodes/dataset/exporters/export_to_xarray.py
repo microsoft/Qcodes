@@ -40,7 +40,7 @@ def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]
 
     if isinstance(idx, pd.MultiIndex):
         dims = tuple(
-            name if name is not None else "level_%i" % n
+            name if name is not None else f"level_{n}"
             for n, name in enumerate(idx.names)
         )
         for dim, lev in zip(dims, idx.levels):

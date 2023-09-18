@@ -712,9 +712,6 @@ def test_export_non_grid_in_grid_dataset_xarray(
     assert len(xr_ds.coords["multi_index"].attrs) == 0
 
 
-# test combination of multi_index and regular
-# both inside out and outside in
-# test 2 or more multiindexes?
 def test_export_non_grid_dataset(
     tmp_path_factory: TempPathFactory, mock_dataset_non_grid: DataSet
 ) -> None:

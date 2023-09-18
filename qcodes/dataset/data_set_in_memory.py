@@ -404,15 +404,17 @@ class DataSetInMem(BaseDataSet):
                 all_coords.append(coords)
 
             if len(all_coords) > 1:
+                # if there are more than on index this cannot be a multiindex dataset
+                # so we can expand the data
                 coords_unexpanded = []
-                # this logic only applies if gridded
-                # for multi_index we want to skip that one and
                 for coord_name in data.dims:
                     coords_unexpanded.append(xr_data[coord_name].data)
                 coords_arrays = np.meshgrid(*coords_unexpanded, indexing="ij")
                 for coord_name, coord_array in zip(data.dims, coords_arrays):
                     output[str(datavar)][str(coord_name)] = coord_array
             elif len(all_coords) == 1:
+                # this is either a multiindex or a single regular index
+                # in both cases we do not need to reshape the data
                 coords = all_coords[0]
                 for coord_name, coord in coords.items():
                     output[str(datavar)][str(coord_name)] = coord.data
