@@ -166,6 +166,62 @@ def _make_mock_dataset_non_grid_in_grid(experiment) -> DataSet:
     return dataset
 
 
+@pytest.fixture(name="mock_dataset_grid_in_non_grid")
+def _make_mock_dataset_grid_in_non_grid(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    x1param = ParamSpecBase("x1", "numeric")
+    x2param = ParamSpecBase("x2", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={zparam: (x1param, x2param, yparam)})
+    dataset.set_interdependencies(idps)
+
+    num_x_samples = 10
+
+    rng = np.random.default_rng()
+
+    dataset.mark_started()
+    x1_vals = rng.random(num_x_samples)
+    x2_vals = rng.random(num_x_samples)
+    for x1, x2 in zip(x1_vals, x2_vals):
+        for y in range(5):
+            results = [{"x1": x1, "x2": x2, "y": y, "z": x1 + x2 + y}]
+            dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_grid_in_non_grid")
+def _make_mock_dataset_non_grid_in_non_grid(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    x1param = ParamSpecBase("x1", "numeric")
+    x2param = ParamSpecBase("x2", "numeric")
+    y1param = ParamSpecBase("y1", "numeric")
+    y2param = ParamSpecBase("y2", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(
+        dependencies={zparam: (x1param, x2param, y1param, y2param)}
+    )
+    dataset.set_interdependencies(idps)
+
+    num_x_samples = 10
+    num_y_samples = 5
+
+    rng = np.random.default_rng()
+
+    dataset.mark_started()
+    x1_vals = rng.random(num_x_samples)
+    x2_vals = rng.random(num_x_samples)
+    for x1, x2 in zip(x1_vals, x2_vals):
+        y1_vals = rng.random(num_y_samples) * 10
+        y2_vals = 20 + rng.random(num_y_samples) * 5
+        for y1, y2 in zip(y1_vals, y2_vals):
+            results = [{"x1": x1, "x2": x2, "y1": y1, "y2": y2, "z": x1 + x2 + y1 + y2}]
+            dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_inverted_coords")
 def _make_mock_dataset_inverted_coords(experiment) -> DataSet:
     # this dataset is constructed such
@@ -321,7 +377,9 @@ def test_export_netcdf(
     assert mock_dataset.export_info.export_paths["nc"] == file_path
 
 
-def test_export_netcdf_default_dir(tmp_path_factory, mock_dataset) -> None:
+def test_export_netcdf_default_dir(
+    tmp_path_factory: TempPathFactory, mock_dataset
+) -> None:
     qcodes.config.dataset.export_path = "{db_location}"
     mock_dataset.export(export_type="netcdf", prefix="qcodes_")
     export_path = Path(mock_dataset.export_info.export_paths["nc"])
@@ -591,7 +649,9 @@ def test_to_xarray_da_dict_paramspec_metadata_is_preserved(
             assert xr_da.attrs[spec_name] == spec_value
 
 
-def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None:
+def test_export_2d_dataset(
+    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet
+) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
@@ -617,9 +677,7 @@ def test_export_2d_dataset(tmp_path_factory, mock_dataset_grid: DataSet) -> None
     assert xr_ds.identical(xr_ds_reimported)
 
 
-def test_export_non_grid_dataset_xarray(
-    tmp_path_factory: TempPathFactory, mock_dataset_non_grid: DataSet
-) -> None:
+def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
     assert len(xr_ds.coords) == 3  # dims + 1 multi index
     assert "x" in xr_ds.coords
@@ -631,7 +689,7 @@ def test_export_non_grid_dataset_xarray(
 
 
 def test_export_non_grid_in_grid_dataset_xarray(
-    tmp_path_factory: TempPathFactory, mock_dataset_non_grid_in_grid: DataSet
+    mock_dataset_non_grid_in_grid: DataSet,
 ) -> None:
     xr_ds = mock_dataset_non_grid_in_grid.to_xarray_dataset()
     # this is a dataset where we sweep x from 1 -> 9
@@ -658,7 +716,7 @@ def test_export_non_grid_in_grid_dataset_xarray(
 # both inside out and outside in
 # test 2 or more multiindexes?
 def test_export_non_grid_dataset(
-    tmp_path_factory, mock_dataset_non_grid: DataSet
+    tmp_path_factory: TempPathFactory, mock_dataset_non_grid: DataSet
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
@@ -667,7 +725,6 @@ def test_export_non_grid_dataset(
     pdf = mock_dataset_non_grid.to_pandas_dataframe()
     dims = _calculate_index_shape(pdf.index)
     assert dims == {"x": 50, "y": 50}
-    pdf.to_xarray()
 
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
     assert len(xr_ds.coords) == 3
@@ -689,8 +746,121 @@ def test_export_non_grid_dataset(
     assert xr_ds.identical(xr_ds_reimported)
 
 
+def test_export_non_grid_in_grid_dataset(
+    tmp_path_factory: TempPathFactory, mock_dataset_non_grid_in_grid: DataSet
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_non_grid_in_grid.export(
+        export_type="netcdf", path=tmp_path, prefix="qcodes_"
+    )
+
+    pdf = mock_dataset_non_grid_in_grid.to_pandas_dataframe()
+    dims = _calculate_index_shape(pdf.index)
+    assert dims == {"x": 9, "y1": 450, "y2": 450}
+
+    xr_ds = mock_dataset_non_grid_in_grid.to_xarray_dataset()
+    assert len(xr_ds.coords) == 4
+    assert "multi_index" in xr_ds.coords
+    assert "x" in xr_ds.coords
+    assert "y1" in xr_ds.coords
+    assert "y2" in xr_ds.coords
+
+    assert xr_ds.dims == {"multi_index": 450}
+
+    expected_path = f"qcodes_{mock_dataset_non_grid_in_grid.captured_run_id}_{mock_dataset_non_grid_in_grid.guid}.nc"
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    xr_ds_reimported = ds.to_xarray_dataset()
+
+    assert len(xr_ds_reimported.coords) == 4
+    assert "multi_index" in xr_ds_reimported.coords
+    assert "x" in xr_ds_reimported.coords
+    assert "y1" in xr_ds_reimported.coords
+    assert "y2" in xr_ds_reimported.coords
+    assert xr_ds.identical(xr_ds_reimported)
+
+
+def test_export_grid_in_non_grid_dataset(
+    tmp_path_factory: TempPathFactory, mock_dataset_grid_in_non_grid: DataSet
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_grid_in_non_grid.export(
+        export_type="netcdf", path=tmp_path, prefix="qcodes_"
+    )
+
+    pdf = mock_dataset_grid_in_non_grid.to_pandas_dataframe()
+    dims = _calculate_index_shape(pdf.index)
+    assert dims == {"x1": 10, "x2": 10, "y": 5}
+
+    xr_ds = mock_dataset_grid_in_non_grid.to_xarray_dataset()
+    assert len(xr_ds.coords) == 4
+    assert "multi_index" in xr_ds.coords
+    assert "x1" in xr_ds.coords
+    assert "x2" in xr_ds.coords
+    assert "y" in xr_ds.coords
+
+    assert xr_ds.dims == {"multi_index": 50}
+
+    expected_path = f"qcodes_{mock_dataset_grid_in_non_grid.captured_run_id}_{mock_dataset_grid_in_non_grid.guid}.nc"
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    xr_ds_reimported = ds.to_xarray_dataset()
+
+    assert len(xr_ds_reimported.coords) == 4
+    assert "multi_index" in xr_ds_reimported.coords
+    assert "x1" in xr_ds_reimported.coords
+    assert "x2" in xr_ds_reimported.coords
+    assert "y" in xr_ds_reimported.coords
+    assert xr_ds.identical(xr_ds_reimported)
+
+
+def test_export_non_grid_in_non_grid_dataset(
+    tmp_path_factory: TempPathFactory, mock_dataset_non_grid_in_non_grid: DataSet
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_non_grid_in_non_grid.export(
+        export_type="netcdf", path=tmp_path, prefix="qcodes_"
+    )
+
+    pdf = mock_dataset_non_grid_in_non_grid.to_pandas_dataframe()
+    dims = _calculate_index_shape(pdf.index)
+    assert dims == {"x1": 10, "x2": 10, "y1": 50, "y2": 50}
+
+    xr_ds = mock_dataset_non_grid_in_non_grid.to_xarray_dataset()
+    assert len(xr_ds.coords) == 5
+    assert "multi_index" in xr_ds.coords
+    assert "x1" in xr_ds.coords
+    assert "x2" in xr_ds.coords
+    assert "y1" in xr_ds.coords
+    assert "y2" in xr_ds.coords
+
+    assert xr_ds.dims == {"multi_index": 50}
+
+    expected_path = f"qcodes_{mock_dataset_non_grid_in_non_grid.captured_run_id}_{mock_dataset_non_grid_in_non_grid.guid}.nc"
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    xr_ds_reimported = ds.to_xarray_dataset()
+
+    assert len(xr_ds_reimported.coords) == 5
+    assert "multi_index" in xr_ds_reimported.coords
+    assert "x1" in xr_ds_reimported.coords
+    assert "x2" in xr_ds_reimported.coords
+    assert "y1" in xr_ds_reimported.coords
+    assert "y2" in xr_ds_reimported.coords
+    assert xr_ds.identical(xr_ds_reimported)
+
+
 def test_inverted_coords_perserved_on_netcdf_roundtrip(
-    tmp_path_factory, mock_dataset_inverted_coords
+    tmp_path_factory: TempPathFactory, mock_dataset_inverted_coords
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
