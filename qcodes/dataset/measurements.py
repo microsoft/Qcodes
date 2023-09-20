@@ -423,7 +423,7 @@ class DataSaver:
             self._interdeps.validate_subset(list(results_dict.keys()))
         except (DependencyError, InferenceError) as err:
             raise ValueError(
-                "Can not add result, some required parameters " "are missing."
+                "Can not add result, some required parameters are missing."
             ) from err
 
     def _validate_result_shapes(
@@ -903,9 +903,8 @@ class Measurement:
         """
         if not isinstance(parameter, ParameterBase):
             raise ValueError(
-                "Can not register object of type {}. Can only "
+                f"Can not register object of type {type(parameter)}. Can only "
                 "register a QCoDeS Parameter."
-                "".format(type(parameter))
             )
 
         paramtype = self._infer_paramtype(parameter, paramtype)
@@ -954,7 +953,7 @@ class Measurement:
             )
         else:
             raise RuntimeError(
-                "Does not know how to register a parameter" f"of type {type(parameter)}"
+                f"Does not know how to register a parameter of type {type(parameter)}"
             )
 
         return self
@@ -1018,7 +1017,7 @@ class Measurement:
         # dependent (array)parameter
 
         if parameter is not None and parameter != paramspec:
-            raise ValueError("Parameter already registered " "in this Measurement.")
+            raise ValueError("Parameter already registered in this Measurement.")
 
         if setpoints is not None:
             sp_strings = [str(sp) for sp in setpoints]
