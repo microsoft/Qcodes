@@ -163,7 +163,7 @@ class DataSaver:
         results_dict: dict[ParamSpecBase, np.ndarray] = {}
 
         parameter_names = tuple(
-            partial_result[0].full_name
+            partial_result[0].register_name
             if isinstance(partial_result[0], ParameterBase)
             else partial_result[0]
             for partial_result in res_tuple
@@ -232,7 +232,9 @@ class DataSaver:
         partial_result: res_type,
     ) -> dict[ParamSpecBase, np.ndarray]:
         local_results = {}
-        setpoint_names = tuple(setpoint.full_name for setpoint in parameter.setpoints)
+        setpoint_names = tuple(
+            setpoint.register_name for setpoint in parameter.setpoints
+        )
         expanded = tuple(
             setpoint_name in parameter_names for setpoint_name in setpoint_names
         )
@@ -260,7 +262,7 @@ class DataSaver:
         """
         param, values = partial_result
         try:
-            parameter = self._interdeps._id_to_paramspec[str(param)]
+            parameter = self._interdeps._id_to_paramspec[str_or_register_name(param)]
         except KeyError:
             raise ValueError(
                 "Can not add result for parameter "
@@ -1020,12 +1022,12 @@ class Measurement:
             raise ValueError("Parameter already registered in this Measurement.")
 
         if setpoints is not None:
-            sp_strings = [str(sp) for sp in setpoints]
+            sp_strings = [str_or_register_name(sp) for sp in setpoints]
         else:
             sp_strings = []
 
         if basis is not None:
-            bs_strings = [str(bs) for bs in basis]
+            bs_strings = [str_or_register_name(bs) for bs in basis]
         else:
             bs_strings = []
 
@@ -1366,3 +1368,10 @@ class Measurement:
             dataset_class=dataset_class,
             parent_span=parent_span,
         )
+
+
+def str_or_register_name(sp: str | ParameterBase) -> str:
+    if isinstance(sp, str):
+        return sp
+    else:
+        return sp.register_name
