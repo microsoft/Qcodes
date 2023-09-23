@@ -266,8 +266,8 @@ class VisaInstrument(Instrument):
             # The pyvisa-sim visalib has a session attribute but the resource manager is not generic in the
             # visalib type so we need to use ignore[attr-defined] to avoid errors on session not being defined.
             n_sessions = len(self.resource_manager.visalib.sessions)  # type: ignore[attr-defined]
-            # if this instrument is the last one its safe to reset the device
-            if session_found and n_sessions == 1:
+            # if this instrument is the last one or there are no connected instruments its safe to reset the device
+            if (session_found and n_sessions == 1) or n_sessions == 0:
                 # work around for https://github.com/pyvisa/pyvisa-sim/issues/83
                 # see other issues for more context
                 # https://github.com/QCoDeS/Qcodes/issues/5356 and
