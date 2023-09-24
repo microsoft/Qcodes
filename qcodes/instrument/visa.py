@@ -260,12 +260,12 @@ class VisaInstrument(Instrument):
         if getattr(self, "visabackend", None) == "sim" and getattr(
             self, "resource_manager", None
         ):
-            session_found = (
-                self.resource_manager.session in self.resource_manager.visalib.sessions  # type: ignore[attr-defined]
-            )
             # The pyvisa-sim visalib has a session attribute but the resource manager is not generic in the
-            # visalib type so we need to use ignore[attr-defined] to avoid errors on session not being defined.
-            n_sessions = len(self.resource_manager.visalib.sessions)  # type: ignore[attr-defined]
+            # visalib type so we cannot get it in a type safe way
+            known_sessions = getattr(self.resource_manager.visalib, "sessions", ())
+            session_found = self.resource_manager.session in known_sessions
+
+            n_sessions = len(known_sessions)
             # if this instrument is the last one or there are no connected instruments its safe to reset the device
             if (session_found and n_sessions == 1) or n_sessions == 0:
                 # work around for https://github.com/pyvisa/pyvisa-sim/issues/83
