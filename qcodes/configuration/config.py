@@ -26,7 +26,9 @@ BASE_SCHEMA = {
     "required": []
 }
 
-_PARENT_MODULE = ".".join(__loader__.name.split(".")[:-1])
+# https://github.com/python/mypy/issues/4182
+_PARENT_MODULE = ".".join(__loader__.name.split(".")[:-1])  # type: ignore[name-defined]
+
 
 class Config:
     """

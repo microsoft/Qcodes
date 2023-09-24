@@ -267,7 +267,8 @@ def main() -> None:
 
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.
-    parent_module = ".".join(__loader__.name.split(".")[:-1])
+    # # https://github.com/python/mypy/issues/4182
+    parent_module = ".".join(__loader__.name.split(".")[:-1])  # type: ignore[name-defined]
 
     static_dir = files(parent_module).joinpath("dist")
     try:

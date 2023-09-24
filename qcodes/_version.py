@@ -4,7 +4,8 @@ def _get_version() -> str:
 
     import versioningit
 
-    root_module = __loader__.name.split(".")[0]
+    # https://github.com/python/mypy/issues/4182
+    root_module = __loader__.name.split(".")[0]  # type: ignore[name-defined]
 
     module_path = files(root_module)
     if isinstance(module_path, Path):
