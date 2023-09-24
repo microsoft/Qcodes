@@ -78,7 +78,7 @@ loop = ["qcodes_loop>=0.1.2"]
 test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
-    "hypothesis>=5.49.0",
+    "hypothesis>=6.85.0",
     "lxml>=4.6.0",
     "lxml-stubs>=0.4.0",
     "mypy>=0.971",
