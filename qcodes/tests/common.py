@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import copy
 import cProfile
 import os
-import tempfile
-from collections.abc import Generator, Mapping, Sequence
-from contextlib import contextmanager
+from collections.abc import Mapping, Sequence
 from functools import wraps
 from pathlib import Path
 from time import sleep
@@ -14,10 +11,7 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar
 import pytest
 from typing_extensions import ParamSpec
 
-import qcodes
-from qcodes.configuration import Config, DotDict
 from qcodes.metadatable import MetadatableWithName
-from qcodes.utils import deprecate
 
 if TYPE_CHECKING:
     from pytest import ExceptionInfo
@@ -177,73 +171,6 @@ class DummyComponent(MetadatableWithName):
     @property
     def full_name(self) -> str:
         return self.full_name
-
-
-@deprecate(reason="Unused internally", alternative="default_config fixture")
-@contextmanager
-def default_config(user_config: str | None = None) -> Generator[None, None, None]:
-    """
-    Context manager to temporarily establish default config settings.
-    This is achieved by overwriting the config paths of the user-,
-    environment-, and current directory-config files with the path of the
-    config file in the qcodes repository.
-    Additionally the current config object `qcodes.config` gets copied and
-    reestablished.
-
-    Args:
-        user_config: represents the user config file content.
-    """
-    home_file_name = Config.home_file_name
-    schema_home_file_name = Config.schema_home_file_name
-    env_file_name = Config.env_file_name
-    schema_env_file_name = Config.schema_env_file_name
-    cwd_file_name = Config.cwd_file_name
-    schema_cwd_file_name = Config.schema_cwd_file_name
-
-    Config.home_file_name = ''
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        file_name = os.path.join(tmpdirname, 'user_config.json')
-        file_name_schema = os.path.join(tmpdirname, 'user_config_schema.json')
-        if user_config is not None:
-            with open(file_name, 'w') as f:
-                f.write(user_config)
-
-        Config.home_file_name = file_name
-        Config.schema_home_file_name = file_name_schema
-        Config.env_file_name = ''
-        Config.schema_env_file_name = ''
-        Config.cwd_file_name = ''
-        Config.schema_cwd_file_name = ''
-
-        default_config_obj: DotDict | None = copy.deepcopy(qcodes.config.current_config)
-        qcodes.config = Config()
-
-        try:
-            yield
-        finally:
-            Config.home_file_name = home_file_name
-            Config.schema_home_file_name = schema_home_file_name
-            Config.env_file_name = env_file_name
-            Config.schema_env_file_name = schema_env_file_name
-            Config.cwd_file_name = cwd_file_name
-            Config.schema_cwd_file_name = schema_cwd_file_name
-
-            qcodes.config.current_config = default_config_obj
-
-
-@deprecate(reason="Unused internally", alternative="reset_config_on_exit fixture")
-@contextmanager
-def reset_config_on_exit() -> Generator[None, None, None]:
-    """
-    Context manager to clean any modification of the in memory config on exit
-
-    """
-    default_config_obj: DotDict | None = copy.deepcopy(qcodes.config.current_config)
-
-    try:
-        yield
-    finally:
-        qcodes.config.current_config = default_config_obj
 
 
 def compare_dictionaries(
