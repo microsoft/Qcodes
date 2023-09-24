@@ -106,7 +106,6 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
                 # https://github.com/QCoDeS/Qcodes/issues/5356 and
                 # https://github.com/pyvisa/pyvisa-sim/issues/82
                 self.resource_manager.visalib._init()
-        super().close()
 
         # Instrument close
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
