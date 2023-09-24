@@ -19,13 +19,6 @@ list of parameters to monitor:
 """
 from __future__ import annotations
 
-import sys
-
-if sys.version_info >= (3, 9):
-    from importlib.resources import as_file, files
-else:
-    from importlib_resources import as_file, files
-
 import asyncio
 import json
 import logging
@@ -37,6 +30,7 @@ from asyncio import CancelledError
 from collections import defaultdict
 from collections.abc import Awaitable, Sequence
 from contextlib import suppress
+from importlib.resources import as_file, files
 from threading import Event, Thread
 from typing import Any, Callable
 

@@ -1,17 +1,11 @@
 from __future__ import annotations
 
-import sys
-
-if sys.version_info >= (3, 9):
-    from importlib.resources import files
-else:
-    from importlib_resources import files
-
 import copy
 import json
 import logging
 import os
 from collections.abc import Mapping
+from importlib.resources import files
 from os.path import expanduser
 from pathlib import Path
 from typing import Any
