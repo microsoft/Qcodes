@@ -678,6 +678,7 @@ def test_export_2d_dataset(
 
 def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
+    assert xr_ds.dims == {"multi_index": 50}
     assert len(xr_ds.coords) == 3  # dims + 1 multi index
     assert "x" in xr_ds.coords
     assert len(xr_ds.coords["x"].attrs) == 8
@@ -727,6 +728,7 @@ def test_export_non_grid_dataset(
     assert "multi_index" in xr_ds.coords
     assert "x" in xr_ds.coords
     assert "y" in xr_ds.coords
+    assert xr_ds.dims == {"multi_index": 50}
 
     expected_path = f"qcodes_{mock_dataset_non_grid.captured_run_id}_{mock_dataset_non_grid.guid}.nc"
     assert os.listdir(path) == [expected_path]
