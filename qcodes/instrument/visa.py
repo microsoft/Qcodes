@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import warnings
 from collections.abc import Sequence
 from importlib.resources import as_file, files
 from typing import Any
@@ -272,7 +273,15 @@ class VisaInstrument(Instrument):
                 # see other issues for more context
                 # https://github.com/QCoDeS/Qcodes/issues/5356 and
                 # https://github.com/pyvisa/pyvisa-sim/issues/82
-                self.resource_manager.visalib._init()
+                try:
+                    self.resource_manager.visalib._init()
+                except AttributeError:
+                    warnings.warn(
+                        "The installed version of pyvisa-sim does not have an `_init` method "
+                        "in its visa library implementation. Cannot reset simulated instrument state. "
+                        "On reconnect the instrument may retain settings set in this session."
+                    )
+
         super().close()
 
     def write_raw(self, cmd: str) -> None:
