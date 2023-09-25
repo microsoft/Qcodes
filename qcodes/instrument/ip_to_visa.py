@@ -90,6 +90,23 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         if getattr(self, 'visa_handle', None):
             self.visa_handle.close()
 
+        if getattr(self, "visabackend", None) == "sim" and getattr(
+            self, "resource_manager", None
+        ):
+            # The pyvisa-sim visalib has a session attribute but the resource manager is not generic in the
+            # visalib type so we cannot get it in a type safe way
+            known_sessions = getattr(self.resource_manager.visalib, "sessions", ())
+            session_found = self.resource_manager.session in known_sessions
+
+            n_sessions = len(known_sessions)
+            # if this instrument is the last one or there are no connected instruments its safe to reset the device
+            if (session_found and n_sessions == 1) or n_sessions == 0:
+                # work around for https://github.com/pyvisa/pyvisa-sim/issues/83
+                # see other issues for more context
+                # https://github.com/QCoDeS/Qcodes/issues/5356 and
+                # https://github.com/pyvisa/pyvisa-sim/issues/82
+                self.resource_manager.visalib._init()
+
         # Instrument close
         if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
             self.connection.close()

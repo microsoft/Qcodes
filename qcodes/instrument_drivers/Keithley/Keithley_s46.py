@@ -139,37 +139,42 @@ class KeithleyS46(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any):
 
         super().__init__(name, address, terminator="\n", **kwargs)
+        try:
+            self.add_parameter(
+                "closed_channels",
+                get_cmd=":CLOS?",
+                get_parser=self._get_closed_channels_parser,
+            )
 
-        self.add_parameter(
-            "closed_channels",
-            get_cmd=":CLOS?",
-            get_parser=self._get_closed_channels_parser,
-        )
+            self._available_channels: list[str] = []
 
-        self._available_channels: list[str] = []
+            for relay_name, channel_count in zip(
+                KeithleyS46.relay_names, self.relay_layout
+            ):
 
-        for relay_name, channel_count in zip(
-            KeithleyS46.relay_names, self.relay_layout
-        ):
+                relay_lock = KeithleyS46RelayLock(relay_name)
 
-            relay_lock = KeithleyS46RelayLock(relay_name)
+                for channel_index in range(1, channel_count + 1):
+                    # E.g. For channel 'B2', channel_index is 2
+                    if channel_count > 1:
+                        alias = f"{relay_name}{channel_index}"
+                    else:
+                        alias = relay_name  # For channels R1 to R8, we have one
+                        # channel per relay. Channel alias = relay name
 
-            for channel_index in range(1, channel_count + 1):
-                # E.g. For channel 'B2', channel_index is 2
-                if channel_count > 1:
-                    alias = f"{relay_name}{channel_index}"
-                else:
-                    alias = relay_name  # For channels R1 to R8, we have one
-                    # channel per relay. Channel alias = relay name
+                    self.add_parameter(
+                        alias,
+                        channel_number=KeithleyS46.channel_numbers[alias],
+                        lock=relay_lock,
+                        parameter_class=S46Parameter,
+                    )
 
-                self.add_parameter(
-                    alias,
-                    channel_number=KeithleyS46.channel_numbers[alias],
-                    lock=relay_lock,
-                    parameter_class=S46Parameter,
-                )
-
-                self._available_channels.append(alias)
+                    self._available_channels.append(alias)
+        except RuntimeError as err:
+            # If we error on undesirable state we want to make sure
+            # we also close the visa connection
+            self.close()
+            raise err
 
     @staticmethod
     def _get_closed_channels_parser(reply: str) -> list[str]:
