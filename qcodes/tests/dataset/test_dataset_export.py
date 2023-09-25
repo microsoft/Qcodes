@@ -659,7 +659,6 @@ def test_export_2d_dataset(
     pdf = mock_dataset_grid.to_pandas_dataframe()
     dims = _calculate_index_shape(pdf.index)
     assert dims == {"x": 10, "y": 5}
-    pdf.to_xarray()
 
     xr_ds = mock_dataset_grid.to_xarray_dataset()
     assert xr_ds["z"].dims == ("x", "y")
@@ -699,7 +698,7 @@ def test_export_non_grid_in_grid_dataset_xarray(
     assert xr_ds.dims == {"multi_index": 450}
     # ideally we would probably expect this to be {x: 9, multi_index: 50}
     # however at the moment we do not store the "multiindexed" parameters
-    # severalty from the "regular" index parameters when there is a multiindex
+    # seperately from the "regular" index parameters when there is a multiindex
     # parameter
 
     assert "x" in xr_ds.coords
