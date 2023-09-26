@@ -702,6 +702,10 @@ def test_export_non_grid_in_grid_dataset_xarray(
     # seperately from the "regular" index parameters when there is a multiindex
     # parameter
 
+    # we expect to see both the multiindex and the subindexes in coords
+    # the subindexes are from the qcodes dataset so they should have qcodes metadata as 
+    # attributes. The multiindex does not exist in the qcodes dataset so
+    # it has no attributes
     assert "x" in xr_ds.coords
     assert len(xr_ds.coords["x"].attrs) == 8
     assert "y1" in xr_ds.coords
