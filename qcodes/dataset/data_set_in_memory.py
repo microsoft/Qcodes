@@ -227,10 +227,12 @@ class DataSetInMem(BaseDataSet):
         # in the code below floats and ints loaded from attributes are explicitly casted
         # this is due to some older versions of qcodes writing them with a different backend
         # reading them back results in a numpy array of one element
-
+        import cf_xarray as cfxr
         import xarray as xr
 
         loaded_data = xr.load_dataset(path, engine="h5netcdf")
+
+        loaded_data = cfxr.coding.decode_compress_to_multi_index(loaded_data)
 
         parent_dataset_links = str_to_links(
             loaded_data.attrs.get("parent_dataset_links", "[]")
@@ -393,12 +395,30 @@ class DataSetInMem(BaseDataSet):
             output[str(datavar)] = {}
             data = xr_data[datavar]
             output[str(datavar)][str(datavar)] = data.data
-            coords_unexpanded = []
-            for coord_name in data.dims:
-                coords_unexpanded.append(xr_data[coord_name].data)
-            coords_arrays = np.meshgrid(*coords_unexpanded, indexing="ij")
-            for coord_name, coord_array in zip(data.dims, coords_arrays):
-                output[str(datavar)][str(coord_name)] = coord_array
+
+            all_coords = []
+            for index_name in data.dims:
+                index = data.indexes[index_name]
+
+                coords = {name: data.coords[name] for name in index.names}
+                all_coords.append(coords)
+
+            if len(all_coords) > 1:
+                # if there are more than on index this cannot be a multiindex dataset
+                # so we can expand the data
+                coords_unexpanded = []
+                for coord_name in data.dims:
+                    coords_unexpanded.append(xr_data[coord_name].data)
+                coords_arrays = np.meshgrid(*coords_unexpanded, indexing="ij")
+                for coord_name, coord_array in zip(data.dims, coords_arrays):
+                    output[str(datavar)][str(coord_name)] = coord_array
+            elif len(all_coords) == 1:
+                # this is either a multiindex or a single regular index
+                # in both cases we do not need to reshape the data
+                coords = all_coords[0]
+                for coord_name, coord in coords.items():
+                    output[str(datavar)][str(coord_name)] = coord.data
+
         return output
 
     def prepare(

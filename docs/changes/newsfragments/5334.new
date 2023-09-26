@@ -1,0 +1,3 @@
+QCoDeS now exports data that isn't measured on a grid to a XArray using `MultiIndex`.
+Support for exporting these datasets to NetCDF has also been implemented.
+See `this notebook <../examples/DataSet/Working-With-Pandas-and-XArray.ipynb>`__ for additional details.

@@ -35,7 +35,7 @@ dependencies = [
     "opencensus>=0.7.10",
     "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
-    "pandas>=1.1.3",
+    "pandas>=1.2.0",
     "pyvisa>=1.11.0, <1.14.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.8.0",
@@ -45,7 +45,8 @@ dependencies = [
     "versioningit>=2.0.1",
     "websockets>=9.1",
     "wrapt>=1.13.2",
-    "xarray>=0.18.0",
+    "xarray>=2022.06.0",
+    "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.15.0",
     # transitive dependencies. We list these explicitly to",
     # ensure that we always use versions that do not have",
@@ -234,7 +235,8 @@ filterwarnings = [
 # RUF200 validate pyproject.toml
 # I isort
 # ISC flake8-implicit-str-concat
-select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC"]
+# TID253 banned-module-level-imports
+select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC", "TID253"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # We have a lot of use of f strings in log messages
@@ -282,6 +284,17 @@ extend-exclude = ["typings"]
 
 # This triggeres in notebooks even with a md cell at the top
 "*.ipynb" = ["E402"]
+
+# these imports are fine at module level
+# in tests and examples
+"docs/*" = ["TID253"]
+"qcodes/tests/*" = ["TID253"]
+
+[tool.ruff.flake8-tidy-imports]
+# There modules are relatively slow to import
+# and only required in specific places so
+# don't import them at module level
+banned-module-level-imports = ["xarray", "pandas", "opencensus"]
 
 [tool.setuptools]
 zip-safe = false
