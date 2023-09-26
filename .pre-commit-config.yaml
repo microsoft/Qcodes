@@ -19,7 +19,7 @@ repos:
       - id: darker
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.0.290'
+    rev: 'v0.0.291'
     hooks:
       - id: ruff
         types_or: [python, pyi, jupyter, toml]
