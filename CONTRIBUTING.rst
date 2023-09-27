@@ -98,7 +98,7 @@ Then to test and view the coverage:
 
 ::
 
-    pytest --cov=qcodes --cov-report xml --cov-config=setup.cfg
+    pytest --cov=qcodes --cov-report xml --cov-config=pyproject.toml
 
 To test and see the coverage (with missing lines) of a single module:
 
