@@ -98,6 +98,27 @@ dependencies. This can be done by installing QCoDeS using the `test` extra targe
 
     pip install -e <path-to-repository>[test]
 
+Installing QCoDeS from a Forked GitHub Repository
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you've forked the QCoDeS repository, make sure to also fetch the tags from the upstream repository for accurate versioning, especially if you wish to install with test dependencies. Not doing so may result in version conflicts.
+
+.. code:: bash
+
+    # Add the original QCoDeS repository as the 'upstream' remote
+    git remote add upstream https://github.com/QCoDeS/Qcodes.git
+
+    # Fetch all tags from the 'upstream' repository
+    git fetch --tags upstream
+
+After fetching the tags, proceed with the installation as usual:
+
+.. code:: bash
+
+    pip install -e <path-to-forked-repository>
+    # Or with test dependencies
+    pip install -e <path-to-forked-repository>[test]
+
 Other dependencies
 ~~~~~~~~~~~~~~~~~~
 
