@@ -20,7 +20,7 @@ from qcodes.tests.instrument_mocks import (
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("period", [None, 1])
 @pytest.mark.parametrize("plot", [None, True, False])
-@pytest.mark.parametrize("plot_config", [None, True, False])
+@pytest.mark.parametrize("plot_config", [True, None, False])
 def test_do0d_with_real_parameter(period, plot, plot_config) -> None:
     arrayparam = ArraySetPointParam(name="arrayparam")
 
