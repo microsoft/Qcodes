@@ -59,6 +59,7 @@ def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]
 def _load_to_xarray_dataarray_dict_no_metadata(
     dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> dict[str, xr.DataArray]:
+    import pandas as pd
     import xarray as xr
 
     data_xrdarray_dict: dict[str, xr.DataArray] = {}
@@ -91,7 +92,16 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 # we are on a grid
                 on_grid = index_prod == len(index)
                 if not on_grid:
-                    xrdarray = xr.DataArray(df[name], [("multi_index", df.index)])
+                    assert isinstance(df.index, pd.MultiIndex)
+
+                    if hasattr(xr, "Coordinates"):
+                        coords = xr.Coordinates.from_pandas_multiindex(
+                            df.index, "multi_index"
+                        )
+                        xrdarray = xr.DataArray(df[name], coords=coords)
+                    else:
+                        # support xarray < 2023.8.0, can be removed when we drop support for that
+                        xrdarray = xr.DataArray(df[name], [("multi_index", df.index)])
                 else:
                     xrdarray = df.to_xarray().get(name, xr.DataArray())
 
