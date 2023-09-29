@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Hashable, Mapping, Sequence
 from functools import reduce
 from operator import mul
 from typing import TYPE_CHECKING
@@ -93,7 +93,7 @@ def verify_dataframe_for_single_param(
     # check that the dataframe has the same elements as index and columns
     pandas_index_names = list(dataframe.index.names)
     pandas_column_names = list(dataframe)
-    pandas_names: list[str | float] = []
+    pandas_names: list[Hashable] = []
     for i in pandas_index_names:
         if i is not None:
             pandas_names.append(i)
