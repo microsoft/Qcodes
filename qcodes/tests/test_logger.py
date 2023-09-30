@@ -130,7 +130,7 @@ def test_start_logger() -> None:
     assert file_handler is not None
     assert file_handler.level == file_level
 
-    assert logging.getLogger().level == logger.get_level_code('DEBUG')
+    assert logging.getLogger().level == logger.get_level_code("NOTSET")
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
