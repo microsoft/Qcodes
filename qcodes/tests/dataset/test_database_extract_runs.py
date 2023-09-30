@@ -551,7 +551,6 @@ def test_load_by_X_functions(two_empty_temp_db_connections, some_interdeps) -> N
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
 
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_combine_runs(
     two_empty_temp_db_connections, empty_temp_db_connection, some_interdeps
 ) -> None:

@@ -321,7 +321,6 @@ def test_setting_write_period(wp) -> None:
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_setting_write_period_from_config(wp) -> None:
     qc.config.dataset.write_period = wp
 
@@ -341,7 +340,6 @@ def test_setting_write_period_from_config(wp) -> None:
 
 @pytest.mark.parametrize("write_in_background", [True, False])
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_setting_write_in_background_from_config(write_in_background) -> None:
     qc.config.dataset.write_in_background = write_in_background
 

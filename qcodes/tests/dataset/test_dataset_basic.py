@@ -285,7 +285,6 @@ def test_load_by_id_for_none() -> None:
     ),
 )
 @pytest.mark.usefixtures("empty_temp_db")
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_add_experiments(experiment_name, sample_name, dataset_name) -> None:
     qc.config.GUID_components.GUID_type = "random_sample"
 
