@@ -1,7 +1,6 @@
 import json
 
 import numpy as np
-import pytest
 
 from qcodes.dataset import load_by_guid, load_from_netcdf
 from qcodes.dataset.data_set import DataSet

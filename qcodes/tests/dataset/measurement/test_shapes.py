@@ -2,7 +2,6 @@ import logging
 
 import hypothesis.strategies as hst
 import numpy as np
-import pytest
 from hypothesis import HealthCheck, example, given, settings
 from pytest import LogCaptureFixture
 

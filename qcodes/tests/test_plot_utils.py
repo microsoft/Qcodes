@@ -2,7 +2,6 @@
 Tests for `qcodes.utils.plotting`.
 """
 import matplotlib
-import pytest
 from pytest import fixture
 
 import qcodes
