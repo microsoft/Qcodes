@@ -7,7 +7,7 @@ from qcodes.instrument_drivers.Keysight.keysight_34934a import Keysight34934A
 from qcodes.instrument_drivers.Keysight.keysight_34980a import Keysight34980A
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def switch_driver():
     inst = Keysight34980A(
         "keysight_34980A_sim",

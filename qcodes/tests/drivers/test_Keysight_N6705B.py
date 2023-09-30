@@ -3,7 +3,7 @@ import pytest
 import qcodes.instrument_drivers.Keysight.Keysight_N6705B as N6705B
 
 
-@pytest.fixture(scope="module", name="driver")
+@pytest.fixture(scope="function", name="driver")
 def _make_driver():
     driver = N6705B.N6705B(
         "N6705B", address="GPIB::1::INSTR", pyvisa_sim_file="Keysight_N6705B.yaml"

@@ -18,6 +18,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment, new_experiment
+from qcodes.instrument import Instrument
 from qcodes.station import Station
 
 settings.register_profile("ci", deadline=1000)
@@ -90,10 +91,12 @@ def default_session_config(
 
 
 @pytest.fixture(scope="function", autouse=True)
-def reset_config_on_exit() -> Generator[None, None, None]:
+def reset_state_on_exit() -> Generator[None, None, None]:
     """
-    Fixture to clean any modification of the in memory config on exit
+    Fixture to clean any shared state on exit
 
+    Currently this resets the config to the default config
+    and closes all instruments.
     """
     default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
 
@@ -101,6 +104,7 @@ def reset_config_on_exit() -> Generator[None, None, None]:
         yield
     finally:
         qc.config.current_config = default_config_obj
+        Instrument.close_all()
 
 
 @pytest.fixture(scope="function", name="empty_temp_db")
