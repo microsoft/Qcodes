@@ -7,9 +7,7 @@ from typing import Union
 
 import numpy as np
 
-complex_type_union = Union[
-    np.complex64, np.complex128, np.complex_, np.complexfloating, complex
-]
+complex_type_union = Union[np.complex64, np.complex128, np.complexfloating, complex]
 
 
 numpy_concrete_ints = (np.int8, np.int16, np.int32, np.int64,
@@ -46,7 +44,7 @@ numpy_c_floats = (np.half, np.single, np.double)
 """
 Floating point types that matches C types.
 """
-numpy_non_concrete_floats_instantiable = (np.float_, )
+numpy_non_concrete_floats_instantiable = tuple()
 """
 Default floating point types. The size may be platform dependent.
 """
@@ -68,7 +66,7 @@ numpy_c_complex = (np.csingle, np.cdouble)
 """
 Complex types that matches C types.
 """
-numpy_non_concrete_complex_instantiable = (np.complex_, )
+numpy_non_concrete_complex_instantiable = tuple()
 """
 Default complex types. The size may be platform dependent.
 """
