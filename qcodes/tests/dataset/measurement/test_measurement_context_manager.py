@@ -607,7 +607,6 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N) -> None
     set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
     get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
 )
-@pytest.mark.usefixtures("set_default_station_to_none")
 def test_datasaver_scalars(
     experiment, DAC, DMM, set_values, get_values, breakpoint, write_period
 ) -> None:
@@ -645,7 +644,6 @@ def test_datasaver_scalars(
     # More assertions of setpoints, labels and units in the DB!
 
 
-@pytest.mark.usefixtures('set_default_station_to_none')
 def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM) -> None:
     """
     Check that additional instrument metadata is captured into the dataset snapshot

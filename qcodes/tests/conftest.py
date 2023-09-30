@@ -185,11 +185,3 @@ def _make_standalone_parameters_dataset(
     )
     dataset.mark_completed()
     yield dataset
-
-
-@pytest.fixture(name="set_default_station_to_none")
-def _make_set_default_station_to_none():
-    """Makes sure that after startup and teardown there is no default station"""
-    Station.default = None
-    yield
-    Station.default = None
