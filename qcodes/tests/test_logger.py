@@ -220,6 +220,9 @@ def test_filter_without_started_logger_raises(AMI430_3D) -> None:
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_capture_dataframe() -> None:
     root_logger = logging.getLogger()
+    # the logger must be started to set level
+    # debug on the rootlogger
+    logger.start_logger()
     with capture_dataframe() as (_, cb):
         root_logger.debug(TEST_LOG_MESSAGE)
         df = cb()
