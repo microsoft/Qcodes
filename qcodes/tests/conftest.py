@@ -95,8 +95,8 @@ def reset_state_on_exit() -> Generator[None, None, None]:
     """
     Fixture to clean any shared state on exit
 
-    Currently this resets the config to the default config
-    and closes all instruments.
+    Currently this resets the config to the default config,
+    closes the default station and closes all instruments.
     """
     default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
 
@@ -105,6 +105,7 @@ def reset_state_on_exit() -> Generator[None, None, None]:
     finally:
         qc.config.current_config = default_config_obj
         Instrument.close_all()
+        Station.default = None
 
 
 @pytest.fixture(scope="function", name="empty_temp_db")
