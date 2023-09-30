@@ -48,6 +48,7 @@ def awg5208():
 def model372():
     from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
 
+    old_log_sep = logger.logger.LOGGING_SEPARATOR
     logger.logger.LOGGING_SEPARATOR = " - "
 
     logger.start_logger()
@@ -63,6 +64,7 @@ def model372():
     try:
         yield inst
     finally:
+        logger.logger.LOGGING_SEPARATOR = old_log_sep
         inst.close()
 
 
