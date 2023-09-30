@@ -94,7 +94,6 @@ def test_linear_sweep_get_setpoints(_param) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.usefixtures("default_config")
 @pytest.mark.parametrize("cache_config", [True, False])
 @pytest.mark.parametrize("cache_setting", [True, False, None])
 def test_cache_config(_param, _param_2, cache_config, cache_setting) -> None:

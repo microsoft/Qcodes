@@ -279,8 +279,6 @@ def test_update_and_validate_user_config(config, mocker) -> None:
     assert config.current_config == UPDATED_CONFIG
     assert config.current_schema == UPDATED_SCHEMA
 
-
-@pytest.mark.usefixtures("default_config")
 def test_update_from_path(path_to_config_file_on_disk) -> None:
     cfg = qcodes.config
 
@@ -310,7 +308,6 @@ def test_repr() -> None:
     assert rep == expected_rep
 
 
-@pytest.mark.usefixtures("default_config")
 def test_add_and_describe() -> None:
     """
     Test that a key can be added and described

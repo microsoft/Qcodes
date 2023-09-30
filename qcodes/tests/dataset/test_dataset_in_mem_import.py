@@ -10,7 +10,6 @@ from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 
 
-@pytest.mark.usefixtures("default_config")
 def test_basic_roundtrip(
     two_empty_temp_db_connections, some_interdeps, tmp_path
 ) -> None:
@@ -69,7 +68,6 @@ def test_basic_roundtrip(
     )
 
 
-@pytest.mark.usefixtures("default_config")
 def test_roundtrip_to_db_with_existing_meas(
     two_empty_temp_db_connections, some_interdeps, tmp_path
 ) -> None:
@@ -154,7 +152,6 @@ def test_roundtrip_to_db_with_existing_meas(
     )
 
 
-@pytest.mark.usefixtures("default_config")
 def test_roundtrip_to_db_with_existing_meas_in_same_exp(
     two_empty_temp_db_connections, some_interdeps, tmp_path
 ) -> None:

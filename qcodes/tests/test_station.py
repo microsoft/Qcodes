@@ -24,11 +24,6 @@ from .common import DummyComponent
 
 
 @pytest.fixture(autouse=True)
-def use_default_config(default_config):
-    yield
-
-
-@pytest.fixture(autouse=True)
 def set_default_station_to_none_automatically():
     """Makes sure that after startup and teardown there is no default station"""
     Station.default = None

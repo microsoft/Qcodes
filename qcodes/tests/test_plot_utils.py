@@ -50,7 +50,6 @@ def test_extend(dataset_with_outliers) -> None:
     plt.close()
 
 
-@pytest.mark.usefixtures("default_config")
 def test_defaults(dataset_with_outliers) -> None:
     run_id = dataset_with_outliers.run_id
 

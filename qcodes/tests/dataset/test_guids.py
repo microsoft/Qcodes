@@ -29,7 +29,6 @@ def _make_seed_random():
         random.setstate(state)
 
 
-@pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
 @given(
     loc=hst.integers(0, 0xFF),
@@ -70,7 +69,6 @@ def test_generate_legacy_guid(loc, stat, smpl) -> None:
     assert comps["time"] - gen_time < 2
 
 
-@pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
 @given(
     loc=hst.integers(0, 0xFF),
@@ -112,7 +110,6 @@ def test_generate_guid(loc, stat, smpl) -> None:
             _ = generate_guid()
 
 
-@pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=None,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(loc=hst.integers(-10, 350))
@@ -130,7 +127,6 @@ def test_set_guid_location_code(loc, monkeypatch) -> None:
         assert cfg["GUID_components"]["location"] == original_loc
 
 
-@pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000,
           suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(ws=hst.integers(-10, 17000000))
@@ -150,7 +146,6 @@ def test_set_guid_workstation_code(ws, monkeypatch) -> None:
         assert cfg["GUID_components"]["work_station"] == original_ws
 
 
-@pytest.mark.usefixtures("default_config")
 @settings(max_examples=50, deadline=1000)
 @given(
     locs=hst.lists(hst.integers(0, 0xFF), min_size=2, max_size=2, unique=True),
@@ -269,7 +264,6 @@ def test_validation() -> None:
 
 
 @pytest.mark.usefixtures("seed_random")
-@pytest.mark.usefixtures("default_config")
 def test_random_sample_guid() -> None:
 
     cfg = qc.config
@@ -281,7 +275,6 @@ def test_random_sample_guid() -> None:
         assert guid.split("-")[0] == expected_guid_prefix
 
 
-@pytest.mark.usefixtures("default_config")
 def test_random_sample_and_sample_int_in_guid_raises() -> None:
 
     cfg = qc.config
@@ -296,7 +289,6 @@ def test_random_sample_and_sample_int_in_guid_raises() -> None:
         generate_guid(sampleint=10)
 
 
-@pytest.mark.usefixtures("default_config")
 def test_sample_int_in_guid_warns_with_old_config() -> None:
     cfg = qc.config
     cfg["GUID_components"]["GUID_type"] = "explicit_sample"
@@ -307,7 +299,6 @@ def test_sample_int_in_guid_warns_with_old_config() -> None:
         generate_guid(sampleint=10)
 
 
-@pytest.mark.usefixtures("default_config")
 def test_sample_int_in_guid_raises() -> None:
     with pytest.raises(
         RuntimeError,
