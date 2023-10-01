@@ -66,7 +66,7 @@ numpy_c_complex = (np.csingle, np.cdouble)
 """
 Complex types that matches C types.
 """
-numpy_non_concrete_complex_instantiable: tuple[type, ...] = tuple()
+numpy_non_concrete_complex_instantiable: tuple[type[complex_type_union], ...] = tuple()
 """
 Default complex types. The size may be platform dependent.
 """
