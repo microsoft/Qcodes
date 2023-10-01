@@ -72,9 +72,9 @@ Default complex types. The size may be platform dependent.
 """
 
 numpy_complex: tuple[type[complex_type_union], ...] = (
-        numpy_concrete_complex +
-        numpy_c_complex +
-        numpy_non_concrete_complex_instantiable
+    numpy_concrete_complex
+    + numpy_c_complex  # type: ignore[assignment]
+    + numpy_non_concrete_complex_instantiable
 )
 """
 All numpy complex types
