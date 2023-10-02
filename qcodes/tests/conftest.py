@@ -18,6 +18,7 @@ from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment, new_experiment
+from qcodes.instrument import Instrument
 from qcodes.station import Station
 
 settings.register_profile("ci", deadline=1000)
@@ -39,30 +40,13 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 
 @pytest.fixture(scope="session", autouse=True)
-def disable_telemetry() -> Generator[None, None, None]:
+def default_session_config(
+    tmpdir_factory: pytest.TempdirFactory,
+) -> Generator[None, None, None]:
     """
-    We do not want the tests to send up telemetric information, so we disable
-    that with this fixture.
-    """
-
-    original_state = qc.config.telemetry.enabled
-
-    try:
-        qc.config.telemetry.enabled = False
-        yield
-    finally:
-        qc.config.telemetry.enabled = original_state
-
-
-@pytest.fixture(scope="function")
-def default_config(tmp_path: Path) -> Generator[None, None, None]:
-    """
-    Fixture to temporarily establish default config settings.
-    This is achieved by overwriting the config paths of the user-,
-    environment-, and current directory-config files with the path of the
-    config file in the qcodes repository,
-    additionally the current config object `qcodes.config` gets copied and
-    reestablished.
+    Set the config for the test session to be the default config.
+    Making sure that that user config does not influence the tests and
+    that tests cannot write to the user config.
     """
     home_file_name = Config.home_file_name
     schema_home_file_name = Config.schema_home_file_name
@@ -71,61 +55,57 @@ def default_config(tmp_path: Path) -> Generator[None, None, None]:
     cwd_file_name = Config.cwd_file_name
     schema_cwd_file_name = Config.schema_cwd_file_name
 
+    old_config: DotDict | None = copy.deepcopy(qc.config.current_config)
+    qc.config.current_config = copy.deepcopy(qc.config.defaults)
+
+    tmp_path = tmpdir_factory.mktemp("qcodes_tests")
+
     file_name = str(tmp_path / "user_config.json")
     file_name_schema = str(tmp_path / "user_config_schema.json")
 
-    Config.home_file_name = file_name
-    Config.schema_home_file_name = file_name_schema
-    Config.env_file_name = ""
-    Config.schema_env_file_name = ""
-    Config.cwd_file_name = ""
-    Config.schema_cwd_file_name = ""
+    qc.config.home_file_name = file_name
+    qc.config.schema_home_file_name = file_name_schema
+    qc.config.env_file_name = ""
+    qc.config.schema_env_file_name = ""
+    qc.config.cwd_file_name = ""
+    qc.config.schema_cwd_file_name = ""
 
+    # set any config that we want to be different from the default
+    # for the test session here
+    # also set the default db path here
+    qc.config.telemetry.enabled = False
+    qc.config.subscription.default_subscribers = []
+    qc.config.core.db_location = str(tmp_path / "temp.db")
+
+    try:
+        yield
+    finally:
+        qc.config.home_file_name = home_file_name
+        qc.config.schema_home_file_name = schema_home_file_name
+        qc.config.env_file_name = env_file_name
+        qc.config.schema_env_file_name = schema_env_file_name
+        qc.config.cwd_file_name = cwd_file_name
+        qc.config.schema_cwd_file_name = schema_cwd_file_name
+
+        qc.config.current_config = old_config
+
+
+@pytest.fixture(scope="function", autouse=True)
+def reset_state_on_exit() -> Generator[None, None, None]:
+    """
+    Fixture to clean any shared state on exit
+
+    Currently this resets the config to the default config,
+    closes the default station and closes all instruments.
+    """
     default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
-    qc.config = Config()
-
-    try:
-        yield
-    finally:
-        Config.home_file_name = home_file_name
-        Config.schema_home_file_name = schema_home_file_name
-        Config.env_file_name = env_file_name
-        Config.schema_env_file_name = schema_env_file_name
-        Config.cwd_file_name = cwd_file_name
-        Config.schema_cwd_file_name = schema_cwd_file_name
-
-        qc.config.current_config = default_config_obj
-
-
-@pytest.fixture(scope="function")
-def reset_config_on_exit() -> Generator[None, None, None]:
-
-    """
-    Fixture to clean any modification of the in memory config on exit
-
-    """
-    default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
 
     try:
         yield
     finally:
         qc.config.current_config = default_config_obj
-
-
-@pytest.fixture(scope="session", autouse=True)
-def disable_config_subscriber() -> Generator[None, None, None]:
-    """
-    We do not want the tests to send generate subscription events unless specifically
-    enabled in the test. So disable any default subscriber defined.
-    """
-
-    original_state = qc.config.subscription.default_subscribers
-
-    try:
-        qc.config.subscription.default_subscribers = []
-        yield
-    finally:
-        qc.config.subscription.default_subscribers = original_state
+        Instrument.close_all()
+        Station.default = None
 
 
 @pytest.fixture(scope="function", name="empty_temp_db")
@@ -205,11 +185,3 @@ def _make_standalone_parameters_dataset(
     )
     dataset.mark_completed()
     yield dataset
-
-
-@pytest.fixture(name="set_default_station_to_none")
-def _make_set_default_station_to_none():
-    """Makes sure that after startup and teardown there is no default station"""
-    Station.default = None
-    yield
-    Station.default = None

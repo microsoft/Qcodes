@@ -24,7 +24,6 @@ def dmm():
 
 
 @pytest.mark.parametrize("pass_station", (True, False))
-@pytest.mark.usefixtures("set_default_station_to_none")
 def test_station_snapshot_during_measurement(
     experiment, dac, dmm, pass_station
 ) -> None:
@@ -67,7 +66,6 @@ def test_station_snapshot_during_measurement(
     assert expected_snapshot == data_saver.dataset.snapshot
 
 
-@pytest.mark.usefixtures('set_default_station_to_none')
 def test_snapshot_creation_for_types_not_supported_by_builtin_json(experiment) -> None:
     """
     Test that `Measurement`/`Runner`/`DataSaver` infrastructure

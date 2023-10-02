@@ -2,7 +2,6 @@ import copy
 import json
 import os
 from functools import partial
-from pathlib import Path
 from unittest.mock import PropertyMock, mock_open
 
 import jsonschema
@@ -197,10 +196,6 @@ def test_missing_config_file(config) -> None:
         config.load_config("./missing.json")
 
 
-@pytest.mark.skipif(
-    Path.cwd() == Path.home(),
-    reason="This test requires that working dir is different from homedir.",
-)
 def test_default_config_files(config, load_config) -> None:
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
     # don't try to load custom schemas
@@ -212,9 +207,6 @@ def test_default_config_files(config, load_config) -> None:
     assert config == CONFIG
 
 
-@pytest.mark.skipif(Path.cwd() == Path.home(),
-                    reason="This test requires that "
-                           "working dir is different from homedir.")
 def test_bad_config_files(config, load_config) -> None:
 
     load_config.side_effect = partial(side_effect, BAD_CONFIG_MAP)
@@ -227,9 +219,6 @@ def test_bad_config_files(config, load_config) -> None:
         config.update_config()
 
 
-@pytest.mark.skipif(Path.cwd() == Path.home(),
-                    reason="This test requires that "
-                           "working dir is different from homedir.")
 def test_user_schema(config, load_config, mocker) -> None:
     mocker.patch("builtins.open", mock_open(read_data=USER_SCHEMA))
     load_config.side_effect = partial(side_effect, GOOD_CONFIG_MAP)
@@ -279,8 +268,6 @@ def test_update_and_validate_user_config(config, mocker) -> None:
     assert config.current_config == UPDATED_CONFIG
     assert config.current_schema == UPDATED_SCHEMA
 
-
-@pytest.mark.usefixtures("default_config")
 def test_update_from_path(path_to_config_file_on_disk) -> None:
     cfg = qcodes.config
 
@@ -310,7 +297,6 @@ def test_repr() -> None:
     assert rep == expected_rep
 
 
-@pytest.mark.usefixtures("default_config")
 def test_add_and_describe() -> None:
     """
     Test that a key can be added and described

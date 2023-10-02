@@ -48,6 +48,7 @@ def awg5208():
 def model372():
     from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
 
+    old_log_sep = logger.logger.LOGGING_SEPARATOR
     logger.logger.LOGGING_SEPARATOR = " - "
 
     logger.start_logger()
@@ -63,6 +64,7 @@ def model372():
     try:
         yield inst
     finally:
+        logger.logger.LOGGING_SEPARATOR = old_log_sep
         inst.close()
 
 
@@ -128,7 +130,7 @@ def test_start_logger() -> None:
     assert file_handler is not None
     assert file_handler.level == file_level
 
-    assert logging.getLogger().level == logger.get_level_code('DEBUG')
+    assert logging.getLogger().level == logger.get_level_code("NOTSET")
 
 
 @pytest.mark.usefixtures("remove_root_handlers")
@@ -220,6 +222,9 @@ def test_filter_without_started_logger_raises(AMI430_3D) -> None:
 @pytest.mark.usefixtures("remove_root_handlers")
 def test_capture_dataframe() -> None:
     root_logger = logging.getLogger()
+    # the logger must be started to set level
+    # debug on the rootlogger
+    logger.start_logger()
     with capture_dataframe() as (_, cb):
         root_logger.debug(TEST_LOG_MESSAGE)
         df = cb()

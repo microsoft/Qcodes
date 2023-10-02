@@ -551,7 +551,6 @@ def test_load_by_X_functions(two_empty_temp_db_connections, some_interdeps) -> N
     assert source_ds_2_2.the_same_dataset_as(test_ds)
 
 
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_combine_runs(
     two_empty_temp_db_connections, empty_temp_db_connection, some_interdeps
 ) -> None:
@@ -637,7 +636,6 @@ def test_combine_runs(
         assert guid_comp["work_station"] == int(mydict["work_station"])
 
 
-@pytest.mark.usefixtures("default_config")
 def test_copy_datasets_and_add_new(
     two_empty_temp_db_connections, some_interdeps
 ) -> None:

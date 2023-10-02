@@ -94,7 +94,6 @@ def test_linear_sweep_get_setpoints(_param) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.usefixtures("default_config")
 @pytest.mark.parametrize("cache_config", [True, False])
 @pytest.mark.parametrize("cache_setting", [True, False, None])
 def test_cache_config(_param, _param_2, cache_config, cache_setting) -> None:
@@ -858,7 +857,7 @@ def test_dond_2d_multi_datasets_output_type(
     assert isinstance(datasets[1], DataSet) is True
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_2d_multi_datasets_multi_exp(
     _param, _param_complex, _param_set, _param_set_2, request: FixtureRequest
 ) -> None:
@@ -881,7 +880,7 @@ def test_dond_2d_multi_datasets_multi_exp(
     assert datasets[1].exp_id == exp2.exp_id
 
 
-@pytest.mark.usefixtures("plot_close")
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_2d_multi_datasets_multi_exp_inconsistent_raises(
     _param, _param_complex, _param_set, _param_set_2, request: FixtureRequest
 ) -> None:
@@ -1117,6 +1116,7 @@ def test_dond_together_sweep_sweeper(_param_set, _param_set_2, _param) -> None:
         assert output[1].delay == delay_2
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_combined() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1150,6 +1150,7 @@ def test_dond_together_sweep_sweeper_combined() -> None:
     assert datasets[2].name == "ds3"
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_combined_2_in_1() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1214,6 +1215,7 @@ def test_dond_together_sweep_sweeper_mixed_splitting() -> None:
         )
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_combined_explict_names() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1248,6 +1250,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names() -> None:
     assert datasets[2].name == "ds3"
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_combined_explict_names_inconsistent() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1282,6 +1285,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names_inconsistent() -> No
         )
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1315,6 +1319,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name() ->
         )
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_combined_lists() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1373,6 +1378,7 @@ def test_empty_together_sweep_raises() -> None:
         TogetherSweep()
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_more_parameters() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1425,6 +1431,7 @@ def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies() 
         )
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1448,6 +1455,7 @@ def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies() -> None:
         )
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies() -> None:
     a = ManualParameter("a", initial_value=0)
     b = ManualParameter("b", initial_value=0)
@@ -1480,6 +1488,7 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies() -> None:
         )
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument) -> None:
 
     outer_shape = 10
@@ -1532,6 +1541,7 @@ def test_dond_together_sweep_parameter_with_setpoints(dummyinstrument) -> None:
     ] == (outer_shape, inner_shape, n_points_b)
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(
     dummyinstrument,
 ) -> None:
@@ -1587,6 +1597,7 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping(
     ] == (outer_shape, inner_shape, n_points_b)
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_callable(
     dummyinstrument,
 ) -> None:
@@ -1644,6 +1655,7 @@ def test_dond_together_sweep_parameter_with_setpoints_explicit_mapping_and_calla
     ] == (outer_shape, inner_shape, n_points_b)
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_sweeper_combinations(_param_set, _param_set_2, _param) -> None:
     outer_shape = 10
     inner_shape = 15
@@ -1678,6 +1690,7 @@ def test_dond_sweeper_combinations(_param_set, _param_set_2, _param) -> None:
         assert g in sweep_groups
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_sweep_int_vs_float() -> None:
 
     float_param = ManualParameter("float_param", initial_value=0.0)
@@ -1689,6 +1702,7 @@ def test_sweep_int_vs_float() -> None:
     assert dataset.cache.data()["float_param"]["int_param"].dtype.kind == "i"
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_error_no_measured_parameters() -> None:
     float_param = ManualParameter("float_param", initial_value=0.0)
     int_param = ManualParameter("int_param", vals=Ints(0, 100))
@@ -1697,6 +1711,7 @@ def test_error_no_measured_parameters() -> None:
         dond(ArraySweep(int_param, [1, 2, 3]), ArraySweep(float_param, [1.0, 2.0, 3.0]))
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_error_measured_grouped_and_not_grouped() -> None:
     param_1 = ManualParameter("param_1", initial_value=0.0)
     param_2 = ManualParameter("param_2", initial_value=0.0)
@@ -1708,6 +1723,7 @@ def test_error_measured_grouped_and_not_grouped() -> None:
         dond(LinSweep(param_1, 0, 10, 10), param_2, [param_3])
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_post_action(mocker) -> None:
     param_1 = ManualParameter("param_1", initial_value=0.0)
     param_2 = ManualParameter("param_2", initial_value=0.0)
@@ -1718,6 +1734,7 @@ def test_post_action(mocker) -> None:
     post_actions[0].assert_called_with()
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_extra_log_info(caplog: LogCaptureFixture) -> None:
 
     param_1 = ManualParameter("param_1", initial_value=0.0)
@@ -1730,6 +1747,7 @@ def test_extra_log_info(caplog: LogCaptureFixture) -> None:
     assert log_message in caplog.text
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_default_log_info(caplog: LogCaptureFixture) -> None:
 
     param_1 = ManualParameter("param_1", initial_value=0.0)
@@ -1741,6 +1759,7 @@ def test_default_log_info(caplog: LogCaptureFixture) -> None:
     assert "Using 'qcodes.dataset.dond'" in caplog.text
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
 
     n_points = 10
@@ -1764,6 +1783,7 @@ def test_dond_get_after_set(_param_set, _param_set_2, _param) -> None:
     assert b.set_count == 0
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_no_get_after_set(_param_set, _param_set_2, _param) -> None:
 
     n_points = 10
@@ -1787,6 +1807,7 @@ def test_dond_no_get_after_set(_param_set, _param_set_2, _param) -> None:
     assert b.set_count == 0
 
 
+@pytest.mark.usefixtures("plot_close", "experiment")
 def test_dond_get_after_set_stores_get_value(_param_set, _param_set_2, _param) -> None:
 
     n_points = 11

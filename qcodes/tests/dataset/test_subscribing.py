@@ -60,7 +60,7 @@ def basic_subscriber():
 
 
 @pytest.fixture(name="working_subscriber_config")
-def _make_working_subscriber_config(tmp_path, default_config):
+def _make_working_subscriber_config(tmp_path):
     # This string represents the config file in the home directory:
     config = """
     {
@@ -89,7 +89,7 @@ def _make_working_subscriber_config(tmp_path, default_config):
 
 
 @pytest.fixture(name="broken_subscriber_config")
-def _make_broken_subscriber_config(tmp_path, default_config):
+def _make_broken_subscriber_config(tmp_path):
     # This string represents the config file in the home directory:
     config = """
     {
