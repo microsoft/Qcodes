@@ -36,7 +36,7 @@ docutils==0.18.1
 entrypoints==0.4
 exceptiongroup~=1.1.0
 execnet~=2.0.2
-executing~=1.2.0
+executing~=2.0.0
 fastjsonschema~=2.18.0
 fonttools~=4.43.0
 future==0.18.3
