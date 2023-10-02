@@ -249,6 +249,7 @@ class DataSet(BaseDataSet):
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
+        self._export_limit = 1000
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -1466,9 +1467,13 @@ class DataSet(BaseDataSet):
         """Export data as netcdf to a given path with file prefix"""
         import xarray as xr
 
-        if self._estimate_ds_size() > 1000:
+        if self._estimate_ds_size() > self._export_limit:
             file_path = path / file_name
             print("large dataset export.")
+            log.info(
+                "Dataset is expected to be larger that threshold. Using distributed export."
+            )
+
             with tempfile.TemporaryDirectory() as temp_dir:
                 temp_path = Path(temp_dir)
                 for i in tqdm(range(len(self))):
