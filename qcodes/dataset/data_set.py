@@ -4,6 +4,7 @@ import importlib
 import json
 import logging
 import sys
+import tempfile
 import time
 import uuid
 from collections.abc import Callable, Mapping, Sequence
@@ -1468,18 +1469,18 @@ class DataSet(BaseDataSet):
         if self._estimate_ds_size() > 1000:
             file_path = path / file_name
             print("large dataset export.")
-            temp_dir = Path(f"./temp_export_{self.guid}/")
-            temp_dir.mkdir(exist_ok=True)
-            for i in tqdm(range(len(self))):
-                self.to_xarray_dataset(start=i + 1, end=i + 1).to_netcdf(
-                    str(temp_dir / f"ds_{i:03d}.nc"), engine="h5netcdf"
-                )
-            files = tuple(temp_dir.glob("*.nc"))
-            data = xr.open_mfdataset(files)
-            write_job = data.to_netcdf(file_path, compute=False, engine="h5netcdf")
-            with ProgressBar():
-                print(f"Writing to {file_path}")
-                write_job.compute()
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                for i in tqdm(range(len(self))):
+                    self.to_xarray_dataset(start=i + 1, end=i + 1).to_netcdf(
+                        temp_path / f"ds_{i:03d}.nc", engine="h5netcdf"
+                    )
+                files = tuple(temp_path.glob("*.nc"))
+                data = xr.open_mfdataset(files)
+                write_job = data.to_netcdf(file_path, compute=False, engine="h5netcdf")
+                with ProgressBar():
+                    print(f"Writing to {file_path}")
+                    write_job.compute()
         else:
             file_path = super()._export_as_netcdf(path=path, file_name=file_name)
         return file_path
