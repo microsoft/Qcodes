@@ -1474,7 +1474,7 @@ class DataSet(BaseDataSet):
                 self.to_xarray_dataset(start=i + 1, end=i + 1).to_netcdf(
                     str(temp_dir / f"ds_{i:03d}.nc"), engine="h5netcdf"
                 )
-            files = [f for f in temp_dir.glob("*.nc")]
+            files = tuple(temp_dir.glob("*.nc"))
             data = xr.open_mfdataset(files)
             write_job = data.to_netcdf(file_path, compute=False, engine="h5netcdf")
             with ProgressBar():
