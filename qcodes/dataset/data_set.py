@@ -1477,10 +1477,15 @@ class DataSet(BaseDataSet):
                     )
                 files = tuple(temp_path.glob("*.nc"))
                 data = xr.open_mfdataset(files)
-                write_job = data.to_netcdf(file_path, compute=False, engine="h5netcdf")
-                with ProgressBar():
-                    print(f"Writing to {file_path}")
-                    write_job.compute()
+                try:
+                    write_job = data.to_netcdf(
+                        file_path, compute=False, engine="h5netcdf"
+                    )
+                    with ProgressBar():
+                        print(f"Writing to {file_path}")
+                        write_job.compute()
+                finally:
+                    data.close()
         else:
             file_path = super()._export_as_netcdf(path=path, file_name=file_name)
         return file_path
