@@ -1,19 +1,8 @@
 from __future__ import annotations
 
-import sys
-
-from dask.diagnostics.progress import ProgressBar
-from tqdm import tqdm
-
-if sys.version_info >= (3, 10):
-    # new entrypoints api was added in 3.10
-    from importlib.metadata import entry_points
-else:
-    # 3.9 and earlier
-    from importlib_metadata import entry_points
-
 import logging
 import os
+import sys
 import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
@@ -41,6 +30,13 @@ from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
 from .sqlite.queries import raw_time_to_str_time
+
+if sys.version_info >= (3, 10):
+    # new entrypoints api was added in 3.10
+    from importlib.metadata import entry_points
+else:
+    # 3.9 and earlier
+    from importlib_metadata import entry_points
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -245,21 +241,6 @@ class DataSetProtocol(Protocol):
     ) -> ParameterData:
         ...
 
-    def _estimate_ds_size(self) -> float:
-        """
-        Give an estimated size of the dataset as the size of a single row
-        times the len of the dataset. Result is returned in Mega Bytes.
-
-        Note that this does not take overhead into account so it works best
-        if the row size is "large"
-        """
-        sample_data = self.get_parameter_data(start=1, end=1)
-        row_size = 0.0
-
-        for param_data in sample_data.values():
-            for array in param_data.values():
-                row_size += sys.getsizeof(array)
-        return row_size * len(self) / 1024 / 1024
 
     def get_parameters(self) -> SPECS:
         # used by plottr
@@ -484,25 +465,9 @@ class BaseDataSet(DataSetProtocol, Protocol):
 
     def _export_as_netcdf(self, path: Path, file_name: str) -> Path:
         """Export data as netcdf to a given path with file prefix"""
-        import xarray as xr
         file_path = path / file_name
-        if self._estimate_ds_size() > 1000:
-            print("large dataset export.")
-            temp_dir = Path(f"./temp_export_{self.guid}/")
-            temp_dir.mkdir(exist_ok=True)
-            for i in tqdm(range(len(self))):
-                self.to_xarray_dataset(start=i + 1, end=i + 1).to_netcdf(
-                    str(temp_dir / f"ds_{i:03d}.nc"), engine="h5netcdf"
-                )
-            files = [f for f in temp_dir.glob("*.nc")]
-            data = xr.open_mfdataset(files)
-            write_job = data.to_netcdf(file_path, compute=False, engine="h5netcdf")
-            with ProgressBar():
-                print(f"Writing to {file_path}")
-                write_job.compute()
-        else:
-            xarr_dataset = self.to_xarray_dataset()
-            xarray_to_h5netcdf_with_complex_numbers(xarr_dataset, file_path)
+        xarr_dataset = self.to_xarray_dataset()
+        xarray_to_h5netcdf_with_complex_numbers(xarr_dataset, file_path)
         return file_path
 
     def _export_as_csv(self, path: Path, file_name: str) -> Path:
