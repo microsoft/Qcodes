@@ -15,8 +15,8 @@ from threading import Thread
 from typing import TYPE_CHECKING, Any
 
 import numpy
-from dask.diagnostics.progress import ProgressBar
-from tqdm import tqdm
+from tqdm.auto import trange
+from tqdm.dask import TqdmCallback
 
 import qcodes
 from qcodes.dataset.data_set_protocol import (
@@ -1464,14 +1464,15 @@ class DataSet(BaseDataSet):
 
         if self._estimate_ds_size() > self._export_limit:
             file_path = path / file_name
-            print("large dataset export.")
             log.info(
                 "Dataset is expected to be larger that threshold. Using distributed export."
             )
-
+            print(
+                "Large dataset deteced. Will write to individual files and combine to reduce memory overhead."
+            )
             with tempfile.TemporaryDirectory() as temp_dir:
                 temp_path = Path(temp_dir)
-                for i in tqdm(range(len(self))):
+                for i in trange(len(self), desc="Writing individual files"):
                     self.to_xarray_dataset(start=i + 1, end=i + 1).to_netcdf(
                         temp_path / f"ds_{i:03d}.nc", engine="h5netcdf"
                     )
@@ -1481,8 +1482,7 @@ class DataSet(BaseDataSet):
                     write_job = data.to_netcdf(
                         file_path, compute=False, engine="h5netcdf"
                     )
-                    with ProgressBar():
-                        print(f"Writing to {file_path}")
+                    with TqdmCallback(desc="Combining files"):
                         write_job.compute()
                 finally:
                     data.close()
