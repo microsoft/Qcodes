@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -128,7 +130,7 @@ def _make_mock_dataset_numpy(experiment) -> DataSet:
     y = np.arange(10, 21, 1)
     dataset.mark_started()
     for x in range(10):
-        results = [{"x": x, "y": y, "z": x + y}]
+        results: list[dict[str, int | np.ndarray]] = [{"x": x, "y": y, "z": x + y}]
         dataset.add_results(results)
     dataset.mark_completed()
     return dataset
