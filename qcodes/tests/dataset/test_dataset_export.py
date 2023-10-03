@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
+from numpy.testing import assert_allclose
 from pytest import LogCaptureFixture, TempPathFactory
 
 import qcodes
@@ -121,9 +122,9 @@ def _make_mock_dataset_grid(experiment) -> DataSet:
 @pytest.fixture(name="mock_dataset_numpy")
 def _make_mock_dataset_numpy(experiment) -> DataSet:
     dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", "numeric")
-    yparam = ParamSpecBase("y", "array")
-    zparam = ParamSpecBase("z", "array")
+    xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
+    yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
+    zparam = ParamSpecBase("z", "array", label="z label", unit="z unit")
     idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
     dataset.set_interdependencies(idps)
 
@@ -139,9 +140,9 @@ def _make_mock_dataset_numpy(experiment) -> DataSet:
 @pytest.fixture(name="mock_dataset_numpy_complex")
 def _make_mock_dataset_numpy_complex(experiment) -> DataSet:
     dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", "numeric")
-    yparam = ParamSpecBase("y", "array")
-    zparam = ParamSpecBase("z", "array")
+    xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
+    yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
+    zparam = ParamSpecBase("z", "array", label="z label", unit="z unit")
     idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
     dataset.set_interdependencies(idps)
 
@@ -725,6 +726,21 @@ def test_export_numpy_dataset(
         "Dataset is expected to be larger that threshold. Using distributed export."
         in caplog.records[0].msg
     )
+    loaded_ds = xr.load_dataset(mock_dataset_numpy.export_info.export_paths["nc"])
+    assert loaded_ds.x.shape == (10,)
+    assert_allclose(loaded_ds.x, np.arange(10))
+    assert loaded_ds.y.shape == (11,)
+    assert_allclose(loaded_ds.y, np.arange(10, 21, 1))
+
+    arrays = []
+    for i in range(10):
+        arrays.append(np.arange(10 + i, 21 + i))
+    expected_z = np.array(arrays)
+
+    assert loaded_ds.z.shape == (10, 11)
+    assert_allclose(loaded_ds.z, expected_z)
+
+    _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_numpy)
 
 
 def test_export_numpy_dataset_complex(
@@ -741,6 +757,22 @@ def test_export_numpy_dataset_complex(
         "Dataset is expected to be larger that threshold. Using distributed export."
         in caplog.records[0].msg
     )
+    loaded_ds = xr.load_dataset(
+        mock_dataset_numpy_complex.export_info.export_paths["nc"]
+    )
+    assert loaded_ds.x.shape == (10,)
+    assert_allclose(loaded_ds.x, np.arange(10))
+    assert loaded_ds.y.shape == (11,)
+    assert_allclose(loaded_ds.y, np.arange(10, 21, 1))
+
+    arrays = []
+    for i in range(10):
+        arrays.append(1j * np.arange(10, 21) + i)
+    expected_z = np.array(arrays)
+
+    assert loaded_ds.z.shape == (10, 11)
+    assert_allclose(loaded_ds.z, expected_z)
+    _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_numpy_complex)
 
 
 def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:
