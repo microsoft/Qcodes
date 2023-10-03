@@ -243,6 +243,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
             )
             # pyright 1.1.329 for some reason pyright does not allow a bool here
             # the function is typed to take both True and False in overload
+            # https://github.com/microsoft/pyright/issues/6069
             maybe_write_job = internal_ds.to_netcdf(
                 path=file_path,
                 engine="h5netcdf",
