@@ -16,7 +16,6 @@ from typing import TYPE_CHECKING, Any
 
 import numpy
 from tqdm.auto import trange
-from tqdm.dask import TqdmCallback
 
 import qcodes
 from qcodes.dataset.data_set_protocol import (
@@ -97,6 +96,7 @@ from .exporters.export_to_pandas import (
 from .exporters.export_to_xarray import (
     load_to_xarray_dataarray_dict,
     load_to_xarray_dataset,
+    xarray_to_h5netcdf_with_complex_numbers,
 )
 from .subscriber import _Subscriber
 
@@ -1473,17 +1473,14 @@ class DataSet(BaseDataSet):
             with tempfile.TemporaryDirectory() as temp_dir:
                 temp_path = Path(temp_dir)
                 for i in trange(len(self), desc="Writing individual files"):
-                    self.to_xarray_dataset(start=i + 1, end=i + 1).to_netcdf(
-                        temp_path / f"ds_{i:03d}.nc", engine="h5netcdf"
+                    xarray_to_h5netcdf_with_complex_numbers(
+                        self.to_xarray_dataset(start=i + 1, end=i + 1),
+                        temp_path / f"ds_{i:03d}.nc",
                     )
                 files = tuple(temp_path.glob("*.nc"))
                 data = xr.open_mfdataset(files)
                 try:
-                    write_job = data.to_netcdf(
-                        file_path, compute=False, engine="h5netcdf"
-                    )
-                    with TqdmCallback(desc="Combining files"):
-                        write_job.compute()
+                    xarray_to_h5netcdf_with_complex_numbers(data, file_path)
                 finally:
                     data.close()
         else:

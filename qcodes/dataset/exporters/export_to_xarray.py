@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
+from tqdm.dask import TqdmCallback
 
 from qcodes.dataset.linked_datasets.links import links_to_str
 
@@ -207,7 +208,7 @@ def _paramspec_dict_with_extras(
 
 
 def xarray_to_h5netcdf_with_complex_numbers(
-    xarray_dataset: xr.Dataset, file_path: str | Path
+    xarray_dataset: xr.Dataset, file_path: str | Path, compute: bool = True
 ) -> None:
     import cf_xarray as cfxr
     from pandas import MultiIndex
@@ -240,8 +241,14 @@ def xarray_to_h5netcdf_with_complex_numbers(
                 message="You are writing invalid netcdf features",
                 category=UserWarning,
             )
-            internal_ds.to_netcdf(
-                path=file_path, engine="h5netcdf", invalid_netcdf=True
+            maybe_write_job = internal_ds.to_netcdf(
+                path=file_path, engine="h5netcdf", invalid_netcdf=True, compute=compute
             )
     else:
-        internal_ds.to_netcdf(path=file_path, engine="h5netcdf")
+        maybe_write_job = internal_ds.to_netcdf(
+            path=file_path, engine="h5netcdf", compute=compute
+        )
+
+    if not compute and maybe_write_job is not None:
+        with TqdmCallback(desc="Combining files"):
+            maybe_write_job.compute()

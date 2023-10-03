@@ -136,6 +136,24 @@ def _make_mock_dataset_numpy(experiment) -> DataSet:
     return dataset
 
 
+@pytest.fixture(name="mock_dataset_numpy_complex")
+def _make_mock_dataset_numpy_complex(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "array")
+    zparam = ParamSpecBase("z", "array")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps)
+
+    y = np.arange(10, 21, 1)
+    dataset.mark_started()
+    for x in range(10):
+        results: list[dict[str, int | np.ndarray]] = [{"x": x, "y": y, "z": x + 1j * y}]
+        dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_non_grid")
 def _make_mock_dataset_non_grid(experiment) -> DataSet:
     dataset = new_data_set("dataset")
@@ -702,6 +720,22 @@ def test_export_numpy_dataset(
     mock_dataset_numpy._export_limit = 0
     with caplog.at_level(logging.INFO):
         mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    assert (
+        "Dataset is expected to be larger that threshold. Using distributed export."
+        in caplog.records[0].msg
+    )
+
+
+def test_export_numpy_dataset_complex(
+    tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet, caplog
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    mock_dataset_numpy_complex._export_limit = 0
+    with caplog.at_level(logging.INFO):
+        mock_dataset_numpy_complex.export(
+            export_type="netcdf", path=tmp_path, prefix="qcodes_"
+        )
 
     assert (
         "Dataset is expected to be larger that threshold. Using distributed export."
