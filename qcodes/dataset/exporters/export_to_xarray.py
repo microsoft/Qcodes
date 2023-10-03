@@ -241,12 +241,17 @@ def xarray_to_h5netcdf_with_complex_numbers(
                 message="You are writing invalid netcdf features",
                 category=UserWarning,
             )
+            # pyright 1.1.329 for some reason pyright does not allow a bool here
+            # the function is typed to take both True and False in overload
             maybe_write_job = internal_ds.to_netcdf(
-                path=file_path, engine="h5netcdf", invalid_netcdf=True, compute=compute
+                path=file_path,
+                engine="h5netcdf",
+                invalid_netcdf=True,
+                compute=compute,  # pyright: ignore
             )
     else:
         maybe_write_job = internal_ds.to_netcdf(
-            path=file_path, engine="h5netcdf", compute=compute
+            path=file_path, engine="h5netcdf", compute=compute  # pyright: ignore
         )
 
     if not compute and maybe_write_job is not None:
