@@ -210,6 +210,7 @@ ignore = [
     "qcodes/instrument_drivers/Harvard/Decadac.py",
     ]
 reportMissingTypeStubs = true
+stubPath = "typings/stubs"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
