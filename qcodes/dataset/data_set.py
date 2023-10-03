@@ -1465,13 +1465,29 @@ class DataSet(BaseDataSet):
         if self._estimate_ds_size() > self._export_limit:
             file_path = path / file_name
             log.info(
-                "Dataset is expected to be larger that threshold. Using distributed export."
+                "Dataset is expected to be larger that threshold. Using distributed export.",
+                extra={
+                    "file_name": file_path,
+                    "qcodes_guid": self.guid,
+                    "ds_name": self.name,
+                    "exp_name": self.exp_name,
+                },
             )
             print(
-                "Large dataset deteced. Will write to individual files and combine to reduce memory overhead."
+                "Large dataset detected. Will write to individual files and combine to reduce memory overhead."
             )
             with tempfile.TemporaryDirectory() as temp_dir:
                 temp_path = Path(temp_dir)
+                log.info(
+                    "Writing individual files to temp dir.",
+                    extra={
+                        "file_name": file_path,
+                        "qcodes_guid": self.guid,
+                        "ds_name": self.name,
+                        "exp_name": self.exp_name,
+                        "temp_dir": temp_dir,
+                    },
+                )
                 for i in trange(len(self), desc="Writing individual files"):
                     xarray_to_h5netcdf_with_complex_numbers(
                         self.to_xarray_dataset(start=i + 1, end=i + 1),
@@ -1480,6 +1496,16 @@ class DataSet(BaseDataSet):
                 files = tuple(temp_path.glob("*.nc"))
                 data = xr.open_mfdataset(files)
                 try:
+                    log.info(
+                        "Combining temp files into one file.",
+                        extra={
+                            "file_name": file_path,
+                            "qcodes_guid": self.guid,
+                            "ds_name": self.name,
+                            "exp_name": self.exp_name,
+                            "temp_dir": temp_dir,
+                        },
+                    )
                     xarray_to_h5netcdf_with_complex_numbers(data, file_path)
                 finally:
                     data.close()
