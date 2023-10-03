@@ -1504,7 +1504,6 @@ class DataSet(BaseDataSet):
         return row_size * len(self) / 1024 / 1024
 
 
-
 # public api
 def load_by_run_spec(
     *,
