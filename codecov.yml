@@ -1,6 +1,6 @@
 codecov:
   token: c3b231db-2db3-4560-a477-6edcf4cf5ad1
-  branch: master
+  branch: main
   bot: qcodes-bot
 
 coverage:

@@ -6,13 +6,13 @@ concurrency:
 on:
   push:
     branches:
-      - 'master'
+      - 'main'
       - 'release/*'
     tags:
       - 'v*'
   pull_request:
   merge_group:
-    branches: ['master']
+    branches: ['main']
 
 jobs:
   pytestmypy:
