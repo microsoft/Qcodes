@@ -81,7 +81,6 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.utils import (
     NumpyJSONEncoder,
-    QCoDeSDeprecationWarning,
     deprecate,
     issue_deprecation_warning,
 )
@@ -865,7 +864,6 @@ class DataSet(BaseDataSet):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -964,7 +962,6 @@ class DataSet(BaseDataSet):
             Return a pandas DataFrame with
                 df = ds.to_pandas_dataframe()
         """
-        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -1016,7 +1013,6 @@ class DataSet(BaseDataSet):
 
                 dataarray_dict = ds.to_xarray_dataarray_dict()
         """
-        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1067,7 +1063,6 @@ class DataSet(BaseDataSet):
 
                 xds = ds.to_xarray_dataset()
         """
-        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1511,19 +1506,6 @@ class DataSet(BaseDataSet):
                 row_size += sys.getsizeof(array)
         return row_size * len(self) / 1024 / 1024
 
-    @staticmethod
-    def _warn_if_set(
-        *params: str | ParamSpec | ParameterBase,
-        start: int | None = None,
-        end: int | None,
-    ) -> None:
-        if len(params) > 0 or start is not None or end is not None:
-            QCoDeSDeprecationWarning(
-                "Passing params, start or stop to to_xarray_... and "
-                "to_pandas_... methods is deprecated "
-                "This will be an error in the future. "
-                "If you need to sub-select use `dataset.get_parameter_data`"
-            )
 
 
 # public api
