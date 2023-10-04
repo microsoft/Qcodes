@@ -129,7 +129,7 @@ pyzmq~=25.1.0
 requests~=2.31.0
 rsa==4.9
 ruamel.yaml==0.17.34
-ruamel.yaml.clib==0.2.7
+ruamel.yaml.clib==0.2.8
 schema==0.7.5
 scipy~=1.11.2
 Send2Trash~=1.8.0
