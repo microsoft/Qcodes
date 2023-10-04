@@ -1471,10 +1471,12 @@ class DataSet(BaseDataSet):
                     "qcodes_guid": self.guid,
                     "ds_name": self.name,
                     "exp_name": self.exp_name,
+                    "_export_limit": self._export_limit,
+                    "_estimated_ds_size": self._estimate_ds_size(),
                 },
             )
             print(
-                "Large dataset detected. Will write to individual files and combine to reduce memory overhead."
+                "Large dataset detected. Will write to multiple files first and combine after, to reduce memory overhead."
             )
             with tempfile.TemporaryDirectory() as temp_dir:
                 temp_path = Path(temp_dir)
@@ -1523,7 +1525,7 @@ class DataSet(BaseDataSet):
         Give an estimated size of the dataset as the size of a single row
         times the len of the dataset. Result is returned in Mega Bytes.
 
-        Note that this does not take overhead into account so it works best
+        Note that this does not take overhead into account so it is more accurate
         if the row size is "large"
         """
         sample_data = self.get_parameter_data(start=1, end=1)
