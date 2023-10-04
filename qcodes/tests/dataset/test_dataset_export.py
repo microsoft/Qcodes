@@ -714,7 +714,20 @@ def test_export_2d_dataset(
     assert xr_ds.identical(xr_ds_reimported)
 
 
-def test_export_numpy_dataset(
+def test_export_dataset_small_no_delated(
+    tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
+) -> None:
+    """
+    Test that a 'small' dataset does not use the delayed export.
+    """
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    with caplog.at_level(logging.INFO):
+        mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    assert "Writing netcdf file directly" in caplog.records[0].msg
+
+
+def test_export_dataset_delayed(
     tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
@@ -747,7 +760,7 @@ def test_export_numpy_dataset(
     _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_numpy)
 
 
-def test_export_numpy_dataset_complex(
+def test_export_dataset_delayed_complex(
     tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet, caplog
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")

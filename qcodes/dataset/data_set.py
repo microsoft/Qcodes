@@ -1462,8 +1462,8 @@ class DataSet(BaseDataSet):
         """Export data as netcdf to a given path with file prefix"""
         import xarray as xr
 
+        file_path = path / file_name
         if self._estimate_ds_size() > self._export_limit:
-            file_path = path / file_name
             log.info(
                 "Dataset is expected to be larger that threshold. Using distributed export.",
                 extra={
@@ -1517,6 +1517,11 @@ class DataSet(BaseDataSet):
                 finally:
                     data.close()
         else:
+            log.info(
+                "Writing netcdf file directly.",
+                extra={"file_name": file_path},
+            )
+
             file_path = super()._export_as_netcdf(path=path, file_name=file_name)
         return file_path
 
