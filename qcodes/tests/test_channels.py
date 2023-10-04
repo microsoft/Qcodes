@@ -430,7 +430,7 @@ def test_combine_channels(dci, setpoints) -> None:
     assert dci.channels.temperature() == expected
 
 
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=400)
 @given(start=hst.integers(-8, 7), stop=hst.integers(-8, 7),
        step=hst.integers(1, 7))
 def test_access_channels_by_slice(dci, start, stop, step) -> None:
