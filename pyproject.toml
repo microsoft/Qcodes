@@ -207,7 +207,7 @@ stubPath = "typings/stubs"
 minversion = "6.0"
 junit_family = "legacy"
 
-addopts = "-n auto --dist=loadfile"
+addopts = "-n auto --dist worksteal"
 
 markers = "serial"
 
