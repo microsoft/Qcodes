@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import warnings
 from collections.abc import Hashable, Mapping
 from math import prod
@@ -23,6 +24,8 @@ if TYPE_CHECKING:
     import xarray as xr
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
+
+_LOG = logging.getLogger(__name__)
 
 
 def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
@@ -231,30 +234,29 @@ def xarray_to_h5netcdf_with_complex_numbers(
         internal_ds.data_vars[data_var].dtype.kind for data_var in internal_ds.data_vars
     ]
     coord_kinds = [internal_ds.coords[coord].dtype.kind for coord in internal_ds.coords]
-    if "c" in data_var_kinds or "c" in coord_kinds:
+    allow_invalid_netcdf = "c" in data_var_kinds or "c" in coord_kinds
+
+    with warnings.catch_warnings():
         # see http://xarray.pydata.org/en/stable/howdoi.html
         # for how to export complex numbers
-        with warnings.catch_warnings():
+        if allow_invalid_netcdf:
             warnings.filterwarnings(
                 "ignore",
                 module="h5netcdf",
                 message="You are writing invalid netcdf features",
                 category=UserWarning,
             )
-            # pyright 1.1.329 for some reason pyright does not allow a bool here
-            # the function is typed to take both True and False in overload
-            # https://github.com/microsoft/pyright/issues/6069
-            maybe_write_job = internal_ds.to_netcdf(
-                path=file_path,
-                engine="h5netcdf",
-                invalid_netcdf=True,
-                compute=compute,  # pyright: ignore
-            )
-    else:
         maybe_write_job = internal_ds.to_netcdf(
-            path=file_path, engine="h5netcdf", compute=compute  # pyright: ignore
+            path=file_path,
+            engine="h5netcdf",
+            invalid_netcdf=allow_invalid_netcdf,
+            compute=compute,  # pyright: ignore
         )
-
-    if not compute and maybe_write_job is not None:
-        with TqdmCallback(desc="Combining files"):
-            maybe_write_job.compute()
+        # https://github.com/microsoft/pyright/issues/6069
+        if not compute and maybe_write_job is not None:
+            with TqdmCallback(desc="Combining files"):
+                _LOG.info(
+                    "Writing netcdf file using Dask delayed writer",
+                    extra={"file_name": file_path},
+                )
+                maybe_write_job.compute()

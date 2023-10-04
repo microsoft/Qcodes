@@ -726,6 +726,10 @@ def test_export_numpy_dataset(
         "Dataset is expected to be larger that threshold. Using distributed export."
         in caplog.records[0].msg
     )
+    assert "Writing individual files to temp dir" in caplog.records[1].msg
+    assert "Combining temp files into one file" in caplog.records[2].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+
     loaded_ds = xr.load_dataset(mock_dataset_numpy.export_info.export_paths["nc"])
     assert loaded_ds.x.shape == (10,)
     assert_allclose(loaded_ds.x, np.arange(10))
@@ -757,6 +761,10 @@ def test_export_numpy_dataset_complex(
         "Dataset is expected to be larger that threshold. Using distributed export."
         in caplog.records[0].msg
     )
+    assert "Writing individual files to temp dir" in caplog.records[1].msg
+    assert "Combining temp files into one file" in caplog.records[2].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+
     loaded_ds = xr.load_dataset(
         mock_dataset_numpy_complex.export_info.export_paths["nc"]
     )

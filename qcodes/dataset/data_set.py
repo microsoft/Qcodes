@@ -1506,7 +1506,9 @@ class DataSet(BaseDataSet):
                             "temp_dir": temp_dir,
                         },
                     )
-                    xarray_to_h5netcdf_with_complex_numbers(data, file_path)
+                    xarray_to_h5netcdf_with_complex_numbers(
+                        data, file_path, compute=False
+                    )
                 finally:
                     data.close()
         else:
