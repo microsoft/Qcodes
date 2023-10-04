@@ -3,40 +3,50 @@ Tests for `qcodes.utils.logger`.
 """
 import logging
 import os
+from collections.abc import Generator
 from copy import copy
 
+import numpy as np
 import pytest
+from pytest import LogCaptureFixture
 
 import qcodes as qc
 import qcodes.logger as logger
 from qcodes.instrument import Instrument
+from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
+from qcodes.instrument_drivers.tektronix import TektronixAWG5208
 from qcodes.logger.log_analysis import capture_dataframe
+from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
 
 TEST_LOG_MESSAGE = 'test log message'
 
-NUM_PYTEST_LOGGERS = 2
+NUM_PYTEST_LOGGERS = 4
 
 
-@pytest.fixture
-def remove_root_handlers():
+@pytest.fixture(autouse=True)
+def cleanup_started_logger() -> Generator[None, None, None]:
+    # cleanup state left by a test calling start_logger
     root_logger = logging.getLogger()
-    handlers = copy(root_logger.handlers)
-    for handler in handlers:
-        handler.close()
-        root_logger.removeHandler(handler)
+    existing_handlers = copy(root_logger.handlers)
+    yield
+    post_test_handlers = copy(root_logger.handlers)
+    for handler in post_test_handlers:
+        if handler not in existing_handlers:
+            handler.close()
+            root_logger.removeHandler(handler)
     logger.logger.file_handler = None
     logger.logger.console_handler = None
 
 
 @pytest.fixture
-def awg5208():
-    from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
+def awg5208(caplog: LogCaptureFixture) -> Generator[TektronixAWG5208, None, None]:
 
-    logger.start_logger()
-
-    inst = AWG5208(
-        "awg_sim", address="GPIB0::1::INSTR", pyvisa_sim_file="Tektronix_AWG5208.yaml"
-    )
+    with caplog.at_level(logging.INFO):
+        inst = TektronixAWG5208(
+            "awg_sim",
+            address="GPIB0::1::INSTR",
+            pyvisa_sim_file="Tektronix_AWG5208.yaml",
+        )
 
     try:
         yield inst
@@ -45,13 +55,8 @@ def awg5208():
 
 
 @pytest.fixture
-def model372():
-    from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
+def model372() -> Generator[Model_372_Mock, None, None]:
 
-    old_log_sep = logger.logger.LOGGING_SEPARATOR
-    logger.logger.LOGGING_SEPARATOR = " - "
-
-    logger.start_logger()
 
     inst = Model_372_Mock(
         "lakeshore_372",
@@ -64,16 +69,13 @@ def model372():
     try:
         yield inst
     finally:
-        logger.logger.LOGGING_SEPARATOR = old_log_sep
         inst.close()
 
 
 @pytest.fixture()
-def AMI430_3D():
-    import numpy as np
-
-    from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
-
+def AMI430_3D() -> (
+    Generator[tuple[AMIModel4303D, AMIModel430, AMIModel430, AMIModel430], None, None]
+):
     mag_x = AMIModel430(
         "x",
         address="GPIB::1::INSTR",
@@ -114,7 +116,6 @@ def test_get_log_file_name() -> None:
     assert fp[-3] == '.qcodes'
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_start_logger() -> None:
     # remove all Handlers
     logger.start_logger()
@@ -133,28 +134,27 @@ def test_start_logger() -> None:
     assert logging.getLogger().level == logger.get_level_code("NOTSET")
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_start_logger_twice() -> None:
+    root_logger = logging.getLogger()
+
+    assert len(root_logger.handlers) == NUM_PYTEST_LOGGERS
+
     logger.start_logger()
     logger.start_logger()
-    handlers = logging.getLogger().handlers
+    handlers = root_logger.handlers
     # there is one or two loggers registered from pytest
     # depending on the version
     # and the telemetry logger is always off in the tests
     assert len(handlers) == 2+NUM_PYTEST_LOGGERS
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_set_level_without_starting_raises() -> None:
     with pytest.raises(RuntimeError):
         with logger.console_level('DEBUG'):
             pass
-    # there is one or two loggers registered from pytest
-    # depending on the version
     assert len(logging.getLogger().handlers) == NUM_PYTEST_LOGGERS
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_handler_level() -> None:
     with logger.LogCapture(level=logging.INFO) as logs:
         logging.debug(TEST_LOG_MESSAGE)
@@ -168,9 +168,9 @@ def test_handler_level() -> None:
     assert logs.value.strip() == TEST_LOG_MESSAGE
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
-def test_filter_instrument(AMI430_3D) -> None:
-
+def test_filter_instrument(
+    AMI430_3D: tuple[AMIModel4303D, AMIModel430, AMIModel430, AMIModel430]
+) -> None:
     driver, mag_x, mag_y, mag_z = AMI430_3D
 
     logger.start_logger()
@@ -207,9 +207,9 @@ def test_filter_instrument(AMI430_3D) -> None:
     assert any_y
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
-def test_filter_without_started_logger_raises(AMI430_3D) -> None:
-
+def test_filter_without_started_logger_raises(
+    AMI430_3D: tuple[AMIModel4303D, AMIModel430, AMIModel430, AMIModel430]
+) -> None:
     driver, mag_x, mag_y, mag_z = AMI430_3D
 
     # filter one instrument
@@ -219,7 +219,6 @@ def test_filter_without_started_logger_raises(AMI430_3D) -> None:
             pass
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_capture_dataframe() -> None:
     root_logger = logging.getLogger()
     # the logger must be started to set level
@@ -232,8 +231,7 @@ def test_capture_dataframe() -> None:
     assert df.message[0] == TEST_LOG_MESSAGE
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
-def test_channels(model372) -> None:
+def test_channels(model372: Model_372_Mock) -> None:
     """
     Test that messages logged in a channel are propagated to the
     main instrument.
@@ -268,8 +266,7 @@ def test_channels(model372) -> None:
         assert f == u
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
-def test_channels_nomessages(model372) -> None:
+def test_channels_nomessages(model372: Model_372_Mock) -> None:
     """
     Test that messages logged in a channel are not propagated to
     any instrument.
@@ -278,16 +275,17 @@ def test_channels_nomessages(model372) -> None:
     # test with wrong instrument
     mock = Instrument("mock")
     inst.sample_heater.set_range_from_temperature(1)
-    with logger.LogCapture(level=logging.DEBUG) as logs,\
-            logger.filter_instrument(mock, handler=logs.string_handler):
+    with logger.LogCapture(level=logging.DEBUG) as logs, logger.filter_instrument(
+        mock, handler=logs.string_handler
+    ):
         inst.sample_heater.set_range_from_temperature(0.1)
     logs_2 = [log for log in logs.value.splitlines() if "[lakeshore" in log]
     assert len(logs_2) == 0
     mock.close()
 
 
-@pytest.mark.usefixtures("remove_root_handlers", "awg5208")
-def test_instrument_connect_message() -> None:
+@pytest.mark.usefixtures("awg5208")
+def test_instrument_connect_message(caplog: LogCaptureFixture) -> None:
     """
     Test that the connect_message method logs as expected
 
@@ -295,23 +293,14 @@ def test_instrument_connect_message() -> None:
     code, but it is more conveniently written here
     """
 
-    with open(logger.get_log_file_name(), encoding="utf-8") as f:
-        lines = f.readlines()
+    setup_records = caplog.get_records("setup")
 
-    con_mssg_log_line = lines[-1]
+    idn = {"vendor": "QCoDeS", "model": "AWG5208", "serial": "1000", "firmware": "0.1"}
+    expected_con_mssg = f"[awg_sim(TektronixAWG5208)] Connected to instrument: {idn}"
 
-    sep = logger.logger.LOGGING_SEPARATOR
-
-    con_mss = con_mssg_log_line.split(sep)[-1]
-    idn = {"vendor": "QCoDeS", "model": "AWG5208",
-           "serial": "1000", "firmware": "0.1"}
-    expected_con_mssg = ("[awg_sim(AWG5208)] Connected to instrument: "
-                         f"{idn}\n")
-
-    assert con_mss == expected_con_mssg
+    assert any(rec.msg == expected_con_mssg for rec in setup_records)
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_installation_info_logging() -> None:
     """
     Test that installation information is logged upon starting the logging
