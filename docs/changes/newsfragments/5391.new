@@ -1,0 +1,2 @@
+Large datasets are now exported to NetCDF4 using Dask delayed writer.
+This avoids allocating a large amount of memory to process the whole dataset at the same time.
