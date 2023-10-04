@@ -1488,10 +1488,13 @@ class DataSet(BaseDataSet):
                         "temp_dir": temp_dir,
                     },
                 )
-                for i in trange(len(self), desc="Writing individual files"):
+                num_files = len(self)
+                num_digits = len(str(num_files))
+                file_name_template = f"ds_{{:0{num_digits}d}}.nc"
+                for i in trange(num_files, desc="Writing individual files"):
                     xarray_to_h5netcdf_with_complex_numbers(
                         self.to_xarray_dataset(start=i + 1, end=i + 1),
-                        temp_path / f"ds_{i:03d}.nc",
+                        temp_path / file_name_template.format(i),
                     )
                 files = tuple(temp_path.glob("*.nc"))
                 data = xr.open_mfdataset(files)
