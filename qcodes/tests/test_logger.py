@@ -3,13 +3,16 @@ Tests for `qcodes.utils.logger`.
 """
 import logging
 import os
+from collections.abc import Generator
 from copy import copy
 
 import pytest
+from pytest import LogCaptureFixture
 
 import qcodes as qc
 import qcodes.logger as logger
 from qcodes.instrument import Instrument
+from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
 from qcodes.logger.log_analysis import capture_dataframe
 
 TEST_LOG_MESSAGE = 'test log message'
@@ -29,14 +32,14 @@ def remove_root_handlers():
 
 
 @pytest.fixture
-def awg5208():
-    from qcodes.instrument_drivers.tektronix.AWG5208 import AWG5208
+def awg5208(caplog: LogCaptureFixture) -> Generator[AWG5208, None, None]:
 
-    logger.start_logger()
-
-    inst = AWG5208(
-        "awg_sim", address="GPIB0::1::INSTR", pyvisa_sim_file="Tektronix_AWG5208.yaml"
-    )
+    with caplog.at_level(logging.INFO):
+        inst = AWG5208(
+            "awg_sim",
+            address="GPIB0::1::INSTR",
+            pyvisa_sim_file="Tektronix_AWG5208.yaml",
+        )
 
     try:
         yield inst
@@ -232,7 +235,6 @@ def test_capture_dataframe() -> None:
     assert df.message[0] == TEST_LOG_MESSAGE
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_channels(model372) -> None:
     """
     Test that messages logged in a channel are propagated to the
@@ -268,7 +270,6 @@ def test_channels(model372) -> None:
         assert f == u
 
 
-@pytest.mark.usefixtures("remove_root_handlers")
 def test_channels_nomessages(model372) -> None:
     """
     Test that messages logged in a channel are not propagated to
@@ -278,16 +279,17 @@ def test_channels_nomessages(model372) -> None:
     # test with wrong instrument
     mock = Instrument("mock")
     inst.sample_heater.set_range_from_temperature(1)
-    with logger.LogCapture(level=logging.DEBUG) as logs,\
-            logger.filter_instrument(mock, handler=logs.string_handler):
+    with logger.LogCapture(level=logging.DEBUG) as logs, logger.filter_instrument(
+        mock, handler=logs.string_handler
+    ):
         inst.sample_heater.set_range_from_temperature(0.1)
     logs_2 = [log for log in logs.value.splitlines() if "[lakeshore" in log]
     assert len(logs_2) == 0
     mock.close()
 
 
-@pytest.mark.usefixtures("remove_root_handlers", "awg5208")
-def test_instrument_connect_message() -> None:
+@pytest.mark.usefixtures("awg5208")
+def test_instrument_connect_message(caplog) -> None:
     """
     Test that the connect_message method logs as expected
 
@@ -295,20 +297,12 @@ def test_instrument_connect_message() -> None:
     code, but it is more conveniently written here
     """
 
-    with open(logger.get_log_file_name(), encoding="utf-8") as f:
-        lines = f.readlines()
+    setup_records = caplog.get_records("setup")
 
-    con_mssg_log_line = lines[-1]
+    idn = {"vendor": "QCoDeS", "model": "AWG5208", "serial": "1000", "firmware": "0.1"}
+    expected_con_mssg = f"[awg_sim(AWG5208)] Connected to instrument: {idn}"
 
-    sep = logger.logger.LOGGING_SEPARATOR
-
-    con_mss = con_mssg_log_line.split(sep)[-1]
-    idn = {"vendor": "QCoDeS", "model": "AWG5208",
-           "serial": "1000", "firmware": "0.1"}
-    expected_con_mssg = ("[awg_sim(AWG5208)] Connected to instrument: "
-                         f"{idn}\n")
-
-    assert con_mss == expected_con_mssg
+    assert any(rec.msg == expected_con_mssg for rec in setup_records)
 
 
 @pytest.mark.usefixtures("remove_root_handlers")

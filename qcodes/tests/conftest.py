@@ -73,6 +73,7 @@ def default_session_config(
     # set any config that we want to be different from the default
     # for the test session here
     # also set the default db path here
+    qc.config.logger.start_logging_on_import = "never"
     qc.config.telemetry.enabled = False
     qc.config.subscription.default_subscribers = []
     qc.config.core.db_location = str(tmp_path / "temp.db")
