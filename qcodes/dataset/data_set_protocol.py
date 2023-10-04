@@ -1,16 +1,8 @@
 from __future__ import annotations
 
-import sys
-
-if sys.version_info >= (3, 10):
-    # new entrypoints api was added in 3.10
-    from importlib.metadata import entry_points
-else:
-    # 3.9 and earlier
-    from importlib_metadata import entry_points
-
 import logging
 import os
+import sys
 import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
@@ -38,6 +30,13 @@ from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
 from .sqlite.queries import raw_time_to_str_time
+
+if sys.version_info >= (3, 10):
+    # new entrypoints api was added in 3.10
+    from importlib.metadata import entry_points
+else:
+    # 3.9 and earlier
+    from importlib_metadata import entry_points
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -241,6 +240,7 @@ class DataSetProtocol(Protocol):
         callback: Callable[[float], None] | None = None,
     ) -> ParameterData:
         ...
+
 
     def get_parameters(self) -> SPECS:
         # used by plottr

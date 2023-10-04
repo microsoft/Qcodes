@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -6,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
+from numpy.testing import assert_allclose
 from pytest import LogCaptureFixture, TempPathFactory
 
 import qcodes
@@ -112,6 +115,42 @@ def _make_mock_dataset_grid(experiment) -> DataSet:
         for y in range(20, 25):
             results = [{"x": x, "y": y, "z": x + y}]
             dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_numpy")
+def _make_mock_dataset_numpy(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
+    yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
+    zparam = ParamSpecBase("z", "array", label="z label", unit="z unit")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps)
+
+    y = np.arange(10, 21, 1)
+    dataset.mark_started()
+    for x in range(10):
+        results: list[dict[str, int | np.ndarray]] = [{"x": x, "y": y, "z": x + y}]
+        dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_numpy_complex")
+def _make_mock_dataset_numpy_complex(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric", label="x label", unit="x unit")
+    yparam = ParamSpecBase("y", "array", label="y label", unit="y unit")
+    zparam = ParamSpecBase("z", "array", label="z label", unit="z unit")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps)
+
+    y = np.arange(10, 21, 1)
+    dataset.mark_started()
+    for x in range(10):
+        results: list[dict[str, int | np.ndarray]] = [{"x": x, "y": y, "z": x + 1j * y}]
+        dataset.add_results(results)
     dataset.mark_completed()
     return dataset
 
@@ -673,6 +712,88 @@ def test_export_2d_dataset(
 
     assert xr_ds_reimported["z"].dims == ("x", "y")
     assert xr_ds.identical(xr_ds_reimported)
+
+
+def test_export_dataset_small_no_delated(
+    tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
+) -> None:
+    """
+    Test that a 'small' dataset does not use the delayed export.
+    """
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    with caplog.at_level(logging.INFO):
+        mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    assert "Writing netcdf file directly" in caplog.records[0].msg
+
+
+def test_export_dataset_delayed(
+    tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    mock_dataset_numpy._export_limit = 0
+    with caplog.at_level(logging.INFO):
+        mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    assert (
+        "Dataset is expected to be larger that threshold. Using distributed export."
+        in caplog.records[0].msg
+    )
+    assert "Writing individual files to temp dir" in caplog.records[1].msg
+    assert "Combining temp files into one file" in caplog.records[2].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+
+    loaded_ds = xr.load_dataset(mock_dataset_numpy.export_info.export_paths["nc"])
+    assert loaded_ds.x.shape == (10,)
+    assert_allclose(loaded_ds.x, np.arange(10))
+    assert loaded_ds.y.shape == (11,)
+    assert_allclose(loaded_ds.y, np.arange(10, 21, 1))
+
+    arrays = []
+    for i in range(10):
+        arrays.append(np.arange(10 + i, 21 + i))
+    expected_z = np.array(arrays)
+
+    assert loaded_ds.z.shape == (10, 11)
+    assert_allclose(loaded_ds.z, expected_z)
+
+    _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_numpy)
+
+
+def test_export_dataset_delayed_complex(
+    tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet, caplog
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    mock_dataset_numpy_complex._export_limit = 0
+    with caplog.at_level(logging.INFO):
+        mock_dataset_numpy_complex.export(
+            export_type="netcdf", path=tmp_path, prefix="qcodes_"
+        )
+
+    assert (
+        "Dataset is expected to be larger that threshold. Using distributed export."
+        in caplog.records[0].msg
+    )
+    assert "Writing individual files to temp dir" in caplog.records[1].msg
+    assert "Combining temp files into one file" in caplog.records[2].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+
+    loaded_ds = xr.load_dataset(
+        mock_dataset_numpy_complex.export_info.export_paths["nc"]
+    )
+    assert loaded_ds.x.shape == (10,)
+    assert_allclose(loaded_ds.x, np.arange(10))
+    assert loaded_ds.y.shape == (11,)
+    assert_allclose(loaded_ds.y, np.arange(10, 21, 1))
+
+    arrays = []
+    for i in range(10):
+        arrays.append(1j * np.arange(10, 21) + i)
+    expected_z = np.array(arrays)
+
+    assert loaded_ds.z.shape == (10, 11)
+    assert_allclose(loaded_ds.z, expected_z)
+    _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_numpy_complex)
 
 
 def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:

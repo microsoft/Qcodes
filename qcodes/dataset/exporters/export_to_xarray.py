@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import warnings
 from collections.abc import Hashable, Mapping
 from math import prod
@@ -7,6 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
+from tqdm.dask import TqdmCallback
 
 from qcodes.dataset.linked_datasets.links import links_to_str
 
@@ -22,6 +24,8 @@ if TYPE_CHECKING:
     import xarray as xr
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
+
+_LOG = logging.getLogger(__name__)
 
 
 def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
@@ -207,7 +211,7 @@ def _paramspec_dict_with_extras(
 
 
 def xarray_to_h5netcdf_with_complex_numbers(
-    xarray_dataset: xr.Dataset, file_path: str | Path
+    xarray_dataset: xr.Dataset, file_path: str | Path, compute: bool = True
 ) -> None:
     import cf_xarray as cfxr
     from pandas import MultiIndex
@@ -230,18 +234,29 @@ def xarray_to_h5netcdf_with_complex_numbers(
         internal_ds.data_vars[data_var].dtype.kind for data_var in internal_ds.data_vars
     ]
     coord_kinds = [internal_ds.coords[coord].dtype.kind for coord in internal_ds.coords]
-    if "c" in data_var_kinds or "c" in coord_kinds:
+    allow_invalid_netcdf = "c" in data_var_kinds or "c" in coord_kinds
+
+    with warnings.catch_warnings():
         # see http://xarray.pydata.org/en/stable/howdoi.html
         # for how to export complex numbers
-        with warnings.catch_warnings():
+        if allow_invalid_netcdf:
             warnings.filterwarnings(
                 "ignore",
                 module="h5netcdf",
                 message="You are writing invalid netcdf features",
                 category=UserWarning,
             )
-            internal_ds.to_netcdf(
-                path=file_path, engine="h5netcdf", invalid_netcdf=True
-            )
-    else:
-        internal_ds.to_netcdf(path=file_path, engine="h5netcdf")
+        maybe_write_job = internal_ds.to_netcdf(
+            path=file_path,
+            engine="h5netcdf",
+            invalid_netcdf=allow_invalid_netcdf,
+            compute=compute,  # pyright: ignore
+        )
+        # https://github.com/microsoft/pyright/issues/6069
+        if not compute and maybe_write_job is not None:
+            with TqdmCallback(desc="Combining files"):
+                _LOG.info(
+                    "Writing netcdf file using Dask delayed writer.",
+                    extra={"file_name": file_path},
+                )
+                maybe_write_job.compute()
