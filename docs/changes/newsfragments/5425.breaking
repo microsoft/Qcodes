@@ -1,0 +1,2 @@
+The extra install targets qcodes[slack] and qcodes[qtplot] have been removed.
+All dependencies on slack and pyqtgraph have moved to qcodes_loop.

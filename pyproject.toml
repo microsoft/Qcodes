@@ -71,10 +71,6 @@ Tracker = "https://github.com/QCoDeS/Qcodes/issues"
 Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
-qtplot = ["pyqtgraph>=0.11.0"]
-# can be removed once deprecated pyqtgraph module is removed
-slack = ["slack-sdk>=3.4.2"]
-# can be removed once deprecated slack are removed
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 loop = ["qcodes_loop>=0.1.2"]
 test = [
