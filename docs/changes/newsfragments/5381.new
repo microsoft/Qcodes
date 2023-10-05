@@ -1,0 +1,2 @@
+Add a register_name keyword to the ParameterBase constructor. If supplied, this value 
+will be used to register parameters in datasets instead of the default full_name.
