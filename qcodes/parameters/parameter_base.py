@@ -340,7 +340,7 @@ class ParameterBase(MetadatableWithName):
     def add_validator(self, vals: Validator) -> None:
         self._vals.append(vals)
 
-    def remove_validator(self, vals) -> Validator | None:
+    def remove_validator(self) -> Validator | None:
         if len(self._vals) > 0:
             return self._vals.pop()
         else:

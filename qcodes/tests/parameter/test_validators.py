@@ -15,7 +15,7 @@ def test_add_ints_validator_to_parameter():
 def test_remove_ints_validator_from_parameter():
     p = Parameter("test_param", set_cmd=None, get_cmd=None)
     p.add_validator(Ints(min_value=0, max_value=10))
-    p.remove_validator(0)
+    p.remove_validator()
     assert len(p.validators) == 0
 
 
@@ -62,7 +62,7 @@ def test_multiple_ints_validators(
             p.validate(value_to_validate)
 
     while len(p.validators) > 0:
-        p.remove_validator(0)
+        p.remove_validator()
 
     assert len(p.validators) == 0
 
