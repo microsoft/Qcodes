@@ -10,37 +10,41 @@ from qcodes.validators import Arrays
 
 @pytest.mark.usefixtures("experiment")
 def test_register_name_with_manual_parameters():
-    foo = ManualParameter("foo", initial_value=1, register_name="bar")
-    foo_meas = ManualParameter("foo_meas", initial_value=2, register_name="bar_meas")
+    indep_param = ManualParameter(
+        "indep_param", initial_value=1, register_name="renamed_indep_param"
+    )
+    dep_param = ManualParameter(
+        "dep_param", initial_value=2, register_name="renamed_dep_param"
+    )
 
-    ds, _, _ = do1d(foo, 0, 1, 101, 0, foo_meas)
+    ds, _, _ = do1d(indep_param, 0, 1, 101, 0, dep_param)
     paramspecs = ds.get_parameters()
     assert len(paramspecs) == 2
-    assert paramspecs[0].name in ("bar", "bar_meas")
-    assert paramspecs[1].name in ("bar", "bar_meas")
+    assert paramspecs[0].name in ("renamed_indep_param", "renamed_dep_param")
+    assert paramspecs[1].name in ("renamed_indep_param", "renamed_dep_param")
 
 
 @pytest.mark.usefixtures("experiment")
 def test_register_name_with_pws():
-    foo_setpoints = Parameter(
-        name="foo_setpoints",
+    setpoints_param = Parameter(
+        name="setpoints_param",
         get_cmd=partial(np.linspace, 0, 1, 101),
         vals=Arrays(shape=(101,)),
-        register_name="bar_setpoints",
+        register_name="renamed_setpoints",
     )
-    foo_meas = ParameterWithSetpoints(
-        "foo_meas",
-        setpoints=(foo_setpoints,),
+    meas_param = ParameterWithSetpoints(
+        "meas_param",
+        setpoints=(setpoints_param,),
         get_cmd=partial(np.linspace, 0, -1, 101),
         vals=Arrays(
             shape=(101,),
             valid_types=[np.integer, np.floating, np.complexfloating],
         ),
-        register_name="bar_meas",
+        register_name="renamed_meas_param",
     )
 
-    ds, _, _ = do0d(foo_meas)
+    ds, _, _ = do0d(meas_param)
     paramspecs = ds.get_parameters()
     assert len(paramspecs) == 2
-    assert paramspecs[0].name in ("bar_setpoints", "bar_meas")
-    assert paramspecs[1].name in ("bar_setpoints", "bar_meas")
+    assert paramspecs[0].name in ("renamed_setpoints", "renamed_meas_param")
+    assert paramspecs[1].name in ("renamed_setpoints", "renamed_meas_param")
