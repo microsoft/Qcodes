@@ -4,7 +4,8 @@ import collections.abc
 import logging
 import time
 import warnings
-from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
+from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
 from types import TracebackType
@@ -347,8 +348,14 @@ class ParameterBase(MetadatableWithName):
             return None
 
     @property
-    def validators(self) -> list[Validator]:
-        return self._vals
+    def validators(self) -> tuple[Validator, ...]:
+        return tuple(self._vals)
+
+    @contextmanager
+    def extra_validator(self, vals: Validator) -> Generator[None, None, None]:
+        self.add_validator(vals)
+        yield
+        self.remove_validator()
 
     @property
     def raw_value(self) -> ParamRawDataType:
