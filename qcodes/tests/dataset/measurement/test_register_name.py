@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 import pytest
 
-from qcodes.dataset import do0d, do1d
+from qcodes.dataset import do0d, do1d, str_or_register_name
 from qcodes.parameters import ManualParameter, Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
 
@@ -48,3 +48,12 @@ def test_register_name_with_pws():
     assert len(paramspecs) == 2
     assert paramspecs[0].name in ("renamed_setpoints", "renamed_meas_param")
     assert paramspecs[1].name in ("renamed_setpoints", "renamed_meas_param")
+
+def test_register_name_utils():
+    indep_param = ManualParameter(
+        "indep_param", initial_value=1, register_name="renamed_indep_param"
+    )
+
+    assert indep_param.register_name == "renamed_indep_param"
+    assert str_or_register_name(indep_param) == "renamed_indep_param"
+    assert str_or_register_name(str(indep_param)) == "indep_param"

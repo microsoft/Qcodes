@@ -1240,7 +1240,7 @@ class Measurement:
         running this measurement
         """
         if isinstance(parameter, ParameterBase):
-            param = str(parameter)
+            param = str_or_register_name(parameter)
         elif isinstance(parameter, str):
             param = parameter
         else:
