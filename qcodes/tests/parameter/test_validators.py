@@ -51,3 +51,10 @@ def test_multiple_ints_validators(
     else:
         with pytest.raises(ValueError):
             p.validate(value_to_validate)
+
+    while len(p.validators) > 0:
+        p.remove_validator(0)
+
+    assert len(p.validators) == 0
+
+    p.validate(value_to_validate)
