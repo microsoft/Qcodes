@@ -333,9 +333,12 @@ class Parameter(ParameterBase):
 
     @property
     def __doc__(self) -> str:
-        validator_docstrings = [
-            f"* `vals` {validator!r}" for validator in self.validators
-        ]
+        if len(self.validators) == 0:
+            validator_docstrings = ["* `vals` None"]
+        else:
+            validator_docstrings = [
+                f"* `vals` {validator!r}" for validator in self.validators
+            ]
         # generate default docstring
         doc = os.linesep.join(
             (
@@ -348,7 +351,7 @@ class Parameter(ParameterBase):
             )
         )
         if self._docstring is not None:
-            doc = os.linesep.join((self._docstring, "", self.__doc__))
+            doc = os.linesep.join((self._docstring, "", doc))
 
         return doc
 
