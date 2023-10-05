@@ -26,9 +26,12 @@ def test_remove_ints_validator_from_parameter():
         max_size=10,
     ),
     value_to_validate=hst.integers(),
+    add_validator_via_constructor=hst.booleans(),
 )
 def test_multiple_ints_validators(
-    min_max_values: list[tuple[int, int]], value_to_validate: int
+    min_max_values: list[tuple[int, int]],
+    value_to_validate: int,
+    add_validator_via_constructor: bool,
 ) -> None:
     validators = []
     for min_val, max_val in min_max_values:
@@ -39,10 +42,16 @@ def test_multiple_ints_validators(
     max_min_value = max([min_val for min_val, _ in min_max_values])
     min_max_value = min([max_val for _, max_val in min_max_values])
 
-    p = Parameter("test_param", set_cmd=None, get_cmd=None)
+    if add_validator_via_constructor:
+        p = Parameter("test_param", set_cmd=None, get_cmd=None, vals=validators[0])
 
-    for validator in validators:
-        p.add_validator(validator)
+        for validator in validators[1:]:
+            p.add_validator(validator)
+    else:
+        p = Parameter("test_param", set_cmd=None, get_cmd=None)
+
+        for validator in validators:
+            p.add_validator(validator)
 
     assert len(p.validators) == n_validators
 
