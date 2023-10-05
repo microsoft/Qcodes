@@ -67,3 +67,25 @@ def test_multiple_ints_validators(
     assert len(p.validators) == 0
 
     p.validate(value_to_validate)
+
+
+@given(
+    min_val=hst.integers(max_value=0),
+    max_val=hst.integers(min_value=1),
+    value_to_validate=hst.integers(),
+)
+def test_validator_context(min_val: int, max_val: int, value_to_validate: int) -> None:
+    p = Parameter("test_param", set_cmd=None, get_cmd=None)
+
+    with p.extra_validator(Ints(min_value=min_val, max_value=max_val)):
+        assert len(p.validators) == 1
+
+        if value_to_validate >= min_val and value_to_validate <= max_val:
+            p.validate(value_to_validate)
+        else:
+            with pytest.raises(ValueError):
+                p.validate(value_to_validate)
+
+    assert len(p.validators) == 0
+
+    p.validate(value_to_validate)
