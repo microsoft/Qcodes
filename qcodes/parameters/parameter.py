@@ -329,20 +329,28 @@ class Parameter(ParameterBase):
         if initial_cache_value is not None:
             self.cache.set(initial_cache_value)
 
+        self._docstring = docstring
+
+    @property
+    def __doc__(self) -> str:
+        validator_docstrings = [
+            f"* `vals` {validator!r}" for validator in self.validators
+        ]
         # generate default docstring
-        self.__doc__ = os.linesep.join(
+        doc = os.linesep.join(
             (
                 "Parameter class:",
                 "",
-                "* `name` %s" % self.name,
-                "* `label` %s" % self.label,
-                "* `unit` %s" % self.unit,
-                "* `vals` %s" % repr(self.vals),
+                f"* `name` {self.name}",
+                f"* `label` {self.label}",
+                f"* `unit` {self.unit}",
+                *validator_docstrings,
             )
         )
+        if self._docstring is not None:
+            doc = os.linesep.join((self._docstring, "", self.__doc__))
 
-        if docstring is not None:
-            self.__doc__ = os.linesep.join((docstring, "", self.__doc__))
+        return doc
 
     @property
     def unit(self) -> str:

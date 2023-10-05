@@ -89,3 +89,11 @@ def test_validator_context(min_val: int, max_val: int, value_to_validate: int) -
     assert len(p.validators) == 0
 
     p.validate(value_to_validate)
+
+
+def test_validator_doc() -> None:
+    p = Parameter("test_param", set_cmd=None, get_cmd=None)
+    p.add_validator(Ints(min_value=0, max_value=10))
+    p.add_validator(Ints(min_value=3, max_value=7))
+    assert "vals` <Ints 0<=v<=10>" in p.__doc__
+    assert "vals` <Ints 3<=v<=7>" in p.__doc__
