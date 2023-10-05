@@ -219,7 +219,10 @@ class ParameterBase(MetadatableWithName):
             raise TypeError("vals must be None or a Validator")
         elif val_mapping is not None:
             vals = Enum(*val_mapping.keys())
-        self.vals = vals
+        if vals is not None:
+            self._vals: list[Validator[Any]] = [vals]
+        else:
+            self._vals = []
 
         self.step = step
         self.scale = scale
@@ -310,6 +313,29 @@ class ParameterBase(MetadatableWithName):
                     )
 
             instrument.parameters[name] = self
+
+    @property
+    def vals(self) -> Validator | None:
+        if len(self._vals):
+            return self._vals[0]
+        else:
+            return None
+
+    @vals.setter
+    def vals(self, vals: Validator | None) -> None:
+        if vals is not None and len(self._vals) > 0:
+            self._vals[0] = vals
+        elif vals is not None:
+            self._vals = [vals]
+        elif len(self._vals) == 1:
+            self._vals = []
+        elif len(self._vals) > 1:
+            raise RuntimeError(
+                "Cannot remove default validator from parameter with additional validators."
+            )
+        else:
+            # setting the validator to None but the parameter already doesn't have a validator
+            pass
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -711,8 +737,9 @@ class ParameterBase(MetadatableWithName):
             ValueError: If the value is outside the bounds specified by the
                validator.
         """
-        if self.vals is not None:
-            self.vals.validate(value, self._validate_context)
+        for validator in reversed(self._vals):
+            if validator is not None:
+                validator.validate(value, self._validate_context)
 
     @property
     def step(self) -> float | None:
@@ -741,7 +768,7 @@ class ParameterBase(MetadatableWithName):
     def step(self, step: float | None) -> None:
         if step is None:
             self._step: float | None = step
-        elif not getattr(self.vals, "is_numeric", True):
+        elif not all(getattr(vals, "is_numeric", True) for vals in self._vals):
             raise TypeError("you can only step numeric parameters")
         elif not isinstance(step, (int, float)):
             raise TypeError("step must be a number")
@@ -749,8 +776,11 @@ class ParameterBase(MetadatableWithName):
             self._step = None
         elif step <= 0:
             raise ValueError("step must be positive")
-        elif isinstance(self.vals, Ints) and not isinstance(step, int):
+        elif not all(isinstance(vals, Ints) for vals in self._vals) and not isinstance(
+            step, int
+        ):
             raise TypeError("step must be a positive int for an Ints parameter")
+
         else:
             self._step = step
 
