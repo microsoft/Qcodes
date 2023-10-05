@@ -337,6 +337,19 @@ class ParameterBase(MetadatableWithName):
             # setting the validator to None but the parameter already doesn't have a validator
             pass
 
+    def add_validator(self, vals: Validator) -> None:
+        self._vals.append(vals)
+
+    def remove_validator(self, vals) -> Validator | None:
+        if len(self._vals) > 0:
+            return self._vals.pop()
+        else:
+            return None
+
+    @property
+    def validators(self) -> list[Validator]:
+        return self._vals
+
     @property
     def raw_value(self) -> ParamRawDataType:
         """
