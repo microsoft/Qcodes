@@ -276,12 +276,15 @@ def test_load_by_id_for_none() -> None:
 
 
 @settings(deadline=None, max_examples=6)
-@given(experiment_name=hst.text(min_size=1),
-       sample_name=hst.text(min_size=1),
-       dataset_name=hst.text(hst.characters(whitelist_categories=_unicode_categories),
-                             min_size=1))
+@given(
+    experiment_name=hst.text(min_size=1),
+    sample_name=hst.text(min_size=1),
+    dataset_name=hst.text(
+        hst.characters(categories=_unicode_categories),  # type: ignore[arg-type]
+        min_size=1,
+    ),
+)
 @pytest.mark.usefixtures("empty_temp_db")
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_add_experiments(experiment_name, sample_name, dataset_name) -> None:
     qc.config.GUID_components.GUID_type = "random_sample"
 

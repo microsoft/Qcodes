@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import logging
 import warnings
 from collections.abc import Hashable, Mapping
+from math import prod
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
+from tqdm.dask import TqdmCallback
 
 from qcodes.dataset.linked_datasets.links import links_to_str
 
@@ -17,29 +20,96 @@ from .export_to_pandas import (
 )
 
 if TYPE_CHECKING:
+    import pandas as pd
     import xarray as xr
 
     from qcodes.dataset.data_set_protocol import DataSetProtocol, ParameterData
+
+_LOG = logging.getLogger(__name__)
+
+
+def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]:
+    # heavily inspired by xarray.core.dataset.from_dataframe
+    import pandas as pd
+    from xarray.core.indexes import PandasIndex, remove_unused_levels_categories
+    from xarray.core.variable import Variable, calculate_dimensions
+
+    idx = remove_unused_levels_categories(idx)
+
+    if isinstance(idx, pd.MultiIndex) and not idx.is_unique:
+        raise ValueError(
+            "cannot convert a DataFrame with a non-unique MultiIndex into xarray"
+        )
+    index_vars: dict[Hashable, Variable] = {}
+
+    if isinstance(idx, pd.MultiIndex):
+        dims = tuple(
+            name if name is not None else f"level_{n}"
+            for n, name in enumerate(idx.names)
+        )
+        for dim, lev in zip(dims, idx.levels):
+            xr_idx = PandasIndex(lev, dim)
+            index_vars.update(xr_idx.create_variables())
+    else:
+        index_name = idx.name if idx.name is not None else "index"
+        dims = (index_name,)
+        xr_idx = PandasIndex(idx, index_name)
+        index_vars.update(xr_idx.create_variables())
+
+    expanded_shape = calculate_dimensions(index_vars)
+    return expanded_shape
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
     dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
 ) -> dict[str, xr.DataArray]:
+    import pandas as pd
     import xarray as xr
 
     data_xrdarray_dict: dict[str, xr.DataArray] = {}
 
     for name, subdict in datadict.items():
         index = _generate_pandas_index(subdict)
-        if index is not None and len(index.unique()) != len(index):
-            for _name in subdict:
-                data_xrdarray_dict[_name] = _data_to_dataframe(
-                    subdict, index).reset_index().to_xarray()[_name]
-        else:
+
+        if index is None:
             xrdarray: xr.DataArray = (
-                _data_to_dataframe(subdict, index).to_xarray().get(name, xr.DataArray())
+                _data_to_dataframe(subdict, index=index)
+                .to_xarray()
+                .get(name, xr.DataArray())
             )
             data_xrdarray_dict[name] = xrdarray
+        else:
+            index_unique = len(index.unique()) == len(index)
+
+            df = _data_to_dataframe(subdict, index)
+
+            if not index_unique:
+                # index is not unique so we fallback to using a counter as index
+                # and store the index as a variable
+                xrdata_temp = df.reset_index().to_xarray()
+                for _name in subdict:
+                    data_xrdarray_dict[_name] = xrdata_temp[_name]
+            else:
+                calc_index = _calculate_index_shape(index)
+                index_prod = prod(calc_index.values())
+                # if the product of the len of individual index dims == len(total_index)
+                # we are on a grid
+                on_grid = index_prod == len(index)
+                if not on_grid:
+                    assert isinstance(df.index, pd.MultiIndex)
+
+                    if hasattr(xr, "Coordinates"):
+                        coords = xr.Coordinates.from_pandas_multiindex(
+                            df.index, "multi_index"
+                        )
+                        xrdarray = xr.DataArray(df[name], coords=coords)
+                    else:
+                        # support xarray < 2023.8.0, can be removed when we drop support for that
+                        xrdarray = xr.DataArray(df[name], [("multi_index", df.index)])
+                else:
+                    xrdarray = df.to_xarray().get(name, xr.DataArray())
+
+                data_xrdarray_dict[name] = xrdarray
 
     return data_xrdarray_dict
 
@@ -115,7 +185,7 @@ def _add_param_spec_to_xarray_coords(
     dataset: DataSetProtocol, xrdataset: xr.Dataset | xr.DataArray
 ) -> None:
     for coord in xrdataset.coords:
-        if coord != "index":
+        if coord not in ("index", "multi_index"):
             paramspec_dict = _paramspec_dict_with_extras(dataset, str(coord))
             xrdataset.coords[str(coord)].attrs.update(paramspec_dict.items())
 
@@ -141,27 +211,52 @@ def _paramspec_dict_with_extras(
 
 
 def xarray_to_h5netcdf_with_complex_numbers(
-    xarray_dataset: xr.Dataset, file_path: str | Path
+    xarray_dataset: xr.Dataset, file_path: str | Path, compute: bool = True
 ) -> None:
+    import cf_xarray as cfxr
+    from pandas import MultiIndex
+
+    has_multi_index = any(
+        isinstance(xarray_dataset.indexes[index_name], MultiIndex)
+        for index_name in xarray_dataset.indexes
+    )
+
+    if has_multi_index:
+        # as of xarray 2023.8.0 there is no native support
+        # for multi index so use cf_xarray for that
+        internal_ds = cfxr.coding.encode_multi_index_as_compress(
+            xarray_dataset,
+        )
+    else:
+        internal_ds = xarray_dataset
+
     data_var_kinds = [
-        xarray_dataset.data_vars[data_var].dtype.kind
-        for data_var in xarray_dataset.data_vars
+        internal_ds.data_vars[data_var].dtype.kind for data_var in internal_ds.data_vars
     ]
-    coord_kinds = [
-        xarray_dataset.coords[coord].dtype.kind for coord in xarray_dataset.coords
-    ]
-    if "c" in data_var_kinds or "c" in coord_kinds:
+    coord_kinds = [internal_ds.coords[coord].dtype.kind for coord in internal_ds.coords]
+    allow_invalid_netcdf = "c" in data_var_kinds or "c" in coord_kinds
+
+    with warnings.catch_warnings():
         # see http://xarray.pydata.org/en/stable/howdoi.html
         # for how to export complex numbers
-        with warnings.catch_warnings():
+        if allow_invalid_netcdf:
             warnings.filterwarnings(
                 "ignore",
                 module="h5netcdf",
                 message="You are writing invalid netcdf features",
                 category=UserWarning,
             )
-            xarray_dataset.to_netcdf(
-                path=file_path, engine="h5netcdf", invalid_netcdf=True
-            )
-    else:
-        xarray_dataset.to_netcdf(path=file_path, engine="h5netcdf")
+        maybe_write_job = internal_ds.to_netcdf(
+            path=file_path,
+            engine="h5netcdf",
+            invalid_netcdf=allow_invalid_netcdf,
+            compute=compute,  # pyright: ignore
+        )
+        # https://github.com/microsoft/pyright/issues/6069
+        if not compute and maybe_write_job is not None:
+            with TqdmCallback(desc="Combining files"):
+                _LOG.info(
+                    "Writing netcdf file using Dask delayed writer.",
+                    extra={"file_name": file_path},
+                )
+                maybe_write_job.compute()

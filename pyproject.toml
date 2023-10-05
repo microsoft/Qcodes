@@ -35,18 +35,20 @@ dependencies = [
     "opencensus>=0.7.10",
     "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
-    "pandas>=1.1.3",
+    "pandas>=1.2.0",
     "pyvisa>=1.11.0, <1.14.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.8.0",
     "typing_extensions>=4.1.1",
-    "tqdm>=4.32.2",
+    "tqdm>=4.59.0",
     "uncertainties>=3.1.4",
     "versioningit>=2.0.1",
     "websockets>=9.1",
     "wrapt>=1.13.2",
-    "xarray>=0.18.0",
+    "xarray>=2022.06.0",
+    "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.15.0",
+    "dask>=2022.1.0", # we are making use of xarray features that requires dask implicitly
     # transitive dependencies. We list these explicitly to",
     # ensure that we always use versions that do not have",
     # known security vulnerabilities",
@@ -69,16 +71,12 @@ Tracker = "https://github.com/QCoDeS/Qcodes/issues"
 Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
-qtplot = ["pyqtgraph>=0.11.0"]
-# can be removed once deprecated pyqtgraph module is removed
-slack = ["slack-sdk>=3.4.2"]
-# can be removed once deprecated slack are removed
 zurichinstruments = ["zhinst-qcodes>=0.3"]
 loop = ["qcodes_loop>=0.1.2"]
 test = [
     "coverage[toml]>=6.0.0",
     "deepdiff>=5.0.2",
-    "hypothesis>=5.49.0",
+    "hypothesis>=6.85.0",
     "lxml>=4.6.0",
     "lxml-stubs>=0.4.0",
     "mypy>=0.971",
@@ -209,6 +207,7 @@ ignore = [
     "qcodes/instrument_drivers/Harvard/Decadac.py",
     ]
 reportMissingTypeStubs = true
+stubPath = "typings/stubs"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -234,7 +233,8 @@ filterwarnings = [
 # RUF200 validate pyproject.toml
 # I isort
 # ISC flake8-implicit-str-concat
-select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC"]
+# TID253 banned-module-level-imports
+select = ["E", "F", "PT025", "UP", "RUF200", "I", "G", "ISC", "TID253"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # We have a lot of use of f strings in log messages
@@ -282,6 +282,17 @@ extend-exclude = ["typings"]
 
 # This triggeres in notebooks even with a md cell at the top
 "*.ipynb" = ["E402"]
+
+# these imports are fine at module level
+# in tests and examples
+"docs/*" = ["TID253"]
+"qcodes/tests/*" = ["TID253"]
+
+[tool.ruff.flake8-tidy-imports]
+# There modules are relatively slow to import
+# and only required in specific places so
+# don't import them at module level
+banned-module-level-imports = ["xarray", "pandas", "opencensus"]
 
 [tool.setuptools]
 zip-safe = false

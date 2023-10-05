@@ -30,6 +30,7 @@ from asyncio import CancelledError
 from collections import defaultdict
 from collections.abc import Awaitable, Sequence
 from contextlib import suppress
+from importlib.resources import as_file, files
 from threading import Event, Thread
 from typing import Any, Callable
 
@@ -266,15 +267,20 @@ def main() -> None:
 
     # If this file is run, create a simple webserver that serves a simple
     # website that can be used to view monitored parameters.
-    static_dir = os.path.join(os.path.dirname(__file__), "dist")
-    os.chdir(static_dir)
+    # # https://github.com/python/mypy/issues/4182
+    parent_module = ".".join(__loader__.name.split(".")[:-1])  # type: ignore[name-defined]
+
+    static_dir = files(parent_module).joinpath("dist")
     try:
-        log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
-        with socketserver.TCPServer(("", SERVER_PORT),
-                                    http.server.SimpleHTTPRequestHandler) as httpd:
-            log.debug("serving directory %s", static_dir)
-            webbrowser.open(f"http://localhost:{SERVER_PORT}")
-            httpd.serve_forever()
+        with as_file(static_dir) as extracted_dir:
+            os.chdir(extracted_dir)
+            log.info("Starting HTTP Server at http://localhost:%i", SERVER_PORT)
+            with socketserver.TCPServer(
+                ("", SERVER_PORT), http.server.SimpleHTTPRequestHandler
+            ) as httpd:
+                log.debug("serving directory %s", static_dir)
+                webbrowser.open(f"http://localhost:{SERVER_PORT}")
+                httpd.serve_forever()
     except KeyboardInterrupt:
         log.info("Shutting Down HTTP Server")
 

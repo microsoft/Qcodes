@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from collections.abc import Mapping
+from importlib.resources import files
 from os.path import expanduser
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,9 @@ BASE_SCHEMA = {
     "required": []
 }
 
+# https://github.com/python/mypy/issues/4182
+_PARENT_MODULE = ".".join(__loader__.name.split(".")[:-1])  # type: ignore[name-defined]
+
 
 class Config:
     """
@@ -40,14 +44,14 @@ class Config:
     schema_file_name = "qcodesrc_schema.json"
     """Name of schema file"""
     # get abs path of packge config file
-    default_file_name = str(Path(__file__).parent / config_file_name)
+    default_file_name = str(files(_PARENT_MODULE) / config_file_name)
     """Filename of default config"""
     current_config_path = default_file_name
     """Path of the last loaded config file"""
     _loaded_config_files = [default_file_name]
 
     # get abs path of schema  file
-    schema_default_file_name = str(Path(__file__).parent / schema_file_name)
+    schema_default_file_name = str(files(_PARENT_MODULE) / schema_file_name)
     """Filename of default schema"""
 
     # home dir, os independent

@@ -3,15 +3,19 @@ from __future__ import annotations
 import importlib
 import json
 import logging
+import sys
+import tempfile
 import time
 import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from queue import Queue
 from threading import Thread
 from typing import TYPE_CHECKING, Any
 
 import numpy
+from tqdm.auto import trange
 
 import qcodes
 from qcodes.dataset.data_set_protocol import (
@@ -76,7 +80,6 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.utils import (
     NumpyJSONEncoder,
-    QCoDeSDeprecationWarning,
     deprecate,
     issue_deprecation_warning,
 )
@@ -93,6 +96,7 @@ from .exporters.export_to_pandas import (
 from .exporters.export_to_xarray import (
     load_to_xarray_dataarray_dict,
     load_to_xarray_dataset,
+    xarray_to_h5netcdf_with_complex_numbers,
 )
 from .subscriber import _Subscriber
 
@@ -244,6 +248,7 @@ class DataSet(BaseDataSet):
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
+        self._export_limit = 1000
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -859,7 +864,6 @@ class DataSet(BaseDataSet):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -958,7 +962,6 @@ class DataSet(BaseDataSet):
             Return a pandas DataFrame with
                 df = ds.to_pandas_dataframe()
         """
-        self._warn_if_set(*params, start=start, end=end)
         datadict = self.get_parameter_data(*params,
                                            start=start,
                                            end=end)
@@ -1010,7 +1013,6 @@ class DataSet(BaseDataSet):
 
                 dataarray_dict = ds.to_xarray_dataarray_dict()
         """
-        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1061,7 +1063,6 @@ class DataSet(BaseDataSet):
 
                 xds = ds.to_xarray_dataset()
         """
-        self._warn_if_set(*params, start=start, end=end)
         data = self.get_parameter_data(*params,
                                        start=start,
                                        end=end)
@@ -1457,19 +1458,88 @@ class DataSet(BaseDataSet):
 
         self._export_info = export_info
 
-    @staticmethod
-    def _warn_if_set(
-        *params: str | ParamSpec | ParameterBase,
-        start: int | None = None,
-        end: int | None,
-    ) -> None:
-        if len(params) > 0 or start is not None or end is not None:
-            QCoDeSDeprecationWarning(
-                "Passing params, start or stop to to_xarray_... and "
-                "to_pandas_... methods is deprecated "
-                "This will be an error in the future. "
-                "If you need to sub-select use `dataset.get_parameter_data`"
+    def _export_as_netcdf(self, path: Path, file_name: str) -> Path:
+        """Export data as netcdf to a given path with file prefix"""
+        import xarray as xr
+
+        file_path = path / file_name
+        if self._estimate_ds_size() > self._export_limit:
+            log.info(
+                "Dataset is expected to be larger that threshold. Using distributed export.",
+                extra={
+                    "file_name": file_path,
+                    "qcodes_guid": self.guid,
+                    "ds_name": self.name,
+                    "exp_name": self.exp_name,
+                    "_export_limit": self._export_limit,
+                    "_estimated_ds_size": self._estimate_ds_size(),
+                },
             )
+            print(
+                "Large dataset detected. Will write to multiple files first and combine after, to reduce memory overhead."
+            )
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                log.info(
+                    "Writing individual files to temp dir.",
+                    extra={
+                        "file_name": file_path,
+                        "qcodes_guid": self.guid,
+                        "ds_name": self.name,
+                        "exp_name": self.exp_name,
+                        "temp_dir": temp_dir,
+                    },
+                )
+                num_files = len(self)
+                num_digits = len(str(num_files))
+                file_name_template = f"ds_{{:0{num_digits}d}}.nc"
+                for i in trange(num_files, desc="Writing individual files"):
+                    xarray_to_h5netcdf_with_complex_numbers(
+                        self.to_xarray_dataset(start=i + 1, end=i + 1),
+                        temp_path / file_name_template.format(i),
+                    )
+                files = tuple(temp_path.glob("*.nc"))
+                data = xr.open_mfdataset(files)
+                try:
+                    log.info(
+                        "Combining temp files into one file.",
+                        extra={
+                            "file_name": file_path,
+                            "qcodes_guid": self.guid,
+                            "ds_name": self.name,
+                            "exp_name": self.exp_name,
+                            "temp_dir": temp_dir,
+                        },
+                    )
+                    xarray_to_h5netcdf_with_complex_numbers(
+                        data, file_path, compute=False
+                    )
+                finally:
+                    data.close()
+        else:
+            log.info(
+                "Writing netcdf file directly.",
+                extra={"file_name": file_path},
+            )
+
+            file_path = super()._export_as_netcdf(path=path, file_name=file_name)
+        return file_path
+
+    def _estimate_ds_size(self) -> float:
+        """
+        Give an estimated size of the dataset as the size of a single row
+        times the len of the dataset. Result is returned in Mega Bytes.
+
+        Note that this does not take overhead into account so it is more accurate
+        if the row size is "large"
+        """
+        sample_data = self.get_parameter_data(start=1, end=1)
+        row_size = 0.0
+
+        for param_data in sample_data.values():
+            for array in param_data.values():
+                row_size += sys.getsizeof(array)
+        return row_size * len(self) / 1024 / 1024
 
 
 # public api

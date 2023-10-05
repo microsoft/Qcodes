@@ -2,7 +2,6 @@
 Tests for `qcodes.utils.plotting`.
 """
 import matplotlib
-import pytest
 from pytest import fixture
 
 import qcodes
@@ -50,7 +49,6 @@ def test_extend(dataset_with_outliers) -> None:
     plt.close()
 
 
-@pytest.mark.usefixtures("default_config")
 def test_defaults(dataset_with_outliers) -> None:
     run_id = dataset_with_outliers.run_id
 

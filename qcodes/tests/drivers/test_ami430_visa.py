@@ -162,6 +162,91 @@ def test_instantiation_compat_classes(request: FixtureRequest) -> None:
     assert driver._instrument_z is mag_z
 
 
+def test_visa_interaction(request: FixtureRequest) -> None:
+    """
+    Test that closing one instrument we can still use the other simulated instruments.
+    """
+    request.addfinalizer(AMIModel4303D.close_all)
+    mag_x = AMIModel430(
+        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_y = AMIModel430(
+        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_z = AMIModel430(
+        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+
+    default_field_value = 0.123
+
+    assert mag_x.field() == default_field_value
+    assert mag_y.field() == default_field_value
+    assert mag_z.field() == default_field_value
+
+    mag_x.field(0.1)
+    mag_y.field(0.2)
+    mag_z.field(0.3)
+
+    assert mag_x.field() == 0.1
+    assert mag_y.field() == 0.2
+    assert mag_z.field() == 0.3
+
+    mag_x.close()
+    # closing x should not change y or z
+    assert mag_y.field() == 0.2
+    assert mag_z.field() == 0.3
+
+
+def test_sim_visa_reset_on_fully_closed(request: FixtureRequest) -> None:
+    """
+    Test that closing all instruments defined in a yaml file will reset the
+    state of all the instruments.
+    """
+    request.addfinalizer(AMIModel4303D.close_all)
+    mag_x = AMIModel430(
+        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_y = AMIModel430(
+        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_z = AMIModel430(
+        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+
+    default_field_value = 0.123
+
+    assert mag_x.field() == default_field_value
+    assert mag_y.field() == default_field_value
+    assert mag_z.field() == default_field_value
+
+    mag_x.field(0.1)
+    mag_y.field(0.2)
+    mag_z.field(0.3)
+
+    assert mag_x.field() == 0.1
+    assert mag_y.field() == 0.2
+    assert mag_z.field() == 0.3
+
+    mag_x.close()
+    mag_y.close()
+    mag_z.close()
+
+    # all are closed so instruments should be reset
+    mag_x = AMIModel430(
+        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_y = AMIModel430(
+        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+    mag_z = AMIModel430(
+        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
+    )
+
+    assert mag_x.field() == default_field_value
+    assert mag_y.field() == default_field_value
+    assert mag_z.field() == default_field_value
+
+
 def test_instantiation_from_name_of_nonexistent_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:

@@ -321,7 +321,6 @@ def test_setting_write_period(wp) -> None:
 @given(wp=hst.one_of(hst.integers(), hst.floats(allow_nan=False),
                      hst.text()))
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_setting_write_period_from_config(wp) -> None:
     qc.config.dataset.write_period = wp
 
@@ -341,7 +340,6 @@ def test_setting_write_period_from_config(wp) -> None:
 
 @pytest.mark.parametrize("write_in_background", [True, False])
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.usefixtures("reset_config_on_exit")
 def test_setting_write_in_background_from_config(write_in_background) -> None:
     qc.config.dataset.write_in_background = write_in_background
 
@@ -609,7 +607,6 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N) -> None
     set_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
     get_values=hst.lists(elements=hst.floats(), min_size=20, max_size=20),
 )
-@pytest.mark.usefixtures("set_default_station_to_none")
 def test_datasaver_scalars(
     experiment, DAC, DMM, set_values, get_values, breakpoint, write_period
 ) -> None:
@@ -647,7 +644,6 @@ def test_datasaver_scalars(
     # More assertions of setpoints, labels and units in the DB!
 
 
-@pytest.mark.usefixtures('set_default_station_to_none')
 def test_datasaver_inst_metadata(experiment, DAC_with_metadata, DMM) -> None:
     """
     Check that additional instrument metadata is captured into the dataset snapshot

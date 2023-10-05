@@ -275,7 +275,7 @@ def start_logger() -> None:
         logging.getLogger(name).setLevel(level)
 
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.NOTSET)
 
     # remove previously set handlers
     for handler in (console_handler, file_handler, telemetry_handler):
@@ -484,7 +484,7 @@ class LogCapture:
     def __init__(self, logger: logging.Logger = logging.getLogger(),
                  level: Optional[LevelType] = None) -> None:
         self.logger = logger
-        self.level = level or logging.DEBUG
+        self.level = level or logging.NOTSET
 
         self.stashed_handlers = copy(self.logger.handlers)
         for h in self.stashed_handlers:

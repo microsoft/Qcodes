@@ -6,7 +6,7 @@ import pytest
 from qcodes.instrument_drivers.tektronix.DPO7200xx import TektronixDPO7000xx
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="function")
 def tektronix_dpo():
     """
     A six channel-per-relay instrument
