@@ -1371,6 +1371,7 @@ class Measurement:
 
 
 def str_or_register_name(sp: str | ParameterBase) -> str:
+    """Returns either the str passed or the register_name of the Parameter"""
     if isinstance(sp, str):
         return sp
     else:
