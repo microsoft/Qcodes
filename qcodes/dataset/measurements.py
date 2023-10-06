@@ -269,14 +269,14 @@ class DataSaver:
                     "Can not add result for parameter "
                     f"{param}, no such parameter registered "
                     "with this measurement."
-                    )
+                )
             else:
                 err_msg = (
                     "Can not add result for parameter "
                     f"{str(param)} or {str_or_register_name(param)},"
                     "no such parameter registered "
                     "with this measurement."
-                    )
+                )
             raise ValueError(err_msg)
         return {parameter: np.array(values)}
 
