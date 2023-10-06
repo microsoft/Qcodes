@@ -95,5 +95,17 @@ def test_validator_doc() -> None:
     p = Parameter("test_param", set_cmd=None, get_cmd=None)
     p.add_validator(Ints(min_value=0, max_value=10))
     p.add_validator(Ints(min_value=3, max_value=7))
+    assert p.__doc__ is not None
     assert "vals` <Ints 0<=v<=10>" in p.__doc__
     assert "vals` <Ints 3<=v<=7>" in p.__doc__
+    p.remove_validator()
+    assert "vals` <Ints 0<=v<=10>" in p.__doc__
+    assert "vals` <Ints 3<=v<=7>" not in p.__doc__
+    p.remove_validator()
+    assert "vals` <Ints 0<=v<=10>" not in p.__doc__
+    assert "vals` <Ints 3<=v<=7>" not in p.__doc__
+
+    p.vals = Ints(min_value=4, max_value=6)
+    assert "vals` <Ints 0<=v<=10>" not in p.__doc__
+    assert "vals` <Ints 3<=v<=7>" not in p.__doc__
+    assert "vals` <Ints 4<=v<=6>" in p.__doc__

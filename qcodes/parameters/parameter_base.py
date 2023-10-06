@@ -315,6 +315,9 @@ class ParameterBase(MetadatableWithName):
 
             instrument.parameters[name] = self
 
+    def _build__doc__(self) -> str | None:
+        return self.__doc__
+
     @property
     def vals(self) -> Validator | None:
         if len(self._vals):
@@ -337,13 +340,17 @@ class ParameterBase(MetadatableWithName):
         else:
             # setting the validator to None but the parameter already doesn't have a validator
             pass
+        self.__doc__ = self._build__doc__()
 
     def add_validator(self, vals: Validator) -> None:
         self._vals.append(vals)
+        self.__doc__ = self._build__doc__()
 
     def remove_validator(self) -> Validator | None:
         if len(self._vals) > 0:
-            return self._vals.pop()
+            removed = self._vals.pop()
+            self.__doc__ = self._build__doc__()
+            return removed
         else:
             return None
 

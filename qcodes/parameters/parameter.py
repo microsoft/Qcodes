@@ -330,9 +330,9 @@ class Parameter(ParameterBase):
             self.cache.set(initial_cache_value)
 
         self._docstring = docstring
+        self.__doc__ = self._build__doc__()
 
-    @property
-    def __doc__(self) -> str:
+    def _build__doc__(self) -> str:
         if len(self.validators) == 0:
             validator_docstrings = ["* `vals` None"]
         else:
