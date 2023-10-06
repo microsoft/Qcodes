@@ -175,7 +175,7 @@ class ParameterBase(MetadatableWithName):
             on the instrument passed via the instrument argument.
 
         register_name: Specifies if the parameter should be registered in datasets
-            using a different name than the parameter full_name
+            using a different name than the parameter's full_name
     """
 
     def __init__(
@@ -838,8 +838,8 @@ class ParameterBase(MetadatableWithName):
     def register_name(self) -> str:
         """
         Name that will be used to register this parameter in a dataset
-        By default, this returns the full_name, but may be overriden if custom
-        behavior is desired.
+        By default, this returns ``full_name`` or the value of the 
+        ``register_name`` argument if it was passed at initialization.
         """
         return self._register_name or self.full_name
 
