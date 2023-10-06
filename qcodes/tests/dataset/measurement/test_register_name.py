@@ -3,7 +3,8 @@ from functools import partial
 import numpy as np
 import pytest
 
-from qcodes.dataset import do0d, do1d, str_or_register_name
+from qcodes.dataset import do0d, do1d
+from qcodes.dataset.measurements import str_or_register_name
 from qcodes.parameters import ManualParameter, Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays
 

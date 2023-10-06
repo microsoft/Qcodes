@@ -41,7 +41,7 @@ from .measurement_extensions import (
     datasaver_builder,
     dond_into,
 )
-from .measurements import Measurement, str_or_register_name
+from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
 from .sqlite.connection import ConnectionPlus
 from .sqlite.database import (
