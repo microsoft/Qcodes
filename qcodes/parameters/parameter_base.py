@@ -173,6 +173,9 @@ class ParameterBase(MetadatableWithName):
 
         bind_to_instrument: Should the parameter be registered as a delegate attribute
             on the instrument passed via the instrument argument.
+
+        register_name: Specifies if the parameter should be registered in datasets
+            using a different name than the parameter's full_name
     """
 
     def __init__(
@@ -195,6 +198,7 @@ class ParameterBase(MetadatableWithName):
         vals: Validator[Any] | None = None,
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
+        register_name: str | None = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -205,6 +209,7 @@ class ParameterBase(MetadatableWithName):
                 f"must not contain spaces or special characters"
             )
         self._short_name = str(name)
+        self._register_name = register_name
         self._instrument = instrument
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
@@ -299,7 +304,6 @@ class ParameterBase(MetadatableWithName):
             existing_parameter = instrument.parameters.get(name, None)
 
             if existing_parameter:
-
                 if not existing_parameter.abstract:
                     raise KeyError(
                         f"Duplicate parameter name {name} on instrument {instrument}"
@@ -829,6 +833,15 @@ class ParameterBase(MetadatableWithName):
         by underscores, like this: ``instrument_submodule_parameter``.
         """
         return "_".join(self.name_parts)
+
+    @property
+    def register_name(self) -> str:
+        """
+        Name that will be used to register this parameter in a dataset
+        By default, this returns ``full_name`` or the value of the
+        ``register_name`` argument if it was passed at initialization.
+        """
+        return self._register_name or self.full_name
 
     @property
     def instrument(self) -> InstrumentBase | None:
