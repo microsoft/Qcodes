@@ -50,6 +50,7 @@ def test_register_name_with_pws():
     assert paramspecs[0].name in ("renamed_setpoints", "renamed_meas_param")
     assert paramspecs[1].name in ("renamed_setpoints", "renamed_meas_param")
 
+
 def test_register_name_utils():
     indep_param = ManualParameter(
         "indep_param", initial_value=1, register_name="renamed_indep_param"
