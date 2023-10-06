@@ -288,28 +288,6 @@ extend-exclude = ["typings"]
 # don't import them at module level
 banned-module-level-imports = ["xarray", "pandas", "opencensus"]
 
-[tool.setuptools]
-zip-safe = false
-include-package-data = false
-
-[tool.setuptools.packages]
-find = {namespaces = false}
-
-[tool.setuptools.package-data]
-qcodes = [
-    "monitor/dist/*",
-    "monitor/dist/js/*",
-    "monitor/dist/css/*",
-    "configuration/*.json",
-    "instrument/sims/*.yaml",
-    "tests/dataset/fixtures/data_2018_01_17/*/*",
-    "tests/delegate/data/*.yml",
-    "tests/drivers/auxiliary_files/*",
-    "py.typed",
-    "dist/schemas/*",
-    "dist/tests/station/*",
-]
-
 [tool.towncrier]
 package = "qcodes"
 name = "QCoDeS"
@@ -344,5 +322,5 @@ method = "git"
 match = ["v*"]
 
 [tool.versioningit.onbuild]
-source-file = "qcodes/_version.py"
+source-file = "src/qcodes/_version.py"
 build-file = "qcodes/_version.py"
