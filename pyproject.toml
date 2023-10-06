@@ -196,9 +196,9 @@ module = [
 ignore_missing_imports = true
 
 [tool.pyright]
-include = ["qcodes"]
+include = ["src"]
 ignore = [
-    "qcodes/instrument_drivers/Harvard/Decadac.py",
+    "src/qcodes/instrument_drivers/Harvard/Decadac.py",
     ]
 reportMissingTypeStubs = true
 stubPath = "typings/stubs"
