@@ -838,7 +838,7 @@ class ParameterBase(MetadatableWithName):
     def register_name(self) -> str:
         """
         Name that will be used to register this parameter in a dataset
-        By default, this returns ``full_name`` or the value of the 
+        By default, this returns ``full_name`` or the value of the
         ``register_name`` argument if it was passed at initialization.
         """
         return self._register_name or self.full_name
