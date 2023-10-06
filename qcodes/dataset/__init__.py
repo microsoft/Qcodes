@@ -112,5 +112,4 @@ __all__ = [
     "plot_dataset",
     "reset_default_experiment_id",
     "rundescriber_from_json",
-    "str_or_register_name"
 ]
