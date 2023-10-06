@@ -239,6 +239,10 @@ extend-include = ["*.ipynb"]
 
 extend-exclude = ["typings"]
 
+[tool.ruff.isort]
+
+known-first-party = ["qcodes"]
+
 [tool.ruff.per-file-ignores]
 # deprecated modules left
 # for backwards compatibility
