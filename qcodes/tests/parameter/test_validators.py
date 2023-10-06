@@ -109,3 +109,29 @@ def test_validator_doc() -> None:
     assert "vals` <Ints 0<=v<=10>" not in p.__doc__
     assert "vals` <Ints 3<=v<=7>" not in p.__doc__
     assert "vals` <Ints 4<=v<=6>" in p.__doc__
+
+
+def test_validator_snapshot() -> None:
+    p = Parameter("test_param", set_cmd=None, get_cmd=None)
+    p.add_validator(Ints(min_value=0, max_value=10))
+    p.add_validator(Ints(min_value=3, max_value=7))
+    snapshot = p.snapshot()
+    assert "<Ints 0<=v<=10>" in snapshot["validators"]
+    assert "<Ints 3<=v<=7>" in snapshot["validators"]
+    assert snapshot["vals"] == "<Ints 0<=v<=10>"
+    p.remove_validator()
+    snapshot = p.snapshot()
+    assert "<Ints 0<=v<=10>" in snapshot["validators"]
+    assert "<Ints 3<=v<=7>" not in snapshot["validators"]
+    assert snapshot["vals"] == "<Ints 0<=v<=10>"
+    p.remove_validator()
+    snapshot = p.snapshot()
+    assert "<Ints 0<=v<=10>" not in snapshot["validators"]
+    assert "<Ints 3<=v<=7>" not in snapshot["validators"]
+    assert "vals" not in snapshot.keys()
+    p.vals = Ints(min_value=4, max_value=6)
+    snapshot = p.snapshot()
+    assert "<Ints 0<=v<=10>" not in snapshot["validators"]
+    assert "<Ints 3<=v<=7>" not in snapshot["validators"]
+    assert "<Ints 4<=v<=6>" in snapshot["validators"]
+    assert "<Ints 4<=v<=6>" == snapshot["vals"]

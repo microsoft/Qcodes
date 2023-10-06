@@ -293,6 +293,7 @@ class ParameterBase(MetadatableWithName):
             "post_delay",
             "val_mapping",
             "vals",
+            "validators",
         ]
 
         # Specify time of last set operation, used when comparing to delay to
@@ -502,6 +503,8 @@ class ParameterBase(MetadatableWithName):
                         "instrument_name": self._instrument.name,
                     }
                 )
+            elif attr == "validators":
+                state["validators"] = [repr(validator) for validator in self.validators]
             else:
                 val = getattr(self, attr, None)
                 if val is not None:
