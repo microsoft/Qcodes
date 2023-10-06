@@ -2,7 +2,7 @@ import hypothesis.strategies as hst
 import pytest
 from hypothesis import given
 
-from qcodes import Parameter
+from qcodes.parameters import Parameter
 from qcodes.validators import Ints
 
 
