@@ -8,8 +8,11 @@ from qcodes.validators import Ints
 
 def test_add_ints_validator_to_parameter():
     p = Parameter("test_param", set_cmd=None, get_cmd=None)
-    p.add_validator(Ints(min_value=0, max_value=10))
+    ints_val = Ints(min_value=0, max_value=10)
+    p.add_validator(ints_val)
     assert len(p.validators) == 1
+    assert p.validators[0] is ints_val
+    assert p.vals is ints_val
 
 
 def test_remove_ints_validator_from_parameter():
@@ -17,6 +20,7 @@ def test_remove_ints_validator_from_parameter():
     p.add_validator(Ints(min_value=0, max_value=10))
     p.remove_validator()
     assert len(p.validators) == 0
+    assert p.vals is None
 
 
 @given(
@@ -54,6 +58,8 @@ def test_multiple_ints_validators(
             p.add_validator(validator)
 
     assert len(p.validators) == n_validators
+    if len(validators) > 0:
+        assert p.vals is validators[0]
 
     if value_to_validate >= max_min_value and value_to_validate <= min_max_value:
         p.validate(value_to_validate)
@@ -63,8 +69,11 @@ def test_multiple_ints_validators(
 
     while len(p.validators) > 0:
         p.remove_validator()
+        if len(p.validators) > 0:
+            assert p.vals is p.validators[0]
 
     assert len(p.validators) == 0
+    assert p.vals is None
 
     p.validate(value_to_validate)
 
