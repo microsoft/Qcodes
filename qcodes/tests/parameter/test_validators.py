@@ -99,6 +99,8 @@ def test_validator_context(min_val: int, max_val: int, value_to_validate: int) -
 
     p.validate(value_to_validate)
 
+    assert p.remove_validator() is None
+
 
 def test_validator_doc() -> None:
     p = Parameter("test_param", set_cmd=None, get_cmd=None)
