@@ -321,6 +321,17 @@ class ParameterBase(MetadatableWithName):
 
     @property
     def vals(self) -> Validator | None:
+        """
+        The first validator of the parameter. None
+        if no validators are set for this parameter.
+
+        :getter: Returns the first validator or None if no validators.
+        :setter: Sets the first validator. Set to None to remove the first validator.
+
+        Raises:
+            RuntimeError: If removing the first validator when more than one validator is set.
+        """
+
         if len(self._vals):
             return self._vals[0]
         else:
@@ -344,10 +355,24 @@ class ParameterBase(MetadatableWithName):
         self.__doc__ = self._build__doc__()
 
     def add_validator(self, vals: Validator) -> None:
+        """Add a validator for the parameter. The parameter is validated against
+        all validators in reverse order of how they are added.
+
+        Args:
+            vals: Validator to add to the parameter.
+        """
         self._vals.append(vals)
         self.__doc__ = self._build__doc__()
 
     def remove_validator(self) -> Validator | None:
+        """
+        Remove the last validator added to the parameter and return it.
+        Returns None if there are no validators associated with the parameter.
+
+        Returns:
+            The last validator added to the parameter or None if there are no
+            validators associated with the parameter.
+        """
         if len(self._vals) > 0:
             removed = self._vals.pop()
             self.__doc__ = self._build__doc__()
@@ -357,10 +382,21 @@ class ParameterBase(MetadatableWithName):
 
     @property
     def validators(self) -> tuple[Validator, ...]:
+        """
+        Tuple of all validators associated with the parameter.
+
+        :getter: All validators associated with the parameter.
+        """
+
         return tuple(self._vals)
 
     @contextmanager
     def extra_validator(self, vals: Validator) -> Generator[None, None, None]:
+        """
+        Contextmanager to to temporarily add a validator to the parameter within the
+        given context. The validator is removed from the parameter when the context
+        ends.
+        """
         self.add_validator(vals)
         yield
         self.remove_validator()
@@ -425,17 +461,13 @@ class ParameterBase(MetadatableWithName):
             if self.gettable:
                 return self.get()
             else:
-                raise NotImplementedError(
-                    "no get cmd found in" + f" Parameter {self.name}"
-                )
+                raise NotImplementedError(f"no get cmd found in Parameter {self.name}")
         else:
             if self.settable:
                 self.set(*args, **kwargs)
                 return None
             else:
-                raise NotImplementedError(
-                    "no set cmd found in" + f" Parameter {self.name}"
-                )
+                raise NotImplementedError(f"no set cmd found in Parameter {self.name}")
 
     def snapshot_base(
         self,
