@@ -144,3 +144,44 @@ def test_validator_snapshot() -> None:
     assert "<Ints 3<=v<=7>" not in snapshot["validators"]
     assert "<Ints 4<=v<=6>" in snapshot["validators"]
     assert "<Ints 4<=v<=6>" == snapshot["vals"]
+
+
+def test_replace_vals():
+    p = Parameter("test_param", set_cmd=None, get_cmd=None)
+    val1 = Ints(min_value=0, max_value=10)
+    p.add_validator(val1)
+    assert len(p.validators) == 1
+    assert p.validators[0] is val1
+    assert p.vals is val1
+
+    val2 = Ints(min_value=7, max_value=9)
+    p.vals = val2
+    assert len(p.validators) == 1
+    assert p.validators[0] is val2
+    assert p.vals is val2
+
+    val3 = Ints(min_value=8, max_value=9)
+    p.add_validator(val3)
+    assert len(p.validators) == 2
+    assert p.validators[0] is val2
+    assert p.validators[1] is val3
+    assert p.vals is val2
+
+    # when there is more than one validator we cannot remove vals
+    # but we can replace it
+    with pytest.raises(RuntimeError, match="Cannot remove default validator"):
+        p.vals = None
+    assert len(p.validators) == 2
+    assert p.validators[0] is val2
+    assert p.validators[1] is val3
+    assert p.vals is val2
+
+    p.vals = val1
+    assert len(p.validators) == 2
+    assert p.validators[0] is val1
+    assert p.validators[1] is val3
+    assert p.vals is val1
+
+    p.remove_validator()
+    p.vals = None
+    assert len(p.validators) == 0
