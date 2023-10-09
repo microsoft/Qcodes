@@ -814,7 +814,7 @@ class Arrays(Validator[np.ndarray]):
             for mytype in valid_types:
 
                 is_supported = any(
-                    np.issubsctype(mytype, supported_type)
+                    np.issubdtype(mytype, supported_type)
                     for supported_type in self.__supported_types
                 )
                 if not is_supported:
@@ -828,19 +828,17 @@ class Arrays(Validator[np.ndarray]):
             self.valid_types = self.__real_types
 
         supports_complex = any(
-            np.issubsctype(my_type, np.complexfloating) for my_type in self.valid_types
+            np.issubdtype(my_type, np.complexfloating) for my_type in self.valid_types
         )
 
         limits_given = min_value is not None or max_value is not None
 
         min_real = any(
-            np.issubsctype(type(min_value), real_type)
-            for real_type in self.__real_types
+            np.issubdtype(type(min_value), real_type) for real_type in self.__real_types
         )
 
         max_real = any(
-            np.issubsctype(type(max_value), real_type)
-            for real_type in self.__real_types
+            np.issubdtype(type(max_value), real_type) for real_type in self.__real_types
         )
 
         if min_value is not None and not min_real:
@@ -862,12 +860,12 @@ class Arrays(Validator[np.ndarray]):
             )
 
         min_value_is_valid_type = any(
-            np.issubsctype(type(min_value), valid_type)
+            np.issubdtype(type(min_value), valid_type)
             for valid_type in self.valid_types
         )
 
         max_value_is_valid_type = any(
-            np.issubsctype(type(max_value), valid_type)
+            np.issubdtype(type(max_value), valid_type)
             for valid_type in self.valid_types
         )
 
@@ -942,7 +940,7 @@ class Arrays(Validator[np.ndarray]):
             raise TypeError(f"{repr(value)} is not a numpy array; {context}")
 
         if not any(
-            np.issubsctype(value.dtype.type, valid_type)
+            np.issubdtype(value.dtype.type, valid_type)
             for valid_type in self.valid_types
         ):
             raise TypeError(

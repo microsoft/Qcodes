@@ -1525,11 +1525,11 @@ class TektronixAWG5014(VisaInstrument):
             raise TypeError(
                 "Waveform values out of bonds. Allowed values: -1 to 1 (inclusive)"
             )
-        if not np.all(np.in1d(m1, np.array([0, 1]))):
+        if not np.all(np.isin(m1, np.array([0, 1]))):
             raise TypeError(
                 "Marker 1 contains invalid values. Only 0 and 1 are allowed"
             )
-        if not np.all(np.in1d(m2, np.array([0, 1]))):
+        if not np.all(np.isin(m2, np.array([0, 1]))):
             raise TypeError(
                 "Marker 2 contains invalid values. Only 0 and 1 are allowed"
             )

@@ -7,9 +7,7 @@ from typing import Union
 
 import numpy as np
 
-complex_type_union = Union[
-    np.complex64, np.complex128, np.complex_, np.complexfloating, complex
-]
+complex_type_union = Union[np.complex64, np.complex128, np.complexfloating, complex]
 
 
 numpy_concrete_ints = (np.int8, np.int16, np.int32, np.int64,
@@ -46,16 +44,8 @@ numpy_c_floats = (np.half, np.single, np.double)
 """
 Floating point types that matches C types.
 """
-numpy_non_concrete_floats_instantiable = (np.float_, )
-"""
-Default floating point types. The size may be platform dependent.
-"""
 
-numpy_floats: tuple[type, ...] = (
-        numpy_concrete_floats +
-        numpy_c_floats +
-        numpy_non_concrete_floats_instantiable
-)
+numpy_floats: tuple[type, ...] = numpy_concrete_floats + numpy_c_floats
 """
 All numpy float types
 """
@@ -68,15 +58,9 @@ numpy_c_complex = (np.csingle, np.cdouble)
 """
 Complex types that matches C types.
 """
-numpy_non_concrete_complex_instantiable = (np.complex_, )
-"""
-Default complex types. The size may be platform dependent.
-"""
 
 numpy_complex: tuple[type[complex_type_union], ...] = (
-        numpy_concrete_complex +
-        numpy_c_complex +
-        numpy_non_concrete_complex_instantiable
+    numpy_concrete_complex + numpy_c_complex
 )
 """
 All numpy complex types
@@ -85,6 +69,5 @@ All numpy complex types
 concrete_complex_types = numpy_concrete_complex + (complex,)
 complex_types = (
         numpy_concrete_complex +
-        numpy_non_concrete_complex_instantiable +
         (complex,)
 )

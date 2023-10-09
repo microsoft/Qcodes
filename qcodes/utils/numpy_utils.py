@@ -5,7 +5,12 @@ from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
-from numpy import VisibleDeprecationWarning
+
+try:
+    from numpy.exceptions import VisibleDeprecationWarning
+except ImportError:
+    # numpy < 2.0
+    from numpy import VisibleDeprecationWarning
 
 
 def list_of_data_to_maybe_ragged_nd_array(
