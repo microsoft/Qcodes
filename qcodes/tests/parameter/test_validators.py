@@ -43,8 +43,8 @@ def test_multiple_ints_validators(
         validators.append(validator)
     n_validators = len(validators)
 
-    max_min_value = max([min_val for min_val, _ in min_max_values])
-    min_max_value = min([max_val for _, max_val in min_max_values])
+    max_min_value = max(min_val for min_val, _ in min_max_values)
+    min_max_value = min(max_val for _, max_val in min_max_values)
 
     if add_validator_via_constructor:
         p = Parameter("test_param", set_cmd=None, get_cmd=None, vals=validators[0])
@@ -61,7 +61,7 @@ def test_multiple_ints_validators(
     if len(validators) > 0:
         assert p.vals is validators[0]
 
-    if value_to_validate >= max_min_value and value_to_validate <= min_max_value:
+    if max_min_value <= value_to_validate <= min_max_value:
         p.validate(value_to_validate)
     else:
         with pytest.raises(ValueError):
@@ -89,7 +89,7 @@ def test_validator_context(min_val: int, max_val: int, value_to_validate: int) -
     with p.extra_validator(Ints(min_value=min_val, max_value=max_val)):
         assert len(p.validators) == 1
 
-        if value_to_validate >= min_val and value_to_validate <= max_val:
+        if min_val <= value_to_validate <= max_val:
             p.validate(value_to_validate)
         else:
             with pytest.raises(ValueError):
