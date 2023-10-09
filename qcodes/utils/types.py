@@ -44,16 +44,8 @@ numpy_c_floats = (np.half, np.single, np.double)
 """
 Floating point types that matches C types.
 """
-numpy_non_concrete_floats_instantiable: tuple[type, ...] = tuple()
-"""
-Default floating point types. The size may be platform dependent.
-"""
 
-numpy_floats: tuple[type, ...] = (
-        numpy_concrete_floats +
-        numpy_c_floats +
-        numpy_non_concrete_floats_instantiable
-)
+numpy_floats: tuple[type, ...] = numpy_concrete_floats + numpy_c_floats
 """
 All numpy float types
 """
@@ -66,15 +58,10 @@ numpy_c_complex = (np.csingle, np.cdouble)
 """
 Complex types that matches C types.
 """
-numpy_non_concrete_complex_instantiable: tuple[type[complex_type_union], ...] = tuple()
-"""
-Default complex types. The size may be platform dependent.
-"""
 
 numpy_complex: tuple[type[complex_type_union], ...] = (
     numpy_concrete_complex
     + numpy_c_complex  # type: ignore[assignment]
-    + numpy_non_concrete_complex_instantiable
 )
 """
 All numpy complex types
@@ -83,6 +70,5 @@ All numpy complex types
 concrete_complex_types = numpy_concrete_complex + (complex,)
 complex_types = (
         numpy_concrete_complex +
-        numpy_non_concrete_complex_instantiable +
         (complex,)
 )
