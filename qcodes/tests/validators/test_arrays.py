@@ -7,9 +7,8 @@ from hypothesis.extra.numpy import complex_number_dtypes
 
 from qcodes.utils.types import (
     concrete_complex_types,
-    numpy_concrete_floats,
     numpy_concrete_ints,
-    numpy_non_concrete_floats_instantiable,
+    numpy_floats,
     numpy_non_concrete_ints_instantiable,
 )
 from qcodes.validators import Arrays
@@ -87,7 +86,7 @@ def test_real_subtypes() -> None:
     Test that validating a concrete real type into an array that
     only support other concrete types raises as expected
     """
-    types = list(numpy_concrete_ints + numpy_concrete_floats)
+    types = list(numpy_concrete_ints + numpy_floats)
     randint = np.random.randint(0, len(types))
     mytype = types.pop(randint)
 
@@ -140,10 +139,7 @@ def test_default_types() -> None:
     for mytype in integer_types:
         a.validate(np.arange(10, dtype=mytype))
 
-    float_types = (
-            (float,)
-            + numpy_non_concrete_floats_instantiable
-            + numpy_concrete_floats)
+    float_types = (float,) + numpy_floats
     for mytype in float_types:
         a.validate(np.arange(10, dtype=mytype))
 

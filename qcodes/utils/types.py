@@ -60,8 +60,7 @@ Complex types that matches C types.
 """
 
 numpy_complex: tuple[type[complex_type_union], ...] = (
-    numpy_concrete_complex
-    + numpy_c_complex  # type: ignore[assignment]
+    numpy_concrete_complex + numpy_c_complex
 )
 """
 All numpy complex types
