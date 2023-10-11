@@ -179,25 +179,19 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
 # these are packages that we import
-# but either don't have stubs or we
-# dont have them installed.
+# but don't have installed by default
+# ruamel https://github.com/python/mypy/issues/12664
 [[tool.mypy.overrides]]
 module = [
     "clr",
-    "deepdiff",
     "gclib",
-    "ipywidgets",
-    "h5netcdf",
     "mcl_RF_Switch_Controller64",
     "mcl_RF_Switch_Controller_NET45",
-    "opencensus.ext.azure.*",
     "pywinusb.*",
     "ruamel",
     "spyder.utils.site",
     "spyder_kernels.customize",
     "System.IO",
-    "uncertainties",
-    "wrapt",
 ]
 ignore_missing_imports = true
 

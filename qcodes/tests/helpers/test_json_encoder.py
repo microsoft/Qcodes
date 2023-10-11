@@ -1,17 +1,11 @@
 import json
-import warnings
 from collections import OrderedDict, UserDict
 
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
+import uncertainties  # type: ignore[import-untyped]
 from hypothesis import given
-
-with warnings.catch_warnings():
-    # this context manager can be removed when uncertainties
-    # no longer triggers deprecation warnings
-    warnings.simplefilter("ignore", category=DeprecationWarning)
-    import uncertainties
 
 from qcodes.utils import NumpyJSONEncoder
 from qcodes.utils.types import numpy_complex, numpy_floats, numpy_ints

@@ -11,7 +11,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
-import wrapt
+import wrapt  # type: ignore[import-untyped]
 
 from qcodes.utils import DelayedKeyboardInterrupt
 

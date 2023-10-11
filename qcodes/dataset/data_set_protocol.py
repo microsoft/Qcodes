@@ -485,7 +485,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         export_paths = self.export_info.export_paths
         nc_file = export_paths.get(DataExportType.NETCDF.value, None)
         if nc_file is not None:
-            import h5netcdf
+            import h5netcdf  # type: ignore[import-untyped]
 
             try:
                 with h5netcdf.File(

@@ -39,7 +39,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
         * Other objects which cannot be serialized get converted to their
           string representation (using the ``str`` function).
         """
-        import uncertainties
+        import uncertainties  # type: ignore[import-untyped]
 
         if isinstance(obj, np.generic) and not isinstance(obj, np.complexfloating):
             # for numpy scalars

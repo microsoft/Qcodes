@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any, Callable, Optional, cast
 
-import wrapt
+import wrapt  # type: ignore[import-untyped]
 
 
 class QCoDeSDeprecationWarning(RuntimeWarning):

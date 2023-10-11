@@ -23,8 +23,12 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
-    from opencensus.ext.azure.common.protocol import Envelope
-    from opencensus.ext.azure.log_exporter import AzureLogHandler
+    from opencensus.ext.azure.common.protocol import (  # type: ignore[import-untyped]
+        Envelope,
+    )
+    from opencensus.ext.azure.log_exporter import (  # type: ignore[import-untyped]
+        AzureLogHandler,
+    )
 
 import qcodes as qc
 from qcodes.utils import (
