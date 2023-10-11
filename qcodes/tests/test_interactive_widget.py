@@ -7,7 +7,13 @@ from unittest.mock import patch
 import ipykernel.ipkernel  # noqa  F401
 import matplotlib
 import pytest
-from ipywidgets import HTML, Button, GridspecLayout, Tab, Textarea
+from ipywidgets import (  # type: ignore[import-untyped]
+    HTML,
+    Button,
+    GridspecLayout,
+    Tab,
+    Textarea,
+)
 
 from qcodes import interactive_widget
 

@@ -12,7 +12,7 @@ from functools import partial, reduce
 from typing import TYPE_CHECKING, Any, Literal
 
 from IPython.display import clear_output, display
-from ipywidgets import (
+from ipywidgets import (  # type: ignore[import-untyped]
     HTML,
     Box,
     Button,

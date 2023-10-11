@@ -1,4 +1,4 @@
-from deepdiff import DeepDiff  # pyright: ignore[reportMissingTypeStubs]
+from deepdiff import DeepDiff  # type: ignore[import-untyped]
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import (
