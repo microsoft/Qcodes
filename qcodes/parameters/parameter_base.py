@@ -4,7 +4,8 @@ import collections.abc
 import logging
 import time
 import warnings
-from collections.abc import Callable, Iterable, Mapping, Sequence, Sized
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
+from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
 from types import TracebackType
@@ -219,7 +220,10 @@ class ParameterBase(MetadatableWithName):
             raise TypeError("vals must be None or a Validator")
         elif val_mapping is not None:
             vals = Enum(*val_mapping.keys())
-        self.vals = vals
+        if vals is not None:
+            self._vals: list[Validator[Any]] = [vals]
+        else:
+            self._vals = []
 
         self.step = step
         self.scale = scale
@@ -289,6 +293,7 @@ class ParameterBase(MetadatableWithName):
             "post_delay",
             "val_mapping",
             "vals",
+            "validators",
         ]
 
         # Specify time of last set operation, used when comparing to delay to
@@ -310,6 +315,91 @@ class ParameterBase(MetadatableWithName):
                     )
 
             instrument.parameters[name] = self
+
+    def _build__doc__(self) -> str | None:
+        return self.__doc__
+
+    @property
+    def vals(self) -> Validator | None:
+        """
+        The first validator of the parameter. None
+        if no validators are set for this parameter.
+
+        :getter: Returns the first validator or None if no validators.
+        :setter: Sets the first validator. Set to None to remove the first validator.
+
+        Raises:
+            RuntimeError: If removing the first validator when more than one validator is set.
+        """
+
+        if len(self._vals):
+            return self._vals[0]
+        else:
+            return None
+
+    @vals.setter
+    def vals(self, vals: Validator | None) -> None:
+        if vals is not None and len(self._vals) > 0:
+            self._vals[0] = vals
+        elif vals is not None:
+            self._vals = [vals]
+        elif len(self._vals) == 1:
+            self._vals = []
+        elif len(self._vals) > 1:
+            raise RuntimeError(
+                "Cannot remove default validator from parameter with additional validators."
+            )
+        else:
+            # setting the validator to None but the parameter already doesn't have a validator
+            pass
+        self.__doc__ = self._build__doc__()
+
+    def add_validator(self, vals: Validator) -> None:
+        """Add a validator for the parameter. The parameter is validated against
+        all validators in reverse order of how they are added.
+
+        Args:
+            vals: Validator to add to the parameter.
+        """
+        self._vals.append(vals)
+        self.__doc__ = self._build__doc__()
+
+    def remove_validator(self) -> Validator | None:
+        """
+        Remove the last validator added to the parameter and return it.
+        Returns None if there are no validators associated with the parameter.
+
+        Returns:
+            The last validator added to the parameter or None if there are no
+            validators associated with the parameter.
+        """
+        if len(self._vals) > 0:
+            removed = self._vals.pop()
+            self.__doc__ = self._build__doc__()
+            return removed
+        else:
+            return None
+
+    @property
+    def validators(self) -> tuple[Validator, ...]:
+        """
+        Tuple of all validators associated with the parameter.
+
+        :getter: All validators associated with the parameter.
+        """
+
+        return tuple(self._vals)
+
+    @contextmanager
+    def extra_validator(self, vals: Validator) -> Generator[None, None, None]:
+        """
+        Contextmanager to to temporarily add a validator to the parameter within the
+        given context. The validator is removed from the parameter when the context
+        ends.
+        """
+        self.add_validator(vals)
+        yield
+        self.remove_validator()
 
     @property
     def raw_value(self) -> ParamRawDataType:
@@ -371,17 +461,13 @@ class ParameterBase(MetadatableWithName):
             if self.gettable:
                 return self.get()
             else:
-                raise NotImplementedError(
-                    "no get cmd found in" + f" Parameter {self.name}"
-                )
+                raise NotImplementedError(f"no get cmd found in Parameter {self.name}")
         else:
             if self.settable:
                 self.set(*args, **kwargs)
                 return None
             else:
-                raise NotImplementedError(
-                    "no set cmd found in" + f" Parameter {self.name}"
-                )
+                raise NotImplementedError(f"no set cmd found in Parameter {self.name}")
 
     def snapshot_base(
         self,
@@ -449,6 +535,8 @@ class ParameterBase(MetadatableWithName):
                         "instrument_name": self._instrument.name,
                     }
                 )
+            elif attr == "validators":
+                state["validators"] = [repr(validator) for validator in self.validators]
             else:
                 val = getattr(self, attr, None)
                 if val is not None:
@@ -711,8 +799,9 @@ class ParameterBase(MetadatableWithName):
             ValueError: If the value is outside the bounds specified by the
                validator.
         """
-        if self.vals is not None:
-            self.vals.validate(value, self._validate_context)
+        for validator in reversed(self._vals):
+            if validator is not None:
+                validator.validate(value, self._validate_context)
 
     @property
     def step(self) -> float | None:
@@ -741,7 +830,7 @@ class ParameterBase(MetadatableWithName):
     def step(self, step: float | None) -> None:
         if step is None:
             self._step: float | None = step
-        elif not getattr(self.vals, "is_numeric", True):
+        elif not all(getattr(vals, "is_numeric", True) for vals in self._vals):
             raise TypeError("you can only step numeric parameters")
         elif not isinstance(step, (int, float)):
             raise TypeError("step must be a number")
@@ -749,8 +838,11 @@ class ParameterBase(MetadatableWithName):
             self._step = None
         elif step <= 0:
             raise ValueError("step must be positive")
-        elif isinstance(self.vals, Ints) and not isinstance(step, int):
+        elif not all(isinstance(vals, Ints) for vals in self._vals) and not isinstance(
+            step, int
+        ):
             raise TypeError("step must be a positive int for an Ints parameter")
+
         else:
             self._step = step
 

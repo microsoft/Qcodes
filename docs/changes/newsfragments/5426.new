@@ -1,0 +1,2 @@
+The QCoDeS Parameters have nov gained the ability to use multiple validators.
+See `here <../examples/Parameters/Parameters.ipynb>`__ for examples of how to use this.
