@@ -1,3 +1,0 @@
-Large datasets are now exported to NetCDF4 using Dask delayed writer.
-This avoids allocating a large amount of memory to process the whole dataset at the same time.
-Size threshold at the moment is set to approximately 1 GB.
