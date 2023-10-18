@@ -218,6 +218,9 @@ def test_repr() -> None:
     c = Arrays(shape=(2, 2))
     assert str(c) == '<Arrays, shape: (2, 2)>'
     c = Arrays(shape=(lambda: 2, 2))
-    assert re.match(r"<Arrays, shape: \(<function "
-                    r"test_repr.<locals>.<lambda> "
-                    r"at 0x[a-fA-f0-9]*>, 2\)>", str(c))
+    assert re.match(
+        r"<Arrays, shape: \(<function "
+        r"test_repr.<locals>.<lambda> "
+        r"at 0x[a-fA-F0-9]*>, 2\)>",
+        str(c),
+    )
