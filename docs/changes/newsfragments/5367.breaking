@@ -1,5 +1,0 @@
-The deprecated modules
-`qcodes.data`, `qcodes.loop`, `qcodes.actions`, `qcodes.plots`,
-`qcodes.measure`, `qcodes.extensions.slack`, `qcodes.utils.magic`, qcodes.utils.qt_helpers`
-`qcodes.utils.slack` has been removed.
-The modules can be found in `qcodes_loop <https://github.com/qcodes/qcodes_loop>`_

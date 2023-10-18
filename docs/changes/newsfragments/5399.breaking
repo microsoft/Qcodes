@@ -1,3 +1,0 @@
-Update QCoDeS to work with the upcoming release of numpy 2.0.
-The unused attributes `qcodes.utils.types.numpy_non_concrete_floats_instantiable` and
-`qcodes.utils.types.numpy_non_concrete_complex_instantiable` have been removed from QCoDeS.
