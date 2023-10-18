@@ -29,5 +29,5 @@ New:
 - Large datasets are now exported to NetCDF4 using Dask delayed writer.
   This avoids allocating a large amount of memory to process the whole dataset at the same time.
   Size threshold at the moment is set to approximately 1 GB. (:pr:`5391`)
-- The QCoDeS Parameters have nov gained the ability to use multiple validators.
+- The QCoDeS Parameters have now gained the ability to use multiple validators.
   See `here <../examples/Parameters/Parameters.ipynb>`__ for examples of how to use this. (:pr:`5426`)
