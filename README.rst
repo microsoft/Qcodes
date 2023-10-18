@@ -24,11 +24,11 @@ shells and in stand-alone scripts as well. The features in
 Default branch is now main
 ==========================
 
-The default branch in qcodes_contrib_drivers has been renamed to main.
-If you are working with a local clone of QCoDeS you should update it as follows.
+The default branch in QCoDeS has been renamed to main.
+If you are working with a local clone of QCoDeS you should update it as follows:
 
-* Run git fetch origin and git checkout main
-* Run git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main to update your HEAD reference.
+* Run `git fetch origin` and `git checkout main`
+* Run `git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main` to update your HEAD reference.
 
 Install
 =======
