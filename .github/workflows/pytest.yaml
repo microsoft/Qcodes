@@ -43,7 +43,7 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v4.1.0
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: true
         # we need full history with tags for the version number
