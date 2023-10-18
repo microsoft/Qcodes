@@ -13,13 +13,22 @@ To learn more about QCoDeS, browse our `homepage <http://qcodes.github.io/Qcodes
 To get a feeling of QCoDeS read
 `15 minutes to QCoDeS <http://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__,
 and/or browse the Jupyter notebooks in `docs/examples
-<https://github.com/QCoDeS/Qcodes/tree/master/docs/examples>`__ .
+<https://github.com/QCoDeS/Qcodes/tree/main/docs/examples>`__ .
 
 QCoDeS is compatible with Python 3.7+. It is primarily intended for use
 from Jupyter notebooks, but can be used from traditional terminal-based
 shells and in stand-alone scripts as well. The features in
 `qcodes.utils.magic` are exclusively for Jupyter notebooks.
 
+
+Default branch is now main
+==========================
+
+The default branch in QCoDeS has been renamed to main.
+If you are working with a local clone of QCoDeS you should update it as follows:
+
+* Run `git fetch origin` and `git checkout main`
+* Run `git symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main` to update your HEAD reference.
 
 Install
 =======
@@ -32,7 +41,7 @@ Docs
 ====
 
 Read it `here <http://qcodes.github.io/Qcodes>`__ .
-Documentation is updated and deployed on every successful build in master.
+Documentation is updated and deployed on every successful build in main.
 
 We use sphinx for documentations, makefiles are provided both for
 Windows, and \*nix, so that you can build the documentation locally.
@@ -79,7 +88,7 @@ the QCoDeS community but not supported by the QCoDeS developers are contained in
 
 https://github.com/QCoDeS/Qcodes_contrib_drivers
 
-See `Contributing <https://github.com/QCoDeS/Qcodes/tree/master/CONTRIBUTING.rst>`__ for general information about bug/issue
+See `Contributing <https://github.com/QCoDeS/Qcodes/tree/main/CONTRIBUTING.rst>`__ for general information about bug/issue
 reports, contributing code, style, and testing.
 
 
@@ -87,7 +96,7 @@ reports, contributing code, style, and testing.
 License
 =======
 
-See `License <https://github.com/QCoDeS/Qcodes/tree/master/LICENSE>`__.
+See `License <https://github.com/QCoDeS/Qcodes/tree/main/LICENSE>`__.
 
 .. |Build Status Github| image:: https://github.com/QCoDeS/Qcodes/workflows/Run%20mypy%20and%20pytest/badge.svg
     :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22

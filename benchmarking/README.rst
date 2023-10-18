@@ -31,7 +31,7 @@ automatically. The benchmarks are executed in the same way:
   asv run
 
 Either of the commands above will execute benchmarking for the latest commit
-of the master branch.
+of the main branch.
 
 If you want to run benchmarking for a particular commit, use the same syntax
 as there is used for ``git log`` (commit id with ``^!`` at the end; note that in
