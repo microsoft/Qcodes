@@ -3,7 +3,7 @@ import pytest
 from hypothesis import given
 
 from qcodes.parameters import Parameter
-from qcodes.validators import Ints
+from qcodes.validators import Ints, Numbers
 
 
 def test_add_ints_validator_to_parameter():
@@ -187,3 +187,19 @@ def test_replace_vals():
     p.remove_validator()
     p.vals = None
     assert len(p.validators) == 0
+
+
+def test_validators_step_int() -> None:
+    # this parameter should allow step to be set as a float since the parameter is in it self a float
+    param = Parameter("a", get_cmd=False, set_cmd=False, vals=Numbers(0, 10))
+
+    param.step = 0.1
+    param.step = 1.0
+
+    param.add_validator(Ints(0, 10))
+
+    # but once we add an integer validator we no longer can set a step size as a float
+    with pytest.raises(
+        TypeError, match="step must be a positive int for an Ints parameter"
+    ):
+        param.step = 0.1
