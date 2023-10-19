@@ -21,5 +21,5 @@ jobs:
         with:
           options: "--check --diff"
           src: "./qcodes"
-          revision: "origin/master..."
+          revision: "origin/main..."
           version: "@e3c210b5c1b91400c3f317b2474c10ab23bec1cf"
