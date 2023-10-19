@@ -35,7 +35,7 @@ jobs:
             python-version: 3.10
     env:
       OS: ${{ matrix.os }}
-      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       # we expect no warnings from Sphinx in 3.10
       # The std-lib docstring of IntEnum in 3.11.0 is not valid
       # causing errors like in the docstring of from_bytes (from Int)
