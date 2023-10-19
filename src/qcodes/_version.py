@@ -9,7 +9,7 @@ def _get_version() -> str:
 
     module_path = files(root_module)
     if isinstance(module_path, Path):
-        return versioningit.get_version(project_dir=Path(module_path).parent)
+        return versioningit.get_version(project_dir=Path(module_path).parent.parent)
     else:
         return "0.0"
 

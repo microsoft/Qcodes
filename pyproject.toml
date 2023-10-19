@@ -196,9 +196,9 @@ module = [
 ignore_missing_imports = true
 
 [tool.pyright]
-include = ["qcodes"]
+include = ["src"]
 ignore = [
-    "qcodes/instrument_drivers/Harvard/Decadac.py",
+    "src/qcodes/instrument_drivers/Harvard/Decadac.py",
     ]
 reportMissingTypeStubs = true
 stubPath = "typings/stubs"
@@ -239,40 +239,44 @@ extend-include = ["*.ipynb"]
 
 extend-exclude = ["typings"]
 
+[tool.ruff.isort]
+
+known-first-party = ["qcodes"]
+
 [tool.ruff.per-file-ignores]
 # deprecated modules left
 # for backwards compatibility
-"qcodes/utils/validators.py" = ["F401"]
-"qcodes/utils/threading.py" = ["F401"]
-"qcodes/utils/plotting.py" = ["F401"]
-"qcodes/utils/metadata.py" = ["F401"]
-"qcodes/utils/helpers.py" = ["F401"]
-"qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
-"qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
-"qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
-"qcodes/instrument_drivers/tektronix/Keithley_2450.py" = ["F401"]
-"qcodes/instrument_drivers/tektronix/keithley_7510.py" = ["F401"]
-"qcodes/instrument_drivers/signal_hound/USB_SA124B.py" = ["F401"]
-"qcodes/instrument_drivers/rohde_schwarz/RTE1000.py" = ["F401"]
-"qcodes/instrument_drivers/rigol/DS4000.py" = ["F401"]
-"qcodes/instrument_drivers/rigol/DG4000.py" = ["F401"]
-"qcodes/instrument_drivers/rigol/DP832.py" = ["F401"]
-"qcodes/instrument_drivers/rigol/DP831.py" = ["F401"]
-"qcodes/instrument_drivers/rigol/DP821.py" = ["F401"]
-"qcodes/instrument_drivers/rigol/DS1074Z.py" = ["F401"]
-"qcodes/instrument_drivers/rigol/DG1062.py" = ["F401"]
-"qcodes/instrument_drivers/devices.py" = ["F401"]
-"qcodes/instrument_drivers/basel/sp983c_remote.py" = ["F401"]
-"qcodes/instrument_drivers/Lakeshore/Model_325.py" = ["F401"]
-"qcodes/instrument_drivers/Lakeshore/Model_336.py" = ["F401"]
-"qcodes/instrument_drivers/Lakeshore/Model_372.py" = ["F401"]
-"qcodes/instrument_drivers/Minicircuits/RUDAT_13G_90.py" = ["F401"]
-"qcodes/instrument_drivers/HP/HP8133A.py" = ["F401"]
-"qcodes/instrument_drivers/HP/HP8753D.py" = ["F401"]
-"qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
+"src/qcodes/utils/validators.py" = ["F401"]
+"src/qcodes/utils/threading.py" = ["F401"]
+"src/qcodes/utils/plotting.py" = ["F401"]
+"src/qcodes/utils/metadata.py" = ["F401"]
+"src/qcodes/utils/helpers.py" = ["F401"]
+"src/qcodes/instrument_drivers/AimTTi/AimTTi_PL601P_channels.py" = ["F401"]
+"src/qcodes/instrument_drivers/tektronix/Keithley_6500.py" = ["F401"]
+"src/qcodes/instrument_drivers/tektronix/Keithley_2600_channels.py" = ["F401"]
+"src/qcodes/instrument_drivers/tektronix/Keithley_2450.py" = ["F401"]
+"src/qcodes/instrument_drivers/tektronix/keithley_7510.py" = ["F401"]
+"src/qcodes/instrument_drivers/signal_hound/USB_SA124B.py" = ["F401"]
+"src/qcodes/instrument_drivers/rohde_schwarz/RTE1000.py" = ["F401"]
+"src/qcodes/instrument_drivers/rigol/DS4000.py" = ["F401"]
+"src/qcodes/instrument_drivers/rigol/DG4000.py" = ["F401"]
+"src/qcodes/instrument_drivers/rigol/DP832.py" = ["F401"]
+"src/qcodes/instrument_drivers/rigol/DP831.py" = ["F401"]
+"src/qcodes/instrument_drivers/rigol/DP821.py" = ["F401"]
+"src/qcodes/instrument_drivers/rigol/DS1074Z.py" = ["F401"]
+"src/qcodes/instrument_drivers/rigol/DG1062.py" = ["F401"]
+"src/qcodes/instrument_drivers/devices.py" = ["F401"]
+"src/qcodes/instrument_drivers/basel/sp983c_remote.py" = ["F401"]
+"src/qcodes/instrument_drivers/Lakeshore/Model_325.py" = ["F401"]
+"src/qcodes/instrument_drivers/Lakeshore/Model_336.py" = ["F401"]
+"src/qcodes/instrument_drivers/Lakeshore/Model_372.py" = ["F401"]
+"src/qcodes/instrument_drivers/Minicircuits/RUDAT_13G_90.py" = ["F401"]
+"src/qcodes/instrument_drivers/HP/HP8133A.py" = ["F401"]
+"src/qcodes/instrument_drivers/HP/HP8753D.py" = ["F401"]
+"src/qcodes/instrument_drivers/Keysight/N9030B.py" = ["F401"]
 
-"qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
-"qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
+"src/qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
+"src/qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
 
 # This triggeres in notebooks even with a md cell at the top
 "*.ipynb" = ["E402"]
@@ -280,35 +284,13 @@ extend-exclude = ["typings"]
 # these imports are fine at module level
 # in tests and examples
 "docs/*" = ["TID253"]
-"qcodes/tests/*" = ["TID253"]
+"src/qcodes/tests/*" = ["TID253"]
 
 [tool.ruff.flake8-tidy-imports]
 # There modules are relatively slow to import
 # and only required in specific places so
 # don't import them at module level
 banned-module-level-imports = ["xarray", "pandas", "opencensus"]
-
-[tool.setuptools]
-zip-safe = false
-include-package-data = false
-
-[tool.setuptools.packages]
-find = {namespaces = false}
-
-[tool.setuptools.package-data]
-qcodes = [
-    "monitor/dist/*",
-    "monitor/dist/js/*",
-    "monitor/dist/css/*",
-    "configuration/*.json",
-    "instrument/sims/*.yaml",
-    "tests/dataset/fixtures/data_2018_01_17/*/*",
-    "tests/delegate/data/*.yml",
-    "tests/drivers/auxiliary_files/*",
-    "py.typed",
-    "dist/schemas/*",
-    "dist/tests/station/*",
-]
 
 [tool.towncrier]
 package = "qcodes"
@@ -344,5 +326,5 @@ method = "git"
 match = ["v*"]
 
 [tool.versioningit.onbuild]
-source-file = "qcodes/_version.py"
+source-file = "src/qcodes/_version.py"
 build-file = "qcodes/_version.py"

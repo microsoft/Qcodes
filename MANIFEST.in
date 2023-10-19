@@ -1,0 +1,11 @@
+include src/qcodes/monitor/dist/*
+include src/qcodes/monitor/dist/js/*
+include src/qcodes/monitor/dist/css/*
+include src/qcodes/configuration/*.json
+include src/qcodes/instrument/sims/*.yaml
+include src/qcodes/tests/dataset/fixtures/data_2018_01_17/*/*
+include src/qcodes/tests/delegate/data/*.yml
+include src/qcodes/tests/drivers/auxiliary_files/*
+include src/qcodes/py.typed
+include src/qcodes/dist/schemas/*
+include src/qcodes/dist/tests/station/*
