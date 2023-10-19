@@ -838,7 +838,7 @@ class ParameterBase(MetadatableWithName):
             self._step = None
         elif step <= 0:
             raise ValueError("step must be positive")
-        elif not all(isinstance(vals, Ints) for vals in self._vals) and not isinstance(
+        elif any(isinstance(vals, Ints) for vals in self._vals) and not isinstance(
             step, int
         ):
             raise TypeError("step must be a positive int for an Ints parameter")
