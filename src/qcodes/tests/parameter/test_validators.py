@@ -194,3 +194,12 @@ def test_validators_step_int() -> None:
     param = Parameter("a", get_cmd=False, set_cmd=False, vals=Numbers(0, 10))
 
     param.step = 0.1
+    param.step = 1.0
+
+    param.add_validator(Ints(0, 10))
+
+    # but once we add an integer validator we no longer can set a step size as a float
+    with pytest.raises(
+        TypeError, match="step must be a positive int for an Ints parameter"
+    ):
+        param.step = 0.1
