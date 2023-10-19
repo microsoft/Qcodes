@@ -22,4 +22,3 @@ jobs:
           options: "--check --diff"
           src: "./src/qcodes"
           revision: "origin/main..."
-          version: "@e3c210b5c1b91400c3f317b2474c10ab23bec1cf"
