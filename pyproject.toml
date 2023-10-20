@@ -122,10 +122,9 @@ log_exported_ds = "qcodes.extensions:log_dataset_export_info"
 
 [tool.coverage.run]
 omit = [
-    "qcodes/__init__.py",
+    "src/qcodes/__init__.py",
     "*/__init__.py",
-    "qcodes/tests/*",
-    "qcodes/instrument_drivers/test.py"
+    "src/qcodes/tests/*",
 ]
 [tool.coverage.report]
 exclude_lines = [
