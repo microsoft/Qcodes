@@ -111,11 +111,8 @@ async def test_connection() -> None:
     """
     Test that we can connect to a monitor instance
     """
-    # websockets.connect is exposed via some lazy global magic
-    # that pyright/mypy cannot figure out
-    async with websockets.connect(  # type: ignore[attr-defined]
-        f"ws://localhost:{monitor.WEBSOCKET_PORT}"
-    ):
+
+    async with websockets.connect(f"ws://localhost:{monitor.WEBSOCKET_PORT}"):
         pass
 
 
@@ -125,13 +122,13 @@ async def test_instrument_update(inst_and_monitor) -> None:
     Test instrument updates
     """
     instr, my_monitor, monitor_parameters, param = inst_and_monitor
-    async with websockets.connect(  # type: ignore[attr-defined]
+    async with websockets.connect(
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:
 
         # Receive data from monitor
-        data = await websocket.recv()
-        data = json.loads(data)
+        data_b = await websocket.recv()
+        data = json.loads(data_b)
         # Check fields
         assert "ts" in data
         assert "parameters" in data
@@ -170,13 +167,13 @@ async def test_instrument_update(inst_and_monitor) -> None:
 @pytest.mark.asyncio
 async def test_monitor_root_instr(channel_instr_monitor) -> None:
     _, use_root_instrument = channel_instr_monitor
-    async with websockets.connect(  # type: ignore[attr-defined]
+    async with websockets.connect(
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:
 
         # Receive data from monitor
-        data = await websocket.recv()
-        data = json.loads(data)
+        data_b = await websocket.recv()
+        data = json.loads(data_b)
         if use_root_instrument:
             assert len(data["parameters"]) == 1
         else:
