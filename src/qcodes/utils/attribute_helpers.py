@@ -45,9 +45,7 @@ class DelegateAttributes:
             if key == name:
                 # needed to prevent infinite loops!
                 raise AttributeError(
-                    "dict '{}' has not been created in object '{}'".format(
-                        key, self.__class__.__name__
-                    )
+                    f"dict '{key}' has not been created in object '{self.__class__.__name__}'"
                 )
             try:
                 d = getattr(self, name, None)
@@ -59,9 +57,7 @@ class DelegateAttributes:
         for name in self.delegate_attr_objects:
             if key == name:
                 raise AttributeError(
-                    "object '{}' has not been created in object '{}'".format(
-                        key, self.__class__.__name__
-                    )
+                    f"object '{key}' has not been created in object '{self.__class__.__name__}'"
                 )
             try:
                 obj = getattr(self, name, None)
@@ -71,9 +67,7 @@ class DelegateAttributes:
                 pass
 
         raise AttributeError(
-            "'{}' object and its delegates have no attribute '{}'".format(
-                self.__class__.__name__, key
-            )
+            f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"
         )
 
     def __dir__(self) -> list[str]:
