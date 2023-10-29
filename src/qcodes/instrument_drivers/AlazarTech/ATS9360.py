@@ -318,10 +318,12 @@ class AlazarTechATS9360(AlazarTech_ATS):
                            get_cmd=self._get_trigger_holdoff,
                            set_cmd=self._set_trigger_holdoff)
 
-        model = self.get_idn()['model']
-        if model != 'ATS9360':
-            raise Exception(f"The Alazar board kind is not 'ATS9360',"
-                            f" found '{str(model)}' instead.")
+        model = self.get_idn()["model"]
+        if model != "ATS9360":
+            raise Exception(
+                f"The Alazar board kind is not 'ATS9360',"
+                f" found '{model!s}' instead."
+            )
 
     def _get_trigger_holdoff(self) -> bool:
         fwversion = self.get_idn()['firmware']

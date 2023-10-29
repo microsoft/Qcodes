@@ -301,10 +301,12 @@ class AlazarTechATS9870(AlazarTech_ATS):
                            initial_value=1000,
                            vals=validators.Ints(min_value=0))
 
-        model = self.get_idn()['model']
-        if model != 'ATS9870':
-            raise Exception(f"The Alazar board kind is not 'ATS9870',"
-                            f" found '{str(model)}' instead.")
+        model = self.get_idn()["model"]
+        if model != "ATS9870":
+            raise Exception(
+                f"The Alazar board kind is not 'ATS9870',"
+                f" found '{model!s}' instead."
+            )
 
 
 class AlazarTech_ATS9870(AlazarTechATS9870):

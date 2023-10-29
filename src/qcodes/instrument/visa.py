@@ -111,7 +111,7 @@ class VisaInstrument(Instrument):
                         "could not be found. Trying to load "
                         f"file {pyvisa_sim_file} from module: {module}"
                     )
-                visalib = f"{str(sim_visalib_path)}@sim"
+                visalib = f"{sim_visalib_path!s}@sim"
                 (
                     visa_handle,
                     visabackend,

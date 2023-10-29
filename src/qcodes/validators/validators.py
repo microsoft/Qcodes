@@ -171,7 +171,7 @@ class Bool(Validator[Union[bool, np.bool_]]):
             TypeError: IF not a boolean.
         """
         if not isinstance(value, bool) and not isinstance(value, np.bool_):
-            raise TypeError(f"{repr(value)} is not Boolean; {context}")
+            raise TypeError(f"{value!r} is not Boolean; {context}")
 
     def __repr__(self) -> str:
         return "<Boolean>"
@@ -215,12 +215,12 @@ class Strings(Validator[str]):
         """
 
         if not isinstance(value, str):
-            raise TypeError(f"{repr(value)} is not a string; {context}")
+            raise TypeError(f"{value!r} is not a string; {context}")
 
         vallen = len(value)
         if vallen < self._min_length or vallen > self._max_length:
             raise ValueError(
-                f"{repr(value)} is invalid: length must be between "
+                f"{value!r} is invalid: length must be between "
                 f"{self._min_length} and {self._max_length} inclusive; {context}"
             )
 
@@ -258,7 +258,6 @@ class Numbers(Validator[numbertypes]):
         min_value: numbertypes = -float("inf"),
         max_value: numbertypes = float("inf"),
     ) -> None:
-
         if isinstance(min_value, self.validtypes):
             self._min_value = min_value
         else:
@@ -286,11 +285,11 @@ class Numbers(Validator[numbertypes]):
             ValueError: If number is not between the min and the max value.
         """
         if not isinstance(value, self.validtypes):
-            raise TypeError(f"{repr(value)} is not an int or float; {context}")
+            raise TypeError(f"{value!r} is not an int or float; {context}")
 
         if not (self._min_value <= value <= self._max_value):
             raise ValueError(
-                f"{repr(value)} is invalid: must be between "
+                f"{value!r} is invalid: must be between "
                 f"{self._min_value} and {self._max_value} inclusive; {context}"
             )
 
@@ -358,11 +357,11 @@ class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
              ValueError: If not between min_value and max_value.
         """
         if not isinstance(value, self.validtypes):
-            raise TypeError(f"{repr(value)} is not an int; {context}")
+            raise TypeError(f"{value!r} is not an int; {context}")
 
         if not (self._min_value <= value <= self._max_value):
             raise ValueError(
-                f"{repr(value)} is invalid: must be between "
+                f"{value!r} is invalid: must be between "
                 f"{self._min_value} and {self._max_value} inclusive; {context}"
             )
 
@@ -411,7 +410,7 @@ class PermissiveInts(Ints):
                 castvalue = intrepr
             else:
                 raise TypeError(
-                    f"{repr(value)} is not an int or close to an int; {context}"
+                    f"{value:r} is not an int or close to an int; {context}"
                 )
         else:
             castvalue = value
@@ -426,7 +425,6 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
     validtypes = (complex, np.complex128, np.complex64)
 
     def __init__(self) -> None:
-
         self._valid_values = ((1 + 1j),)
 
     def validate(
@@ -445,7 +443,7 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
         # for some reason pyright does not think numpy complex
         # types as valid types here
         if not isinstance(value, self.validtypes):  # pyright: ignore
-            raise TypeError(f"{repr(value)} is not complex; {context}")
+            raise TypeError(f"{value!r} is not complex; {context}")
 
     is_numeric = False  # there is no meaningful way to sweep a complex number
 
@@ -472,18 +470,16 @@ class Enum(Validator[Hashable]):
     def validate(self, value: Hashable, context: str = "") -> None:
         try:
             if value not in self._values:
-                raise ValueError(
-                    f"{repr(value)} is not in {repr(self._values)}; {context}"
-                )
+                raise ValueError(f"{value!r} is not in {self._values!r}; {context}")
 
         except TypeError as e:  # in case of unhashable (mutable) type
             e.args = e.args + (
-                f"error looking for {repr(value)} in {repr(self._values)}; {context}",
+                f"error looking for {value!r} in {self._values!r}; {context}",
             )
             raise
 
     def __repr__(self) -> str:
-        return f"<Enum: {repr(self._values)}>"
+        return f"<Enum: {self._values!r}>"
 
     @property
     def values(self) -> set[Hashable]:
@@ -540,7 +536,7 @@ class Multiples(Ints):
         super().validate(value=value, context=context)
         if not value % self._divisor == 0:
             raise ValueError(
-                f"{repr(value)} is not a multiple of {repr(self._divisor)}; {context}"
+                f"{value!r} is not a multiple of {self._divisor!r}; {context}"
             )
 
     def __repr__(self) -> str:
@@ -809,10 +805,8 @@ class Arrays(Validator[np.ndarray]):
         shape: abc.Sequence[shape_type] | None = None,
         valid_types: abc.Sequence[type] | None = None,
     ) -> None:
-
         if valid_types is not None:
             for mytype in valid_types:
-
                 is_supported = any(
                     np.issubdtype(mytype, supported_type)
                     for supported_type in self.__supported_types
@@ -935,9 +929,8 @@ class Arrays(Validator[np.ndarray]):
         return shape
 
     def validate(self, value: np.ndarray, context: str = "") -> None:
-
         if not isinstance(value, np.ndarray):
-            raise TypeError(f"{repr(value)} is not a numpy array; {context}")
+            raise TypeError(f"{value!r} is not a numpy array; {context}")
 
         if not any(
             np.issubdtype(value.dtype.type, valid_type)
@@ -951,7 +944,7 @@ class Arrays(Validator[np.ndarray]):
             shape = self.shape
             if np.shape(value) != shape:
                 raise ValueError(
-                    f"{repr(value)} does not have expected shape {shape},"
+                    f"{value!r} does not have expected shape {shape},"
                     f" it has shape {np.shape(value)}; {context}"
                 )
 
@@ -959,7 +952,7 @@ class Arrays(Validator[np.ndarray]):
         if self._max_value != (float("inf")) and self._max_value is not None:
             if not (np.max(value) <= self._max_value):
                 raise ValueError(
-                    f"{repr(value)} is invalid: all values must be between "
+                    f"{value!r} is invalid: all values must be between "
                     f"{self._min_value} and {self._max_value} inclusive; {context}"
                 )
 
@@ -967,7 +960,7 @@ class Arrays(Validator[np.ndarray]):
         if self._min_value != (-float("inf")) and self._min_value is not None:
             if not (self._min_value <= np.min(value)):
                 raise ValueError(
-                    f"{repr(value)} is invalid: all values must be between "
+                    f"{value!r} is invalid: all values must be between "
                     f"{self._min_value} and {self._max_value} inclusive; {context}"
                 )
 
@@ -1026,7 +1019,7 @@ class Lists(Validator[list[T]]):
             TypeError: If not list.
         """
         if not isinstance(value, list):
-            raise TypeError(f"{repr(value)} is not a list; {context}")
+            raise TypeError(f"{value!r} is not a list; {context}")
         # Does not validate elements if not required to improve performance
         if not isinstance(self._elt_validator, Anything):
             for elt in value:
@@ -1079,13 +1072,13 @@ class Sequence(Validator[typing.Sequence[Any]]):
             ValueError: If not of given length or if not sorted.
         """
         if not isinstance(value, abc.Sequence):
-            raise TypeError(f"{repr(value)} is not a sequence; {context}")
+            raise TypeError(f"{value!r} is not a sequence; {context}")
         if self._length and not len(value) == self._length:
             raise ValueError(
-                f"{repr(value)} has not length {self._length} but {len(value)}"
+                f"{value!r} has not length {self._length} but {len(value)}"
             )
         if self._require_sorted and tuple(sorted(value)) != tuple(value):
-            raise ValueError(f"{repr(value)} is required to be sorted.")
+            raise ValueError(f"{value!r} is required to be sorted.")
         # Does not validate elements if not required to improve performance
         if not isinstance(self._elt_validator, Anything):
             for elt in value:
@@ -1124,7 +1117,7 @@ class Callable(Validator[typing.Callable[..., Any]]):
             TypeError: If not a callable.
         """
         if not callable(value):
-            raise TypeError(f"{repr(value)} is not a callable; {context}")
+            raise TypeError(f"{value!r} is not a callable; {context}")
 
     def __repr__(self) -> str:
         return "<Callable>"
@@ -1158,7 +1151,7 @@ class Dict(Validator[dict[Hashable, Any]]):
             SyntaxError: If keys are not in allowed keys.
         """
         if not isinstance(value, dict):
-            raise TypeError(f"{repr(value)} is not a dictionary; {context}")
+            raise TypeError(f"{value!r} is not a dictionary; {context}")
 
         allowed_keys = self._allowed_keys
         if allowed_keys is not None:
