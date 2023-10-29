@@ -210,13 +210,12 @@ addopts = "-n auto --dist=loadfile"
 
 markers = "serial"
 
-# warnings triggered by xarray and hdf5netcdf using deprecated apis
+# triggered by third party packages
 filterwarnings = [
-    "ignore:The distutils package is deprecated and slated for removal in Python 3.12:DeprecationWarning",
-    "ignore:distutils Version classes are deprecated:DeprecationWarning",
-    "ignore:SelectableGroups dict interface is deprecated:DeprecationWarning",
-    'ignore:Deprecated call to `pkg_resources\.declare_namespace:DeprecationWarning',
-    'ignore:pkg_resources is deprecated as an API',
+    'ignore:Deprecated call to `pkg_resources\.declare_namespace:DeprecationWarning',  # google, sphinxcontrib
+    'ignore:pkg_resources is deprecated as an API:DeprecationWarning', # pyvisa-sim
+    'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated and scheduled for removal in a future version:DeprecationWarning', # tqdm dateutil
+    'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning' # jupyter
 ]
 
 [tool.ruff]
