@@ -410,7 +410,7 @@ class PermissiveInts(Ints):
                 castvalue = intrepr
             else:
                 raise TypeError(
-                    f"{value:r} is not an int or close to an int; {context}"
+                    f"{value!r} is not an int or close to an int; {context}"
                 )
         else:
             castvalue = value
