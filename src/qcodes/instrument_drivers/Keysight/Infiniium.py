@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import Any, Literal, Optional, Union
+from typing import Any, ClassVar, Literal, Optional, Union
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -84,7 +84,14 @@ class DSOTraceParam(ParameterWithSetpoints):
     Trace parameter for the Infiniium series DSO
     """
 
-    UNIT_MAP = {0: "UNKNOWN", 1: "V", 2: "s", 3: "''", 4: "A", 5: "dB"}
+    UNIT_MAP: ClassVar[dict[int, str]] = {
+        0: "UNKNOWN",
+        1: "V",
+        2: "s",
+        3: "''",
+        4: "A",
+        5: "dB",
+    }
 
     def __init__(
         self,

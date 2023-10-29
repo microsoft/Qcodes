@@ -8,7 +8,7 @@ any functionality whatsoever.
 
 
 import ctypes
-from typing import Any, Callable, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 import numpy as np
 
@@ -23,7 +23,7 @@ from qcodes.instrument_drivers.AlazarTech.dll_wrapper import _mark_params_as_upd
 
 class SimulatedATS9360API(AlazarATSAPI):
 
-    registers = {
+    registers: ClassVar[dict[int, int]] = {
         8: 70254688,
         58: int(np.uint32(1 << 26))  # Trigger hold off
     }

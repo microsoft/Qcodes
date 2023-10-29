@@ -1,7 +1,7 @@
 import logging
 from collections import namedtuple
 from itertools import chain
-from typing import Any
+from typing import Any, ClassVar
 
 log = logging.getLogger(__name__)
 
@@ -38,8 +38,10 @@ class CommandHandler:
     """
 
     # Variable types
-    _variants = {'double': win32com.client.VARIANT(VT_BYREF | VT_R8, 0.0),
-                 'long': win32com.client.VARIANT(VT_BYREF | VT_I4, 0)}
+    _variants: ClassVar[dict[str, win32com.client.VARIANT]] = {
+        "double": win32com.client.VARIANT(VT_BYREF | VT_R8, 0.0),
+        "long": win32com.client.VARIANT(VT_BYREF | VT_I4, 0),
+    }
 
     def __init__(self, inst_type: str = 'dynacool') -> None:
         self.inst_type = inst_type

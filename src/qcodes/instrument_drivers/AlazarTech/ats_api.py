@@ -7,7 +7,7 @@ of its C library in a python-friendly way.
 
 import ctypes
 from ctypes import POINTER
-from typing import Any, Union
+from typing import Any, ClassVar, Union
 
 # `ParameterBase` is needed because users may pass instrument parameters
 # that originate from `Instrument.parameters` dictionary which is typed
@@ -51,7 +51,7 @@ class AlazarATSAPI(WrappedDll):
 
     ## ACTUAL DLL API FUNCTIONS ##
 
-    signatures: dict[str, Signature] = {}
+    signatures: ClassVar[dict[str, Signature]] = {}
 
     def set_trigger_time_out(self,
                              handle: int,

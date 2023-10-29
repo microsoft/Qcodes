@@ -5,7 +5,7 @@ import collections.abc
 import logging
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 
@@ -578,7 +578,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     # instrument.get('someparam') === instrument['someparam'].get()         #
     # etc...                                                                #
     #
-    delegate_attr_dicts = ["parameters", "functions", "submodules"]
+    delegate_attr_dicts: ClassVar[list[str]] = ["parameters", "functions", "submodules"]
 
     def __getitem__(self, key: str) -> Callable[..., Any] | Parameter:
         """Delegate instrument['name'] to parameter or function 'name'."""

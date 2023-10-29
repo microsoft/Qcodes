@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import Any, Callable, Optional
+from typing import Any, Callable, ClassVar, Optional
 
 import numpy as np
 
@@ -606,40 +606,83 @@ class SR86x(VisaInstrument):
     """
     This is the code for Stanford_SR865 Lock-in Amplifier
     """
-    _VOLT_TO_N = {1: 0, 500e-3: 1, 200e-3: 2,
-                  100e-3: 3, 50e-3: 4, 20e-3: 5,
-                  10e-3: 6, 5e-3: 7, 2e-3: 8,
-                  1e-3: 9, 500e-6: 10, 200e-6: 11,
-                  100e-6: 12, 50e-6: 13, 20e-6: 14,
-                  10e-6: 15, 5e-6: 16, 2e-6: 17,
-                  1e-6: 18, 500e-9: 19, 200e-9: 20,
-                  100e-9: 21, 50e-9: 22, 20e-9: 23,
-                  10e-9: 24, 5e-9: 25, 2e-9: 26,
-                  1e-9: 27}
-    _N_TO_VOLT = {v: k for k, v in _VOLT_TO_N.items()}
 
-    _CURR_TO_N = {1e-6: 0, 500e-9: 1, 200e-9: 2,
-                  100e-9: 3, 50e-9: 4, 20e-9: 5,
-                  10e-9: 6, 5e-9: 7, 2e-9: 8,
-                  1e-9: 9, 500e-12: 10, 200e-12: 11,
-                  100e-12: 12, 50e-12: 13, 20e-12: 14,
-                  10e-12: 15, 5e-12: 16, 2e-12: 17,
-                  1e-12: 18, 500e-15: 19, 200e-15: 20,
-                  100e-15: 21, 50e-15: 22, 20e-15: 23,
-                  10e-15: 24, 5e-15: 25, 2e-15: 26,
-                  1e-15: 27}
-    _N_TO_CURR = {v: k for k, v in _CURR_TO_N.items()}
+    _VOLT_TO_N: ClassVar[dict[int | float, int]] = {
+        1: 0,
+        500e-3: 1,
+        200e-3: 2,
+        100e-3: 3,
+        50e-3: 4,
+        20e-3: 5,
+        10e-3: 6,
+        5e-3: 7,
+        2e-3: 8,
+        1e-3: 9,
+        500e-6: 10,
+        200e-6: 11,
+        100e-6: 12,
+        50e-6: 13,
+        20e-6: 14,
+        10e-6: 15,
+        5e-6: 16,
+        2e-6: 17,
+        1e-6: 18,
+        500e-9: 19,
+        200e-9: 20,
+        100e-9: 21,
+        50e-9: 22,
+        20e-9: 23,
+        10e-9: 24,
+        5e-9: 25,
+        2e-9: 26,
+        1e-9: 27,
+    }
+    _N_TO_VOLT: ClassVar[dict[int, int | float]] = {v: k for k, v in _VOLT_TO_N.items()}
+
+    _CURR_TO_N: ClassVar[dict[float, int]] = {
+        1e-6: 0,
+        500e-9: 1,
+        200e-9: 2,
+        100e-9: 3,
+        50e-9: 4,
+        20e-9: 5,
+        10e-9: 6,
+        5e-9: 7,
+        2e-9: 8,
+        1e-9: 9,
+        500e-12: 10,
+        200e-12: 11,
+        100e-12: 12,
+        50e-12: 13,
+        20e-12: 14,
+        10e-12: 15,
+        5e-12: 16,
+        2e-12: 17,
+        1e-12: 18,
+        500e-15: 19,
+        200e-15: 20,
+        100e-15: 21,
+        50e-15: 22,
+        20e-15: 23,
+        10e-15: 24,
+        5e-15: 25,
+        2e-15: 26,
+        1e-15: 27,
+    }
+    _N_TO_CURR: ClassVar[dict[int, float]] = {v: k for k, v in _CURR_TO_N.items()}
 
     _VOLT_ENUM = Enum(*_VOLT_TO_N.keys())
     _CURR_ENUM = Enum(*_CURR_TO_N.keys())
 
-    _INPUT_SIGNAL_TO_N = {
+    _INPUT_SIGNAL_TO_N: ClassVar[dict[str, int]] = {
         'voltage': 0,
         'current': 1,
     }
-    _N_TO_INPUT_SIGNAL = {v: k for k, v in _INPUT_SIGNAL_TO_N.items()}
+    _N_TO_INPUT_SIGNAL: ClassVar[dict[int, str]] = {
+        v: k for k, v in _INPUT_SIGNAL_TO_N.items()
+    }
 
-    PARAMETER_NAMES = {
+    PARAMETER_NAMES: ClassVar[dict[str, str]] = {
                 'X': '0',   # X output, 'X'
                 'Y': '1',   # Y output, 'Y'
                 'R': '2',   # R output, 'R'

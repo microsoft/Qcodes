@@ -1,7 +1,7 @@
 import warnings
 from functools import partial
 from time import sleep
-from typing import Any, Optional, Union, cast
+from typing import Any, Callable, ClassVar, Literal, Optional, Union, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -31,13 +31,14 @@ class DynaCool(VisaInstrument):
     # _do_blocking_ramp method
     _ramp_time_resolution = 0.1
 
-    temp_params = ['temperature_setpoint', 'temperature_rate',
-                   'temperature_settling']
-    field_params = ['field_target', 'field_rate', 'field_approach']
+    temp_params = ("temperature_setpoint", "temperature_rate", "temperature_settling")
+    field_params = ("field_target", "field_rate", "field_approach")
 
-    _errors = {-2: lambda: warnings.warn('Unknown command'),
-               1: lambda: None,
-               0: lambda: None}
+    _errors: ClassVar[dict[int, Callable[[], None]]] = {
+        -2: lambda: warnings.warn("Unknown command"),
+        1: lambda: None,
+        0: lambda: None,
+    }
 
     def __init__(self, name: str,
                  address: str,
@@ -291,7 +292,9 @@ class DynaCool(VisaInstrument):
         number_in_tesla = number_in_oersted*1e-4
         return number_in_tesla
 
-    def _field_getter(self, param_name: str) -> Union[int, float]:
+    def _field_getter(
+        self, param_name: Literal["field_target", "field_rate", "field_approach"]
+    ) -> Union[int, float]:
         """
         The combined get function for the three field parameters,
         field_setpoint, field_rate, and field_approach
@@ -303,7 +306,11 @@ class DynaCool(VisaInstrument):
 
         return dict(zip(self.field_params, [sp, rate, approach]))[param_name]
 
-    def _field_setter(self, param: str, value: float) -> None:
+    def _field_setter(
+        self,
+        param: Literal["field_target", "field_rate", "field_approach"],
+        value: float,
+    ) -> None:
         """
         The combined set function for the three field parameters,
         field_setpoint, field_rate, and field_approach
@@ -315,7 +322,12 @@ class DynaCool(VisaInstrument):
 
         self.write(f'FELD {values[0]}, {values[1]}, {values[2]}, 0')
 
-    def _temp_getter(self, param_name: str) -> Union[int, float]:
+    def _temp_getter(
+        self,
+        param_name: Literal[
+            "temperature_setpoint", "temperature_rate", "temperature_settling"
+        ],
+    ) -> Union[int, float]:
         """
         This function queries the last temperature setpoint (w. rate and mode)
         from the instrument.
@@ -327,7 +339,13 @@ class DynaCool(VisaInstrument):
 
         return dict(zip(self.temp_params, [sp, rate, mode]))[param_name]
 
-    def _temp_setter(self, param: str, value: float) -> None:
+    def _temp_setter(
+        self,
+        param: Literal[
+            "temperature_setpoint", "temperature_rate", "temperature_settling"
+        ],
+        value: float,
+    ) -> None:
         """
         The setter function for the temperature parameters. All three are set
         with the same call to the instrument API

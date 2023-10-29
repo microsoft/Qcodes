@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
@@ -214,7 +214,7 @@ class AimTTi(VisaInstrument):
     Tested with Aim TTi PL601-P equipped with a single output channel.
     """
 
-    _numOutputChannels = {
+    _numOutputChannels: ClassVar[dict[str, int]] = {
         "PL068-P": 1,
         "PL155-P": 1,
         "PL303-P": 1,

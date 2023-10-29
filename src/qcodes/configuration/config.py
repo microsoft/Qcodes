@@ -48,7 +48,6 @@ class Config:
     """Filename of default config"""
     current_config_path = default_file_name
     """Path of the last loaded config file"""
-    _loaded_config_files = [default_file_name]
 
     # get abs path of schema  file
     schema_default_file_name = str(files(_PARENT_MODULE) / schema_file_name)
@@ -84,15 +83,16 @@ class Config:
     defaults_schema: DotDict
     """The default schema"""
 
-    _diff_config: dict[str, Any] = {}
-    _diff_schema: dict[str, Any] = {}
-
     def __init__(self, path: str | None = None) -> None:
         """
         Args:
             path: Optional path to directory containing
                 a `qcodesrc.json` config file
         """
+        self._loaded_config_files = [self.default_file_name]
+        self._diff_config: dict[str, Any] = {}
+        self._diff_schema: dict[str, Any] = {}
+
         self.config_file_path = path
         self.defaults, self.defaults_schema = self.load_default()
         self.update_config()

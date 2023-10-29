@@ -14,7 +14,7 @@ import logging
 from collections.abc import Callable, Sequence
 from functools import partial
 from threading import Lock
-from typing import Any, NamedTuple, NewType, TypeVar
+from typing import Any, ClassVar, NamedTuple, NewType, TypeVar
 from weakref import WeakValueDictionary
 
 from qcodes.parameters import ParameterBase
@@ -144,7 +144,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
         dll_path: Path to the DLL library to load and wrap
     """
 
-    signatures: dict[str, Signature] = {}
+    signatures: ClassVar[dict[str, Signature]] = {}
     """
     Signatures for loaded DLL functions;
     It is to be filled with :class:`Signature` instances for the DLL

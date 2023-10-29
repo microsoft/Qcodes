@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Any, Union, cast
+from typing import Any, ClassVar, Union, cast
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
@@ -106,19 +106,19 @@ class RigolDG1062Channel(InstrumentChannel):
     min_impedance = 1
     max_impedance = 10000
 
-    waveform_params = {
-        waveform: ["freq", "ampl", "offset", "phase"]
+    waveform_params: ClassVar[dict[str, tuple[str, ...]]] = {
+        waveform: ("freq", "ampl", "offset", "phase")
         for waveform in ["HARM", "NOIS", "RAMP", "SIN", "SQU", "TRI", "USER", "PULS"]
     }
 
-    waveform_params["DC"] = ["freq", "ampl", "offset"]
-    waveform_params["ARB"] = ["sample_rate", "ampl", "offset"]
+    waveform_params["DC"] = ("freq", "ampl", "offset")
+    waveform_params["ARB"] = ("sample_rate", "ampl", "offset")
 
     """
     Responses from the machine don't always match
     the name to set the function, hence a translater
     """
-    waveform_translate = {
+    waveform_translate: ClassVar[dict[str, str]] = {
         "HARM": "HARM",
         "NOISE": "NOIS",
         "RAMP": "RAMP",
@@ -129,7 +129,7 @@ class RigolDG1062Channel(InstrumentChannel):
         "PULSE": "PULS",
     }
 
-    waveforms = list(waveform_params.keys())
+    waveforms: ClassVar[tuple[str, ...]] = tuple(waveform_params.keys())
 
     def __init__(self, parent: "RigolDG1062", name: str, channel: int):
         """
@@ -279,7 +279,7 @@ class RigolDG1062Channel(InstrumentChannel):
         current_waveform = self.waveform_translate[parts[0]]
         param_vals: list[Union[str, float]] = [current_waveform]
         param_vals += [to_float(i) for i in parts[1:]]
-        param_names = ["waveform"] + self.waveform_params[current_waveform]
+        param_names = ["waveform"] + list(self.waveform_params[current_waveform])
         params_dict = dict(zip(param_names, param_vals))
 
         return params_dict

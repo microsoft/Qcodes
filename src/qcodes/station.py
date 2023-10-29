@@ -20,7 +20,7 @@ from functools import partial
 from io import StringIO
 from pathlib import Path
 from types import ModuleType
-from typing import IO, Any, AnyStr, NoReturn, Union, cast, overload
+from typing import IO, Any, AnyStr, ClassVar, NoReturn, Union, cast, overload
 
 import jsonschema
 import jsonschema.exceptions
@@ -116,7 +116,7 @@ class Station(Metadatable, DelegateAttributes):
     default: Station | None = None
     "Class attribute to store the default station."
 
-    delegate_attr_dicts = ['components']
+    delegate_attr_dicts: ClassVar[list[str]] = ["components"]
     """
     A list of names (strings) of dictionaries
     which are (or will be) attributes of ``self``,

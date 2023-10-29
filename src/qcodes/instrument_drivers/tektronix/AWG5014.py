@@ -6,7 +6,7 @@ from collections import abc
 from collections.abc import Sequence
 from io import BytesIO
 from time import localtime, sleep
-from typing import Any, Literal, NamedTuple, Optional, Union, cast
+from typing import Any, ClassVar, Literal, NamedTuple, Optional, Union, cast
 
 import numpy as np
 from pyvisa.errors import VisaIOError
@@ -50,7 +50,8 @@ class TektronixAWG5014(VisaInstrument):
           corresponding parameters.
 
     """
-    AWG_FILE_FORMAT_HEAD = {
+
+    AWG_FILE_FORMAT_HEAD: ClassVar[dict[str, str]] = {
         'SAMPLING_RATE': 'd',    # d
         'REPETITION_RATE': 'd',    # # NAME?
         'HOLD_REPETITION_RATE': 'h',    # True | False
@@ -79,7 +80,7 @@ class TektronixAWG5014(VisaInstrument):
         'INTERLEAVE_ADJ_PHASE': 'd',
         'INTERLEAVE_ADJ_AMPLITUDE': 'd',
     }
-    AWG_FILE_FORMAT_CHANNEL = {
+    AWG_FILE_FORMAT_CHANNEL: ClassVar[dict[str, str]] = {
         # Include NULL.(Output Waveform Name for Non-Sequence mode)
         'OUTPUT_WAVEFORM_NAME_N': 's',
         'CHANNEL_STATE_N': 'h',  # On | Off

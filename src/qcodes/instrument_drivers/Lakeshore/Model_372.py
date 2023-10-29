@@ -3,7 +3,7 @@ This contains an alias of the Lakeshore Model 372 driver.
 It will eventually be deprecated and removed
 """
 
-from typing import Any
+from typing import Any, ClassVar
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
@@ -28,12 +28,12 @@ class Model_372(LakeshoreBase):
     Computer Interface Operation section of the manual) is not implemented.
     """
 
-    channel_name_command: dict[str, str] = {
+    channel_name_command: ClassVar[dict[str, str]] = {
         f"ch{i:02}": str(i) for i in range(1, 1 + _n_channels)
     }
-    input_channel_parameter_values_to_channel_name_on_instrument = {
-        i: f'ch{i:02}' for i in range(1, 1 + _n_channels)
-    }
+    input_channel_parameter_values_to_channel_name_on_instrument: ClassVar[
+        dict[int, str]
+    ] = {i: f"ch{i:02}" for i in range(1, 1 + _n_channels)}
 
     CHANNEL_CLASS = Model_372_Channel
 

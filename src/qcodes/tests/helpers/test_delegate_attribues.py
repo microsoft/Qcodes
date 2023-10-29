@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import pytest
 
 from qcodes.utils import DelegateAttributes
@@ -5,8 +7,8 @@ from qcodes.utils import DelegateAttributes
 
 def test_delegate_dict() -> None:
     class ToDict(DelegateAttributes):
-        delegate_attr_dicts = ['d']
-        apples = 'green'
+        delegate_attr_dicts: ClassVar[list[str]] = ["d"]
+        apples = "green"
 
     td = ToDict()
     # td.d doesn't exist yet
@@ -45,7 +47,7 @@ def test_delegate_dict() -> None:
 
 def test_delegate_dicts() -> None:
     class ToDicts(DelegateAttributes):
-        delegate_attr_dicts = ['d', 'e']
+        delegate_attr_dicts: ClassVar[list[str]] = ["d", "e"]
 
     td = ToDicts()
     e = {"cats": 12, "dogs": 3}
@@ -75,8 +77,8 @@ def test_delegate_object() -> None:
         white = '#fff'
 
     class ToObject(DelegateAttributes):
-        delegate_attr_objects = ['recipient']
-        gray = '#888'
+        delegate_attr_objects: ClassVar[list[str]] = ["recipient"]
+        gray = "#888"
 
     to_obj = ToObject()
     recipient = Recipient()
@@ -114,7 +116,7 @@ def test_delegate_objects() -> None:
         d = 6
 
     class ToObjects(DelegateAttributes):
-        delegate_attr_objects = ['r1', 'r2']
+        delegate_attr_objects: ClassVar[list[str]] = ["r1", "r2"]
         a = 0
         e = 7
         r1 = R1()
@@ -151,10 +153,10 @@ def test_delegate_both() -> None:
     my_recipient_dict = {'paper': 'Petta et al.', 'year': 2005}
 
     class ToBoth(DelegateAttributes):
-        delegate_attr_objects = ['recipient_object']
-        delegate_attr_dicts = ['recipient_dict']
-        rock = 'Eiger'
-        water = 'Lac Leman'
+        delegate_attr_objects: ClassVar[list[str]] = ["recipient_object"]
+        delegate_attr_dicts: ClassVar[list[str]] = ["recipient_dict"]
+        rock = "Eiger"
+        water = "Lac Leman"
         recipient_dict = my_recipient_dict
         recipient_object = Recipient()
 

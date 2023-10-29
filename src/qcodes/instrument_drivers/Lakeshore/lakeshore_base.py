@@ -480,9 +480,11 @@ class LakeshoreBase(VisaInstrument):
     # is used in instrument commands as values. For example, if channel called
     # "B" is referred to in instrument commands as '2', then this dictionary
     # will contain {'B': '2'} entry.
-    channel_name_command: dict[str, str] = {}
+    channel_name_command: ClassVar[dict[str, str]] = {}
 
-    input_channel_parameter_values_to_channel_name_on_instrument: dict[Any, str]
+    input_channel_parameter_values_to_channel_name_on_instrument: ClassVar[
+        dict[Any, str]
+    ]
 
     def __init__(
         self,
