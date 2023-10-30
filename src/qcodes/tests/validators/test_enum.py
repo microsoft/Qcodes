@@ -27,7 +27,7 @@ def test_good() -> None:
             with pytest.raises((ValueError, TypeError)):
                 e.validate(v)
 
-        assert repr(e) == f"<Enum: {repr(set(enum))}>"
+        assert repr(e) == f"<Enum: {set(enum)!r}>"
 
         # Enum is never numeric, even if its members are all numbers
         # because the use of is_numeric is for sweeping

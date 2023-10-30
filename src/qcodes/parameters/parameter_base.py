@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, overload
+from typing import TYPE_CHECKING, Any, ClassVar, overload
 
 from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
@@ -1093,8 +1093,8 @@ class GetLatest(DelegateAttributes):
     def __init__(self, parameter: ParameterBase):
         self.parameter = parameter
 
-    delegate_attr_objects = ["parameter"]
-    omit_delegate_attrs = ["set"]
+    delegate_attr_objects: ClassVar[list[str]] = ["parameter"]
+    omit_delegate_attrs: ClassVar[list[str]] = ["set"]
 
     def get(self) -> ParamDataType:
         """

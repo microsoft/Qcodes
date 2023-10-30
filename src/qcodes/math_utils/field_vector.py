@@ -5,7 +5,7 @@ coordinate systems.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Literal, TypeVar, Union
+from typing import Any, ClassVar, Literal, TypeVar, Union
 
 import numpy as np
 
@@ -23,7 +23,8 @@ class FieldVector:
     or (rho, phi, z) values or (r, theta, phi) values at instantiation for a
     meaningful computation of the other representation, immediately.
     """
-    attributes = ["x", "y", "z", "r", "theta", "phi", "rho"]
+
+    attributes: ClassVar[list[str]] = ["x", "y", "z", "r", "theta", "phi", "rho"]
     repr_format = "cartesian"
 
     def __init__(

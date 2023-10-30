@@ -98,7 +98,8 @@ class LakeshoreModel372Channel(BaseSensorChannel):
     An InstrumentChannel representing a single sensor on a Lakeshore Model 372.
 
     """
-    SENSOR_STATUSES = {
+
+    SENSOR_STATUSES: ClassVar[dict[int, str]] = {
         0: "OK",
         1: "CS OVL",
         2: "VCM OVL",
@@ -288,12 +289,12 @@ class LakeshoreModel372(LakeshoreBase):
     Computer Interface Operation section of the manual) is not implemented.
     """
 
-    channel_name_command: dict[str, str] = {
+    channel_name_command: ClassVar[dict[str, str]] = {
         f"ch{i:02}": str(i) for i in range(1, 1 + _n_channels)
     }
-    input_channel_parameter_values_to_channel_name_on_instrument = {
-        i: f"ch{i:02}" for i in range(1, 1 + _n_channels)
-    }
+    input_channel_parameter_values_to_channel_name_on_instrument: ClassVar[
+        dict[int, str]
+    ] = {i: f"ch{i:02}" for i in range(1, 1 + _n_channels)}
 
     CHANNEL_CLASS = LakeshoreModel372Channel
 

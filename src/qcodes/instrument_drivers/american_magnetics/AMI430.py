@@ -9,7 +9,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, TypeVar, cast
+from typing import Any, Callable, ClassVar, TypeVar, cast
 
 import numpy as np
 
@@ -134,8 +134,13 @@ class AMI430(IPInstrument):
         address: IP address of the power supply programmer
         current_ramp_limit: A current ramp limit, in units of A/s
     """
-    _SHORT_UNITS = {'seconds': 's', 'minutes': 'min',
-                    'tesla': 'T', 'kilogauss': 'kG'}
+
+    _SHORT_UNITS: ClassVar[dict[str, str]] = {
+        "seconds": "s",
+        "minutes": "min",
+        "tesla": "T",
+        "kilogauss": "kG",
+    }
     _DEFAULT_CURRENT_RAMP_LIMIT = 0.06  # [A/s]
 
     def __init__(

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any
+from typing import Any, ClassVar
 
 from typing_extensions import TypedDict
 
@@ -20,8 +20,7 @@ class ParamSpecDict(ParamSpecBaseDict):
 
 
 class ParamSpecBase:
-
-    allowed_types = ['array', 'numeric', 'text', 'complex']
+    allowed_types: ClassVar[list[str]] = ["array", "numeric", "text", "complex"]
 
     def __init__(
         self,

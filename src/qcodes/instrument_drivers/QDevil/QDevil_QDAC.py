@@ -51,7 +51,7 @@ class Waveform:
     square = 2
     triangle = 3
     staircase = 4
-    all_waveforms = [sine, square, triangle, staircase]
+    all_waveforms = (sine, square, triangle, staircase)
 
 
 class Generator:

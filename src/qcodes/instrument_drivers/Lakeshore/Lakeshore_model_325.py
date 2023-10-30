@@ -83,7 +83,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
     An InstrumentChannel representing a curve on a Lakeshore Model 325
     """
 
-    valid_sensor_units = ["mV", "V", "Ohm", "log Ohm"]
+    valid_sensor_units = ("mV", "V", "Ohm", "log Ohm")
     temperature_key = "Temperature (K)"
 
     def __init__(self, parent: "LakeshoreModel325", index: int) -> None:

@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, Optional, Union, cast
+from typing import Any, ClassVar, Optional, TypedDict, Union, cast
 
 import numpy as np
 
@@ -79,9 +79,9 @@ class Keithley7510Buffer(InstrumentChannel):
     Treat the reading buffer as a submodule, similar to Sense.
     """
 
-    default_buffer = {"defbuffer1", "defbuffer2"}
+    default_buffer: ClassVar[set[str]] = {"defbuffer1", "defbuffer2"}
 
-    buffer_elements = {
+    buffer_elements: ClassVar[dict[str, str]] = {
         "date": "DATE",
         "measurement_formatted": "FORMatted",
         "fractional_seconds": "FRACtional",
@@ -389,6 +389,12 @@ class Keithley7510Buffer(InstrumentChannel):
             self.write(f":TRACe:DELete '{self.short_name}'")
 
 
+class _FunctionMode(TypedDict):
+    name: str
+    unit: str
+    range_vals: Optional[Numbers]
+
+
 class Keithley7510Sense(InstrumentChannel):
     """
     The sense module of the Keithley 7510 DMM, based on the sense module of
@@ -411,7 +417,7 @@ class Keithley7510Sense(InstrumentChannel):
             which returns the proper submodule for any given function mode.
     """
 
-    function_modes = {
+    function_modes: ClassVar[dict[str, _FunctionMode]] = {
         "voltage": {
             "name": '"VOLT:DC"',
             "unit": "V",
@@ -589,7 +595,7 @@ class Keithley7510DigitizeSense(InstrumentChannel):
     The Digitize sense module of the Keithley 7510 DMM.
     """
 
-    function_modes: dict[str, dict[str, Any]] = {
+    function_modes: ClassVar[dict[str, _FunctionMode]] = {
         "None": {"name": '"NONE"', "unit": "", "range_vals": None},
         "voltage": {
             "name": '"VOLT"',

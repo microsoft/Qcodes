@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import time
 from collections.abc import Iterable
 from functools import partial
-from typing import Any, Union
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -85,7 +87,7 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: 'SR830', channel: int) -> None:
+    def __init__(self, name: str, instrument: SR830, channel: int) -> None:
         """
         Args:
             name: The name of the parameter
@@ -193,39 +195,81 @@ class SR830(VisaInstrument):
     QCoDeS driver for the Stanford Research Systems SR830 Lock-in Amplifier.
     """
 
-    _VOLT_TO_N = {2e-9:    0, 5e-9:    1, 10e-9:  2,
-                  20e-9:   3, 50e-9:   4, 100e-9: 5,
-                  200e-9:  6, 500e-9:  7, 1e-6:   8,
-                  2e-6:    9, 5e-6:   10, 10e-6:  11,
-                  20e-6:  12, 50e-6:  13, 100e-6: 14,
-                  200e-6: 15, 500e-6: 16, 1e-3:   17,
-                  2e-3:   18, 5e-3:   19, 10e-3:  20,
-                  20e-3:  21, 50e-3:  22, 100e-3: 23,
-                  200e-3: 24, 500e-3: 25, 1:      26}
-    _N_TO_VOLT = {v: k for k, v in _VOLT_TO_N.items()}
+    _VOLT_TO_N: ClassVar[dict[float | int, int]] = {
+        2e-9: 0,
+        5e-9: 1,
+        10e-9: 2,
+        20e-9: 3,
+        50e-9: 4,
+        100e-9: 5,
+        200e-9: 6,
+        500e-9: 7,
+        1e-6: 8,
+        2e-6: 9,
+        5e-6: 10,
+        10e-6: 11,
+        20e-6: 12,
+        50e-6: 13,
+        100e-6: 14,
+        200e-6: 15,
+        500e-6: 16,
+        1e-3: 17,
+        2e-3: 18,
+        5e-3: 19,
+        10e-3: 20,
+        20e-3: 21,
+        50e-3: 22,
+        100e-3: 23,
+        200e-3: 24,
+        500e-3: 25,
+        1: 26,
+    }
+    _N_TO_VOLT: ClassVar[dict[int, float | int]] = {v: k for k, v in _VOLT_TO_N.items()}
 
-    _CURR_TO_N = {2e-15:    0, 5e-15:    1, 10e-15:  2,
-                  20e-15:   3, 50e-15:   4, 100e-15: 5,
-                  200e-15:  6, 500e-15:  7, 1e-12:   8,
-                  2e-12:    9, 5e-12:   10, 10e-12:  11,
-                  20e-12:  12, 50e-12:  13, 100e-12: 14,
-                  200e-12: 15, 500e-12: 16, 1e-9:    17,
-                  2e-9:    18, 5e-9:    19, 10e-9:   20,
-                  20e-9:   21, 50e-9:   22, 100e-9:  23,
-                  200e-9:  24, 500e-9:  25, 1e-6:    26}
-    _N_TO_CURR = {v: k for k, v in _CURR_TO_N.items()}
+    _CURR_TO_N: ClassVar[dict[float, int]] = {
+        2e-15: 0,
+        5e-15: 1,
+        10e-15: 2,
+        20e-15: 3,
+        50e-15: 4,
+        100e-15: 5,
+        200e-15: 6,
+        500e-15: 7,
+        1e-12: 8,
+        2e-12: 9,
+        5e-12: 10,
+        10e-12: 11,
+        20e-12: 12,
+        50e-12: 13,
+        100e-12: 14,
+        200e-12: 15,
+        500e-12: 16,
+        1e-9: 17,
+        2e-9: 18,
+        5e-9: 19,
+        10e-9: 20,
+        20e-9: 21,
+        50e-9: 22,
+        100e-9: 23,
+        200e-9: 24,
+        500e-9: 25,
+        1e-6: 26,
+    }
+    _N_TO_CURR: ClassVar[dict[int, float]] = {v: k for k, v in _CURR_TO_N.items()}
 
     _VOLT_ENUM = Enum(*_VOLT_TO_N.keys())
     _CURR_ENUM = Enum(*_CURR_TO_N.keys())
 
-    _INPUT_CONFIG_TO_N = {
+    _INPUT_CONFIG_TO_N: ClassVar[dict[str, int]] = {
         'a': 0,
         'a-b': 1,
         'I 1M': 2,
         'I 100M': 3,
     }
 
-    _N_TO_INPUT_CONFIG = {v: k for k, v in _INPUT_CONFIG_TO_N.items()}
+    _N_TO_INPUT_CONFIG: ClassVar[dict[int, str]] = {
+        v: k for k, v in _INPUT_CONFIG_TO_N.items()
+    }
 
     def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, **kwargs)
@@ -568,7 +612,7 @@ class SR830(VisaInstrument):
         self.connect_message()
 
 
-    SNAP_PARAMETERS = {
+    SNAP_PARAMETERS: ClassVar[dict[str, str]] = {
             'x': '1',
             'y': '2',
             'r': '3',
@@ -821,13 +865,14 @@ class SR830(VisaInstrument):
             sets += 1
             time.sleep(self.time_constant())
 
-    def set_sweep_parameters(self,
-                             sweep_param: Parameter,
-                             start: float,
-                             stop: float,
-                             n_points: int = 10,
-                             label: Union[str, None] = None) -> None:
-
+    def set_sweep_parameters(
+        self,
+        sweep_param: Parameter,
+        start: float,
+        stop: float,
+        n_points: int = 10,
+        label: str | None = None,
+    ) -> None:
         self.sweep_setpoints.sweep_array = np.linspace(start, stop, n_points)
         self.sweep_setpoints.unit = sweep_param.unit
         if label is not None:
@@ -841,9 +886,13 @@ class GeneratedSetPoints(Parameter):
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
     """
-    def __init__(self,
-                 sweep_array: Iterable[Union[float, int]] = np.linspace(0, 1, 10),
-                 *args: Any, **kwargs: Any) -> None:
+
+    def __init__(
+        self,
+        sweep_array: Iterable[float | int] = np.linspace(0, 1, 10),
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.sweep_array = sweep_array
         self.update_units_if_constant_sample_rate()
@@ -860,7 +909,7 @@ class GeneratedSetPoints(Parameter):
             self.unit = 's'
             self.label = 'Time'
 
-    def set_raw(self, value: Iterable[Union[float, int]]) -> None:
+    def set_raw(self, value: Iterable[float | int]) -> None:
         self.sweep_array = value
 
     def get_raw(self) -> ParamRawDataType:

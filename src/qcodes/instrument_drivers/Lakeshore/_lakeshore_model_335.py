@@ -29,7 +29,7 @@ class LakeshoreModel335Channel(BaseSensorChannel):
 
     """
 
-    SENSOR_STATUSES = {
+    SENSOR_STATUSES: ClassVar[dict[int, str]] = {
         0: "OK",
         1: "Invalid Reading",
         16: "Temp Underrange",
@@ -125,7 +125,7 @@ class LakeshoreModel335CurrentSource(BaseOutput):
 
     RANGES: ClassVar[dict[str, int]] = {"off": 0, "low": 1, "medium": 2, "high": 3}
 
-    _input_channel_parameter_kwargs = {
+    _input_channel_parameter_kwargs: ClassVar[dict[str, dict[str, int]]] = {
         "val_mapping": _channel_name_to_outmode_command_map
     }
 
@@ -144,7 +144,7 @@ class LakeshoreModel335(LakeshoreBase):
     Lakeshore Model 335 Temperature Controller Driver
     """
 
-    channel_name_command: dict[str, str] = _channel_name_to_command_map
+    channel_name_command: ClassVar[dict[str, str]] = _channel_name_to_command_map
 
     CHANNEL_CLASS = LakeshoreModel335Channel
 

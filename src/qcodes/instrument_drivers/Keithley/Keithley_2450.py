@@ -1,5 +1,5 @@
 from types import TracebackType
-from typing import Any, Optional, Union, cast
+from typing import Any, ClassVar, Optional, Union, cast
 
 import numpy as np
 from typing_extensions import TypedDict
@@ -46,9 +46,9 @@ class Keithley2450Buffer(InstrumentChannel):
     Treat the reading buffer as a submodule, similar to Sense and Source
     """
 
-    default_buffer = {"defbuffer1", "defbuffer2"}
+    default_buffer: ClassVar[set[str]] = {"defbuffer1", "defbuffer2"}
 
-    buffer_elements = {
+    buffer_elements: ClassVar[dict[str, str]] = {
         "date": "DATE",
         "measurement_formatted": "FORMatted",
         "fractional_seconds": "FRACtional",
@@ -202,6 +202,11 @@ class Keithley2450Buffer(InstrumentChannel):
             self.write(f":TRACe:DELete '{self.buffer_name}'")
 
 
+class _FunctionMode(TypedDict):
+    name: str
+    unit: str
+    range_vals: Numbers
+
 class Keithley2450Sense(InstrumentChannel):
     """
     The sense module of the Keithley 2450 SMU.
@@ -217,7 +222,7 @@ class Keithley2450Sense(InstrumentChannel):
             which returns the proper submodule for any given function mode
     """
 
-    function_modes = {
+    function_modes: ClassVar[dict[str, _FunctionMode]] = {
         "current": {"name": '"CURR:DC"', "unit": "A", "range_vals": Numbers(10e-9, 1)},
         "resistance": {
             "name": '"RES"',
@@ -372,7 +377,7 @@ class Keithley2450Source(InstrumentChannel):
             which returns the proper submodule for any given function mode
     """
 
-    function_modes = {
+    function_modes: ClassVar[dict[str, _FunctionMode]] = {
         "current": {"name": "CURR", "unit": "A", "range_vals": Numbers(-1, 1)},
         "voltage": {"name": "VOLT", "unit": "V", "range_vals": Numbers(-200, 200)},
     }

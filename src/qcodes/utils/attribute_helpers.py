@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, Union
+from typing import Any, ClassVar, Union
 
 
 class DelegateAttributes:
@@ -17,19 +17,19 @@ class DelegateAttributes:
         3. Attributes of each object in ``delegate_attr_objects`` (in order).
     """
 
-    delegate_attr_dicts: list[str] = []
+    delegate_attr_dicts: ClassVar[list[str]] = []
     """
     A list of names (strings) of dictionaries
     which are (or will be) attributes of ``self``, whose keys should
     be treated as attributes of ``self``.
     """
-    delegate_attr_objects: list[str] = []
+    delegate_attr_objects: ClassVar[list[str]] = []
     """
     A list of names (strings) of objects
     which are (or will be) attributes of ``self``, whose attributes
     should be passed through to ``self``.
     """
-    omit_delegate_attrs: list[str] = []
+    omit_delegate_attrs: ClassVar[list[str]] = []
     """
     A list of attribute names (strings)
     to *not* delegate to any other dictionary or object.
@@ -45,9 +45,7 @@ class DelegateAttributes:
             if key == name:
                 # needed to prevent infinite loops!
                 raise AttributeError(
-                    "dict '{}' has not been created in object '{}'".format(
-                        key, self.__class__.__name__
-                    )
+                    f"dict '{key}' has not been created in object '{self.__class__.__name__}'"
                 )
             try:
                 d = getattr(self, name, None)
@@ -59,9 +57,7 @@ class DelegateAttributes:
         for name in self.delegate_attr_objects:
             if key == name:
                 raise AttributeError(
-                    "object '{}' has not been created in object '{}'".format(
-                        key, self.__class__.__name__
-                    )
+                    f"object '{key}' has not been created in object '{self.__class__.__name__}'"
                 )
             try:
                 obj = getattr(self, name, None)
@@ -71,9 +67,7 @@ class DelegateAttributes:
                 pass
 
         raise AttributeError(
-            "'{}' object and its delegates have no attribute '{}'".format(
-                self.__class__.__name__, key
-            )
+            f"'{self.__class__.__name__}' object and its delegates have no attribute '{key}'"
         )
 
     def __dir__(self) -> list[str]:

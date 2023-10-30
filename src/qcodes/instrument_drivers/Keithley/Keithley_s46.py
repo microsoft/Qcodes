@@ -3,7 +3,7 @@ Driver for the Keithley S46 RF switch
 """
 import re
 from itertools import product
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from qcodes.instrument import Instrument, VisaInstrument
 from qcodes.parameters import Parameter, ParamRawDataType
@@ -128,13 +128,13 @@ class KeithleyS46(VisaInstrument):
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
     # and values are corresponding channel numbers.
-    channel_numbers: dict[str, int] = {
+    channel_numbers: ClassVar[dict[str, int]] = {
         f"{a}{b}": count + 1
         for count, (a, b) in enumerate(product(["A", "B", "C", "D"], range(1, 7)))
     }
     channel_numbers.update({f"R{i}": i + 24 for i in range(1, 9)})
     # Make a reverse dict for efficient alias lookup given a channel number
-    aliases = {v: k for k, v in channel_numbers.items()}
+    aliases: ClassVar[dict[int, str]] = {v: k for k, v in channel_numbers.items()}
 
     def __init__(self, name: str, address: str, **kwargs: Any):
 

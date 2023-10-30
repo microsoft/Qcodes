@@ -1,10 +1,11 @@
 import re
 import time
 from datetime import datetime
+from typing import ClassVar
 
 
 class MockAMI430:
-    states = {
+    states: ClassVar[dict[str, str]] = {
         "RAMPING to target field/current": "1",
         "HOLDING at the target field/current": "2",
         "PAUSED": "3",
@@ -17,17 +18,11 @@ class MockAMI430:
         "Cooling persistent switch": "10"
     }
 
-    field_units = {
-        "tesla": "1",
-        "kilogauss": "0"
-    }
+    field_units: ClassVar[dict[str, str]] = {"tesla": "1", "kilogauss": "0"}
 
-    ramp_rate_units = {
-        "A/s": "0",
-        "A/min": "1"
-    }
+    ramp_rate_units: ClassVar[dict[str, str]] = {"A/s": "0", "A/min": "1"}
 
-    quench_state = {False: "0", True: "1"}
+    quench_state: ClassVar[dict[bool, str]] = {False: "0", True: "1"}
 
     def __init__(self, name):
 

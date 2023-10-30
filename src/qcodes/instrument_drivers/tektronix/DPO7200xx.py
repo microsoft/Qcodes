@@ -6,7 +6,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import Any, Callable, Union, cast
+from typing import Any, Callable, ClassVar, Union, cast
 
 import numpy as np
 
@@ -206,7 +206,8 @@ class TekronixDPOWaveform(InstrumentChannel):
     This submodule retrieves data from waveform sources, e.g.
     channels.
     """
-    valid_identifiers = [
+
+    valid_identifiers: ClassVar[list[str]] = [
         f"{source_type}{i}"
         for source_type in ["CH", "MATH", "REF"]
         for i in range(1, TektronixDPO7000xx.number_of_channels + 1)
@@ -761,21 +762,59 @@ class TektronixDPOMeasurement(InstrumentChannel):
     # seconds after setting measurement type/source before
     # calling the measurement value SCPI command.
 
-    measurements = [
-        ('amplitude', 'V'), ('area', 'Vs'), ('burst', 's'), ('carea', 'Vs'),
-        ('cmean', 'V'), ('crms', 'V'), ('delay', 's'), ('distduty', '%'),
-        ('extinctdb', 'dB'), ('extinctpct', '%'), ('extinctratio', ''),
-        ('eyeheight', 'V'), ('eyewidth', 's'), ('fall', 's'),
-        ('frequency', 'Hz'), ('high', 'V'), ('hits', 'hits'), ('low', 'V'),
-        ('maximum', 'V'), ('mean', 'V'), ('median', 'V'), ('minimum', 'V'),
-        ('ncross', 's'), ('nduty', '%'), ('novershoot', '%'), ('nwidth', 's'),
-        ('pbase', 'V'), ('pcross', 's'), ('pctcross', '%'), ('pduty', '%'),
-        ('peakhits', 'hits'), ('period', 's'), ('phase', '°'), ('pk2pk', 'V'),
-        ('pkpkjitter', 's'), ('pkpknoise', 'V'), ('povershoot', '%'),
-        ('ptop', 'V'), ('pwidth', 's'), ('qfactor', ''), ('rise', 's'),
-        ('rms', 'V'), ('rmsjitter', 's'), ('rmsnoise', 'V'), ('sigma1', '%'),
-        ('sigma2', '%'), ('sigma3', '%'), ('sixsigmajit', 's'), ('snratio', ''),
-        ('stddev', 'V'), ('undefined', ''), ('waveforms', 'wfms')
+    measurements: ClassVar[list[tuple[str, str]]] = [
+        ("amplitude", "V"),
+        ("area", "Vs"),
+        ("burst", "s"),
+        ("carea", "Vs"),
+        ("cmean", "V"),
+        ("crms", "V"),
+        ("delay", "s"),
+        ("distduty", "%"),
+        ("extinctdb", "dB"),
+        ("extinctpct", "%"),
+        ("extinctratio", ""),
+        ("eyeheight", "V"),
+        ("eyewidth", "s"),
+        ("fall", "s"),
+        ("frequency", "Hz"),
+        ("high", "V"),
+        ("hits", "hits"),
+        ("low", "V"),
+        ("maximum", "V"),
+        ("mean", "V"),
+        ("median", "V"),
+        ("minimum", "V"),
+        ("ncross", "s"),
+        ("nduty", "%"),
+        ("novershoot", "%"),
+        ("nwidth", "s"),
+        ("pbase", "V"),
+        ("pcross", "s"),
+        ("pctcross", "%"),
+        ("pduty", "%"),
+        ("peakhits", "hits"),
+        ("period", "s"),
+        ("phase", "°"),
+        ("pk2pk", "V"),
+        ("pkpkjitter", "s"),
+        ("pkpknoise", "V"),
+        ("povershoot", "%"),
+        ("ptop", "V"),
+        ("pwidth", "s"),
+        ("qfactor", ""),
+        ("rise", "s"),
+        ("rms", "V"),
+        ("rmsjitter", "s"),
+        ("rmsnoise", "V"),
+        ("sigma1", "%"),
+        ("sigma2", "%"),
+        ("sigma3", "%"),
+        ("sixsigmajit", "s"),
+        ("snratio", ""),
+        ("stddev", "V"),
+        ("undefined", ""),
+        ("waveforms", "wfms"),
     ]
 
     def __init__(

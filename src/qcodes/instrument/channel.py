@@ -791,7 +791,7 @@ class ChannelTupleValidator(Validator[InstrumentChannel]):
         """
         if value not in self._channel_list:
             raise ValueError(
-                f"{repr(value)} is not part of the expected channel list; {context}"
+                f"{value!r} is not part of the expected channel list; {context}"
             )
 
 

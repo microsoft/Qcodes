@@ -3,7 +3,7 @@ import random
 import re
 from collections.abc import Sequence
 from copy import copy
-from typing import Optional
+from typing import ClassVar, Optional
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -817,7 +817,7 @@ def test_parent_dataset_links(some_interdeps) -> None:
 class TestGetData:
     x = ParamSpecBase("x", paramtype='numeric')
     n_vals = 5
-    xvals = list(range(n_vals))
+    xvals: ClassVar[list[int]] = list(range(n_vals))
     # this is the format of how data is returned by DataSet.get_data
     # which means "a list of table rows"
     xdata = np.array(xvals)
