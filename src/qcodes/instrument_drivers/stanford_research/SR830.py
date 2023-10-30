@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import time
 from collections.abc import Iterable
 from functools import partial
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -85,7 +87,7 @@ class ChannelBuffer(ArrayParameter):
     The instrument natively supports this in its TRCL call.
     """
 
-    def __init__(self, name: str, instrument: 'SR830', channel: int) -> None:
+    def __init__(self, name: str, instrument: SR830, channel: int) -> None:
         """
         Args:
             name: The name of the parameter
@@ -863,13 +865,14 @@ class SR830(VisaInstrument):
             sets += 1
             time.sleep(self.time_constant())
 
-    def set_sweep_parameters(self,
-                             sweep_param: Parameter,
-                             start: float,
-                             stop: float,
-                             n_points: int = 10,
-                             label: Union[str, None] = None) -> None:
-
+    def set_sweep_parameters(
+        self,
+        sweep_param: Parameter,
+        start: float,
+        stop: float,
+        n_points: int = 10,
+        label: str | None = None,
+    ) -> None:
         self.sweep_setpoints.sweep_array = np.linspace(start, stop, n_points)
         self.sweep_setpoints.unit = sweep_param.unit
         if label is not None:
@@ -883,9 +886,13 @@ class GeneratedSetPoints(Parameter):
     A parameter that generates a setpoint array from start, stop and num points
     parameters.
     """
-    def __init__(self,
-                 sweep_array: Iterable[Union[float, int]] = np.linspace(0, 1, 10),
-                 *args: Any, **kwargs: Any) -> None:
+
+    def __init__(
+        self,
+        sweep_array: Iterable[float | int] = np.linspace(0, 1, 10),
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.sweep_array = sweep_array
         self.update_units_if_constant_sample_rate()
@@ -902,7 +909,7 @@ class GeneratedSetPoints(Parameter):
             self.unit = 's'
             self.label = 'Time'
 
-    def set_raw(self, value: Iterable[Union[float, int]]) -> None:
+    def set_raw(self, value: Iterable[float | int]) -> None:
         self.sweep_array = value
 
     def get_raw(self) -> ParamRawDataType:

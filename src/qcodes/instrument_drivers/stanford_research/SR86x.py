@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import Sequence
-from typing import Any, Callable, ClassVar, Optional
+from typing import Any, Callable, ClassVar
 
 import numpy as np
 
@@ -20,7 +22,8 @@ class SR86xBufferReadout(ArrayParameter):
         name: Name of the parameter.
         instrument: The instrument to add this parameter to.
     """
-    def __init__(self, name: str, instrument: 'SR86x', **kwargs: Any) -> None:
+
+    def __init__(self, name: str, instrument: SR86x, **kwargs: Any) -> None:
 
         unit = "deg"
         if name in ["X", "Y", "R"]:
@@ -37,7 +40,7 @@ class SR86xBufferReadout(ArrayParameter):
                                    'buffer of one channel.',
                          **kwargs)
 
-        self._capture_data: Optional[np.ndarray] = None
+        self._capture_data: np.ndarray | None = None
 
     def prepare_readout(self, capture_data: np.ndarray) -> None:
         """
@@ -77,7 +80,7 @@ class SR86xBuffer(InstrumentChannel):
     manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 
-    def __init__(self, parent: 'SR86x', name: str) -> None:
+    def __init__(self, parent: SR86x, name: str) -> None:
         super().__init__(parent, name)
 
         self.add_parameter(
@@ -159,8 +162,8 @@ class SR86xBuffer(InstrumentChannel):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = False,
-        params_to_skip_update: Optional[Sequence[str]] = None,
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         if params_to_skip_update is None:
             params_to_skip_update = []
@@ -569,9 +572,15 @@ class SR86xDataChannel(InstrumentChannel):
             is being plotted on the instrument's screen; added here only for
             reference
     """
-    def __init__(self, parent: 'SR86x', name: str, cmd_id: str,
-                 cmd_id_name: Optional[str] = None,
-                 color: Optional[str] = None) -> None:
+
+    def __init__(
+        self,
+        parent: SR86x,
+        name: str,
+        cmd_id: str,
+        cmd_id_name: str | None = None,
+        color: str | None = None,
+    ) -> None:
         super().__init__(parent, name)
 
         self._cmd_id = cmd_id
@@ -594,11 +603,11 @@ class SR86xDataChannel(InstrumentChannel):
         return self._cmd_id
 
     @property
-    def cmd_id_name(self) -> Optional[str]:
+    def cmd_id_name(self) -> str | None:
         return self._cmd_id_name
 
     @property
-    def color(self) -> Optional[str]:
+    def color(self) -> str | None:
         return self._color
 
 
