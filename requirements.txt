@@ -53,7 +53,7 @@ importlib-resources~=6.1.0
 incremental~=22.10.0
 iniconfig~=2.0.0
 ipykernel~=6.26.0
-ipython~=8.16.0
+ipython~=8.17.1
 ipython-genutils==0.2.0
 ipywidgets~=8.1.0
 jedi~=0.19.0
