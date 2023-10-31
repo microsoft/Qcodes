@@ -6,6 +6,7 @@ import os
 import shutil
 import tempfile
 import time
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -36,7 +37,7 @@ class Adding5Params:
     # Dictionary of values is used instead of tuple of lists, because in the
     # latter case asv will run the benchmark for all the combinations of the
     # values
-    params = [
+    params: ClassVar[list[dict[str, Any]]] = [
         {'n_values': 10000, 'n_times': 2, 'paramtype': 'array'},
         {'n_values': 100, 'n_times': 200, 'paramtype': 'array'},
         {'n_values': 10000, 'n_times': 2, 'paramtype': 'numeric'},
@@ -118,6 +119,7 @@ class Adding5Params:
 
     def time_test(self, bench_param):
         """Adding data for 5 parameters"""
+        assert self.datasaver is not None
         for _ in range(bench_param['n_times']):
             self.datasaver.add_result(
                 (self.parameters[0], self.values[0]),
