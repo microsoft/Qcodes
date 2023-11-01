@@ -595,7 +595,7 @@ def plot_2d_scatterplot(
 
     # according to the docs the c argument should support an ndarray
     # but that fails type checking
-    mappable = ax.scatter(x=x, y=y, c=z, rasterized=rasterized, cmap=cmap, **kwargs)  # type: ignore[arg-type]
+    mappable = ax.scatter(x=x, y=y, c=z, rasterized=rasterized, cmap=cmap, **kwargs)
 
     assert ax.figure is not None
     if colorbar is not None:
