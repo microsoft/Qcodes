@@ -7,6 +7,10 @@ updates:
   open-pull-requests-limit: 20
   rebase-strategy: "disabled"
   versioning-strategy: increase-if-necessary
+  groups:
+    zhinst:
+      patterns:
+        - "zhinst*"
 - package-ecosystem: github-actions
   directory: "/"
   rebase-strategy: "disabled"
