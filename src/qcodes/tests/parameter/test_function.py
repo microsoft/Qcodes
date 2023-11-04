@@ -2,7 +2,7 @@ from collections.abc import Iterator
 
 import pytest
 
-from qcodes.tests.instrument_mocks import DummyChannelInstrument
+from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 
 
 @pytest.fixture(name="channel_instr")

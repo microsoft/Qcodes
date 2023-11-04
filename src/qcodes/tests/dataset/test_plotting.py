@@ -16,8 +16,8 @@ from qcodes.dataset.plotting import (
     plot_by_id,
     plot_dataset,
 )
+from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
-from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class TerminateLoopException(Exception):

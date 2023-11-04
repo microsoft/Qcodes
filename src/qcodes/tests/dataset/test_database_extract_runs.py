@@ -33,9 +33,9 @@ from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import path_to_dbfile
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.queries import get_experiments
+from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.station import Station
 from qcodes.tests.common import error_caused_by, skip_if_no_fixtures
-from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 @contextmanager

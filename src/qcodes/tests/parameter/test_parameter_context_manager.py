@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 
 import qcodes.validators as vals
+from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import Parameter, ParamRawDataType
-from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 class DummyTrackingInstrument(DummyInstrument):

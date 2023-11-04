@@ -9,9 +9,8 @@ from typing import Any
 import pytest
 
 from qcodes.dataset.threading import ThreadPoolParamsCaller, call_params_threaded
+from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import Parameter, ParamRawDataType
-
-from .instrument_mocks import DummyInstrument
 
 
 class ParameterWithThreadKnowledge(Parameter):

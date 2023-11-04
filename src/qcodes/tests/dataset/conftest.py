@@ -17,8 +17,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.database import connect
-from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
-from qcodes.tests.instrument_mocks import (
+from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
     DummyChannelInstrument,
     DummyInstrument,
@@ -26,6 +25,7 @@ from qcodes.tests.instrument_mocks import (
     Multi2DSetPointParam2Sizes,
     setpoint_generator,
 )
+from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays, ComplexNumbers, Numbers
 
 

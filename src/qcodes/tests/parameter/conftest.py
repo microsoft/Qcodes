@@ -8,8 +8,8 @@ import pytest
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBase
+from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 from qcodes.parameters import ParamDataType, Parameter, ParamRawDataType
-from qcodes.tests.instrument_mocks import DummyChannelInstrument
 
 T = TypeVar("T")
 

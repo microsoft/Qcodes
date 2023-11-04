@@ -28,11 +28,11 @@ instruments:
           channels:
             gate_1:
               channel: dac.ch01
-              type: qcodes.tests.instrument_mocks.MockCustomChannel
+              type: qcodes.instrument_drivers.mock_instruments.MockCustomChannel
               current_valid_range: [-0.5, 0]
             fast_gate:
               channel: dac.ch02
-              type: qcodes.tests.instrument_mocks.DummyChannel
+              type: qcodes.instrument_drivers.mock_instruments.DummyChannel
 
       set_initial_values_on_load: true
       initial_values:

@@ -25,7 +25,7 @@ instruments:
           parameters:
             readout: lockin.phase
           channels:
-            type: qcodes.tests.instrument_mocks.MockCustomChannel
+            type: qcodes.instrument_drivers.mock_instruments.MockCustomChannel
             gate_1:
               channel: dac.ch01
               current_valid_range: [-0.5, 0]

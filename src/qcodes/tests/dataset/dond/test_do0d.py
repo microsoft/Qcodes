@@ -8,13 +8,13 @@ from hypothesis import HealthCheck, given, settings
 from qcodes import config, validators
 from qcodes.dataset import do0d, new_experiment
 from qcodes.dataset.data_set import DataSet
-from qcodes.tests.dataset.conftest import ArrayshapedParam
-from qcodes.tests.instrument_mocks import (
+from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
+from qcodes.tests.dataset.conftest import ArrayshapedParam
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")

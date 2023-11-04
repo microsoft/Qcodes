@@ -11,9 +11,12 @@ import pytest
 import websockets
 from pytest import FixtureRequest
 
+from qcodes.instrument_drivers.mock_instruments import (
+    DummyChannelInstrument,
+    DummyInstrument,
+)
 from qcodes.monitor import monitor
 from qcodes.parameters import Parameter
-from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyInstrument
 
 monitor.WEBSOCKET_PORT = random.randint(50000, 60000)
 

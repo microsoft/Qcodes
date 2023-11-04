@@ -4,7 +4,7 @@
             "dac": {
                 "functions": {},
                 "submodules": {},
-                "__class__": "qcodes.tests.instrument_mocks.DummyInstrument",
+                "__class__": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                 "parameters": {
                     "IDN": {
                         "value": {
@@ -26,7 +26,7 @@
                         "label": "IDN",
                         "name": "IDN",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dac",
                         "post_delay": 0,
                         "unit": ""
@@ -41,7 +41,7 @@
                         "label": "Gate ch1",
                         "name": "ch1",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dac",
                         "post_delay": 0,
                         "unit": "V"
@@ -56,7 +56,7 @@
                         "label": "Gate ch2",
                         "name": "ch2",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dac",
                         "post_delay": 0,
                         "unit": "V"
@@ -70,7 +70,7 @@
                         "label": "Verbose Channel",
                         "name": "verbose_channel",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dac",
                         "post_delay": 0,
                         "unit": "V"
@@ -81,7 +81,7 @@
             "dmm": {
                 "functions": {},
                 "submodules": {},
-                "__class__": "qcodes.tests.instrument_mocks.DummyInstrument",
+                "__class__": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                 "parameters": {
                     "IDN": {
                         "value": {
@@ -103,7 +103,7 @@
                         "label": "IDN",
                         "name": "IDN",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dmm",
                         "post_delay": 0,
                         "unit": ""
@@ -118,7 +118,7 @@
                         "label": "Gate voltage",
                         "name": "voltage",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dmm",
                         "post_delay": 0,
                         "unit": "V"
@@ -144,7 +144,7 @@
                 "label": "Gate ch1",
                 "name": "ch1",
                 "inter_delay": 0,
-                "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                 "instrument_name": "dac",
                 "post_delay": 0,
                 "unit": "V"
@@ -173,7 +173,7 @@
                         "label": "Gate ch2",
                         "name": "ch2",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dac",
                         "post_delay": 0,
                         "unit": "V"
@@ -199,7 +199,7 @@
                         "label": "Gate voltage",
                         "name": "voltage",
                         "inter_delay": 0,
-                        "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+                        "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
                         "instrument_name": "dmm",
                         "post_delay": 0,
                         "unit": "V"
@@ -224,7 +224,7 @@
             "label": "Gate ch1",
             "name": "ch1",
             "inter_delay": 0,
-            "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+            "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
             "instrument_name": "dac",
             "post_delay": 0,
             "unit": "V",
@@ -243,7 +243,7 @@
             "label": "Gate ch2",
             "name": "ch2",
             "inter_delay": 0,
-            "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+            "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
             "instrument_name": "dac",
             "post_delay": 0,
             "unit": "V",
@@ -265,7 +265,7 @@
             "label": "Gate voltage",
             "name": "voltage",
             "inter_delay": 0,
-            "instrument": "qcodes.tests.instrument_mocks.DummyInstrument",
+            "instrument": "qcodes.instrument_drivers.mock_instruments.DummyInstrument",
             "instrument_name": "dmm",
             "post_delay": 0,
             "unit": "V",
