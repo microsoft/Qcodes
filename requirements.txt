@@ -38,7 +38,7 @@ exceptiongroup~=1.1.0
 execnet~=2.0.2
 executing~=2.0.0
 fastjsonschema~=2.18.0
-fonttools~=4.43.0
+fonttools~=4.44.0
 future==0.18.3
 google-api-core~=2.12.0
 google-auth~=2.23.0
