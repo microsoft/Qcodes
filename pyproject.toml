@@ -284,6 +284,7 @@ known-first-party = ["qcodes"]
 # in tests and examples
 "docs/*" = ["TID253"]
 "src/qcodes/tests/*" = ["TID253"]
+"tests/*" = ["TID253"]
 
 [tool.ruff.flake8-tidy-imports]
 # There modules are relatively slow to import
