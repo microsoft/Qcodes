@@ -12,13 +12,13 @@ from hypothesis import HealthCheck, given, settings
 from qcodes import config
 from qcodes.dataset import do2d, new_experiment
 from qcodes.dataset.data_set import DataSet
-from qcodes.parameters import Parameter
-from qcodes.tests.instrument_mocks import (
+from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
+from qcodes.parameters import Parameter
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")

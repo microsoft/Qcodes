@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 
 from qcodes.instrument import InstrumentBase
+from qcodes.instrument_drivers.mock_instruments import DummyAttrInstrument
 from qcodes.parameters import Parameter
-from qcodes.tests.instrument_mocks import DummyAttrInstrument
 from qcodes.utils import QCoDeSDeprecationWarning
 
 

@@ -5,7 +5,7 @@ Test module for snapshots of instruments and parameters
 import pytest
 from pytest import FixtureRequest
 
-from qcodes.tests.instrument_mocks import SnapShotTestInstrument
+from qcodes.instrument_drivers.mock_instruments import SnapShotTestInstrument
 
 
 @pytest.mark.parametrize(

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from numpy.testing import assert_almost_equal
 
-from qcodes.tests.instrument_mocks import MockField
+from qcodes.instrument_drivers.mock_instruments import MockField
 
 
 def test_mock_dac(dac) -> None:

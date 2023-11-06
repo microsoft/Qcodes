@@ -2,8 +2,8 @@ from collections.abc import Generator
 
 import pytest
 
+from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import ManualParameter, ScaledParameter
-from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 @pytest.fixture(name="instrument")

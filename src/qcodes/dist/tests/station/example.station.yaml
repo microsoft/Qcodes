@@ -48,12 +48,12 @@ instruments:
     add_parameters:
       Bx: {source: ch01.fine_volt, label: Bx, unit: T, scale: 28, limits: [-1, 1], monitor: true}
   mock_dac:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1", "ch2"}
     add_parameters:
       Bx: {source: ch1, label: Bx, unit: T, scale: 28, limits: [-1, 1], monitor: true}
   mock_dac2:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     enable_forced_reconnect: true

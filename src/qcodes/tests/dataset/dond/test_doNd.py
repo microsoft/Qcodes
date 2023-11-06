@@ -26,14 +26,14 @@ from qcodes.dataset import (
 )
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.dond.do_nd import _Sweeper
-from qcodes.parameters import ManualParameter, Parameter, ParameterBase
-from qcodes.tests.dataset.conftest import ArrayshapedParam
-from qcodes.tests.instrument_mocks import (
+from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
+from qcodes.parameters import ManualParameter, Parameter, ParameterBase
+from qcodes.tests.dataset.conftest import ArrayshapedParam
 from qcodes.validators import Ints
 
 

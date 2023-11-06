@@ -15,16 +15,15 @@ import pytest
 from pytest import FixtureRequest
 
 from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
-from qcodes.metadatable import Metadatable
-from qcodes.parameters import Function, Parameter
-
-from .instrument_mocks import (
+from qcodes.instrument_drivers.mock_instruments import (
     DummyChannelInstrument,
     DummyFailingInstrument,
     DummyInstrument,
     MockMetaParabola,
     MockParabola,
 )
+from qcodes.metadatable import Metadatable
+from qcodes.parameters import Function, Parameter
 
 
 @pytest.fixture(name="testdummy", scope="function")
@@ -342,11 +341,13 @@ def test_find_same_name_but_different_class(request: FixtureRequest) -> None:
         some_other_attr = 25
 
     # Find an instrument with the same name but of different class
-    error_msg = ("Instrument instr is <class "
-                 "'qcodes.tests.instrument_mocks.DummyInstrument'> but "
-                 "<class 'qcodes.tests.test_instrument"
-                 ".test_find_same_name_but_different_class.<locals>"
-                 ".GammyInstrument'> was requested")
+    error_msg = (
+        "Instrument instr is <class "
+        "'qcodes.instrument_drivers.mock_instruments.DummyInstrument'> but "
+        "<class 'qcodes.tests.test_instrument"
+        ".test_find_same_name_but_different_class.<locals>"
+        ".GammyInstrument'> was requested"
+    )
 
     with pytest.raises(TypeError, match=error_msg):
         _ = find_or_create_instrument(

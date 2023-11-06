@@ -4,9 +4,9 @@ import numpy
 import pytest
 
 from qcodes.dataset.measurements import Measurement
+from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import ManualParameter
 from qcodes.station import Station
-from qcodes.tests.instrument_mocks import DummyInstrument
 
 
 @pytest.fixture  # scope is "function" per default

@@ -3,8 +3,8 @@ import pathlib
 
 import pytest
 
+from qcodes.instrument_drivers.mock_instruments import MockDAC, MockField, MockLockin
 from qcodes.station import Station
-from qcodes.tests.instrument_mocks import MockDAC, MockField, MockLockin
 
 PARENT_DIR = pathlib.Path(__file__).parent.absolute()
 

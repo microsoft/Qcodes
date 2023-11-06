@@ -7,8 +7,8 @@ from typing import Any, Literal
 import pytest
 
 import qcodes.validators as vals
+from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 from qcodes.parameters import Parameter, ParameterBase
-from qcodes.tests.instrument_mocks import DummyChannelInstrument
 
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
 

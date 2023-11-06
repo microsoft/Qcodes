@@ -9,7 +9,10 @@ from numpy.testing import assert_array_equal
 from pytest import LogCaptureFixture
 
 from qcodes.instrument import ChannelList, ChannelTuple, Instrument, InstrumentChannel
-from qcodes.tests.instrument_mocks import DummyChannel, DummyChannelInstrument
+from qcodes.instrument_drivers.mock_instruments import (
+    DummyChannel,
+    DummyChannelInstrument,
+)
 
 
 @pytest.fixture(scope='function', name='dci')
@@ -72,8 +75,9 @@ def test_channels_call_function(dci, caplog: LogCaptureFixture) -> None:
     Test that dci.channels.some_function() calls
     some_function on each of the channels
     """
-    with caplog.at_level(logging.DEBUG,
-                         logger='qcodes.tests.instrument_mocks'):
+    with caplog.at_level(
+        logging.DEBUG, logger="qcodes.instrument_drivers.mock_instruments"
+    ):
         caplog.clear()
         dci.channels.log_my_name()
         mssgs = [rec.message for rec in caplog.records]

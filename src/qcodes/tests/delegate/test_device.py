@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from qcodes.dataset import Measurement
-from qcodes.tests.instrument_mocks import DummyChannel, MockCustomChannel
+from qcodes.instrument_drivers.mock_instruments import DummyChannel, MockCustomChannel
 
 
 def test_device(station, chip_config, dac, lockin) -> None:

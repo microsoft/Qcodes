@@ -13,10 +13,13 @@ from ruamel.yaml import YAML
 import qcodes
 from qcodes import validators
 from qcodes.instrument import Instrument
+from qcodes.instrument_drivers.mock_instruments import (
+    DummyChannelInstrument,
+    DummyInstrument,
+)
 from qcodes.monitor import Monitor
 from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
-from qcodes.tests.instrument_mocks import DummyChannelInstrument, DummyInstrument
 from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning, get_qcodes_path
 from qcodes.utils.deprecate import deprecation_message
 
@@ -282,7 +285,7 @@ instruments:
     init:
       visalib: '{sims_path}lakeshore_model336.yaml@sim'
   mock_dac:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {{"ch1", "ch2"}}
@@ -290,7 +293,7 @@ instruments:
       ch1:
         monitor: true
   mock_dac2:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     """
     with config_file_context(test_config) as filename:
         yield filename
@@ -410,18 +413,21 @@ def simple_mock_station():
         """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
-        """)
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
+        """
+    )
 
 
 def test_simple_mock_config(simple_mock_station) -> None:
     st = simple_mock_station
     assert station_config_has_been_loaded(st)
-    assert hasattr(st, 'load_mock')
-    mock_snapshot = st.snapshot()['config']['instruments']['mock']
-    assert (mock_snapshot['type'] ==
-            "qcodes.tests.instrument_mocks.DummyInstrument")
-    assert 'mock' in st.config['instruments']
+    assert hasattr(st, "load_mock")
+    mock_snapshot = st.snapshot()["config"]["instruments"]["mock"]
+    assert (
+        mock_snapshot["type"]
+        == "qcodes.instrument_drivers.mock_instruments.DummyInstrument"
+    )
+    assert "mock" in st.config["instruments"]
 
 
 def test_simple_mock_load_mock(simple_mock_station) -> None:
@@ -445,7 +451,7 @@ def test_enable_force_reconnect() -> None:
         return f"""
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     {f'enable_forced_reconnect: {enable_forced_reconnect}'
         if enable_forced_reconnect is not None else ''}
     init:
@@ -489,16 +495,18 @@ instruments:
 
 
 def test_revive_instance() -> None:
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1"}
-    """)
-    mock = st.load_instrument('mock')
-    mock2 = st.load_instrument('mock')
+    """
+    )
+    mock = st.load_instrument("mock")
+    mock2 = st.load_instrument("mock")
     assert mock is not mock2
     assert mock is not st.mock
     assert mock2 is st.mock
@@ -513,7 +521,7 @@ def test_init_parameters() -> None:
         """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1", "ch2"}
@@ -556,10 +564,11 @@ def test_name_specified_in_init_in_yaml_is_used() -> None:
         """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     init:
       name: dummy
-        """)
+        """
+    )
 
     mock = st.load_instrument('mock')
     assert isinstance(mock, DummyInstrument)
@@ -588,10 +597,11 @@ instruments:
 
 
 def test_setup_alias_parameters() -> None:
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1"}
@@ -605,9 +615,10 @@ instruments:
         alias: gate_a
         initial_value: 9
 
-    """)
-    mock = st.load_instrument('mock')
-    p = getattr(mock, 'gate_a')
+    """
+    )
+    mock = st.load_instrument("mock")
+    p = getattr(mock, "gate_a")
     assert isinstance(p, Parameter)
     assert p.unit == 'mV'
     assert p.label == 'main gate'
@@ -625,10 +636,11 @@ instruments:
 
 
 def test_setup_delegate_parameters() -> None:
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     enable_forced_reconnect: true
     init:
       gates: {"ch1"}
@@ -649,9 +661,10 @@ instruments:
         limits: [-6.0 , 6.]
         initial_value: 2
 
-    """)
-    mock = st.load_instrument('mock')
-    p = getattr(mock, 'gate_a')
+    """
+    )
+    mock = st.load_instrument("mock")
+    p = getattr(mock, "gate_a")
     assert isinstance(p, DelegateParameter)
     assert p.unit == 'mV'
     assert p.label == 'main gate'
@@ -677,10 +690,11 @@ instruments:
 
 def test_channel_instrument() -> None:
     """Test that parameters from instrument's submodule also get configured correctly"""
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyChannelInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
     enable_forced_reconnect: true
     parameters:
       A.temperature:
@@ -690,23 +704,26 @@ instruments:
         source: A.temperature
       A.voltage:
         source: A.temperature
-    """)
-    mock = st.load_instrument('mock')
-    assert mock.A.temperature.unit == 'mK'
-    assert mock.T.unit == 'mK'
+    """
+    )
+    mock = st.load_instrument("mock")
+    assert mock.A.temperature.unit == "mK"
+    assert mock.T.unit == "mK"
     assert mock.A.voltage.source is mock.A.temperature
 
 
 def test_setting_channel_parameter() -> None:
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyChannelInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyChannelInstrument
     parameters:
       channels.temperature:
           initial_value: 10
-    """)
-    mock = st.load_instrument('mock')
+    """
+    )
+    mock = st.load_instrument("mock")
     assert mock.channels.temperature() == (10,) * 6
 
 
@@ -742,12 +759,14 @@ def test_monitor_not_loaded_if_specified(example_station_config) -> None:
 
 
 def test_deprecated_driver_keyword() -> None:
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks
+    driver: qcodes.instrument_drivers.mock_instruments
     type: DummyChannelInstrument
-    """)
+    """
+    )
     message = deprecation_message(
         'use of the "driver"-keyword in the station configuration file',
         alternative='the "type"-keyword instead, prepending the driver value to it',
@@ -757,16 +776,18 @@ instruments:
 
 
 def test_deprecated_limits_keyword_as_string() -> None:
-    st = station_from_config_str("""
+    st = station_from_config_str(
+        """
 instruments:
   mock:
-    type: qcodes.tests.instrument_mocks.DummyInstrument
+    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     init:
       gates: {"ch1"}
     parameters:
       ch1:
         limits: -10, 10
-    """)
+    """
+    )
     message = deprecation_message(
         "use of a comma separated string for the limits keyword",
         alternative=r'an array like "\[lower_lim, upper_lim\]"',
@@ -777,13 +798,15 @@ instruments:
 
 def test_config_validation_failure() -> None:
     with pytest.raises(ValidationWarning):
-        station_from_config_str("""
+        station_from_config_str(
+            """
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks.DummyInstrument
+    driver: qcodes.instrument_drivers.mock_instruments.DummyInstrument
 invalid_keyword:
   more_errors: 42
-        """)
+        """
+        )
 
 
 def test_config_validation_failure_on_file() -> None:
@@ -791,7 +814,7 @@ def test_config_validation_failure_on_file() -> None:
         test_config = """
 instruments:
   mock:
-    driver: qcodes.tests.instrument_mocks.DummyInstrument
+    driver: qcodes.instrument_drivers.mock_instruments.DummyInstrument
 invalid_keyword:
   more_errors: 42
     """
@@ -885,7 +908,7 @@ def test_station_config_created_with_multiple_config_files() -> None:
     test_config1 = """
         instruments:
           mock_dac1:
-            type: qcodes.tests.instrument_mocks.DummyInstrument
+            type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
             enable_forced_reconnect: true
             init:
               gates: {{"ch1", "ch2"}}
@@ -896,7 +919,7 @@ def test_station_config_created_with_multiple_config_files() -> None:
     test_config2 = """
         instruments:
           mock_dac2:
-            type: qcodes.tests.instrument_mocks.DummyInstrument
+            type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
     """
     with config_files_context(
             test_config1, test_config2

@@ -4,13 +4,13 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.parameters import Parameter
-from qcodes.tests.instrument_mocks import (
+from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
     Multi2DSetPointParam,
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
+from qcodes.parameters import Parameter
 from qcodes.validators import Arrays
 
 from .conftest import ArrayshapedParam
