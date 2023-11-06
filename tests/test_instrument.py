@@ -344,7 +344,7 @@ def test_find_same_name_but_different_class(request: FixtureRequest) -> None:
     error_msg = (
         "Instrument instr is <class "
         "'qcodes.instrument_drivers.mock_instruments.DummyInstrument'> but "
-        "<class 'qcodes.tests.test_instrument"
+        "<class 'tests.test_instrument"
         ".test_find_same_name_but_different_class.<locals>"
         ".GammyInstrument'> was requested"
     )

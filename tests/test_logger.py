@@ -16,9 +16,9 @@ from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
 from qcodes.instrument_drivers.tektronix import TektronixAWG5208
 from qcodes.logger.log_analysis import capture_dataframe
-from qcodes.tests.drivers.test_lakeshore import Model_372_Mock
+from tests.drivers.test_lakeshore import Model_372_Mock
 
-TEST_LOG_MESSAGE = 'test log message'
+TEST_LOG_MESSAGE = "test log message"
 
 NUM_PYTEST_LOGGERS = 4
 
@@ -40,7 +40,6 @@ def cleanup_started_logger() -> Generator[None, None, None]:
 
 @pytest.fixture
 def awg5208(caplog: LogCaptureFixture) -> Generator[TektronixAWG5208, None, None]:
-
     with caplog.at_level(logging.INFO):
         inst = TektronixAWG5208(
             "awg_sim",
@@ -56,8 +55,6 @@ def awg5208(caplog: LogCaptureFixture) -> Generator[TektronixAWG5208, None, None
 
 @pytest.fixture
 def model372() -> Generator[Model_372_Mock, None, None]:
-
-
     inst = Model_372_Mock(
         "lakeshore_372",
         "GPIB::3::INSTR",
@@ -96,7 +93,7 @@ def AMI430_3D() -> (
     )
     field_limit = [
         lambda x, y, z: x == 0 and y == 0 and z < 3,
-        lambda x, y, z: np.linalg.norm([x, y, z]) < 2
+        lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
     ]
     driver = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     try:
@@ -113,7 +110,7 @@ def test_get_log_file_name() -> None:
     assert str(os.getpid()) in fp[-1]
     assert logger.logger.PYTHON_LOG_NAME in fp[-1]
     assert fp[-2] == logger.logger.LOGGING_DIR
-    assert fp[-3] == '.qcodes'
+    assert fp[-3] == ".qcodes"
 
 
 def test_start_logger() -> None:
@@ -145,12 +142,12 @@ def test_start_logger_twice() -> None:
     # there is one or two loggers registered from pytest
     # depending on the version
     # and the telemetry logger is always off in the tests
-    assert len(handlers) == 2+NUM_PYTEST_LOGGERS
+    assert len(handlers) == 2 + NUM_PYTEST_LOGGERS
 
 
 def test_set_level_without_starting_raises() -> None:
     with pytest.raises(RuntimeError):
-        with logger.console_level('DEBUG'):
+        with logger.console_level("DEBUG"):
             pass
     assert len(logging.getLogger().handlers) == NUM_PYTEST_LOGGERS
 
@@ -158,11 +155,10 @@ def test_set_level_without_starting_raises() -> None:
 def test_handler_level() -> None:
     with logger.LogCapture(level=logging.INFO) as logs:
         logging.debug(TEST_LOG_MESSAGE)
-    assert logs.value == ''
+    assert logs.value == ""
 
     with logger.LogCapture(level=logging.INFO) as logs:
-        with logger.handler_level(level=logging.DEBUG,
-                                  handler=logs.string_handler):
+        with logger.handler_level(level=logging.DEBUG, handler=logs.string_handler):
             print(logs.string_handler)
             logging.debug(TEST_LOG_MESSAGE)
     assert logs.value.strip() == TEST_LOG_MESSAGE

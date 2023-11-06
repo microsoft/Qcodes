@@ -19,13 +19,12 @@ from qcodes.instrument_drivers.mock_instruments import (
     MultiSetPointParam,
 )
 from qcodes.parameters import Parameter
-from qcodes.tests.dataset.conftest import ArrayshapedParam
+from tests.dataset.conftest import ArrayshapedParam
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_with_real_parameter(_param_set, _param, delay) -> None:
-
     start = 0
     stop = 1
     num_points = 1
@@ -37,7 +36,6 @@ def test_do1d_with_real_parameter(_param_set, _param, delay) -> None:
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
 def test_do1d_plot(_param_set, _param, plot, plot_config) -> None:
-
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
 
@@ -56,7 +54,6 @@ def test_do1d_plot(_param_set, _param, plot, plot_config) -> None:
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_with_complex_parameter(_param_set, _param_complex, delay) -> None:
-
     start = 0
     stop = 1
     num_points = 1
@@ -67,7 +64,6 @@ def test_do1d_with_complex_parameter(_param_set, _param_complex, delay) -> None:
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay) -> None:
-
     start = 0
     stop = 1
     num_points = 1
@@ -78,7 +74,6 @@ def test_do1d_with_2_parameter(_param_set, _param, _param_complex, delay) -> Non
 @pytest.mark.usefixtures("plot_close", "experiment")
 @pytest.mark.parametrize("delay", [0, 0.1, 1])
 def test_do1d_output_type_real_parameter(_param_set, _param, delay) -> None:
-
     start = 0
     stop = 1
     num_points = 1
@@ -89,7 +84,6 @@ def test_do1d_output_type_real_parameter(_param_set, _param, delay) -> None:
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_do1d_output_data(_param, _param_set) -> None:
-
     start = 0
     stop = 1
     num_points = 5
@@ -311,7 +305,6 @@ def test_do1d_additional_setpoints_shape(
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_do1d_break_condition(caplog: LogCaptureFixture, _param_set, _param) -> None:
-
     start = 0
     stop = 1
     num_points = 5

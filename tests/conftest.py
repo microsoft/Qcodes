@@ -28,6 +28,7 @@ n_experiments = 0
 if TYPE_CHECKING:
     from qcodes.configuration import DotDict
 
+
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "win32: tests that only run under windows")
 
@@ -158,7 +159,7 @@ def _make_standalone_parameters_dataset(
     dataset: DataSet,
 ) -> Generator[DataSet, None, None]:
     n_params = 3
-    n_rows = 10 ** 3
+    n_rows = 10**3
     params_indep = [
         ParamSpecBase(f"param_{i}", "numeric", label=f"param_{i}", unit="V")
         for i in range(n_params)

@@ -14,7 +14,7 @@ from qcodes.instrument_drivers.mock_instruments import (
     Multi2DSetPointParam2Sizes,
     MultiSetPointParam,
 )
-from qcodes.tests.dataset.conftest import ArrayshapedParam
+from tests.dataset.conftest import ArrayshapedParam
 
 
 @pytest.mark.usefixtures("plot_close", "experiment")

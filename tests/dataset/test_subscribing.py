@@ -10,7 +10,7 @@ import qcodes
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.tests.common import retry_until_does_not_throw
+from tests.common import retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class MockSubscriber:
     is called from another thread than the one holding the connection of the
     dataset!
     """
+
     def __init__(self, ds, lg):
         self.lg = lg
         self.ds = ds
@@ -46,7 +47,7 @@ def config_subscriber_factory(ds, log):
     return config_subscriber
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def basic_subscriber():
     """
     A basic subscriber that just puts results and length into
@@ -67,7 +68,7 @@ def _make_working_subscriber_config(tmp_path):
         "subscription":{
             "subscribers":{
                 "test_subscriber":{
-                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
+                    "factory": "tests.dataset.test_subscribing.MockSubscriber",
                     "factory_kwargs":{
                         "lg": false
                     },
@@ -96,7 +97,7 @@ def _make_broken_subscriber_config(tmp_path):
         "subscription":{
             "subscribers":{
                 "test_subscriber_wrong":{
-                    "factory": "qcodes.tests.dataset.test_subscribing.MockSubscriber",
+                    "factory": "tests.dataset.test_subscribing.MockSubscriber",
                     "factory_kwargs":{
                         "lg": false
                     },
@@ -117,24 +118,18 @@ def _make_broken_subscriber_config(tmp_path):
     yield
 
 
-
 @pytest.mark.flaky(reruns=5)
 @pytest.mark.serial
 def test_basic_subscription(dataset, basic_subscriber) -> None:
-    xparam = ParamSpecBase(name='x',
-                           paramtype='numeric',
-                           label='x parameter',
-                           unit='V')
-    yparam = ParamSpecBase(name='y',
-                           paramtype='numeric',
-                           label='y parameter',
-                           unit='Hz')
+    xparam = ParamSpecBase(name="x", paramtype="numeric", label="x parameter", unit="V")
+    yparam = ParamSpecBase(
+        name="y", paramtype="numeric", label="y parameter", unit="Hz"
+    )
     idps = InterDependencies_(dependencies={yparam: (xparam,)})
     dataset.set_interdependencies(idps)
     dataset.mark_started()
 
-    sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1,
-                               state={})
+    sub_id = dataset.subscribe(basic_subscriber, min_wait=0, min_count=1, state={})
 
     assert len(dataset.subscribers) == 1
     assert list(dataset.subscribers.keys()) == [sub_id]
@@ -142,12 +137,13 @@ def test_basic_subscription(dataset, basic_subscriber) -> None:
     expected_state = {}
 
     for x in range(10):
-        y = -x**2
-        dataset.add_results([{'x': x, 'y': y}])
-        expected_state[x+1] = [(x, y)]
+        y = -(x**2)
+        dataset.add_results([{"x": x, "y": y}])
+        expected_state[x + 1] = [(x, y)]
 
         @retry_until_does_not_throw(
-            exception_class_to_expect=AssertionError, delay=0.5, tries=10)
+            exception_class_to_expect=AssertionError, delay=0.5, tries=10
+        )
         def assert_expected_state():
             assert dataset.subscribers[sub_id].state == expected_state
 
@@ -160,8 +156,7 @@ def test_basic_subscription(dataset, basic_subscriber) -> None:
 
     # Ensure the trigger for the subscriber has been removed from the database
     get_triggers_sql = "SELECT * FROM sqlite_master WHERE TYPE = 'trigger';"
-    triggers = atomic_transaction(
-        dataset.conn, get_triggers_sql).fetchall()
+    triggers = atomic_transaction(dataset.conn, get_triggers_sql).fetchall()
     assert len(triggers) == 0
 
 

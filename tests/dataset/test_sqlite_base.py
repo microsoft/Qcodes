@@ -29,12 +29,12 @@ from qcodes.dataset.sqlite import queries as mut_queries
 from qcodes.dataset.sqlite import query_helpers as mut_help
 from qcodes.dataset.sqlite.connection import atomic_transaction, path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.tests.common import error_caused_by
 from qcodes.utils import QCoDeSDeprecationWarning
+from tests.common import error_caused_by
 
 from .helper_functions import verify_data_dict
 
-_unicode_categories = ('Lu', 'Ll', 'Lt', 'Lm', 'Lo', 'Nd', 'Pc', 'Pd', 'Zs')
+_unicode_categories = ("Lu", "Ll", "Lt", "Lm", "Lo", "Nd", "Pc", "Pd", "Zs")
 
 
 @contextmanager
@@ -62,8 +62,7 @@ def _make_simple_run_describer():
 
 
 def test_path_to_dbfile(tmp_path) -> None:
-
-    tempdb = str(tmp_path / 'database.db')
+    tempdb = str(tmp_path / "database.db")
     conn = mut_db.connect(tempdb)
     try:
         assert path_to_dbfile(conn) == tempdb
@@ -178,8 +177,9 @@ def test_insert_many_values_raises(experiment) -> None:
     conn = experiment.conn
 
     with pytest.raises(ValueError):
-        mut_help.insert_many_values(conn, 'some_string', ['column1'],
-                                    values=[[1], [1, 3]])
+        mut_help.insert_many_values(
+            conn, "some_string", ["column1"], values=[[1], [1, 3]]
+        )
 
 
 def test_get_non_existing_metadata_returns_none(experiment) -> None:
@@ -206,7 +206,6 @@ def test__validate_table_raises(table_name) -> None:
 
 
 def test_get_dependents_simple(experiment, simple_run_describer) -> None:
-
     (_, run_id, _) = mut_queries.create_run(
         experiment.conn,
         experiment.exp_id,
@@ -250,16 +249,17 @@ def test_get_dependents(experiment) -> None:
 
     deps = mut_queries._get_dependents(experiment.conn, run_id)
 
-    expected_deps = [mut_queries._get_layout_id(experiment.conn, 'y', run_id),
-                     mut_queries._get_layout_id(experiment.conn, 'z', run_id)]
+    expected_deps = [
+        mut_queries._get_layout_id(experiment.conn, "y", run_id),
+        mut_queries._get_layout_id(experiment.conn, "z", run_id),
+    ]
 
     assert deps == expected_deps
 
 
 def test_column_in_table(dataset) -> None:
     assert mut_help.is_column_in_table(dataset.conn, "runs", "run_id")
-    assert not mut_help.is_column_in_table(dataset.conn, "runs",
-                                           "non-existing-column")
+    assert not mut_help.is_column_in_table(dataset.conn, "runs", "non-existing-column")
 
 
 def test_run_exist(dataset) -> None:
@@ -268,10 +268,8 @@ def test_run_exist(dataset) -> None:
 
 
 def test_get_last_run(dataset) -> None:
-    assert dataset.run_id \
-        == mut_queries.get_last_run(dataset.conn, dataset.exp_id)
-    assert dataset.run_id \
-        == mut_queries.get_last_run(dataset.conn)
+    assert dataset.run_id == mut_queries.get_last_run(dataset.conn, dataset.exp_id)
+    assert dataset.run_id == mut_queries.get_last_run(dataset.conn)
 
 
 def test_get_last_run_no_runs(experiment) -> None:
@@ -280,8 +278,7 @@ def test_get_last_run_no_runs(experiment) -> None:
 
 
 def test_get_last_experiment(experiment) -> None:
-    assert experiment.exp_id \
-           == mut_queries.get_last_experiment(experiment.conn)
+    assert experiment.exp_id == mut_queries.get_last_experiment(experiment.conn)
 
 
 def test_get_last_experiment_no_experiments(empty_temp_db) -> None:
@@ -290,12 +287,11 @@ def test_get_last_experiment_no_experiments(empty_temp_db) -> None:
 
 
 def test_update_runs_description(dataset) -> None:
-    invalid_descs = ['{}', 'description']
+    invalid_descs = ["{}", "description"]
 
     for idesc in invalid_descs:
         with pytest.raises(ValueError):
-            mut_queries.update_run_description(
-                dataset.conn, dataset.run_id, idesc)
+            mut_queries.update_run_description(dataset.conn, dataset.run_id, idesc)
 
     desc = serial.to_json_for_storage(RunDescriber(InterDependencies_()))
     mut_queries.update_run_description(dataset.conn, dataset.run_id, desc)
@@ -329,14 +325,14 @@ def test_get_data_no_columns(scalar_dataset) -> None:
 
 def test_get_parameter_data(scalar_dataset) -> None:
     ds = scalar_dataset
-    input_names = ['param_3']
+    input_names = ["param_3"]
 
     data = mut_queries.get_parameter_data(ds.conn, ds.table_name, input_names)
 
     assert len(data.keys()) == len(input_names)
 
     expected_names = {"param_3": ["param_0", "param_1", "param_2", "param_3"]}
-    expected_shapes = {"param_3": [(10 ** 3,)] * 4}
+    expected_shapes = {"param_3": [(10**3,)] * 4}
 
     expected_values = {
         "param_3": [np.arange(10000 * a, 10000 * a + 1000) for a in range(4)]
@@ -353,7 +349,7 @@ def test_get_parameter_data_independent_parameters(
 
     paramspecs = ds.description.interdeps.non_dependencies
     params = [ps.name for ps in paramspecs]
-    expected_toplevel_params = ['param_1', 'param_2', 'param_3']
+    expected_toplevel_params = ["param_1", "param_2", "param_3"]
     assert params == expected_toplevel_params
 
     data = mut_queries.get_parameter_data(ds.conn, ds.table_name)
@@ -367,9 +363,9 @@ def test_get_parameter_data_independent_parameters(
     }
 
     expected_shapes = {
-        "param_1": [(10 ** 3,)],
-        "param_2": [(10 ** 3,)],
-        "param_3": [(10 ** 3,)] * 2,
+        "param_1": [(10**3,)],
+        "param_2": [(10**3,)],
+        "param_3": [(10**3,)] * 2,
     }
     expected_values = {
         "param_1": [np.arange(10000, 10000 + 1000)],
@@ -377,13 +373,19 @@ def test_get_parameter_data_independent_parameters(
         "param_3": [np.arange(30000, 30000 + 1000), np.arange(0, 1000)],
     }
 
-    verify_data_dict(data, None, expected_toplevel_params, expected_names,
-                     expected_shapes, expected_values)
+    verify_data_dict(
+        data,
+        None,
+        expected_toplevel_params,
+        expected_names,
+        expected_shapes,
+        expected_values,
+    )
 
 
 def test_is_run_id_in_db(empty_temp_db) -> None:
     conn = mut_db.connect(get_DB_location())
-    mut_queries.new_experiment(conn, 'test_exp', 'no_sample')
+    mut_queries.new_experiment(conn, "test_exp", "no_sample")
 
     for _ in range(5):
         DataSet(conn=conn, run_id=None)
@@ -402,7 +404,7 @@ def test_is_run_id_in_db(empty_temp_db) -> None:
 
 
 def test_atomic_creation(experiment, simple_run_describer) -> None:
-    """"
+    """ "
     Test that dataset creation is atomic. Test for
     https://github.com/QCoDeS/Qcodes/issues/1444
     """
@@ -416,7 +418,6 @@ def test_atomic_creation(experiment, simple_run_describer) -> None:
     with patch(
         "qcodes.dataset.sqlite.queries.add_data_to_dynamic_columns", new=just_throw
     ):
-
         with pytest.raises(
             RuntimeError, match="Rolling back due to unhandled exception"
         ) as e:
@@ -431,12 +432,10 @@ def test_atomic_creation(experiment, simple_run_describer) -> None:
     assert error_caused_by(e, "This breaks adding metadata")
     # since we are starting from an empty database and the above transaction
     # should be rolled back there should be no runs in the run table
-    runs = mut_conn.transaction(experiment.conn,
-                                'SELECT run_id FROM runs').fetchall()
+    runs = mut_conn.transaction(experiment.conn, "SELECT run_id FROM runs").fetchall()
     assert len(runs) == 0
     with shadow_conn(experiment.path_to_db) as new_conn:
-        runs = mut_conn.transaction(new_conn,
-                                    'SELECT run_id FROM runs').fetchall()
+        runs = mut_conn.transaction(new_conn, "SELECT run_id FROM runs").fetchall()
         assert len(runs) == 0
 
     # if the above was not correctly rolled back we
@@ -450,18 +449,15 @@ def test_atomic_creation(experiment, simple_run_describer) -> None:
         metadata={"a": 1},
     )
 
-    runs = mut_conn.transaction(experiment.conn,
-                                'SELECT run_id FROM runs').fetchall()
+    runs = mut_conn.transaction(experiment.conn, "SELECT run_id FROM runs").fetchall()
     assert len(runs) == 1
 
     with shadow_conn(experiment.path_to_db) as new_conn:
-        runs = mut_conn.transaction(new_conn,
-                                    'SELECT run_id FROM runs').fetchall()
+        runs = mut_conn.transaction(new_conn, "SELECT run_id FROM runs").fetchall()
         assert len(runs) == 1
 
 
 def test_set_run_timestamp(dataset) -> None:
-
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -473,16 +469,15 @@ def test_set_run_timestamp(dataset) -> None:
     assert dataset.run_timestamp_raw > time_now
     assert dataset.completed_timestamp_raw is None
 
-    with pytest.raises(RuntimeError, match="Rolling back due to unhandled "
-                                           "exception") as ei:
+    with pytest.raises(
+        RuntimeError, match="Rolling back due to unhandled exception"
+    ) as ei:
         mut_queries.set_run_timestamp(dataset.conn, dataset.run_id)
 
-    assert error_caused_by(ei, ("Can not set run_timestamp; it has already "
-                                "been set"))
+    assert error_caused_by(ei, ("Can not set run_timestamp; it has already been set"))
 
 
 def test_set_run_timestamp_explicit(dataset) -> None:
-
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -502,7 +497,6 @@ def test_set_run_timestamp_explicit(dataset) -> None:
 
 
 def test_mark_run_complete(dataset) -> None:
-
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
@@ -556,7 +550,6 @@ def test_mark_run_complete_twice(dataset, caplog: LogCaptureFixture) -> None:
 
 
 def test_mark_run_complete_explicit_time(dataset) -> None:
-
     assert dataset.run_timestamp_raw is None
     assert dataset.completed_timestamp_raw is None
 
