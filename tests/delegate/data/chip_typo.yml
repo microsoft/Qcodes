@@ -1,0 +1,42 @@
+instruments:
+  MockChip_123:
+    type: qcodes.instrument.delegate.InstrumentGroup
+    init:
+      submodules_type: qcodes.instrument.delegate.DelegateInstrument
+      submodules:
+        device1:
+            gate: dac.ch01.voltage
+            source:
+              - lockin.frequency
+              - lockin.amplitude
+              - lockin.phase
+              - lockin.time_constant
+            drain:
+              - lockin.X
+              - lockin.Y
+
+        channel_device:
+          parameters:
+            readout: lockin.phase
+          channels:
+            gate_1: dac.ch01
+
+        channel_device_custom:
+          parameters:
+            readout: lockin.phase
+          channels:
+            type: qcodes.instrument_drivers.mock_instruments.MockCustomChannel
+            gate_1:
+              channel: dac.ch01
+              current_valid_range: [-0.5, 0]
+
+      set_initial_values_on_load: true
+      initial_values:
+        device1:
+          gate.step: 5e-4
+          gate.inter_delay: 12.5e-4
+        channel_device:
+          readout: 1e-5
+          gate_1.voltage.post_delay: 0.01
+        channel_device_custom:
+          readout: 1e-5
