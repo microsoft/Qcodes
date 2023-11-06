@@ -64,6 +64,9 @@ class VisaInstrument(Instrument):
             ``qcodes.instruments.sims:AimTTi_PL601P.yaml`` in which case it is loaded
             from the supplied module. Note that it is an error to pass both
             ``pyvisa_sim_file`` and ``visalib``.
+        visa_kwargs: Keyword arguments passed to PyVisas `ResourceManager().open_resource`
+            This allows setting custom properties for a Visa connection such as serial
+            baud rate. See PyVisa docs for additional options.
 
     See help for :class:`.Instrument` for additional information on writing
     instrument subclasses.
@@ -79,6 +82,7 @@ class VisaInstrument(Instrument):
         device_clear: bool = True,
         visalib: str | None = None,
         pyvisa_sim_file: str | None = None,
+        visa_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ):
 
@@ -98,6 +102,8 @@ class VisaInstrument(Instrument):
                 "It's an error to supply both visalib and pyvisa_sim_file as "
                 "arguments to a VISA instrument"
             )
+        if visa_kwargs is None:
+            visa_kwargs = {}
         if pyvisa_sim_file is not None:
             if ":" in pyvisa_sim_file:
                 module, pyvisa_sim_file = pyvisa_sim_file.split(":")
@@ -116,10 +122,12 @@ class VisaInstrument(Instrument):
                     visa_handle,
                     visabackend,
                     resource_manager,
-                ) = self._connect_and_handle_error(address, visalib)
+                ) = self._connect_and_handle_error(
+                    address, visalib, visa_kwargs=visa_kwargs
+                )
         else:
             visa_handle, visabackend, resource_manager = self._connect_and_handle_error(
-                address, visalib
+                address, visalib, visa_kwargs=visa_kwargs
             )
         finalize(self, _close_visa_handle, visa_handle, str(self.name))
 
@@ -142,11 +150,13 @@ class VisaInstrument(Instrument):
         self.timeout.set(timeout)
 
     def _connect_and_handle_error(
-        self, address: str, visalib: str | None
+        self, address: str, visalib: str | None, visa_kwargs: dict[str, Any]
     ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
         try:
             visa_handle, visabackend, resource_manager = self._open_resource(
-                address, visalib
+                address,
+                visalib,
+                visa_kwargs=visa_kwargs,
             )
         except Exception as e:
             self.visa_log.exception(f"Could not connect at {address}")
@@ -155,7 +165,7 @@ class VisaInstrument(Instrument):
         return visa_handle, visabackend, resource_manager
 
     def _open_resource(
-        self, address: str, visalib: str | None
+        self, address: str, visalib: str | None, visa_kwargs: dict[str, Any]
     ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
 
         # in case we're changing the address - close the old handle first
@@ -174,7 +184,7 @@ class VisaInstrument(Instrument):
             visabackend = "ivi"
 
         self.visa_log.info(f"Opening PyVISA resource at address: {address}")
-        resource = resource_manager.open_resource(address)
+        resource = resource_manager.open_resource(address, **visa_kwargs)
         if not isinstance(resource, pyvisa.resources.MessageBasedResource):
             resource.close()
             raise TypeError("QCoDeS only support MessageBasedResource Visa resources")
@@ -192,7 +202,7 @@ class VisaInstrument(Instrument):
                 (and then call this function).
         """
         resource, visabackend, resource_manager = self._open_resource(
-            address, self.visalib
+            address, self.visalib, {}
         )
         self.visa_handle = resource
         self._address = address
