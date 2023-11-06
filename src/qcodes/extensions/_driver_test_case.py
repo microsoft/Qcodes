@@ -9,12 +9,6 @@ This module defines:
 
 - `DriverTestCase`: a `TestCase` subclass meant for testing instrument drivers
 
-- `test_instrument`: a function to test one instrument, given its test class
-
-- `test_instruments`: a function to test all instruments that have been defined
-                      in your python session
-
-
 Using `DriverTestCase` is pretty easy:
 
 - Inherit from this class instead of from the base `unittest.TestCase`
@@ -35,7 +29,7 @@ class DriverTestCase(unittest.TestCase):
     instrument: Instrument
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         if cls is DriverTestCase:
             return
 
@@ -62,42 +56,3 @@ class DriverTestCase(unittest.TestCase):
             )
 
         cls.instrument = instances[-1]
-
-
-def test_instruments(verbosity=1) -> None:
-    """
-    Discover available instruments and test them all
-    Unlike test_instrument, this does NOT reload tests prior to running them
-
-    optional verbosity (default 1)
-    """
-    import qcodes
-    import qcodes.instrument_drivers as qcdrivers
-
-    driver_path = list(qcdrivers.__path__)[0]
-    suite = unittest.defaultTestLoader.discover(
-        driver_path, top_level_dir=list(qcodes.__path__)[0]
-    )
-    unittest.TextTestRunner(verbosity=verbosity).run(suite)
-
-
-def test_instrument(instrument_testcase, verbosity=2) -> None:
-    """
-    Runs one instrument testcase
-    Reloads the test case before running it
-
-    optional verbosity (default 2)
-    """
-    import importlib
-    import sys
-
-    # reload the test case
-    module_name = instrument_testcase.__module__
-    class_name = instrument_testcase.__name__
-    del sys.modules[module_name]
-
-    module = importlib.import_module(module_name)
-    reloaded_testcase = getattr(module, class_name)
-
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(reloaded_testcase)
-    unittest.TextTestRunner(verbosity=verbosity).run(suite)
