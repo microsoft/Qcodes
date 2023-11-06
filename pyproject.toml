@@ -205,7 +205,7 @@ stubPath = "typings/stubs"
 [tool.pytest.ini_options]
 minversion = "6.0"
 junit_family = "legacy"
-
+testpaths = "tests"
 addopts = "-n auto --dist=loadfile"
 
 markers = "serial"
