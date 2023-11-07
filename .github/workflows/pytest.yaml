@@ -92,3 +92,6 @@ jobs:
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON
+      if: ${{ github.event_name != 'merge_group' }}
+      # we don't trigger coverage from merge groups since that would
+      # make twice the number of coverage reports be uploded from a given commit
