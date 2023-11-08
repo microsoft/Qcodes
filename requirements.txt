@@ -30,7 +30,7 @@ cryptography~=41.0.0
 cycler==0.12.1
 debugpy~=1.8.0
 decorator~=5.1.1
-deepdiff~=6.6.0
+deepdiff~=6.7.0
 defusedxml==0.7.1
 docutils==0.18.1
 entrypoints==0.4
