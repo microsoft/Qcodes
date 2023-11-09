@@ -1,0 +1,5 @@
+Tests are no longer shipped as part of the qcodes package. The qcodes.tests
+namespace still exists but will be deprecated in QCoDeS 0.43.0.
+`qcodes.test` is deprecated and will be removed in a future release.
+To run the tests against an installed version clone git repo to matching tag and
+run `pytest tests` from the root of the repo.
