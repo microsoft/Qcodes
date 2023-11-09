@@ -92,26 +92,26 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
         pass
 
     try:
-        parsed_expression = ast.parse(s, mode='eval')
+        parsed_expression = ast.parse(s, mode="eval")
     except SyntaxError:
         return None
 
-    if not hasattr(parsed_expression, 'body'):
+    if not hasattr(parsed_expression, "body"):
         return None
 
     parsed = parsed_expression.body
 
-    if isinstance(parsed, ast.Str):
-        if len(parsed.s) > 0:
-            return (parsed.s,)
+    if isinstance(parsed, ast.Constant):
+        if len(parsed.value) > 0:
+            return (parsed.value,)
         else:
             return tuple()
 
     if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
         return None
 
-    if not all(isinstance(e, ast.Str) for e in parsed.elts):
+    if not all(isinstance(e, ast.Constant) for e in parsed.elts):
         return None
 
-    str_elts = cast(tuple[ast.Str, ...], tuple(parsed.elts))
-    return tuple(s.s for s in str_elts)
+    str_elts = cast(tuple[ast.Constant, ...], tuple(parsed.elts))
+    return tuple(s.value for s in str_elts)
