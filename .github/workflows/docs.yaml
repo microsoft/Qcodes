@@ -51,7 +51,7 @@ jobs:
         fetch-depth: '0'
     - name: set-sphinx-opts
       run: |
-        echo "SPHINX_OPTS=-W -v" >> $GITHUB_ENV
+        echo "SPHINX_OPTS=-W -v --keep-going" >> $GITHUB_ENV
       if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
     - name: install pandoc linux
       run: |
