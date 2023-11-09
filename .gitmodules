@@ -1,5 +1,5 @@
 [submodule "qcodes/tests/dataset/fixtures/db_files"]
-	path = src/qcodes/tests/dataset/fixtures/db_files
+	path = tests/dataset/fixtures/db_files
 	url = https://github.com/QCoDeS/qcodes_db_fixtures.git
 	branch = main
 [submodule "typings"]

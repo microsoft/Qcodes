@@ -205,7 +205,7 @@ stubPath = "typings/stubs"
 [tool.pytest.ini_options]
 minversion = "6.0"
 junit_family = "legacy"
-
+testpaths = "tests"
 addopts = "-n auto --dist=loadfile"
 
 markers = "serial"
@@ -284,6 +284,7 @@ known-first-party = ["qcodes"]
 # in tests and examples
 "docs/*" = ["TID253"]
 "src/qcodes/tests/*" = ["TID253"]
+"tests/*" = ["TID253"]
 
 [tool.ruff.flake8-tidy-imports]
 # There modules are relatively slow to import

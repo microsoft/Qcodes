@@ -75,6 +75,7 @@ from qcodes.parameters import (
     combine,
 )
 from qcodes.station import Station
+from qcodes.utils import deprecate
 
 # ensure to close all instruments when interpreter is closed
 atexit.register(Instrument.close_all)
@@ -89,22 +90,18 @@ if config.core.import_legacy_api:
         QCoDeSDeprecationWarning,
     )
 
+
+@deprecate(
+    reason="tests are no longer shipped as part of QCoDeS",
+    alternative="Clone git repo to matching tag and run `pytest tests` from the root of the repo.",
+)
 def test(**kwargs: Any) -> int:
     """
-    Run QCoDeS tests. This requires the test requirements given
-    in test_requirements.txt to be installed.
-    All arguments are forwarded to pytest.main
+    Deprecated
     """
-    try:
-        import pytest
-        from hypothesis import settings
-        settings(deadline=1000)
-    except ImportError:
-        print("Need pytest and hypothesis to run tests")
-        return 1
-    args = ['--pyargs', 'qcodes.tests']
-    retcode = pytest.main(args, **kwargs)
-    return retcode
+    return 0
 
 
-test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test
+del deprecate
+
+test.__test__ = False  # Don't try to run this method as a test
