@@ -155,7 +155,7 @@ terminado==0.17.1
 tinycss2~=1.2.1
 tomli~=2.0.1
 tornado~=6.2
-towncrier~=23.10.0
+towncrier~=23.11.0
 tqdm~=4.66.1
 traitlets~=5.13.0
 types-requests~=2.31.0
