@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import pytest
 
@@ -44,23 +46,27 @@ def alazar_ctrl():
 
 
 @pytest.mark.win32
-def test_simulated_alazar(simulated_alazar, alazar_ctrl) -> None:
+def test_simulated_alazar(simulated_alazar, alazar_ctrl, caplog) -> None:
     alazar = simulated_alazar
     buffers_per_acquisition = 10
-    data = alazar.acquire(
-        mode='NPT',
-        samples_per_record=int(1e4*128),
-        records_per_buffer=1,
-        buffers_per_acquisition=buffers_per_acquisition,
-        channel_selection='A',
-        enable_record_headers=None,
-        alloc_buffers=None,
-        fifo_only_streaming=None,
-        interleave_samples=None,
-        get_processed_data=None,
-        allocated_buffers=4,
-        buffer_timeout=None,
-        acquisition_controller=alazar_ctrl)
+    with caplog.at_level(logging.DEBUG):
+        data = alazar.acquire(
+            mode="NPT",
+            samples_per_record=int(1e4 * 128),
+            records_per_buffer=1,
+            buffers_per_acquisition=buffers_per_acquisition,
+            channel_selection="A",
+            enable_record_headers=None,
+            alloc_buffers=None,
+            fifo_only_streaming=None,
+            interleave_samples=None,
+            get_processed_data=None,
+            allocated_buffers=4,
+            buffer_timeout=None,
+            acquisition_controller=alazar_ctrl,
+        )
+    assert "tot acquire time" in caplog.records[-1].msg
     assert len(data) == buffers_per_acquisition
+
     for d in data:
         assert np.allclose(d, np.ones(d.shape))
