@@ -171,7 +171,7 @@ webencodings==0.5.1
 websockets~=12.0
 widgetsnbextension~=4.0.3
 wincertstore==0.2
-wrapt~=1.15.0
+wrapt~=1.16.0
 xarray~=2023.10.1
 zipp~=3.17.0
 zhinst-core~=23.10.49450
