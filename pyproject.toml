@@ -171,6 +171,7 @@ strict_equality = true
 
 [[tool.mypy.overrides]]
 module = [
+    "tests.*",
     "qcodes.tests.*",
     "qcodes.instrument.mockers.ami430",
     "qcodes.instrument_drivers.Harvard.*",
