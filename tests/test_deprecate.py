@@ -63,6 +63,7 @@ def test_similar_output() -> None:
         assert add_one(1) == _add_one(1)
 
 
+@pytest.mark.filterwarnings("ignore:Some other warning")
 def test_deprecated_context_manager() -> None:
     with _catch_deprecation_warnings() as ws:
         issue_deprecation_warning('something')
