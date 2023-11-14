@@ -12,7 +12,15 @@ from numpy.testing import assert_allclose
 from pytest import LogCaptureFixture, TempPathFactory
 
 import qcodes
-from qcodes.dataset import get_data_export_path, load_from_netcdf, new_data_set
+from qcodes.dataset import (
+    DataSetProtocol,
+    DataSetType,
+    Measurement,
+    get_data_export_path,
+    load_by_id,
+    load_from_netcdf,
+    new_data_set,
+)
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
@@ -178,6 +186,29 @@ def _make_mock_dataset_non_grid(experiment) -> DataSet:
         dataset.add_results(results)
     dataset.mark_completed()
     return dataset
+
+
+@pytest.fixture(name="mock_dataset_non_grid_in_mem")
+def _make_mock_dataset_non_grid_in_mem(experiment) -> DataSetProtocol:
+    meas = Measurement(exp=experiment, name="in_mem_ds")
+
+    num_samples = 50
+
+    rng = np.random.default_rng()
+
+    x_vals = rng.random(num_samples) * 10
+    y_vals = 20 + rng.random(num_samples) * 5
+
+    meas.register_custom_parameter("x")
+    meas.register_custom_parameter("y")
+    meas.register_custom_parameter("z", setpoints=("x", "y"))
+
+    with meas.run(dataset_class=DataSetType.DataSetInMem) as datasaver:
+        for x, y in zip(x_vals, y_vals):
+            results = [("x", x), ("y", y), ("z", x + y)]
+            datasaver.add_result(*results)
+
+    return datasaver.dataset
 
 
 @pytest.fixture(name="mock_dataset_non_grid_in_grid")
@@ -862,6 +893,49 @@ def test_export_non_grid_dataset(
     assert "x" in xr_ds_reimported.coords
     assert "y" in xr_ds_reimported.coords
     assert xr_ds.identical(xr_ds_reimported)
+
+
+def test_export_non_grid_in_mem_dataset(
+    tmp_path_factory: TempPathFactory, mock_dataset_non_grid_in_mem: DataSetProtocol
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_non_grid_in_mem.export(
+        export_type="netcdf", path=tmp_path, prefix="qcodes_"
+    )
+
+    pdf = mock_dataset_non_grid_in_mem.to_pandas_dataframe()
+    dims = _calculate_index_shape(pdf.index)
+    assert dims == {"x": 50, "y": 50}
+
+    xr_ds = mock_dataset_non_grid_in_mem.to_xarray_dataset()
+    assert len(xr_ds.coords) == 3
+    assert "multi_index" in xr_ds.coords
+    assert "x" in xr_ds.coords
+    assert "y" in xr_ds.coords
+    assert xr_ds.dims == {"multi_index": 50}
+
+    expected_path = f"qcodes_{mock_dataset_non_grid_in_mem.captured_run_id}_{mock_dataset_non_grid_in_mem.guid}.nc"
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    xr_ds_reimported = ds.to_xarray_dataset()
+
+    assert len(xr_ds_reimported.coords) == 3
+    assert "multi_index" in xr_ds_reimported.coords
+    assert "x" in xr_ds_reimported.coords
+    assert "y" in xr_ds_reimported.coords
+    assert xr_ds.identical(xr_ds_reimported)
+
+    loaded_by_id_ds = load_by_id(mock_dataset_non_grid_in_mem.run_id)
+    loaded_by_id_ds_xr = loaded_by_id_ds.to_xarray_dataset()
+
+    assert len(loaded_by_id_ds_xr.coords) == 3
+    assert "multi_index" in loaded_by_id_ds_xr.coords
+    assert "x" in loaded_by_id_ds_xr.coords
+    assert "y" in loaded_by_id_ds_xr.coords
+    assert xr_ds.identical(loaded_by_id_ds_xr)
 
 
 def test_export_non_grid_in_grid_dataset(
