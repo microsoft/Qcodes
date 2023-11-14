@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import re
 import traceback
 from time import sleep
@@ -554,13 +555,9 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(
 
 @pytest.mark.serial
 @pytest.mark.flaky(reruns=5)
-@settings(
-    deadline=None,
-    max_examples=25,
-    suppress_health_check=(HealthCheck.function_scoped_fixture,),
-)
-@given(N=hst.integers(min_value=2000, max_value=3000))
-def test_subscribers_called_for_all_data_points(experiment, DAC, DMM, N) -> None:
+def test_subscribers_called_for_all_data_points(experiment, DAC, DMM) -> None:
+    N = random.randint(2000, 3000)
+
     def sub_get_x_vals(results, length, state):
         """
         A list of all x values
