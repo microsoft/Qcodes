@@ -218,7 +218,7 @@ class DataSetProtocol(Protocol):
     def export(
         self,
         export_type: DataExportType | str | None = None,
-        path: str | None = None,
+        path: Path | str | None = None,
         prefix: str | None = None,
         automatic_export: bool = False,
     ) -> None:
