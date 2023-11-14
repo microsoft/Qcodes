@@ -342,12 +342,14 @@ class DataSetInMem(BaseDataSet):
 
     @classmethod
     def _set_cache_from_netcdf(cls, ds: DataSetInMem, xr_path: str | None) -> bool:
+        import cf_xarray as cfxr
         import xarray as xr
 
         success = True
         if xr_path is not None:
             try:
                 loaded_data = xr.load_dataset(xr_path, engine="h5netcdf")
+                loaded_data = cfxr.coding.decode_compress_to_multi_index(loaded_data)
                 ds._cache = DataSetCacheInMem(ds)
                 ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(
                     loaded_data
