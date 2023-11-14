@@ -1,0 +1,2 @@
+QCoDeS in memory datasets exported to netcdf with MultiIndexes are now
+correctly decompressed when reloaded with load_by_id and friends.
