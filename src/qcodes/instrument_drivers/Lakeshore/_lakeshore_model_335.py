@@ -21,7 +21,7 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
     ch_name: num_for_cmd + 1
     for num_for_cmd, ch_name in enumerate(_channel_name_to_command_map.keys())
 }
-_channel_name_to_outmode_command_map.update({'None':0})
+_channel_name_to_outmode_command_map.update({"None": 0})
 
 
 class LakeshoreModel335Channel(BaseSensorChannel):
