@@ -1467,7 +1467,7 @@ class DataSet(BaseDataSet):
             log.info(
                 "Dataset is expected to be larger that threshold. Using distributed export.",
                 extra={
-                    "file_name": file_path,
+                    "file_name": str(file_path),
                     "qcodes_guid": self.guid,
                     "ds_name": self.name,
                     "exp_name": self.exp_name,
@@ -1483,7 +1483,7 @@ class DataSet(BaseDataSet):
                 log.info(
                     "Writing individual files to temp dir.",
                     extra={
-                        "file_name": file_path,
+                        "file_name": str(file_path),
                         "qcodes_guid": self.guid,
                         "ds_name": self.name,
                         "exp_name": self.exp_name,
@@ -1504,7 +1504,7 @@ class DataSet(BaseDataSet):
                     log.info(
                         "Combining temp files into one file.",
                         extra={
-                            "file_name": file_path,
+                            "file_name": str(file_path),
                             "qcodes_guid": self.guid,
                             "ds_name": self.name,
                             "exp_name": self.exp_name,
