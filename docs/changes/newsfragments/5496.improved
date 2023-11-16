@@ -1,1 +1,0 @@
-Fixed a bug in the Agilent 8257D where on and off would call a non existing parameter. The methods have been updated to call ``output_enabled``.

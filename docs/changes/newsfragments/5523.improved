@@ -1,2 +1,0 @@
-The size calculation used to estimate when a dataset should be exported in chuncks has been improved.
-This will prevent "small" dataset with many rows from being exported in chuncks when not required.
