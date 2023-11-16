@@ -1,3 +1,0 @@
-Mock instruments have been moved from `qcodes.tests.instrument_mocks` to `qcodes.instrument_drivers.mock_instruments` and `DriverTestCase` from
-`qcodes.tests.driver_test_case` to `qcodes.extensions`. This is in preparation for no longer shipping `qcodes.tests` as part of the
-public api. The previous locations remain functional but will be deprecated after one release.

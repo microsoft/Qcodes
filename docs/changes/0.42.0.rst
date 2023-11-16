@@ -1,0 +1,31 @@
+QCoDeS 0.42.0 (2023-11-16)
+==========================
+
+Breaking Changes:
+-----------------
+
+- Tests are no longer shipped as part of the qcodes package. The `qcodes.tests`
+  namespace still exists but will be deprecated in QCoDeS 0.43.0.
+  `qcodes.test` is deprecated and will be removed in a future release.
+  To run the tests against an installed version clone git repo to matching tag and
+  run `pytest tests` from the root of the repo. (:pr:`5452`)
+
+
+Improved:
+---------
+
+- Fixed a bug in the Agilent 8257D where on and off would call a non existing parameter. The methods have been updated to call ``output_enabled``. (:pr:`5496`)
+- QCoDeS in memory datasets exported to netcdf with MultiIndexes are now
+  correctly decompressed when reloaded with load_by_id and friends. (:pr:`5517`)
+- Lakeshore 335 Output: Add parameter mapping for input=None (:pr:`5520`)
+- The size calculation used to estimate when a dataset should be exported in chuncks has been improved.
+  This will prevent "small" dataset with many rows from being exported in chuncks when not required. (:pr:`5523`)
+
+
+New:
+----
+
+- Mark python 3.12 as supported and fix deprecation warnings with python 3.12 (:pr:`5408`)
+- Mock instruments have been moved from `qcodes.tests.instrument_mocks` to `qcodes.instrument_drivers.mock_instruments` and `DriverTestCase` from
+  `qcodes.tests.driver_test_case` to `qcodes.extensions`. This is in preparation for no longer shipping `qcodes.tests` as part of the
+  public api. The previous locations remain functional but will be deprecated after one release. (:pr:`5486`)
