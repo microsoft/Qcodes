@@ -758,6 +758,39 @@ def test_export_dataset_small_no_delated(
     assert "Writing netcdf file directly" in caplog.records[0].msg
 
 
+def test_export_dataset_delayed_numeric(
+    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    mock_dataset_grid._export_limit = 0
+    with caplog.at_level(logging.INFO):
+        mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    assert (
+        "Dataset is expected to be larger that threshold. Using distributed export."
+        in caplog.records[0].msg
+    )
+    assert "Writing individual files to temp dir" in caplog.records[1].msg
+    assert "Combining temp files into one file" in caplog.records[2].msg
+    assert "Writing netcdf file using Dask delayed writer" in caplog.records[3].msg
+
+    loaded_ds = xr.load_dataset(mock_dataset_grid.export_info.export_paths["nc"])
+    assert loaded_ds.x.shape == (10,)
+    assert_allclose(loaded_ds.x, np.arange(10))
+    assert loaded_ds.y.shape == (5,)
+    assert_allclose(loaded_ds.y, np.arange(20, 25, 1))
+
+    arrays = []
+    for i in range(10):
+        arrays.append(np.arange(20 + i, 25 + i))
+    expected_z = np.array(arrays)
+
+    assert loaded_ds.z.shape == (10, 5)
+    assert_allclose(loaded_ds.z, expected_z)
+
+    _assert_xarray_metadata_is_as_expected(loaded_ds, mock_dataset_grid)
+
+
 def test_export_dataset_delayed(
     tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
 ) -> None:
