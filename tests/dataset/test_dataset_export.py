@@ -5,9 +5,11 @@ import logging
 import os
 from pathlib import Path
 
+import hypothesis.strategies as hst
 import numpy as np
 import pytest
 import xarray as xr
+from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose
 from pytest import LogCaptureFixture, TempPathFactory
 
@@ -826,11 +828,17 @@ def test_export_dataset_small_no_delated(
     assert "Writing netcdf file directly" in caplog.records[0].msg
 
 
+@settings(
+    deadline=None,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
+@given(max_num_files=hst.integers(min_value=1, max_value=55))
 def test_export_dataset_delayed_numeric(
-    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
+    max_num_files, tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
 ) -> None:
-    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    tmp_path = tmp_path_factory.mktemp(f"export_netcdf_{max_num_files}")
     mock_dataset_grid._export_limit = 0
+    mock_dataset_grid._max_num_files_export = max_num_files
     with caplog.at_level(logging.INFO):
         mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
