@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib
 import json
 import logging
-import sys
 import tempfile
 import time
 import uuid
@@ -1530,15 +1529,15 @@ class DataSet(BaseDataSet):
         Give an estimated size of the dataset as the size of a single row
         times the len of the dataset. Result is returned in Mega Bytes.
 
-        Note that this does not take overhead into account so it is more accurate
-        if the row size is "large"
+        Note that this does not take overhead from storing the array into account
+        so it is assumed that the total array is large compared to the overhead.
         """
         sample_data = self.get_parameter_data(start=1, end=1)
         row_size = 0.0
 
         for param_data in sample_data.values():
             for array in param_data.values():
-                row_size += sys.getsizeof(array)
+                row_size += array.size * array.dtype.itemsize
         return row_size * len(self) / 1024 / 1024
 
 
