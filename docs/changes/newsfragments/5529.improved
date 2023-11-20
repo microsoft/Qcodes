@@ -1,0 +1,1 @@
+Avoid warning from OpenTelemetry when exporting datasets to netcdf.
