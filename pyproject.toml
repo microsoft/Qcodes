@@ -229,12 +229,15 @@ filterwarnings = [
 # I isort
 # ISC flake8-implicit-str-concat
 # TID253 banned-module-level-imports
-select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253"]
+select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY"]
 # darker will fix this as code is
 # reformatted when it is changed.
-# We have a lot of use of f strings in log messages
+# G004 We have a lot of use of f strings in log messages
 # so disable that lint for now
-ignore = ["E501", "G004"]
+# NPY002 We have a lot of use of the legacy
+# random number generator. Eventually we should port this
+# code.
+ignore = ["E501", "G004", "NPY002"]
 
 extend-include = ["*.ipynb"]
 
