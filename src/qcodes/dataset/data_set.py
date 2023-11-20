@@ -1518,7 +1518,7 @@ class DataSet(BaseDataSet):
         else:
             log.info(
                 "Writing netcdf file directly.",
-                extra={"file_name": file_path},
+                extra={"file_name": str(file_path)},
             )
 
             file_path = super()._export_as_netcdf(path=path, file_name=file_name)
