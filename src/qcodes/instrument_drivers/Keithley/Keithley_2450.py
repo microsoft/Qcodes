@@ -10,7 +10,7 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
     invert_val_mapping,
 )
-from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
+from qcodes.validators import Arrays, Bool, Enum, Ints, Lists, Numbers
 
 
 class _SweepDict(TypedDict):
@@ -385,6 +385,7 @@ class Keithley2450Source(InstrumentChannel):
     def __init__(self, parent: "Keithley2450", name: str, proper_function: str) -> None:
         super().__init__(parent, name)
         self._proper_function = proper_function
+        self._block = False
         range_vals = self.function_modes[self._proper_function]["range_vals"]
         unit = self.function_modes[self._proper_function]["unit"]
 
@@ -472,9 +473,22 @@ class Keithley2450Source(InstrumentChannel):
             "when making a measurement.",
         )
 
-    def _set_proper_function(self, value: float, block: bool = True) -> None:
+        self.add_parameter(
+            "block_during_ramp",
+            get_cmd=self._block,
+            set_cmd=self._set_block,
+            vals=Bool(),
+            docstring="Setting the source output level alone cannot block the "
+            "execution of subsequent code. This parameter allows _proper_function"
+            "to either block or not.",
+        )
+
+    def _set_block(self, value: bool) -> None:
+        self._block = value
+
+    def _set_proper_function(self, value: float) -> None:
         self.write(f"SOUR:{self._proper_function} {value}")
-        if block:
+        if self._block:
             self.ask('*OPC?')
 
     def get_sweep_axis(self) -> np.ndarray:
