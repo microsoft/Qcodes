@@ -424,7 +424,7 @@ class Keithley2450Source(InstrumentChannel):
 
         self.add_parameter(
             self._proper_function,
-            set_cmd=f"SOUR:{self._proper_function} {{}}",
+            set_cmd=self._set_proper_function,
             get_cmd=f"SOUR:{self._proper_function}?",
             get_parser=float,
             unit=unit,
@@ -471,6 +471,11 @@ class Keithley2450Source(InstrumentChannel):
             "measured source value or the configured source value "
             "when making a measurement.",
         )
+
+    def _set_proper_function(self, value: float, block: bool = True) -> None:
+        self.write(f"SOUR:{self._proper_function} {value}")
+        if block:
+            self.ask('*OPC?')
 
     def get_sweep_axis(self) -> np.ndarray:
         if self._sweep_arguments is None:
