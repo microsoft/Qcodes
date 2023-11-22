@@ -187,7 +187,7 @@ class FieldVector:
         if names not in groups:
             raise ValueError("Can only set vector with a complete value set")
 
-        new_vector = FieldVector(**new_values)
+        new_vector = self.__class__(**new_values)
         self.copy(new_vector)
 
     def set_component(self, **new_values: float) -> None:
