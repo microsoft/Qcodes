@@ -34,7 +34,7 @@ deepdiff~=6.7.0
 defusedxml==0.7.1
 docutils==0.18.1
 entrypoints==0.4
-exceptiongroup~=1.1.0
+exceptiongroup~=1.2.0
 execnet~=2.0.2
 executing~=2.0.0
 fastjsonschema~=2.19.0
