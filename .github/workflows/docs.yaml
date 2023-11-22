@@ -43,7 +43,7 @@ jobs:
       # causing errors like in the docstring of from_bytes (from Int)
       # WARNING: Inline interpreted text or phrase reference start-string without end-string.
       SPHINX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
-      SPHINX_OPTS: "-v"
+      SPHINX_OPTS: "-v -j 2"
     steps:
     - uses: actions/checkout@v4.1.1
       with:
@@ -51,7 +51,7 @@ jobs:
         fetch-depth: '0'
     - name: set-sphinx-opts
       run: |
-        echo "SPHINX_OPTS=-W -v --keep-going" >> $GITHUB_ENV
+        echo "SPHINX_OPTS=-W -v --keep-going -j 2" >> $GITHUB_ENV
       if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
     - name: install pandoc linux
       run: |
