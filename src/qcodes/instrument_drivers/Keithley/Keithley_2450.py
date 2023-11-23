@@ -385,7 +385,6 @@ class Keithley2450Source(InstrumentChannel):
     def __init__(self, parent: "Keithley2450", name: str, proper_function: str) -> None:
         super().__init__(parent, name)
         self._proper_function = proper_function
-        self._block = False
         range_vals = self.function_modes[self._proper_function]["range_vals"]
         unit = self.function_modes[self._proper_function]["unit"]
 
@@ -477,6 +476,7 @@ class Keithley2450Source(InstrumentChannel):
             "block_during_ramp",
             get_cmd=None,
             set_cmd=None,
+            initial_value=False,
             vals=Bool(),
             docstring="Setting the source output level alone cannot block the "
             "execution of subsequent code. This parameter allows _proper_function"
