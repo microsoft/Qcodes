@@ -4,7 +4,7 @@ import time
 from collections.abc import Generator, Sequence
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from opentelemetry import trace
 
@@ -130,7 +130,7 @@ def parse_dond_into_args(
             raise ValueError("dond_into does not support multiple datasets")
         elif isinstance(par, ParameterBase) and par.gettable:
             params_meas.append(par)
-        elif isinstance(par, Callable):  # type: ignore [arg-type]
+        elif callable(par):
             params_meas.append(par)
     return sweep_instances, params_meas
 
