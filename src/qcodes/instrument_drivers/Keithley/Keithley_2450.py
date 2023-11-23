@@ -475,20 +475,17 @@ class Keithley2450Source(InstrumentChannel):
 
         self.add_parameter(
             "block_during_ramp",
-            get_cmd=self._block,
-            set_cmd=self._set_block,
+            get_cmd=None,
+            set_cmd=None,
             vals=Bool(),
             docstring="Setting the source output level alone cannot block the "
             "execution of subsequent code. This parameter allows _proper_function"
             "to either block or not.",
         )
 
-    def _set_block(self, value: bool) -> None:
-        self._block = value
-
     def _set_proper_function(self, value: float) -> None:
         self.write(f"SOUR:{self._proper_function} {value}")
-        if self._block:
+        if self.block_during_ramp():
             self.ask('*OPC?')
 
     def get_sweep_axis(self) -> np.ndarray:
