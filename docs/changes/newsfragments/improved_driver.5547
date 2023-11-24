@@ -1,0 +1,2 @@
+Keithley 2450s by default don't block when setting their output level, differing in behavior from the keithley 2400.
+I added a manual boolian parameter 'block_during_ramp' which forces a check that the ramp command has been completed when True.

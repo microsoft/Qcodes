@@ -10,7 +10,7 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
     invert_val_mapping,
 )
-from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
+from qcodes.validators import Arrays, Bool, Enum, Ints, Lists, Numbers
 
 
 class _SweepDict(TypedDict):
@@ -424,7 +424,7 @@ class Keithley2450Source(InstrumentChannel):
 
         self.add_parameter(
             self._proper_function,
-            set_cmd=f"SOUR:{self._proper_function} {{}}",
+            set_cmd=self._set_proper_function,
             get_cmd=f"SOUR:{self._proper_function}?",
             get_parser=float,
             unit=unit,
@@ -471,6 +471,22 @@ class Keithley2450Source(InstrumentChannel):
             "measured source value or the configured source value "
             "when making a measurement.",
         )
+
+        self.add_parameter(
+            "block_during_ramp",
+            initial_value=False,
+            get_cmd=None,
+            set_cmd=None,
+            vals=Bool(),
+            docstring="Setting the source output level alone cannot block the "
+            "execution of subsequent code. This parameter allows _proper_function"
+            "to either block or not.",
+        )
+
+    def _set_proper_function(self, value: float) -> None:
+        self.write(f"SOUR:{self._proper_function} {value}")
+        if self.block_during_ramp():
+            self.ask("*OPC?")
 
     def get_sweep_axis(self) -> np.ndarray:
         if self._sweep_arguments is None:
