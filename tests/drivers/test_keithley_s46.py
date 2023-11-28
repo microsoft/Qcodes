@@ -82,7 +82,8 @@ def test_query_close_once_at_init(caplog: LogCaptureFixture) -> None:
             address="GPIB::2::INSTR",
             pyvisa_sim_file="Keithley_s46.yaml",
         )
-        assert caplog.text.count(":CLOS?") == 1
+        assert caplog.text.count("Querying: :CLOS?") == 1
+        assert caplog.text.count("Writing into device input buffer: b':CLOS?") == 1
         inst.close()
 
 
