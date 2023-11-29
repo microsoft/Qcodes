@@ -1,9 +1,8 @@
-import logging
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pytest
-from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.rohde_schwarz.SGS100A import RohdeSchwarz_SGS100A
 
@@ -79,4 +78,3 @@ def test_IQ_gain_imbalance(sg) -> None:
 
 def test_IQ_angle(sg) -> None:
     verify_property(sg, "IQ_angle", [-8, -4, 0, 4, 8])
-
