@@ -1,0 +1,174 @@
+# SIMULATED INSTRUMENT FOR Rohde&Schwarz SGS100A
+spec: "1.0"
+devices:
+  SGS100A:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+    error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "QCoDeS, SGS100A_simulated, simulated, 0.0.1"
+
+    properties:
+
+      state:
+        default: 0
+        getter:
+          q: "OUTPut:MASTer:STATe?"
+          r: "{}"
+        setter:
+          q: "OUTPut:MASTer:STATe {}"
+
+      frequency:
+        default: 1e6
+        getter:
+          q: "SOUR:FREQ?"
+          r: "{}"
+        setter:
+          q: "SOUR:FREQ {:.2f}"
+
+      phase:
+        default: 0
+        getter:
+          q: "SOUR:PHAS?"
+          r: "{}"
+        setter:
+          q: "SOUR:PHAS {:.2f}"
+
+      power:
+        default: 0
+        getter:
+          q: "SOUR:POW?"
+          r: "{}"
+        setter:
+          q: "SOUR:POW {:.2f}"
+
+      status:
+        default: 0
+        getter:
+          q: ":OUTP:STAT?"
+          r: "{}"
+        setter:
+          q: ":OUTP:STAT {}"
+
+      IQ_state:
+        default: 0
+        getter:
+          q: ":IQ:STAT?"
+          r: "{}"
+        setter:
+          q: ":IQ:STAT {}"
+
+      pulsemod_state:
+        default: 0
+        getter:
+          q: ":SOUR:PULM:STAT?"
+          r: "{}"
+        setter:
+          q: ":SOUR:PULM:STAT {}"
+
+      pulsemod_source:
+        default: "INT"
+        getter:
+          q: "SOUR:PULM:SOUR?"
+          r: "{}"
+        setter:
+          q: "SOUR:PULM:SOUR {}"
+
+      ref_osc_source:
+        default: "INT"
+        getter:
+          q: "SOUR:ROSC:SOUR?"
+          r: "{}"
+        setter:
+          q: "SOUR:ROSC:SOUR {}"
+
+      # Define LO source INT/EXT (Only with K-90 option)
+      LO_source:
+        default : "INT"
+        getter:
+          q: "SOUR:LOSC:SOUR?"
+          r: "{}"
+        setter:
+          q: "SOUR:LOSC:SOUR {}"
+
+      # Define output at REF/LO Output (Only with K-90 option)
+      ref_LO_out:
+        default: "OFF"
+        getter:
+          q: "CONN:REFL:OUTP?"
+          r: "{}"
+        setter:
+          q: "CONN:REFL:OUTP {}"
+
+      # Frequency mw_source outputs when used as a reference
+      ref_osc_output_freq:
+        default: "1000MHz"
+        getter:
+          q: "SOUR:ROSC:OUTP:FREQ?"
+          r: "{}"
+        setter:
+          q: "SOUR:ROSC:OUTP:FREQ {}"
+
+      ref_osc_external_freq:
+        default: "1000MHz"
+        getter:
+          q: "SOUR:ROSC:EXT:FREQ?"
+          r: "{}"
+        setter:
+          q: "SOUR:ROSC:EXT:FREQ {}"
+
+      # IQ impairments
+      IQ_impairments:
+        default: 0
+        getter:
+          q: ":SOUR:IQ:IMP:STAT?"
+          r: "{}"
+        setter:
+          q: ":SOUR:IQ:IMP:STAT {}"
+
+      I_offset:
+        default: 0
+        getter:
+          q: "SOUR:IQ:IMP:LEAK:I?"
+          r: "{}"
+        setter:
+          q: "SOUR:IQ:IMP:LEAK:I {:.2f}"
+
+      Q_offset:
+        default: 0
+        getter:
+          q: "SOUR:IQ:IMP:LEAK:Q?"
+          r: "{}"
+        setter:
+          q: "SOUR:IQ:IMP:LEAK:Q {:.2f}"
+
+      IQ_gain_imbalance:
+        default: 0
+        getter:
+          q: "SOUR:IQ:IMP:IQR?"
+          r: "{}"
+        setter:
+          q: "SOUR:IQ:IMP:IQR {:.2f}"
+
+      IQ_angle:
+        default: 0
+        getter:
+          q: "SOUR:IQ:IMP:QUAD?"
+          r: "{}"
+        setter:
+          q: "SOUR:IQ:IMP:QUAD {:.2f}"
+
+resources:
+  GPIB::1::INSTR:
+    device: SGS100A
+  GPIB::2::INSTR:
+    device: SGS100A
+  GPIB::3::INSTR:
+    device: SGS100A
+  GPIB::4::INSTR:
+    device: SGS100A
+  GPIB::5::INSTR:
+    device: SGS100A
