@@ -147,7 +147,7 @@ class Monitor(Thread):
             use_root_instrument: Defines if parameters are grouped according to
                                 parameter.root_instrument or parameter.instrument
         """
-        super().__init__()
+        super().__init__(daemon=True)
 
         # Check that all values are valid parameters
         for parameter in parameters:
