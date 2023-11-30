@@ -7,8 +7,8 @@ import pytest
 from qcodes.instrument_drivers.rohde_schwarz.SGS100A import RohdeSchwarz_SGS100A
 
 
-@pytest.fixture(scope='function')
-def sg():
+@pytest.fixture(scope='function', name="sg")
+def _make_sg():
     """
     Create a RohdeSchwarz SGS100A instrument
     """
