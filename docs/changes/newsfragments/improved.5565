@@ -1,0 +1,1 @@
+qcodes.Monitor now runs as a daemon thread, resolving issues with closing python or ipython with a running qcodes.Monitor.
