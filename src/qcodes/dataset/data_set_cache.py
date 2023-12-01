@@ -5,6 +5,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
+
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
