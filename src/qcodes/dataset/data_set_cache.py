@@ -5,7 +5,6 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 import numpy as np
-
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
@@ -485,7 +484,11 @@ class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
 
         if self._loaded_from_completed_ds:
             return
-        self._dataset.completed = completed(self._dataset.conn, self._dataset.run_id)
+        # Only updated the completed property if necessary to avoid the warning emitted by
+        # mark_run_completed if the run is already marked completed.
+        is_completed = completed(self._dataset.conn, self._dataset.run_id)
+        if self._dataset.completed != is_completed:
+            self._dataset.completed = is_completed
         if self._dataset.completed:
             self._loaded_from_completed_ds = True
         if self._data == {}:
