@@ -485,7 +485,7 @@ class Keithley2450Source(InstrumentChannel):
 
     def _set_proper_function(self, value: float) -> None:
         self.write(f"SOUR:{self._proper_function} {value}")
-        if self.block_during_ramp():
+        if self.block_during_ramp:
             self.ask("*OPC?")
 
     def get_sweep_axis(self) -> np.ndarray:
