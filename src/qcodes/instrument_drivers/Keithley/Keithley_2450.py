@@ -607,7 +607,6 @@ class Keithley2450(VisaInstrument):
 
         self.add_parameter(
             "output_enabled",
-            initial_value="0",
             set_cmd=":OUTP {}",
             get_cmd=":OUTP?",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
