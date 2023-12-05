@@ -387,7 +387,12 @@ def length(conn: ConnectionPlus,
     Returns:
         the length of the table
     """
-    query = f"select MAX(id) from '{formatted_name}'"
+    # we replace ' in the table name to '' to make sure that
+    # if the formatted name contains ' that will not cause the ' '
+    # around formatted name to be ended
+    # https://stackoverflow.com/questions/603572/escape-single-quote-character-for-use-in-an-sqlite-query
+    escaped_formatted_name = formatted_name.replace("'", "''")
+    query = f"select MAX(id) from '{escaped_formatted_name}'"
     c = atomic_transaction(conn, query)
     _len = c.fetchall()[0][0]
     if _len is None:

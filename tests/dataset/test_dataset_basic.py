@@ -352,6 +352,7 @@ def test_add_experiments(experiment_name, sample_name, dataset_name) -> None:
     assert loaded_dataset.table_name == "{}-{}-{}".format(
         "results", exp.exp_id, loaded_dataset.counter
     )
+    assert len(loaded_dataset) == 0
     expected_ds_counter += 1
     dataset = new_data_set(dataset_name)
     dsid = dataset.run_id
