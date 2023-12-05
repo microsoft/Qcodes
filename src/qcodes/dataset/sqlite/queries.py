@@ -254,6 +254,9 @@ def get_shaped_parameter_data_for_one_paramtree(
         shape = rundescriber.shapes.get(output_param)
 
         if shape is not None:
+            # if the user calculates shape its very easy to end up putting in a
+            # float such as 100.0 rather than 100 so to be safe we cast to int here
+            shape = tuple(int(s) for s in shape)
             total_len_shape = np.prod(shape)
             for name, paramdata in one_param_output.items():
                 total_data_shape = np.prod(paramdata.shape)
