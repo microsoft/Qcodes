@@ -1,2 +1,2 @@
-Previously, the keithley 2450 driver had an initial value for the output. This is particularly dangerous when reinitializing/recovering from a kernal crash. 
+Previously, the keithley 2450 driver had an initial value for the output. This is particularly dangerous when reinitializing/recovering from a kernal crash.
 Initializing the instrument should leave all parameters unchanged. This PR removes the initial value for the output.
