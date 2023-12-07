@@ -27,7 +27,7 @@ class DummyBase(Instrument):
         return {
             "vendor": "QCoDeS",
             "model": str(self.__class__),
-            "seral": "NA",
+            "serial": "NA",
             "firmware": "NA",
         }
 
