@@ -212,7 +212,7 @@ def test_get_idn(testdummy: DummyInstrument) -> None:
     idn = {
         "vendor": "QCoDeS",
         "model": str(testdummy.__class__),
-        "seral": "NA",
+        "serial": "NA",
         "firmware": "NA",
     }
     assert testdummy.get_idn() == idn
