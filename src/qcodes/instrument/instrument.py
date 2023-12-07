@@ -307,7 +307,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
         return ins
 
     @staticmethod
-    def exist(name: str, instrument_class: type | None = None) -> bool:
+    def exist(name: str, instrument_class: type[Instrument] | None = None) -> bool:
         """
         Check if an instrument with a given names exists (i.e. is already
         instantiated).

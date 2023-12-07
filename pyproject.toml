@@ -204,6 +204,9 @@ ignore = [
     ]
 reportMissingTypeStubs = true
 stubPath = "typings/stubs"
+# we would like to move this to at least standard
+# eventually. From 1.1.339 onwards standard is the default
+typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
