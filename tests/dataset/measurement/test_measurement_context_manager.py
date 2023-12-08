@@ -627,6 +627,12 @@ def test_datasaver_scalars(
         datasaver.add_result(
             (DAC.ch1, set_values[breakpoint]), (DMM.v1, get_values[breakpoint])
         )
+        # test that work with time intervals are often flaky
+        # so we add a bit more wait time here if the expected number
+        # of points have not been written
+        for _ in range(10):
+            if not datasaver.points_written == breakpoint + 1:
+                sleep(write_period * 1.1)
         assert datasaver.points_written == breakpoint + 1
 
     assert datasaver.run_id == no_of_runs + 1
