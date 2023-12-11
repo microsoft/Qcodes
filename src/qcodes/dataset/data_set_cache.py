@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 import numpy as np
 
@@ -177,7 +177,9 @@ class DataSetCache(Generic[DatasetType]):
         """
         return self.to_pandas_dataframe_dict()
 
-    def to_xarray_dataarray_dict(self) -> dict[str, xr.DataArray]:
+    def to_xarray_dataarray_dict(
+        self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
+    ) -> dict[str, xr.DataArray]:  # noqa: F821
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
         :py:class:`xr.DataArray` s
@@ -190,9 +192,13 @@ class DataSetCache(Generic[DatasetType]):
 
         """
         data = self.data()
-        return load_to_xarray_dataarray_dict(self._dataset, data)
+        return load_to_xarray_dataarray_dict(
+            self._dataset, data, use_multi_index=use_multi_index
+        )
 
-    def to_xarray_dataset(self) -> xr.Dataset:
+    def to_xarray_dataset(
+        self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
+    ) -> xr.Dataset:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
         :py:class:`xr.Dataset` object.
@@ -207,7 +213,9 @@ class DataSetCache(Generic[DatasetType]):
 
         """
         data = self.data()
-        return load_to_xarray_dataset(self._dataset, data)
+        return load_to_xarray_dataset(
+            self._dataset, data, use_multi_index=use_multi_index
+        )
 
 
 def load_new_data_from_db_and_append(

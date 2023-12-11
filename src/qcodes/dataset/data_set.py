@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from queue import Queue
 from threading import Thread
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy
 from tqdm.auto import trange
@@ -971,6 +971,7 @@ class DataSet(BaseDataSet):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> dict[str, xr.DataArray]:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
@@ -1001,6 +1002,11 @@ class DataSet(BaseDataSet):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
+            use_multi_index: Should the data be exported using a multi index.
+                If the data is not on a grid this will create a xarray dataset
+                without missing datapoints. If set to "auto" multi index will be
+                used if putting the data on a grid would introduce missing data and
+                the shapes of the data is not set in the run description.
 
         Returns:
             Dictionary from requested parameter names to :py:class:`xr.DataArray` s
@@ -1012,10 +1018,10 @@ class DataSet(BaseDataSet):
 
                 dataarray_dict = ds.to_xarray_dataarray_dict()
         """
-        data = self.get_parameter_data(*params,
-                                       start=start,
-                                       end=end)
-        datadict = load_to_xarray_dataarray_dict(self, data)
+        data = self.get_parameter_data(*params, start=start, end=end)
+        datadict = load_to_xarray_dataarray_dict(
+            self, data, use_multi_index=use_multi_index
+        )
 
         return datadict
 
@@ -1024,6 +1030,7 @@ class DataSet(BaseDataSet):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> xr.Dataset:
         """
         Returns the values stored in the :class:`.DataSet` for the specified parameters
@@ -1052,7 +1059,11 @@ class DataSet(BaseDataSet):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
-
+            use_multi_index: Should the data be exported using a multi index.
+                If the data is not on a grid this will create a xarray dataset
+                without missing datapoints. If set to "auto" multi index will be
+                used if putting the data on a grid would introduce missing data and
+                the shapes of the data is not set in the run description.
         Returns:
             :py:class:`xr.Dataset` with the requested parameter(s) data as
             :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
@@ -1066,7 +1077,7 @@ class DataSet(BaseDataSet):
                                        start=start,
                                        end=end)
 
-        return load_to_xarray_dataset(self, data)
+        return load_to_xarray_dataset(self, data, use_multi_index=use_multi_index)
 
     def write_data_to_text_file(
         self, path: str, single_file: bool = False, single_file_name: str | None = None
