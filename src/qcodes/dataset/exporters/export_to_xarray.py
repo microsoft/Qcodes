@@ -69,6 +69,11 @@ def _load_to_xarray_dataarray_dict_no_metadata(
     import pandas as pd
     import xarray as xr
 
+    if use_multi_index not in ("auto", "always", "never"):
+        raise ValueError(
+            f"Invalid value for use_multi_index. Expected one of 'auto', 'always', 'never' but got {use_multi_index}"
+        )
+
     data_xrdarray_dict: dict[str, xr.DataArray] = {}
 
     for name, subdict in datadict.items():

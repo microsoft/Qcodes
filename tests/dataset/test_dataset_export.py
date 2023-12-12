@@ -1296,3 +1296,14 @@ def test_multi_index_options_non_grid(mock_dataset_non_grid) -> None:
 
     xds_always = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="always")
     assert xds_always.dims == {"multi_index": 50}
+
+
+def test_multi_index_wrong_option(mock_dataset_non_grid) -> None:
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)
+
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)
+
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")
