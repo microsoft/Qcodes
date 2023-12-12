@@ -1002,11 +1002,18 @@ class DataSet(BaseDataSet):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
-            use_multi_index: Should the data be exported using a multi index.
-                If the data is not on a grid this will create a xarray dataset
-                without missing datapoints. If set to "auto" multi index will be
-                used if putting the data on a grid would introduce missing data and
-                the shapes of the data is not set in the run description.
+            use_multi_index: Should the data be exported using a multi index
+                rather than regular cartesian indexes. With regular cartesian
+                coordinates, the xarray dimensions are calculated from the sets or all
+                values along the setpoint axis of the QCoDeS dataset. Any position
+                in this grid not corresponding to a measured value will be filled
+                with a placeholder (typically NaN) potentially creating a sparse
+                dataset with significant storage overhead.
+                Multi index avoids this and is therefor better
+                suited for data that is known to not be on a grid.
+                If set to "auto" multi index will be used if projecting the data onto
+                a grid requires filling non measured values with NaN  and the shapes
+                of the data has not been set in the run description.
 
         Returns:
             Dictionary from requested parameter names to :py:class:`xr.DataArray` s
@@ -1059,11 +1066,18 @@ class DataSet(BaseDataSet):
                 if None
             end: end value of selection range (by results count); ignored if
                 None
-            use_multi_index: Should the data be exported using a multi index.
-                If the data is not on a grid this will create a xarray dataset
-                without missing datapoints. If set to "auto" multi index will be
-                used if putting the data on a grid would introduce missing data and
-                the shapes of the data is not set in the run description.
+            use_multi_index: Should the data be exported using a multi index
+                rather than regular cartesian indexes. With regular cartesian
+                coordinates, the xarray dimensions are calculated from the sets or all
+                values along the setpoint axis of the QCoDeS dataset. Any position
+                in this grid not corresponding to a measured value will be filled
+                with a placeholder (typically NaN) potentially creating a sparse
+                dataset with significant storage overhead.
+                Multi index avoids this and is therefor better
+                suited for data that is known to not be on a grid.
+                If set to "auto" multi index will be used if projecting the data onto
+                a grid requires filling non measured values with NaN  and the shapes
+                of the data has not been set in the run description.
         Returns:
             :py:class:`xr.Dataset` with the requested parameter(s) data as
             :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
