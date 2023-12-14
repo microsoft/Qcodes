@@ -127,6 +127,74 @@ def _make_mock_dataset_grid(experiment) -> DataSet:
     return dataset
 
 
+@pytest.fixture(name="mock_dataset_grid_with_shapes")
+def _make_mock_dataset_grid_with_shapes(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps, shapes={"z": (10, 5)})
+
+    dataset.mark_started()
+    for x in range(10):
+        for y in range(20, 25):
+            results = [{"x": x, "y": y, "z": x + y}]
+            dataset.add_results(results)
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_grid_incomplete")
+def _make_mock_dataset_grid_incomplete(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps)
+
+    dataset.mark_started()
+    break_loop = False
+
+    for x in range(10):
+        if break_loop is True:
+            break
+        for y in range(20, 25):
+            results = [{"x": x, "y": y, "z": x + y}]
+            dataset.add_results(results)
+            if y == 23 and x == 7:
+                break_loop = True
+                break
+    dataset.mark_completed()
+    return dataset
+
+
+@pytest.fixture(name="mock_dataset_grid_incomplete_with_shapes")
+def _make_mock_dataset_grid_incomplete_with_shapes(experiment) -> DataSet:
+    dataset = new_data_set("dataset")
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={zparam: (xparam, yparam)})
+    dataset.set_interdependencies(idps, shapes={"z": (10, 5)})
+
+    dataset.mark_started()
+    break_loop = False
+
+    for x in range(10):
+        if break_loop is True:
+            break
+        for y in range(20, 25):
+            results = [{"x": x, "y": y, "z": x + y}]
+            dataset.add_results(results)
+            if y == 23 and x == 7:
+                break_loop = True
+                break
+    dataset.mark_completed()
+    return dataset
+
+
 @pytest.fixture(name="mock_dataset_numpy")
 def _make_mock_dataset_numpy(experiment) -> DataSet:
     dataset = new_data_set("dataset")
@@ -1136,3 +1204,106 @@ def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
     assert xarray_ds.parent_dataset_links == links_to_str(
         qc_dataset.parent_dataset_links
     )
+
+
+def test_multi_index_options_grid(mock_dataset_grid) -> None:
+    assert mock_dataset_grid.description.shapes is None
+
+    xds = mock_dataset_grid.to_xarray_dataset()
+    assert xds.dims == {"x": 10, "y": 5}
+
+    xds_never = mock_dataset_grid.to_xarray_dataset(use_multi_index="never")
+    assert xds_never.dims == {"x": 10, "y": 5}
+
+    xds_auto = mock_dataset_grid.to_xarray_dataset(use_multi_index="auto")
+    assert xds_auto.dims == {"x": 10, "y": 5}
+
+    xds_always = mock_dataset_grid.to_xarray_dataset(use_multi_index="always")
+    assert xds_always.dims == {"multi_index": 50}
+
+
+def test_multi_index_options_grid_with_shape(mock_dataset_grid_with_shapes) -> None:
+    assert mock_dataset_grid_with_shapes.description.shapes == {"z": (10, 5)}
+
+    xds = mock_dataset_grid_with_shapes.to_xarray_dataset()
+    assert xds.dims == {"x": 10, "y": 5}
+
+    xds_never = mock_dataset_grid_with_shapes.to_xarray_dataset(use_multi_index="never")
+    assert xds_never.dims == {"x": 10, "y": 5}
+
+    xds_auto = mock_dataset_grid_with_shapes.to_xarray_dataset(use_multi_index="auto")
+    assert xds_auto.dims == {"x": 10, "y": 5}
+
+    xds_always = mock_dataset_grid_with_shapes.to_xarray_dataset(
+        use_multi_index="always"
+    )
+    assert xds_always.dims == {"multi_index": 50}
+
+
+def test_multi_index_options_incomplete_grid(mock_dataset_grid_incomplete) -> None:
+    assert mock_dataset_grid_incomplete.description.shapes is None
+
+    xds = mock_dataset_grid_incomplete.to_xarray_dataset()
+    assert xds.dims == {"multi_index": 39}
+
+    xds_never = mock_dataset_grid_incomplete.to_xarray_dataset(use_multi_index="never")
+    assert xds_never.dims == {"x": 8, "y": 5}
+
+    xds_auto = mock_dataset_grid_incomplete.to_xarray_dataset(use_multi_index="auto")
+    assert xds_auto.dims == {"multi_index": 39}
+
+    xds_always = mock_dataset_grid_incomplete.to_xarray_dataset(
+        use_multi_index="always"
+    )
+    assert xds_always.dims == {"multi_index": 39}
+
+
+def test_multi_index_options_incomplete_grid_with_shapes(
+    mock_dataset_grid_incomplete_with_shapes,
+) -> None:
+    assert mock_dataset_grid_incomplete_with_shapes.description.shapes == {"z": (10, 5)}
+
+    xds = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset()
+    assert xds.dims == {"x": 8, "y": 5}
+
+    xds_never = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset(
+        use_multi_index="never"
+    )
+    assert xds_never.dims == {"x": 8, "y": 5}
+
+    xds_auto = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset(
+        use_multi_index="auto"
+    )
+    assert xds_auto.dims == {"x": 8, "y": 5}
+
+    xds_always = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset(
+        use_multi_index="always"
+    )
+    assert xds_always.dims == {"multi_index": 39}
+
+
+def test_multi_index_options_non_grid(mock_dataset_non_grid) -> None:
+    assert mock_dataset_non_grid.description.shapes is None
+
+    xds = mock_dataset_non_grid.to_xarray_dataset()
+    assert xds.dims == {"multi_index": 50}
+
+    xds_never = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="never")
+    assert xds_never.dims == {"x": 50, "y": 50}
+
+    xds_auto = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="auto")
+    assert xds_auto.dims == {"multi_index": 50}
+
+    xds_always = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="always")
+    assert xds_always.dims == {"multi_index": 50}
+
+
+def test_multi_index_wrong_option(mock_dataset_non_grid) -> None:
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=True)
+
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index=False)
+
+    with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
+        mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")

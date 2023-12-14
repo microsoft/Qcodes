@@ -5,7 +5,7 @@ import warnings
 from collections.abc import Hashable, Mapping
 from math import prod
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 import numpy as np
 from tqdm.dask import TqdmCallback
@@ -61,10 +61,18 @@ def _calculate_index_shape(idx: pd.Index | pd.MultiIndex) -> dict[Hashable, int]
 
 
 def _load_to_xarray_dataarray_dict_no_metadata(
-    dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
+    dataset: DataSetProtocol,
+    datadict: Mapping[str, Mapping[str, np.ndarray]],
+    *,
+    use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> dict[str, xr.DataArray]:
     import pandas as pd
     import xarray as xr
+
+    if use_multi_index not in ("auto", "always", "never"):
+        raise ValueError(
+            f"Invalid value for use_multi_index. Expected one of 'auto', 'always', 'never' but got {use_multi_index}"
+        )
 
     data_xrdarray_dict: dict[str, xr.DataArray] = {}
 
@@ -94,8 +102,16 @@ def _load_to_xarray_dataarray_dict_no_metadata(
                 index_prod = prod(calc_index.values())
                 # if the product of the len of individual index dims == len(total_index)
                 # we are on a grid
+
                 on_grid = index_prod == len(index)
-                if not on_grid:
+
+                export_with_multi_index = (
+                    not on_grid
+                    and dataset.description.shapes is None
+                    and use_multi_index == "auto"
+                ) or use_multi_index == "always"
+
+                if export_with_multi_index:
                     assert isinstance(df.index, pd.MultiIndex)
 
                     if hasattr(xr, "Coordinates"):
@@ -115,9 +131,14 @@ def _load_to_xarray_dataarray_dict_no_metadata(
 
 
 def load_to_xarray_dataarray_dict(
-    dataset: DataSetProtocol, datadict: Mapping[str, Mapping[str, np.ndarray]]
+    dataset: DataSetProtocol,
+    datadict: Mapping[str, Mapping[str, np.ndarray]],
+    *,
+    use_multi_index: Literal["auto", "always", "never"] = "auto",
 ) -> dict[str, xr.DataArray]:
-    dataarrays = _load_to_xarray_dataarray_dict_no_metadata(dataset, datadict)
+    dataarrays = _load_to_xarray_dataarray_dict_no_metadata(
+        dataset, datadict, use_multi_index=use_multi_index
+    )
 
     for dataname, dataarray in dataarrays.items():
         _add_param_spec_to_xarray_coords(dataset, dataarray)
@@ -157,7 +178,12 @@ def _add_metadata_to_xarray(
             xrdataset.attrs[metadata_tag] = metadata
 
 
-def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.Dataset:
+def load_to_xarray_dataset(
+    dataset: DataSetProtocol,
+    data: ParameterData,
+    *,
+    use_multi_index: Literal["auto", "always", "never"] = "auto",
+) -> xr.Dataset:
     import xarray as xr
 
     if not _same_setpoints(data):
@@ -168,7 +194,9 @@ def load_to_xarray_dataset(dataset: DataSetProtocol, data: ParameterData) -> xr.
             "independent parameter to its own datarray."
         )
 
-    data_xrdarray_dict = _load_to_xarray_dataarray_dict_no_metadata(dataset, data)
+    data_xrdarray_dict = _load_to_xarray_dataarray_dict_no_metadata(
+        dataset, data, use_multi_index=use_multi_index
+    )
 
     # Casting Hashable for the key type until python/mypy#1114
     # and python/typing#445 are resolved.

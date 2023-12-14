@@ -7,7 +7,15 @@ import warnings
 from collections.abc import Mapping, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Protocol, Union, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Literal,
+    Protocol,
+    Union,
+    runtime_checkable,
+)
 
 import numpy as np
 from typing_extensions import TypeAlias
@@ -257,6 +265,7 @@ class DataSetProtocol(Protocol):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> dict[str, xr.DataArray]:
         ...
 
@@ -265,6 +274,7 @@ class DataSetProtocol(Protocol):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> xr.Dataset:
         ...
 

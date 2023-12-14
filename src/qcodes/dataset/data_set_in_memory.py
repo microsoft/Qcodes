@@ -8,7 +8,7 @@ import time
 import warnings
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 import numpy as np
 
@@ -838,6 +838,7 @@ class DataSetInMem(BaseDataSet):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> dict[str, xr.DataArray]:
         self._warn_if_set(*params, start=start, end=end)
         return self.cache.to_xarray_dataarray_dict()
@@ -847,6 +848,7 @@ class DataSetInMem(BaseDataSet):
         *params: str | ParamSpec | ParameterBase,
         start: int | None = None,
         end: int | None = None,
+        use_multi_index: Literal["auto", "always", "never"] = "auto",
     ) -> xr.Dataset:
         self._warn_if_set(*params, start=start, end=end)
         return self.cache.to_xarray_dataset()

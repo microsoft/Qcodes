@@ -1,0 +1,5 @@
+The use of multi index when exporting to xarray (and netcdf files) has been made smarter
+such that any dataset with a known shape (such as those measured by doNd etc) will
+never be automatically exported using multi index even in the case of incomplete datasets (i.e. due to an interrupted measurement).
+Furthermore `to_xarray_dataset` and `to_xarray_dataarray_dict` have gained a key word argument `use_multi_index` to allow the user
+to control the use of multi indexes.
