@@ -930,7 +930,7 @@ def test_export_dataset_delayed_complex(
 
 def test_export_non_grid_dataset_xarray(mock_dataset_non_grid: DataSet) -> None:
     xr_ds = mock_dataset_non_grid.to_xarray_dataset()
-    assert xr_ds.dims == {"multi_index": 50}
+    assert xr_ds.sizes == {"multi_index": 50}
     assert len(xr_ds.coords) == 3  # dims + 1 multi index
     assert "x" in xr_ds.coords
     assert len(xr_ds.coords["x"].attrs) == 8
@@ -948,7 +948,7 @@ def test_export_non_grid_in_grid_dataset_xarray(
     # for each x we measure 50 points as a function of random values of y1 and y2
 
     assert len(xr_ds.coords) == 4  # dims + 1 multi index
-    assert xr_ds.dims == {"multi_index": 450}
+    assert xr_ds.sizes == {"multi_index": 450}
     # ideally we would probably expect this to be {x: 9, multi_index: 50}
     # however at the moment we do not store the "multiindexed" parameters
     # seperately from the "regular" index parameters when there is a multiindex
@@ -980,7 +980,7 @@ def test_export_non_grid_dataset(
     assert "multi_index" in xr_ds.coords
     assert "x" in xr_ds.coords
     assert "y" in xr_ds.coords
-    assert xr_ds.dims == {"multi_index": 50}
+    assert xr_ds.sizes == {"multi_index": 50}
 
     expected_path = f"qcodes_{mock_dataset_non_grid.captured_run_id}_{mock_dataset_non_grid.guid}.nc"
     assert os.listdir(path) == [expected_path]
@@ -1014,7 +1014,7 @@ def test_export_non_grid_in_mem_dataset(
     assert "multi_index" in xr_ds.coords
     assert "x" in xr_ds.coords
     assert "y" in xr_ds.coords
-    assert xr_ds.dims == {"multi_index": 50}
+    assert xr_ds.sizes == {"multi_index": 50}
 
     expected_path = f"qcodes_{mock_dataset_non_grid_in_mem.captured_run_id}_{mock_dataset_non_grid_in_mem.guid}.nc"
     assert os.listdir(path) == [expected_path]
@@ -1059,7 +1059,7 @@ def test_export_non_grid_in_grid_dataset(
     assert "y1" in xr_ds.coords
     assert "y2" in xr_ds.coords
 
-    assert xr_ds.dims == {"multi_index": 450}
+    assert xr_ds.sizes == {"multi_index": 450}
 
     expected_path = f"qcodes_{mock_dataset_non_grid_in_grid.captured_run_id}_{mock_dataset_non_grid_in_grid.guid}.nc"
     assert os.listdir(path) == [expected_path]
@@ -1096,7 +1096,7 @@ def test_export_grid_in_non_grid_dataset(
     assert "x2" in xr_ds.coords
     assert "y" in xr_ds.coords
 
-    assert xr_ds.dims == {"multi_index": 50}
+    assert xr_ds.sizes == {"multi_index": 50}
 
     expected_path = f"qcodes_{mock_dataset_grid_in_non_grid.captured_run_id}_{mock_dataset_grid_in_non_grid.guid}.nc"
     assert os.listdir(path) == [expected_path]
@@ -1134,7 +1134,7 @@ def test_export_non_grid_in_non_grid_dataset(
     assert "y1" in xr_ds.coords
     assert "y2" in xr_ds.coords
 
-    assert xr_ds.dims == {"multi_index": 50}
+    assert xr_ds.sizes == {"multi_index": 50}
 
     expected_path = f"qcodes_{mock_dataset_non_grid_in_non_grid.captured_run_id}_{mock_dataset_non_grid_in_non_grid.guid}.nc"
     assert os.listdir(path) == [expected_path]
@@ -1210,52 +1210,52 @@ def test_multi_index_options_grid(mock_dataset_grid) -> None:
     assert mock_dataset_grid.description.shapes is None
 
     xds = mock_dataset_grid.to_xarray_dataset()
-    assert xds.dims == {"x": 10, "y": 5}
+    assert xds.sizes == {"x": 10, "y": 5}
 
     xds_never = mock_dataset_grid.to_xarray_dataset(use_multi_index="never")
-    assert xds_never.dims == {"x": 10, "y": 5}
+    assert xds_never.sizes == {"x": 10, "y": 5}
 
     xds_auto = mock_dataset_grid.to_xarray_dataset(use_multi_index="auto")
-    assert xds_auto.dims == {"x": 10, "y": 5}
+    assert xds_auto.sizes == {"x": 10, "y": 5}
 
     xds_always = mock_dataset_grid.to_xarray_dataset(use_multi_index="always")
-    assert xds_always.dims == {"multi_index": 50}
+    assert xds_always.sizes == {"multi_index": 50}
 
 
 def test_multi_index_options_grid_with_shape(mock_dataset_grid_with_shapes) -> None:
     assert mock_dataset_grid_with_shapes.description.shapes == {"z": (10, 5)}
 
     xds = mock_dataset_grid_with_shapes.to_xarray_dataset()
-    assert xds.dims == {"x": 10, "y": 5}
+    assert xds.sizes == {"x": 10, "y": 5}
 
     xds_never = mock_dataset_grid_with_shapes.to_xarray_dataset(use_multi_index="never")
-    assert xds_never.dims == {"x": 10, "y": 5}
+    assert xds_never.sizes == {"x": 10, "y": 5}
 
     xds_auto = mock_dataset_grid_with_shapes.to_xarray_dataset(use_multi_index="auto")
-    assert xds_auto.dims == {"x": 10, "y": 5}
+    assert xds_auto.sizes == {"x": 10, "y": 5}
 
     xds_always = mock_dataset_grid_with_shapes.to_xarray_dataset(
         use_multi_index="always"
     )
-    assert xds_always.dims == {"multi_index": 50}
+    assert xds_always.sizes == {"multi_index": 50}
 
 
 def test_multi_index_options_incomplete_grid(mock_dataset_grid_incomplete) -> None:
     assert mock_dataset_grid_incomplete.description.shapes is None
 
     xds = mock_dataset_grid_incomplete.to_xarray_dataset()
-    assert xds.dims == {"multi_index": 39}
+    assert xds.sizes == {"multi_index": 39}
 
     xds_never = mock_dataset_grid_incomplete.to_xarray_dataset(use_multi_index="never")
-    assert xds_never.dims == {"x": 8, "y": 5}
+    assert xds_never.sizes == {"x": 8, "y": 5}
 
     xds_auto = mock_dataset_grid_incomplete.to_xarray_dataset(use_multi_index="auto")
-    assert xds_auto.dims == {"multi_index": 39}
+    assert xds_auto.sizes == {"multi_index": 39}
 
     xds_always = mock_dataset_grid_incomplete.to_xarray_dataset(
         use_multi_index="always"
     )
-    assert xds_always.dims == {"multi_index": 39}
+    assert xds_always.sizes == {"multi_index": 39}
 
 
 def test_multi_index_options_incomplete_grid_with_shapes(
@@ -1264,38 +1264,38 @@ def test_multi_index_options_incomplete_grid_with_shapes(
     assert mock_dataset_grid_incomplete_with_shapes.description.shapes == {"z": (10, 5)}
 
     xds = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset()
-    assert xds.dims == {"x": 8, "y": 5}
+    assert xds.sizes == {"x": 8, "y": 5}
 
     xds_never = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset(
         use_multi_index="never"
     )
-    assert xds_never.dims == {"x": 8, "y": 5}
+    assert xds_never.sizes == {"x": 8, "y": 5}
 
     xds_auto = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset(
         use_multi_index="auto"
     )
-    assert xds_auto.dims == {"x": 8, "y": 5}
+    assert xds_auto.sizes == {"x": 8, "y": 5}
 
     xds_always = mock_dataset_grid_incomplete_with_shapes.to_xarray_dataset(
         use_multi_index="always"
     )
-    assert xds_always.dims == {"multi_index": 39}
+    assert xds_always.sizes == {"multi_index": 39}
 
 
 def test_multi_index_options_non_grid(mock_dataset_non_grid) -> None:
     assert mock_dataset_non_grid.description.shapes is None
 
     xds = mock_dataset_non_grid.to_xarray_dataset()
-    assert xds.dims == {"multi_index": 50}
+    assert xds.sizes == {"multi_index": 50}
 
     xds_never = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="never")
-    assert xds_never.dims == {"x": 50, "y": 50}
+    assert xds_never.sizes == {"x": 50, "y": 50}
 
     xds_auto = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="auto")
-    assert xds_auto.dims == {"multi_index": 50}
+    assert xds_auto.sizes == {"multi_index": 50}
 
     xds_always = mock_dataset_non_grid.to_xarray_dataset(use_multi_index="always")
-    assert xds_always.dims == {"multi_index": 50}
+    assert xds_always.sizes == {"multi_index": 50}
 
 
 def test_multi_index_wrong_option(mock_dataset_non_grid) -> None:

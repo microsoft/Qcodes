@@ -29,7 +29,7 @@ def assert_dataset_as_expected(
     dataset, dims_dict: dict[str, int], data_vars: Sequence[str]
 ):
     xr_ds = dataset.to_xarray_dataset()
-    assert xr_ds.dims == dims_dict
+    assert xr_ds.sizes == dims_dict
     assert set(xr_ds.data_vars) == set(data_vars)
 
 
