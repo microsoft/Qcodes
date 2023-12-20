@@ -13,6 +13,7 @@ from queue import Queue
 from threading import Thread
 from typing import TYPE_CHECKING, Any, Literal
 
+import cf_xarray as cfxr
 import numpy
 from tqdm.auto import tqdm
 
@@ -1543,7 +1544,9 @@ class DataSet(BaseDataSet):
                         temp_path / file_name_template.format(i),
                     )
                 files = tuple(temp_path.glob("*.nc"))
-                data = xr.open_mfdataset(files)
+                data = xr.open_mfdataset(
+                    files, preprocess=cfxr.coding.decode_compress_to_multi_index
+                )
                 try:
                     log.info(
                         "Combining temp files into one file.",
