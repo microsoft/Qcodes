@@ -8,7 +8,7 @@ alabaster==0.7.13
 argon2-cffi~=23.1.0
 argon2-cffi-bindings~=21.2.0
 asttokens~=2.4.0
-attrs~=23.1.0
+attrs~=23.2.0
 autodocsumm==0.2.11
 azure-core~=1.29.0
 azure-identity~=1.15.0
