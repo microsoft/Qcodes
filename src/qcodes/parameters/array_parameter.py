@@ -21,6 +21,25 @@ if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase
 
 
+try:
+    from qcodes_loop.data.data_array import DataArray
+
+    _SP_TYPES: tuple[type, ...] = (
+        type(None),
+        DataArray,
+        collections.abc.Sequence,
+        collections.abc.Iterator,
+        np.ndarray,
+    )
+except ImportError:
+    _SP_TYPES: tuple[type, ...] = (
+        type(None),
+        collections.abc.Sequence,
+        collections.abc.Iterator,
+        np.ndarray,
+    )
+
+
 class ArrayParameter(ParameterBase):
     """
     A gettable parameter that returns an array of values.
@@ -154,23 +173,8 @@ class ArrayParameter(ParameterBase):
         # require one setpoint per dimension of shape
         sp_shape = (len(shape),)
 
-        if has_loop:
-            sp_types: tuple[type, ...] = (
-                nt,
-                DataArray,
-                collections.abc.Sequence,
-                collections.abc.Iterator,
-                np.ndarray,
-            )
-        else:
-            sp_types = (
-                nt,
-                collections.abc.Sequence,
-                collections.abc.Iterator,
-                np.ndarray,
-            )
         if setpoints is not None and not is_sequence_of(
-            setpoints, sp_types, shape=sp_shape
+            setpoints, _SP_TYPES, shape=sp_shape
         ):
             raise ValueError("setpoints must be a tuple of arrays")
         if setpoint_names is not None and not is_sequence_of(

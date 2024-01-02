@@ -6,19 +6,29 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-try:
-    from qcodes_loop.data.data_array import DataArray
-
-    has_loop = True
-except ImportError:
-    has_loop = False
-
-
 from .parameter_base import ParameterBase
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
     from qcodes.instrument import InstrumentBase
+
+try:
+    from qcodes_loop.data.data_array import DataArray
+
+    _SP_TYPES: tuple[type, ...] = (
+        type(None),
+        DataArray,
+        Sequence,
+        Iterator,
+        np.ndarray,
+    )
+except ImportError:
+    _SP_TYPES: tuple[type, ...] = (
+        type(None),
+        Sequence,
+        Iterator,
+        np.ndarray,
+    )
 
 
 def _is_nested_sequence_or_none(
@@ -180,22 +190,7 @@ class MultiParameter(ParameterBase):
             )
         self.shapes = shapes
 
-        if has_loop:
-            sp_types: tuple[type, ...] = (
-                nt,
-                DataArray,
-                Sequence,
-                Iterator,
-                np.ndarray,
-            )
-        else:
-            sp_types = (
-                nt,
-                Sequence,
-                Iterator,
-                np.ndarray,
-            )
-        if not _is_nested_sequence_or_none(setpoints, sp_types, shapes):
+        if not _is_nested_sequence_or_none(setpoints, _SP_TYPES, shapes):
             raise ValueError("setpoints must be a tuple of tuples of arrays")
 
         if not _is_nested_sequence_or_none(setpoint_names, (nt, str), shapes):
