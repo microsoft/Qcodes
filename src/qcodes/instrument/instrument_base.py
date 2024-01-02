@@ -396,6 +396,8 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         snapshot = self.snapshot(update=update)
 
         par_lengths = [len(p) for p in snapshot["parameters"]]
+        # handle the case of no parameters
+        par_lengths = par_lengths or [0]
 
         # Min of 50 is to prevent a super long parameter name to break this
         # function

@@ -14,7 +14,12 @@ from weakref import WeakValueDictionary
 import pytest
 from pytest import FixtureRequest
 
-from qcodes.instrument import Instrument, InstrumentBase, find_or_create_instrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentBase,
+    InstrumentModule,
+    find_or_create_instrument,
+)
 from qcodes.instrument_drivers.mock_instruments import (
     DummyChannelInstrument,
     DummyFailingInstrument,
@@ -47,6 +52,16 @@ def _dummy_channel_instr() -> Iterator[DummyChannelInstrument]:
 @pytest.fixture(name="parabola", scope="function")
 def _dummy_parabola() -> Iterator[MockParabola]:
     instrument = MockParabola("parabola")
+    try:
+        yield instrument
+    finally:
+        instrument.close()
+
+
+@pytest.fixture(name="empty_instrument_with_empty_submodule", scope="function")
+def _empty_instrument_with_empty_submodule() -> Iterator[Instrument]:
+    instrument = Instrument("EmptyInstrument")
+    instrument.add_submodule("A", InstrumentModule(instrument, "B"))
     try:
         yield instrument
     finally:
@@ -318,6 +333,10 @@ def test_meta_instrument(parabola) -> None:
     assert all(len(line) <= 80 for line in readable_snap.splitlines())
     # Gain is included in output with correct value
     assert re.search(r"gain[ \t]+:[ \t]+2", readable_snap) is not None
+
+
+def test_empty_instrument(empty_instrument_with_empty_submodule: Instrument) -> None:
+    empty_instrument_with_empty_submodule.print_readable_snapshot()
 
 
 def test_find(testdummy) -> None:
