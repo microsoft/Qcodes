@@ -247,7 +247,6 @@ class DataSet(BaseDataSet):
         self._cache: DataSetCacheWithDBBackend = DataSetCacheWithDBBackend(self)
         self._results: list[dict[str, VALUE]] = []
         self._in_memory_cache = in_memory_cache
-        self._export_limit = 1000
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
@@ -1487,7 +1486,11 @@ class DataSet(BaseDataSet):
         import xarray as xr
 
         file_path = path / file_name
-        if self._estimate_ds_size() > self._export_limit:
+        if (
+            qcodes.config.dataset.export_chunked_export_of_large_files_enabled
+            and self._estimate_ds_size()
+            > qcodes.config.dataset.export_chunked_threshold
+        ):
             log.info(
                 "Dataset is expected to be larger that threshold. Using distributed export.",
                 extra={
@@ -1495,7 +1498,7 @@ class DataSet(BaseDataSet):
                     "qcodes_guid": self.guid,
                     "ds_name": self.name,
                     "exp_name": self.exp_name,
-                    "_export_limit": self._export_limit,
+                    "_export_limit": qcodes.config.dataset.export_chunked_threshold,
                     "_estimated_ds_size": self._estimate_ds_size(),
                 },
             )
