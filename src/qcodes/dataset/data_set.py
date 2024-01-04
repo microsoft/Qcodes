@@ -1487,7 +1487,7 @@ class DataSet(BaseDataSet):
 
         file_path = path / file_name
         if (
-            qcodes.config.dataset.export_chunked_export_of_large_files
+            qcodes.config.dataset.export_chunked_export_of_large_files_enabled
             and self._estimate_ds_size()
             > qcodes.config.dataset.export_chunked_threshold
         ):

@@ -363,7 +363,7 @@
                     },
                     "default": ["captured_run_id", "guid"]
                 },
-                "export_chunked_export_of_large_files": {
+                "export_chunked_export_of_large_files_enabled": {
                     "type": "boolean",
                     "default": false,
                     "description": "Should large dataset be exported to netcdf in chuncks and then recombined into one file. This reduces the memory requirements for exporting the dataset but may be slower and fail in some corner cases"
