@@ -733,23 +733,27 @@ def test_monitor_not_loaded_by_default(example_station_config) -> None:
     assert Monitor.running is None
 
 
-def test_monitor_loaded_if_specified(example_station_config) -> None:
+def test_monitor_loaded_if_specified(
+    example_station_config, request: pytest.FixtureRequest
+) -> None:
     st = Station(config_file=example_station_config, use_monitor=True)
     st.load_instrument("mock_dac")
     assert Monitor.running is not None
+    request.addfinalizer(Monitor.running.stop)
     assert len(Monitor.running._parameters) == 1
     assert Monitor.running._parameters[0].name == "ch1"
-    Monitor.running.stop()
 
 
-def test_monitor_loaded_by_default_if_in_config(example_station_config) -> None:
+def test_monitor_loaded_by_default_if_in_config(
+    example_station_config, request: pytest.FixtureRequest
+) -> None:
     qcodes.config["station"]["use_monitor"] = True
     st = Station(config_file=example_station_config)
     st.load_instrument("mock_dac")
     assert Monitor.running is not None
+    request.addfinalizer(Monitor.running.stop)
     assert len(Monitor.running._parameters) == 1
     assert Monitor.running._parameters[0].name == "ch1"
-    Monitor.running.stop()
 
 
 def test_monitor_not_loaded_if_specified(example_station_config) -> None:
