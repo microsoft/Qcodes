@@ -76,6 +76,8 @@
         "export_prefix": "qcodes_",
         "export_path": "{db_location}",
         "export_name_elements": ["captured_run_id", "guid"],
+        "export_chunked_export_of_large_files": false,
+        "export_chunked_threshold": 1000,
         "in_memory_cache": true
     },
     "telemetry":

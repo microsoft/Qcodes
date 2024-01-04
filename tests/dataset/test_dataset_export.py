@@ -830,7 +830,7 @@ def test_export_dataset_delayed_numeric(
     tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
-    mock_dataset_grid._export_limit = 0
+    qcodes.config.dataset.export_chunked_threshold = 0
     with caplog.at_level(logging.INFO):
         mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
@@ -863,7 +863,7 @@ def test_export_dataset_delayed(
     tmp_path_factory: TempPathFactory, mock_dataset_numpy: DataSet, caplog
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
-    mock_dataset_numpy._export_limit = 0
+    qcodes.config.dataset.export_chunked_threshold = 0
     with caplog.at_level(logging.INFO):
         mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
@@ -896,7 +896,7 @@ def test_export_dataset_delayed_complex(
     tmp_path_factory: TempPathFactory, mock_dataset_numpy_complex: DataSet, caplog
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
-    mock_dataset_numpy_complex._export_limit = 0
+    qcodes.config.dataset.export_chunked_threshold = 0
     with caplog.at_level(logging.INFO):
         mock_dataset_numpy_complex.export(
             export_type="netcdf", path=tmp_path, prefix="qcodes_"
