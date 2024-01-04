@@ -1,4 +1,0 @@
-The feature of exporting large DataSets to netcdf by writing individual small files and combining them, introduced in QCoDeS 0.41.0 has been made configurable
-and turned off by default due to a number of corner cases where the export did not work correctly. The
-feature can be enabled when required by setting the config variable `qcodes.config.dataset.export_chunked_export_of_large_files_enabled`
-to True and the threshold controlled using `qcodes.config.dataset.export_chunked_threshold`
