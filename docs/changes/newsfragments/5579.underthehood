@@ -1,1 +1,0 @@
-Fix typo: instrument_drivers.mock_instruments.DummyInstrument::get_idn() now returns dict containing key "serial" instead of "seral"
