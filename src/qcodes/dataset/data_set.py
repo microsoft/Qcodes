@@ -1486,7 +1486,11 @@ class DataSet(BaseDataSet):
         import xarray as xr
 
         file_path = path / file_name
-        if self._estimate_ds_size() > qcodes.config.dataset.export_chunked_threshold:
+        if (
+            qcodes.config.dataset.export_chunked_export_of_large_files
+            and self._estimate_ds_size()
+            > qcodes.config.dataset.export_chunked_threshold
+        ):
             log.info(
                 "Dataset is expected to be larger that threshold. Using distributed export.",
                 extra={

@@ -826,11 +826,24 @@ def test_export_dataset_small_no_delated(
     assert "Writing netcdf file directly" in caplog.records[0].msg
 
 
+def test_export_dataset_delayed_off_by_default(
+    tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    qcodes.config.dataset.export_chunked_threshold = 0
+    assert qcodes.config.dataset.export_chunked_export_of_large_files is False
+    with caplog.at_level(logging.INFO):
+        mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
+
+    assert "Writing netcdf file directly." in caplog.records[0].msg
+
+
 def test_export_dataset_delayed_numeric(
     tmp_path_factory: TempPathFactory, mock_dataset_grid: DataSet, caplog
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
+    qcodes.config.dataset.export_chunked_export_of_large_files = True
     with caplog.at_level(logging.INFO):
         mock_dataset_grid.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
@@ -864,6 +877,7 @@ def test_export_dataset_delayed(
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
+    qcodes.config.dataset.export_chunked_export_of_large_files = True
     with caplog.at_level(logging.INFO):
         mock_dataset_numpy.export(export_type="netcdf", path=tmp_path, prefix="qcodes_")
 
@@ -897,6 +911,7 @@ def test_export_dataset_delayed_complex(
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     qcodes.config.dataset.export_chunked_threshold = 0
+    qcodes.config.dataset.export_chunked_export_of_large_files = True
     with caplog.at_level(logging.INFO):
         mock_dataset_numpy_complex.export(
             export_type="netcdf", path=tmp_path, prefix="qcodes_"
