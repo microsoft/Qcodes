@@ -1832,10 +1832,13 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
     if get_data_load_from_file():
         export_info = _get_datasetprotocol_export_info(run_id=run_id, conn=conn)
         export_type = get_data_export_type()
-        export_file_path = export_info.export_paths.get(export_type.value)
+        if export_type is not None:
+            export_file_path = export_info.export_paths.get(export_type.value)
+        else:
+            export_file_path = None
         if export_file_path is not None:
             try:
-                d: DataSetInMem = load_from_file(export_file_path)
+                d: DataSetProtocol = load_from_file(export_file_path)
 
             except (ValueError, FileNotFoundError) as e:
                 log.warning(f"Cannot load data from file: {e!s}")
@@ -1845,14 +1848,14 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
 
     result_table_name = _get_result_table_name_by_guid(conn, guid)
     if _check_if_table_found(conn, result_table_name):
-        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
+        d = DataSet(conn=conn, run_id=run_id)
     else:
         d = DataSetInMem._load_from_db(conn=conn, guid=guid)
 
     return d
 
 
-def _get_datasetprotocol_export_info(run_id: str, conn: ConnectionPlus) -> ExportInfo:
+def _get_datasetprotocol_export_info(run_id: int, conn: ConnectionPlus) -> ExportInfo:
     metadata = get_metadata_from_run_id(conn=conn, run_id=run_id)
     export_info_str = metadata.get("export_info", "")
     export_info = ExportInfo.from_str(export_info_str)
