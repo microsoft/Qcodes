@@ -451,7 +451,6 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     compare_datasets(ds, loaded_ds)
 
 
-@pytest.mark.usefixtures("default_config")
 def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
     qcodes.config["dataset"]["export_type"] = "netcdf"
@@ -486,7 +485,6 @@ def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     compare_datasets(ds, loaded_ds)
 
 
-@pytest.mark.usefixtures("default_config")
 def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
     qcodes.config["dataset"]["export_type"] = "netcdf"
