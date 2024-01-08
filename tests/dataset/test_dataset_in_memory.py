@@ -488,8 +488,8 @@ def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
 def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
     qcodes.config["dataset"]["export_type"] = "netcdf"
-    qcodes.config["dataset"]["load_from_file"] = True
-    assert qcodes.config.dataset.load_from_file is True
+    qcodes.config["dataset"]["load_from_exported_file"] = True
+    assert qcodes.config.dataset.load_from_exported_file is True
 
     Station(DAC, DMM)
     with meas_with_registered_param.run() as datasaver:
@@ -507,8 +507,8 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     assert isinstance(loaded_ds_from_file, DataSetInMem)
 
     # Load from db
-    qcodes.config["dataset"]["load_from_file"] = False
-    assert qcodes.config.dataset.load_from_file is False
+    qcodes.config["dataset"]["load_from_exported_file"] = False
+    assert qcodes.config.dataset.load_from_exported_file is False
     loaded_ds_from_db = load_by_id(ds.run_id)
     assert not isinstance(loaded_ds_from_db, DataSetInMem)
 

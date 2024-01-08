@@ -373,7 +373,7 @@
                     "default": 1000,
                     "description": "Estimated size in MB above which the dataset will be exported in chuncks and recombined."
                 },
-                "load_from_file": {
+                "load_from_exported_file": {
                     "description": "Flag to load metadata and raw data from exported file of type specified in export_type. If set to true, qcodes will try to import from file first, if it exists.",
                     "type": "boolean",
                     "default": false

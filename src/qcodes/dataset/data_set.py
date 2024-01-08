@@ -1828,7 +1828,7 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
     if run_id is None:
         raise NameError("No run with GUID: %s found in database.", guid)
 
-    if qcodes.config.dataset.load_from_file:
+    if qcodes.config.dataset.load_from_exported_file:
         export_info = _get_datasetprotocol_export_info(run_id=run_id, conn=conn)
         export_type = get_data_export_type()
         if export_type is not None:
