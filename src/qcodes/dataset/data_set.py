@@ -38,7 +38,6 @@ from qcodes.dataset.export_config import (
 )
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
-from qcodes.dataset.load_config import get_data_load_from_file
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
@@ -1827,9 +1826,9 @@ def load_by_counter(
 def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetProtocol:
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
-        raise NameError(f"No run with GUID: {guid} found in database.")
+        raise NameError("No run with GUID: %s found in database.", guid)
 
-    if get_data_load_from_file():
+    if qcodes.config.dataset.load_from_file:
         export_info = _get_datasetprotocol_export_info(run_id=run_id, conn=conn)
         export_type = get_data_export_type()
         if export_type is not None:
@@ -1841,7 +1840,7 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
                 d: DataSetProtocol = load_from_file(export_file_path)
 
             except (ValueError, FileNotFoundError) as e:
-                log.warning(f"Cannot load data from file: {e!s}")
+                log.warning("Cannot load data from file: %s", e)
 
             else:
                 return d

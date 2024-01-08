@@ -15,7 +15,6 @@ import qcodes
 from qcodes.dataset import load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
-from qcodes.dataset.load_config import get_data_load_from_file
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.station import Station
 
@@ -489,7 +488,7 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
     qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
     qcodes.config["dataset"]["export_type"] = "netcdf"
     qcodes.config["dataset"]["load_from_file"] = True
-    assert get_data_load_from_file()
+    assert qcodes.config.dataset.load_from_file is True
 
     Station(DAC, DMM)
     with meas_with_registered_param.run() as datasaver:
@@ -508,7 +507,7 @@ def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) ->
 
     # Load from db
     qcodes.config["dataset"]["load_from_file"] = False
-    assert get_data_load_from_file() is False
+    assert qcodes.config.dataset.load_from_file is False
     loaded_ds_from_db = load_by_id(ds.run_id)
     assert not isinstance(loaded_ds_from_db, DataSetInMem)
 
