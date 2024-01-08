@@ -465,6 +465,18 @@ class DataSetCacheDeferred(DataSetCacheInMem):
             )
 
 
+    def to_xarray_dataset(
+        self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
+    ) -> xr.Dataset:
+        if use_multi_index == "always":
+            ds = self._xr_dataset.stack()
+        elif use_multi_index == "never":
+            ds = self._xr_dataset.unstack()
+        else:
+            ds = self._xr_dataset
+        return ds
+
+
 class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):
     def load_data_from_db(self) -> None:
         """
