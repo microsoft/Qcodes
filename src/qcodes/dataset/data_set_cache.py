@@ -9,7 +9,6 @@ import numpy as np
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
-from qcodes.utils import deprecate
 
 from .exporters.export_to_pandas import (
     load_to_concatenated_dataframe,
@@ -156,26 +155,6 @@ class DataSetCache(Generic[DatasetType]):
         data = self.data()
         return load_to_concatenated_dataframe(data)
 
-    @deprecate(alternative="to_pandas_dataframe or to_pandas_dataframe_dict")
-    def to_pandas(self) -> dict[str, pd.DataFrame]:
-        """
-        Returns the values stored in the :class:`.dataset.data_set.DataSet` as a
-        concatenated :py:class:`pandas.DataFrame` s
-
-        The DataFrame contains a column for the data and is indexed by a
-        :py:class:`pandas.MultiIndex` formed from all the setpoints
-        of the parameter.
-
-        Note that if the dataset contains data for multiple parameters that do
-        not share the same setpoints it is recommended to use
-        :py:class:`.to_pandas_dataframe_dict`
-
-        Returns:
-            :py:class:`pandas.DataFrame` s with the requested parameter as
-            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
-            by the dependencies.
-        """
-        return self.to_pandas_dataframe_dict()
 
     def to_xarray_dataarray_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
