@@ -592,6 +592,7 @@ def test_subscribers_called_for_all_data_points(experiment, DAC, DMM) -> None:
 
 # There is no way around it: this test is slow. We test that write_period
 # works and hence we must wait for some time to elapse. Sorry.
+@pytest.mark.serial
 @settings(
     max_examples=5,
     deadline=None,
