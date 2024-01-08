@@ -1,3 +1,3 @@
 `load_by_run_spec` and `load_by_id` may now optionally load the dataset as a DataSetInMem from an exported netcdf file. This avoids reading
-from the database potentially resulting in better performance. This option is off by default at the moment but can be turned on by experiment_setting
+from the database potentially resulting in better performance. This option is off by default at the moment but can be turned on by setting
 `qcodes.config.dataset.load_from_exported_file` to True.
