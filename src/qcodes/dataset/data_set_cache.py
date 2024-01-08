@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
     # used in forward refs that cannot be detected
     from .data_set import DataSet  # noqa F401
-    from .data_set_in_memory import DataSetInMem  # noqa F401
+    from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol, ParameterData
 
 DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
@@ -451,6 +451,18 @@ def _expand_single_param_dict(
 
 class DataSetCacheInMem(DataSetCache["DataSetInMem"]):
     pass
+
+
+class DataSetCacheDeferred(DataSetCacheInMem):
+    def __init__(self, dataset: DataSetInMem, loaded_data: xr.Dataset):
+        super().__init__(dataset)
+        self._xr_dataset = loaded_data
+
+    def load_data_from_db(self) -> None:
+        if self._data == {}:
+            self._data = self._dataset._from_xarray_dataset_to_qcodes_raw_data(
+                self._xr_dataset
+            )
 
 
 class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):

@@ -44,7 +44,7 @@ from qcodes.dataset.sqlite.queries import (
 )
 from qcodes.utils import NumpyJSONEncoder
 
-from .data_set_cache import DataSetCacheInMem
+from .data_set_cache import DataSetCacheDeferred, DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
 from .experiment_settings import get_default_experiment_id
@@ -298,8 +298,7 @@ class DataSetInMem(BaseDataSet):
             export_info=export_info,
             snapshot=loaded_data.snapshot,
         )
-        ds._cache = DataSetCacheInMem(ds)
-        ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(loaded_data)
+        ds._cache = DataSetCacheDeferred(ds, loaded_data)
 
         return ds
 
