@@ -469,6 +469,7 @@ def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     ds.add_metadata("metadata_added_after_export", "42")
 
     export_file_path = ds.export_info.export_paths.get("nc")
+    assert export_file_path is not None
     loaded_ds: DataSetInMem = load_from_file(export_file_path)
 
     assert isinstance(loaded_ds, DataSetInMem)
