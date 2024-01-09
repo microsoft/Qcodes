@@ -34,7 +34,7 @@ from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
 from qcodes.dataset.export_config import (
-    get_data_export_type,
+    DataExportType,
 )
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
@@ -1834,11 +1834,11 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
 
     if qcodes.config.dataset.load_from_exported_file:
         export_info = _get_datasetprotocol_export_info(run_id=run_id, conn=conn)
-        export_type = get_data_export_type()
-        if export_type is not None:
-            export_file_path = export_info.export_paths.get(export_type.value)
-        else:
-            export_file_path = None
+
+        export_file_path = export_info.export_paths.get(
+            DataExportType.NETCDF.value, None
+        )
+
         if export_file_path is not None:
             try:
                 d: DataSetProtocol = load_from_file(export_file_path)
