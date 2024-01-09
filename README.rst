@@ -8,10 +8,10 @@ While it has been developed to serve the needs of nanoelectronic device
 experiments, it is not inherently limited to such experiments, and can
 be used anywhere a system with many degrees of freedom is controllable
 by computer.
-To learn more about QCoDeS, browse our `homepage <http://qcodes.github.io/Qcodes>`_ .
+To learn more about QCoDeS, browse our `homepage <http://microsoft.github.io/Qcodes>`_ .
 
 To get a feeling of QCoDeS read
-`15 minutes to QCoDeS <http://qcodes.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__,
+`15 minutes to QCoDeS <http://microsoft.github.io/Qcodes/examples/15_minutes_to_QCoDeS.html>`__,
 and/or browse the Jupyter notebooks in `docs/examples
 <https://github.com/QCoDeS/Qcodes/tree/main/docs/examples>`__ .
 
@@ -33,14 +33,14 @@ If you are working with a local clone of QCoDeS you should update it as follows:
 Install
 =======
 
-In general, refer to `here <http://qcodes.github.io/Qcodes/start/index.html#installation>`__
+In general, refer to `here <http://microsoft.github.io/Qcodes/start/index.html#installation>`__
 for installation.
 
 
 Docs
 ====
 
-Read it `here <http://qcodes.github.io/Qcodes>`__ .
+Read it `here <http://microsoft.github.io/Qcodes>`__ .
 Documentation is updated and deployed on every successful build in main.
 
 We use sphinx for documentations, makefiles are provided both for
@@ -69,7 +69,7 @@ The modules ``qcodes.data``, ``qcodes.plots``, ``qcodes.actions``,
 and ``qcodes.utils.magic`` that were part of QCoDeS until version 0.37.0.
 have been moved into an independent package called qcodes_loop.
 Please see it's `repository <https://github.com/QCoDeS/Qcodes_loop/>`_ and
-`documentation <https://qcodes.github.io/Qcodes_loop/>`_ for more information.
+`documentation <https://microsoft.github.io/Qcodes_loop/>`_ for more information.
 
 For the time being it is possible to automatically install the qcodes_loop
 package when installing qcodes by executing ``pip install qcodes[loop]``.
@@ -110,6 +110,6 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/main/LICENSE>`__.
 .. |PyPI python versions| image:: https://img.shields.io/pypi/pyversions/qcodes.svg
     :target: https://pypi.python.org/pypi/qcodes/
 .. |DOCS| image:: https://img.shields.io/badge/read%20-thedocs-ff66b4.svg
-   :target: http://qcodes.github.io/Qcodes
+   :target: http://microsoft.github.io/Qcodes
 .. |DOI| image:: https://zenodo.org/badge/37137879.svg
    :target: https://zenodo.org/badge/latestdoi/37137879

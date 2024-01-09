@@ -67,10 +67,10 @@ content-type = "text/x-rst"
 
 [project.urls]
 Homepage = "https://github.com/QCoDeS/Qcodes"
-Documentation = "https://qcodes.github.io/Qcodes/"
+Documentation = "https://microsoft.github.io/Qcodes/"
 Source = "https://github.com/qcodes/qcodes"
 Tracker = "https://github.com/QCoDeS/Qcodes/issues"
-Changelog = "https://qcodes.github.io/Qcodes/changes/index.html"
+Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
 zurichinstruments = ["zhinst-qcodes>=0.3"]

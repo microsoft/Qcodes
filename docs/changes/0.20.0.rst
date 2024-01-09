@@ -16,7 +16,7 @@ Breaking Changes:
 ----
 New:
 ----
-- The ``DataSet`` shape is used when loading data; this impacts the ``DataSet.get_parameter_data`` and ``DataSet.cache.data`` methods. See also `the measurement docs <https://qcodes.github.io/Qcodes/examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Specifying-shape-of-measurement>`_ for more info on how data are loaded (:pr:`2264`)
+- The ``DataSet`` shape is used when loading data; this impacts the ``DataSet.get_parameter_data`` and ``DataSet.cache.data`` methods. See also `the measurement docs <https://microsoft.github.io/Qcodes/examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Specifying-shape-of-measurement>`_ for more info on how data are loaded (:pr:`2264`)
 - The ``Measurement`` now captures exception info in the ``DataSet`` s metadata if an exception occured during measurement (:pr:`2327`)
 - There is now an explicit API for marking the ``cache`` of a ``Parameter`` as invalid (:pr:`2012`)
 - New support email introduced (:pr:`2366`)

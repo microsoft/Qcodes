@@ -22,7 +22,7 @@ If this fixes a known bug reported against QCoDeS:
 
 - [ ] Please include a string in the following form ``closes #xxx`` where ``xxx``` is the number of the bug fixed.
 
-Please have a look at [the contributing guide](https://qcodes.github.io/Qcodes/community/contributing.html)
+Please have a look at [the contributing guide](https://microsoft.github.io/Qcodes/community/contributing.html)
 for more information.
 
 If you are in doubt about any of this please ask and we will be happy to help.
