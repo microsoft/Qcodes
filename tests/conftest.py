@@ -4,6 +4,7 @@ import copy
 import gc
 import os
 import sys
+import threading
 from collections.abc import Generator
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -19,6 +20,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment, new_experiment
 from qcodes.instrument import Instrument
+from qcodes.monitor.monitor import Monitor
 from qcodes.station import Station
 
 settings.register_profile("ci", deadline=1000)
@@ -98,7 +100,7 @@ def reset_state_on_exit() -> Generator[None, None, None]:
     Fixture to clean any shared state on exit
 
     Currently this resets the config to the default config,
-    closes the default station and closes all instruments.
+    closes the default station shutdown the monitor and closes all instruments.
     """
     default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
 
@@ -106,6 +108,9 @@ def reset_state_on_exit() -> Generator[None, None, None]:
         yield
     finally:
         qc.config.current_config = default_config_obj
+        for thread in threading.enumerate():
+            if isinstance(thread, Monitor):
+                thread.stop()
         Instrument.close_all()
         Station.default = None
 
