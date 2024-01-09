@@ -1791,11 +1791,11 @@ def load_by_counter(
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+    If the raw data is in the database this will be loaded as a
+    :class:`qcodes.dataset.data_set.DataSet`.
     If the raw data is exported to netcdf this will be loaded from file
     as a :class:`DataSetInMemory`.
-    If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet`
-    otherwise it will be loaded as a :class:`.DataSetInMemory`
+    In other cases, it will be loaded as a :class:`.DataSetInMemory`
 
     Args:
         counter: counter of the dataset within the given experiment
