@@ -100,7 +100,7 @@ def reset_state_on_exit() -> Generator[None, None, None]:
     Fixture to clean any shared state on exit
 
     Currently this resets the config to the default config,
-    closes the default station shutdown the monitor and closes all instruments.
+    closes the default station, shutdown the monitor, and closes all instruments.
     """
     default_config_obj: DotDict | None = copy.deepcopy(qc.config.current_config)
 
