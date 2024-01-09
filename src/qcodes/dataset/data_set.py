@@ -1592,8 +1592,9 @@ def load_by_run_spec(
     specs of the runs found will be printed.
 
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet`
-    otherwise it will be loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         captured_run_id: The ``run_id`` that was originally assigned to this
@@ -1712,9 +1713,11 @@ def load_by_id(run_id: int, conn: ConnectionPlus | None = None) -> DataSetProtoc
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet` otherwise it will be
-    loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         run_id: run id of the dataset
@@ -1750,8 +1753,9 @@ def load_by_guid(guid: str, conn: ConnectionPlus | None = None) -> DataSetProtoc
     is specified in the config.
 
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet`
-    otherwise it will be loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         guid: guid of the dataset
@@ -1791,11 +1795,11 @@ def load_by_counter(
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet`.
-    If the raw data is exported to netcdf this will be loaded from file
-    as a :class:`DataSetInMemory`.
-    In other cases, it will be loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         counter: counter of the dataset within the given experiment
@@ -1804,7 +1808,7 @@ def load_by_counter(
           connection to the DB file specified in the config is made
 
     Returns:
-        :class:`qcodes.dataset.data_set.DataSet` or
+        :class:`DataSet` or
         :class:`.DataSetInMemory` of the given counter in
         the given experiment
     """
