@@ -25,7 +25,7 @@ with ``pip install qcodes_contrib_drivers``
 The source code is hosted on Github
 `here <https://github.com/qcodes/qcodes_contrib_drivers>`__
 and the documentation can be found
-`here <https://qcodes.github.io/Qcodes_contrib_drivers/>`__
+`here <https://microsoft.github.io/Qcodes_contrib_drivers/>`__
 
 
 Broadbean
