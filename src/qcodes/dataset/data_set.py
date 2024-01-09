@@ -33,6 +33,9 @@ from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
+from qcodes.dataset.export_config import (
+    DataExportType,
+)
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
@@ -84,7 +87,7 @@ from qcodes.utils import (
 )
 
 from .data_set_cache import DataSetCacheWithDBBackend
-from .data_set_in_memory import DataSetInMem
+from .data_set_in_memory import DataSetInMem, load_from_file
 from .descriptions.versioning import serialization as serial
 from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
@@ -1589,8 +1592,9 @@ def load_by_run_spec(
     specs of the runs found will be printed.
 
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet`
-    otherwise it will be loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         captured_run_id: The ``run_id`` that was originally assigned to this
@@ -1709,9 +1713,11 @@ def load_by_id(run_id: int, conn: ConnectionPlus | None = None) -> DataSetProtoc
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet` otherwise it will be
-    loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         run_id: run id of the dataset
@@ -1747,8 +1753,9 @@ def load_by_guid(guid: str, conn: ConnectionPlus | None = None) -> DataSetProtoc
     is specified in the config.
 
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet`
-    otherwise it will be loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         guid: guid of the dataset
@@ -1788,9 +1795,11 @@ def load_by_counter(
     data to another db file. We recommend using :func:`.load_by_run_spec` which
     does not have this issue and is significantly more flexible.
 
+
     If the raw data is in the database this will be loaded as a
-    :class:`qcodes.dataset.data_set.DataSet`
-    otherwise it will be loaded as a :class:`.DataSetInMemory`
+    :class:`DataSet`. Otherwise it will be loaded as a :class:`.DataSetInMemory`
+    If the raw data is exported to netcdf and ``qcodes.config.dataset.load_from_exported_file`` is
+    set to True. this will be loaded from file as a :class:`DataSetInMemory`. regardless.
 
     Args:
         counter: counter of the dataset within the given experiment
@@ -1799,7 +1808,7 @@ def load_by_counter(
           connection to the DB file specified in the config is made
 
     Returns:
-        :class:`qcodes.dataset.data_set.DataSet` or
+        :class:`DataSet` or
         :class:`.DataSetInMemory` of the given counter in
         the given experiment
     """
@@ -1821,13 +1830,39 @@ def load_by_counter(
 def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetProtocol:
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
-        raise NameError(f"No run with GUID: {guid} found in database.")
+        raise NameError("No run with GUID: %s found in database.", guid)
+
+    if qcodes.config.dataset.load_from_exported_file:
+        export_info = _get_datasetprotocol_export_info(run_id=run_id, conn=conn)
+
+        export_file_path = export_info.export_paths.get(
+            DataExportType.NETCDF.value, None
+        )
+
+        if export_file_path is not None:
+            try:
+                d: DataSetProtocol = load_from_file(export_file_path)
+
+            except (ValueError, FileNotFoundError) as e:
+                log.warning("Cannot load data from file: %s", e)
+
+            else:
+                return d
+
     result_table_name = _get_result_table_name_by_guid(conn, guid)
     if _check_if_table_found(conn, result_table_name):
-        d: DataSetProtocol = DataSet(conn=conn, run_id=run_id)
+        d = DataSet(conn=conn, run_id=run_id)
     else:
         d = DataSetInMem._load_from_db(conn=conn, guid=guid)
+
     return d
+
+
+def _get_datasetprotocol_export_info(run_id: int, conn: ConnectionPlus) -> ExportInfo:
+    metadata = get_metadata_from_run_id(conn=conn, run_id=run_id)
+    export_info_str = metadata.get("export_info", "")
+    export_info = ExportInfo.from_str(export_info_str)
+    return export_info
 
 
 def new_data_set(

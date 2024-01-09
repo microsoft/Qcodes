@@ -23,6 +23,7 @@ from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
@@ -913,3 +914,36 @@ def load_from_netcdf(
         The loaded dataset.
     """
     return DataSetInMem._load_from_netcdf(path=path, path_to_db=path_to_db)
+
+
+def load_from_file(
+    path: Path | str, path_to_db: Path | str | None = None
+) -> DataSetInMem:
+    """
+    Create an in-memory dataset from a file.
+    The file is expected to contain a QCoDeS dataset that
+    has been exported using the QCoDeS export functions.
+    Currently, this only supports loading from netcdf files.
+
+    Args:
+        path: Path to the file to import.
+        path_to_db: Optional path to a database where this dataset may be
+            exported to. If not supplied the path can be given at export time
+            or the dataset exported to the default db as set in the QCoDeS config.
+
+    Returns:
+        The loaded dataset.
+    """
+    path = Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"File {path} not found.")
+
+    if DataExportType.NETCDF.value == path.suffix.replace(".", ""):
+        return DataSetInMem._load_from_netcdf(path=path, path_to_db=path_to_db)
+
+    else:
+        raise ValueError(
+            f"Loading file of type {path.suffix} is not supported."
+            "Please refer to https://github.com/QCoDeS/Qcodes/issues"
+            "to find existing or create a new feature request."
+        )

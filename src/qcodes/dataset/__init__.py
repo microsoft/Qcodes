@@ -10,7 +10,7 @@ from .data_set import (
     load_by_run_spec,
     new_data_set,
 )
-from .data_set_in_memory import load_from_netcdf
+from .data_set_in_memory import load_from_file, load_from_netcdf
 from .data_set_protocol import DataSetProtocol, DataSetType
 from .database_extract_runs import extract_runs_into_db
 from .descriptions.dependencies import InterDependencies_, ParamSpecTree
@@ -103,6 +103,7 @@ __all__ = [
     "load_by_run_spec",
     "load_experiment",
     "load_experiment_by_name",
+    "load_from_file",
     "load_from_netcdf",
     "load_last_experiment",
     "load_or_create_experiment",

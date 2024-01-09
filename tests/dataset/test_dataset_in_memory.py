@@ -11,8 +11,9 @@ import xarray as xr
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_almost_equal
 
+import qcodes
 from qcodes.dataset import load_by_id, load_by_run_spec
-from qcodes.dataset.data_set_in_memory import DataSetInMem
+from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
 from qcodes.station import Station
@@ -447,6 +448,69 @@ def test_load_from_db(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
     assert loaded_ds.metadata["metadata_added_after_export"] == 69
 
     compare_datasets(ds, loaded_ds)
+
+
+def test_load_from_file(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
+    qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
+    qcodes.config["dataset"]["export_type"] = "netcdf"
+
+    Station(DAC, DMM)
+    with meas_with_registered_param.run(
+        dataset_class=DataSetType.DataSetInMem
+    ) as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    ds: DataSetInMem = datasaver.dataset
+    ds.add_metadata("foo", "bar")
+    ds.export(path=tmp_path)
+    ds.add_metadata("metadata_added_after_export", "42")
+
+    export_file_path = ds.export_info.export_paths.get("nc")
+    assert export_file_path is not None
+    loaded_ds: DataSetInMem = load_from_file(export_file_path)
+
+    assert isinstance(loaded_ds, DataSetInMem)
+    assert loaded_ds.snapshot == ds.snapshot
+    assert loaded_ds.export_info == ds.export_info
+    assert loaded_ds.metadata == ds.metadata
+
+    assert "export_info" in loaded_ds.metadata.keys()
+    assert "metadata_added_after_export" in loaded_ds.metadata.keys()
+    assert loaded_ds.metadata["foo"] == "bar"
+    assert loaded_ds.metadata["metadata_added_after_export"] == "42"
+
+    compare_datasets(ds, loaded_ds)
+
+
+def test_load_from_file_by_id(meas_with_registered_param, DMM, DAC, tmp_path) -> None:
+    qcodes.config["dataset"]["export_prefix"] = "my_export_prefix"
+    qcodes.config["dataset"]["export_type"] = "netcdf"
+    qcodes.config["dataset"]["load_from_exported_file"] = True
+    assert qcodes.config.dataset.load_from_exported_file is True
+
+    Station(DAC, DMM)
+    with meas_with_registered_param.run() as datasaver:
+        for set_v in np.linspace(0, 25, 10):
+            DAC.ch1.set(set_v)
+            get_v = DMM.v1()
+            datasaver.add_result((DAC.ch1, set_v), (DMM.v1, get_v))
+
+    ds: DataSetInMem = datasaver.dataset
+    assert not isinstance(ds, DataSetInMem)
+    ds.export(path=tmp_path)
+
+    # Load from file
+    loaded_ds_from_file = load_by_id(ds.run_id)
+    assert isinstance(loaded_ds_from_file, DataSetInMem)
+
+    # Load from db
+    qcodes.config["dataset"]["load_from_exported_file"] = False
+    assert qcodes.config.dataset.load_from_exported_file is False
+    loaded_ds_from_db = load_by_id(ds.run_id)
+    assert not isinstance(loaded_ds_from_db, DataSetInMem)
 
 
 def test_load_from_netcdf_legacy_version(non_created_db) -> None:
