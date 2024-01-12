@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 from numpy.testing import assert_allclose
@@ -26,6 +27,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
 from qcodes.dataset.export_config import DataExportType
+from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
 from qcodes.dataset.linked_datasets.links import links_to_str
 
@@ -1322,3 +1324,41 @@ def test_multi_index_wrong_option(mock_dataset_non_grid) -> None:
 
     with pytest.raises(ValueError, match="Invalid value for use_multi_index"):
         mock_dataset_non_grid.to_xarray_dataset(use_multi_index="perhaps")
+
+
+def test_geneate_pandas_index():
+    indexes = {
+        "z": np.array([[7, 8, 9], [10, 11, 12]]),
+        "x": np.array([[1, 2, 3], [1, 2, 3]]),
+        "y": np.array([[5, 5, 5], [6, 6, 6]]),
+    }
+    pdi = _generate_pandas_index(indexes)
+    assert isinstance(pdi, pd.MultiIndex)
+    assert len(pdi) == 6
+
+    indexes = {
+        "z": np.array([[7, 8, 9], [10, 11, 12]]),
+        "x": np.array([["a", "b", "c"], ["a", "b", "c"]]),
+        "y": np.array([[5, 5, 5], [6, 6, 6]]),
+    }
+    pdi = _generate_pandas_index(indexes)
+    assert isinstance(pdi, pd.MultiIndex)
+    assert len(pdi) == 6
+
+    indexes = {
+        "z": np.array([[7, 8, 9], [10, 11, 12]]),
+        "x": np.array([["a", "b", "c"], ["a", "b", "c"]], dtype=np.object_),
+        "y": np.array([[5, 5, 5], [6, 6, 6]]),
+    }
+    pdi = _generate_pandas_index(indexes)
+    assert isinstance(pdi, pd.MultiIndex)
+    assert len(pdi) == 6
+
+    indexes = {
+        "z": np.array([[7], [8, 9]], dtype=np.object_),
+        "x": np.array([["a"], ["a", "b"]], dtype=np.object_),
+        "y": np.array([[5], [6, 6]], dtype=np.object_),
+    }
+    pdi = _generate_pandas_index(indexes)
+    assert isinstance(pdi, pd.MultiIndex)
+    assert len(pdi) == 3

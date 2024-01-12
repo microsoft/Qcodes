@@ -70,10 +70,23 @@ def _generate_pandas_index(
     elif len(data) == 2:
         index = pd.Index(data[keys[1]].ravel(), name=keys[1])
     else:
-        index_data = tuple(np.concatenate(data[key])
-                           if data[key].dtype == np.dtype('O')
-                           else data[key].ravel()
-                           for key in keys[1:])
+        index_data = []
+        for key in keys[1:]:
+            if data[key].dtype == np.dtype("O"):
+                # if we have a numpy array of dtype object,
+                # it could either be a variable length array
+                # in which case we concatenate it, or it could
+                # be a numpy array of scalar objects.
+                # In the latter case concatenate will fail
+                # with a value error but ravel will produce the
+                # correct result
+                try:
+                    index_data.append(np.concatenate(data[key]))
+                except ValueError:
+                    index_data.append(data[key].ravel())
+            else:
+                index_data.append(data[key].ravel())
+
         index = pd.MultiIndex.from_arrays(
             index_data,
             names=keys[1:])
