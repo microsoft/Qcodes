@@ -47,7 +47,7 @@ class LakeshoreModel335Channel(BaseSensorChannel):
             "sensor_type",
             label="Input sensor type",
             docstring="Specifies input sensor type",
-            val_mapping={"disabled": 0, "diode": 1, "platinum_rtd": 2, "ntc_rtd": 3},
+            val_mapping={"disabled": 0, "diode": 1, "platinum_rtd": 2, "ntc_rtd": 3, "thermocouple": 4},
             parameter_class=GroupParameter,
         )
         self.add_parameter(
