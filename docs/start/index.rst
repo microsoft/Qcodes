@@ -10,11 +10,11 @@ Getting Started
 Requirements
 ------------
 
-You need a working python 3.7 installation, as the minimum Python version, to be able to
+You need a working python 3.9 installation, as the minimum Python version, to be able to
 use QCoDeS. We highly recommend installing Miniconda, which takes care of installing Python
 and managing packages. In the following it will be assumed that you use Miniconda.
 Download and install it from `here <https://docs.conda.io/en/latest/miniconda.html>`_. Make
-sure to download the latest version with python 3.7 or newer.
+sure to download the latest version with python 3.9 or newer.
 
 Once you download, install Miniconda according to the instructions on screen,
 choosing the single user installation option.
@@ -45,10 +45,9 @@ Here type in the prompt:
     conda activate qcodes
     pip install qcodes
 
-The first line creates a new conda environment that is called *qcodes*
-with python 3.9 (QCoDeS also supports 3.7 and 3.8). The second line activates
-this freshly created environment, so that the command in the third line will
-install qcodes for this environment.
+The first line creates a new conda environment that is called *qcodes* with
+python 3.9. The second line activates this freshly created environment, so that
+the command in the third line will install qcodes for this environment.
 
 Installing the latest QCoDeS release with conda
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
