@@ -104,6 +104,6 @@ def test(**kwargs: Any) -> int:
     return 0
 
 
-del deprecate
+del deprecated
 
-test.__test__ = False  # Don't try to run this method as a test
+test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test
