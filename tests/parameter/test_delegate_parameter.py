@@ -3,8 +3,8 @@ Test suite for DelegateParameter
 """
 from __future__ import annotations
 
-from collections.abc import Generator
-from typing import Any, Callable, Literal, cast
+from collections.abc import Callable, Generator
+from typing import Any, Literal, cast
 
 import hypothesis.strategies as hst
 import pytest

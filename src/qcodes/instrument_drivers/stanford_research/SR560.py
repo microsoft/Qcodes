@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from qcodes.instrument import Instrument
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -113,7 +113,7 @@ class SR560(Instrument):
                            unit=None,
                            vals=Enum(*gains))
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = 'Stanford Research Systems'
         model = 'SR560'
         serial = None

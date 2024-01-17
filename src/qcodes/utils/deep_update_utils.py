@@ -1,7 +1,7 @@
 from collections import abc
 from collections.abc import Hashable, Mapping, MutableMapping
 from copy import deepcopy
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 K = TypeVar("K", bound=Hashable)
 L = TypeVar("L", bound=Hashable)
@@ -9,7 +9,7 @@ L = TypeVar("L", bound=Hashable)
 
 def deep_update(
     dest: MutableMapping[K, Any], update: Mapping[L, Any]
-) -> MutableMapping[Union[K, L], Any]:
+) -> MutableMapping[K | L, Any]:
     """
     Recursively update one JSON structure with another.
 
@@ -17,7 +17,7 @@ def deep_update(
     If the original value is a dictionary and the new value is not, or vice versa,
     we also replace the value completely.
     """
-    dest_int = cast(MutableMapping[Union[K, L], Any], dest)
+    dest_int = cast(MutableMapping[K | L, Any], dest)
     for k, v_update in update.items():
         v_dest = dest_int.get(k)
         if isinstance(v_update, abc.Mapping) and isinstance(v_dest, abc.MutableMapping):

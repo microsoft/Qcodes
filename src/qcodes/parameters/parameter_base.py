@@ -216,7 +216,7 @@ class ParameterBase(MetadatableWithName):
         self._snapshot_value = snapshot_value
         self.snapshot_exclude = snapshot_exclude
 
-        if not isinstance(vals, (Validator, type(None))):
+        if not isinstance(vals, Validator | type(None)):
             raise TypeError("vals must be None or a Validator")
         elif val_mapping is not None:
             vals = Enum(*val_mapping.keys())
@@ -755,8 +755,7 @@ class ParameterBase(MetadatableWithName):
                 self.get()
             start_value = self.get_latest()
             if not (
-                isinstance(start_value, (int, float))
-                and isinstance(value, (int, float))
+                isinstance(start_value, int | float) and isinstance(value, int | float)
             ):
                 # parameter is numeric but either one of the endpoints
                 # is not or the starting point is unknown. The later
@@ -832,7 +831,7 @@ class ParameterBase(MetadatableWithName):
             self._step: float | None = step
         elif not all(getattr(vals, "is_numeric", True) for vals in self._vals):
             raise TypeError("you can only step numeric parameters")
-        elif not isinstance(step, (int, float)):
+        elif not isinstance(step, int | float):
             raise TypeError("step must be a number")
         elif step == 0:
             self._step = None
@@ -871,7 +870,7 @@ class ParameterBase(MetadatableWithName):
 
     @post_delay.setter
     def post_delay(self, post_delay: float) -> None:
-        if not isinstance(post_delay, (int, float)):
+        if not isinstance(post_delay, int | float):
             raise TypeError(f"post_delay ({post_delay}) must be a number")
         if post_delay < 0:
             raise ValueError(f"post_delay ({post_delay}) must not be negative")
@@ -899,7 +898,7 @@ class ParameterBase(MetadatableWithName):
 
     @inter_delay.setter
     def inter_delay(self, inter_delay: float) -> None:
-        if not isinstance(inter_delay, (int, float)):
+        if not isinstance(inter_delay, int | float):
             raise TypeError(f"inter_delay ({inter_delay}) must be a number")
         if inter_delay < 0:
             raise ValueError(f"inter_delay ({inter_delay}) must not be negative")

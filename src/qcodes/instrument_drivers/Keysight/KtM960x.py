@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import Any, Optional
+from typing import Any
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument
@@ -138,10 +138,10 @@ class KeysightM960x(Instrument):
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         """generates the ``*IDN`` dictionary for qcodes"""
 
-        id_dict: dict[str, Optional[str]] = {
+        id_dict: dict[str, str | None] = {
             'firmware': self._get_firmware_revision(),
             'model': self._get_model(),
             'serial': self._get_serial_number(),

@@ -2,7 +2,7 @@ import re
 import textwrap
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import Any
 
 from qcodes.instrument import VisaInstrument
 from qcodes.parameters import MultiParameter, create_on_off_val_mapping
@@ -122,8 +122,9 @@ class KeysightB1500(VisaInstrument):
             self.add_module(name=module.short_name, module=module)
 
     @staticmethod
-    def from_model_name(model: str, slot_nr: int, parent: 'KeysightB1500',
-                        name: Optional[str] = None) -> 'B1500Module':
+    def from_model_name(
+        model: str, slot_nr: int, parent: "KeysightB1500", name: str | None = None
+    ) -> "B1500Module":
         """Creates the correct instance of instrument module by model name.
 
         Args:
@@ -149,8 +150,7 @@ class KeysightB1500(VisaInstrument):
             raise NotImplementedError(f"Module type {model} in slot"
                                       f" {slot_nr} not yet supported.")
 
-    def enable_channels(self, channels: Optional[constants.ChannelList] = None
-                        ) -> None:
+    def enable_channels(self, channels: constants.ChannelList | None = None) -> None:
         """Enable specified channels.
 
         If channels is omitted or `None`, then all channels are enabled.
@@ -159,10 +159,7 @@ class KeysightB1500(VisaInstrument):
 
         self.write(msg.message)
 
-    def disable_channels(
-            self,
-            channels: Optional[constants.ChannelList] = None
-    ) -> None:
+    def disable_channels(self, channels: constants.ChannelList | None = None) -> None:
         """Disable specified channels.
 
         If channels is omitted or `None`, then all channels are disabled.
@@ -175,11 +172,12 @@ class KeysightB1500(VisaInstrument):
     parse_spot_measurement_response = parse_spot_measurement_response
     parse_module_query_response = parse_module_query_response
 
-    def _setup_integration_time(self,
-                                adc_type: constants.AIT.Type,
-                                mode: Union[constants.AIT.Mode, int],
-                                coeff: Optional[int] = None
-                                ) -> None:
+    def _setup_integration_time(
+        self,
+        adc_type: constants.AIT.Type,
+        mode: constants.AIT.Mode | int,
+        coeff: int | None = None,
+    ) -> None:
         """See :meth:`MessageBuilder.ait` for information"""
         if coeff is not None:
             coeff = int(coeff)
@@ -198,8 +196,7 @@ class KeysightB1500(VisaInstrument):
             assert isinstance(param, _ParameterWithStatus)
             param._measurement_status = None
 
-    def use_nplc_for_high_speed_adc(
-            self, n: Optional[int] = None) -> None:
+    def use_nplc_for_high_speed_adc(self, n: int | None = None) -> None:
         """
         Set the high-speed ADC to NPLC mode, with optionally defining number
         of averaging samples via argument `n`.
@@ -224,8 +221,7 @@ class KeysightB1500(VisaInstrument):
             coeff=n
         )
 
-    def use_nplc_for_high_resolution_adc(
-            self, n: Optional[int] = None) -> None:
+    def use_nplc_for_high_resolution_adc(self, n: int | None = None) -> None:
         """
         Set the high-resolution ADC to NPLC mode, with optionally defining
         the number of PLCs per sample via argument `n`.
@@ -247,8 +243,7 @@ class KeysightB1500(VisaInstrument):
             coeff=n
         )
 
-    def use_manual_mode_for_high_speed_adc(
-            self, n: Optional[int] = None) -> None:
+    def use_manual_mode_for_high_speed_adc(self, n: int | None = None) -> None:
         """
         Set the high-speed ADC to manual mode, with optionally defining number
         of averaging samples via argument `n`.
@@ -271,9 +266,9 @@ class KeysightB1500(VisaInstrument):
     def _set_autozero(self, do_autozero: bool) -> None:
         self.write(MessageBuilder().az(do_autozero=do_autozero).message)
 
-    def self_calibration(self,
-                         slot: Optional[Union[constants.SlotNr, int]] = None
-                         ) -> constants.CALResponse:
+    def self_calibration(
+        self, slot: constants.SlotNr | int | None = None
+    ) -> constants.CALResponse:
         """
         Performs the self calibration of the specified module (SMU) and
         returns the result. Failed modules are disabled, and can only be
@@ -299,8 +294,7 @@ class KeysightB1500(VisaInstrument):
             response = self.ask(msg.message)
         return constants.CALResponse(int(response))
 
-    def error_message(self, mode: Optional[Union[constants.ERRX.Mode,
-                                                 int]] = None) -> str:
+    def error_message(self, mode: constants.ERRX.Mode | int | None = None) -> str:
         """
         This method reads one error code from the head of the error
         queue and removes that code from the queue. The read error is
@@ -332,7 +326,7 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().err_query()
         self.write(msg.message)
 
-    def clear_timer_count(self, chnum: Optional[int] = None) -> None:
+    def clear_timer_count(self, chnum: int | None = None) -> None:
         """
         This command clears the timer count. This command is effective for
         all measurement modes, regardless of the TSC setting. This command
@@ -354,10 +348,11 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().tsr(chnum=chnum)
         self.write(msg.message)
 
-    def set_measurement_mode(self,
-                             mode: Union[constants.MM.Mode, int],
-                             channels: Optional[constants.ChannelList] = None
-                             ) -> None:
+    def set_measurement_mode(
+        self,
+        mode: constants.MM.Mode | int,
+        channels: constants.ChannelList | None = None,
+    ) -> None:
         """
         This method specifies the measurement mode and the channels used
         for measurements. This method must be entered to specify the
@@ -375,7 +370,7 @@ class KeysightB1500(VisaInstrument):
         msg = MessageBuilder().mm(mode=mode, channels=channels).message
         self.write(msg)
 
-    def get_measurement_mode(self) -> dict[str, Union[constants.MM.Mode, list[int]]]:
+    def get_measurement_mode(self) -> dict[str, constants.MM.Mode | list[int]]:
         """
         This method gets the measurement mode(MM) and the channels used
         for measurements. It outputs a dictionary with 'mode' and
@@ -389,7 +384,7 @@ class KeysightB1500(VisaInstrument):
         if not match:
             raise ValueError('Measurement Mode (MM) not found.')
 
-        out_dict: dict[str, Union[constants.MM.Mode, list[int]]] = {}
+        out_dict: dict[str, constants.MM.Mode | list[int]] = {}
         resp_dict = match.groupdict()
         out_dict['mode'] = constants.MM.Mode(int(resp_dict['mode']))
         out_dict['channels'] = list(map(int, resp_dict['channels'].split(',')))
@@ -397,7 +392,7 @@ class KeysightB1500(VisaInstrument):
 
     def get_response_format_and_mode(
         self,
-    ) -> dict[str, Union[constants.FMT.Format, constants.FMT.Mode]]:
+    ) -> dict[str, constants.FMT.Format | constants.FMT.Mode]:
         """
         This method queries the the data output format and mode.
         """
@@ -410,7 +405,7 @@ class KeysightB1500(VisaInstrument):
         if not match:
             raise ValueError('Measurement Mode (FMT) not found.')
 
-        out_dict: dict[str, Union[constants.FMT.Format, constants.FMT.Mode]] = {}
+        out_dict: dict[str, constants.FMT.Format | constants.FMT.Mode] = {}
         resp_dict = match.groupdict()
         out_dict['format'] = constants.FMT.Format(int(resp_dict[
                                                           'format']))
@@ -418,9 +413,7 @@ class KeysightB1500(VisaInstrument):
         return out_dict
 
     def enable_smu_filters(
-            self,
-            enable_filter: bool,
-            channels: Optional[constants.ChannelList] = None
+        self, enable_filter: bool, channels: constants.ChannelList | None = None
     ) -> None:
         """
         This methods sets the connection mode of a SMU filter for each channel.
@@ -470,11 +463,12 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
 
-    def set_names_labels_and_units(self,
-                                   names: Optional[Sequence[str]] = None,
-                                   labels: Optional[Sequence[str]] = None,
-                                   units: Optional[Sequence[str]] = None
-                                   ) -> None:
+    def set_names_labels_and_units(
+        self,
+        names: Sequence[str] | None = None,
+        labels: Sequence[str] | None = None,
+        units: Sequence[str] | None = None,
+    ) -> None:
         """
         Set names, labels, and units of the measured parts of the MultiParameter.
 
@@ -544,10 +538,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         self.set_setpoint_name_label_and_unit()
 
     def set_setpoint_name_label_and_unit(
-            self,
-            name: Optional[str] = None,
-            label: Optional[str] = None,
-            unit: Optional[str] = None
+        self, name: str | None = None, label: str | None = None, unit: str | None = None
     ) -> None:
         """
         Set name, label, and unit of the setpoint of the MultiParameter.

@@ -107,7 +107,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
         else:
             return tuple()
 
-    if not isinstance(parsed, (ast.List, ast.Tuple, ast.Set)):
+    if not isinstance(parsed, ast.List | ast.Tuple | ast.Set):
         return None
 
     if not all(isinstance(e, ast.Constant) for e in parsed.elts):

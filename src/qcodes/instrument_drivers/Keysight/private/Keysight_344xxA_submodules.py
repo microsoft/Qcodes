@@ -3,7 +3,7 @@ from bisect import bisect_left
 from collections.abc import Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from packaging import version
@@ -927,9 +927,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         self.range.get()
 
     def increase_range(
-        self,
-        range_value: Optional[float] = None,
-        increase_by: int = 1
+        self, range_value: float | None = None, increase_by: int = 1
     ) -> None:
         """
         Increases the voltage range by a certain amount with default of 1.
@@ -957,9 +955,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             self.range(self.ranges[-1])
 
     def decrease_range(
-        self,
-        range_value: Optional[float] = None,
-        decrease_by: int = -1
+        self, range_value: float | None = None, decrease_by: int = -1
     ) -> None:
         """
         Decrease the voltage range by a certain amount with default of -1.

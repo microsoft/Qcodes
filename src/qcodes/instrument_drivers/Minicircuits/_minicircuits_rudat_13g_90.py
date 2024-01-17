@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from qcodes.instrument import Instrument
 
@@ -35,7 +35,7 @@ class MiniCircuitsRudat13G90Base(Instrument):
 
         self.connect_message()
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         model = self.model_name()
         serial = self.serial_number()
         firmware = self.firmware()

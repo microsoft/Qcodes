@@ -867,7 +867,7 @@ def get_completed_timestamp_from_run_id(
     # sometimes it happens that the timestamp is written to DB as an int
     if isinstance(ts, int):
         ts = float(ts)
-    assert isinstance(ts, (float, type(None)))
+    assert isinstance(ts, float | type(None))
     return ts
 
 
@@ -1745,7 +1745,7 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
         maybe_mayby_link_str = select_one_where(
             conn, "runs", "parent_datasets", "run_id", run_id
         )
-        assert isinstance(maybe_mayby_link_str, (str, type(None)))
+        assert isinstance(maybe_mayby_link_str, str | type(None))
         maybe_link_str = maybe_mayby_link_str
 
     if maybe_link_str is None:
@@ -1904,7 +1904,7 @@ def get_experiment_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) ->
 
 def get_sample_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
     sample_name = select_one_where(conn, "experiments", "sample_name", "exp_id", exp_id)
-    assert isinstance(sample_name, (str, type(None)))
+    assert isinstance(sample_name, str | type(None))
     # there may be a few cases for very old db where None is returned as a sample name
     # however, these probably do not exist in relaity outside that test so here we
     # cast to str. See test_experiments_with_NULL_sample_name
@@ -1916,7 +1916,7 @@ def get_run_timestamp_from_run_id(conn: ConnectionPlus, run_id: int) -> float | 
     # sometimes it happens that the timestamp is saved as an integer in the database
     if isinstance(time_stamp, int):
         time_stamp = float(time_stamp)
-    assert isinstance(time_stamp, (float, type(None)))
+    assert isinstance(time_stamp, float | type(None))
     return time_stamp
 
 
@@ -2091,7 +2091,7 @@ def get_experiment_attributes_by_exp_id(
     start_time = temp_exp_attrs["start_time"]
     assert isinstance(start_time, float)
     end_time = temp_exp_attrs["end_time"]
-    assert isinstance(end_time, (float, type(None)))
+    assert isinstance(end_time, float | type(None))
 
     exp_attrs: ExperimentAttributeDict = {
         "name": str(temp_exp_attrs["name"]),
@@ -2201,7 +2201,7 @@ def get_raw_run_attributes(
     assert isinstance(name, str)
 
     rawsnapshot = select_one_where(conn, "runs", "snapshot", "guid", guid)
-    assert isinstance(rawsnapshot, (str, type(None)))
+    assert isinstance(rawsnapshot, str | type(None))
     output: RawRunAttributesDict = {
         "run_id": run_id,
         "experiment": experiment,

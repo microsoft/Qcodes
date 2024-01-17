@@ -4,7 +4,7 @@ A mixin module for USB Human Interface Device instruments
 import os
 import struct
 import time
-from typing import Any, Optional
+from typing import Any
 
 try:
     import pywinusb.hid as hid  # pyright: ignore[reportMissingModuleSource]
@@ -42,9 +42,13 @@ class USBHIDMixin(Instrument):
                 "'pip install pywinusb' in a qcodes environment terminal"
             )
 
-    def __init__(self, name: str, instance_id: Optional[str] = None,
-                 timeout: float = 2,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        instance_id: str | None = None,
+        timeout: float = 2,
+        **kwargs: Any,
+    ):
         self._check_hid_import()
 
         devs = hid.HidDeviceFilter(
@@ -62,7 +66,7 @@ class USBHIDMixin(Instrument):
         self._device = devs[0]
         self._device.open()
 
-        self._data_buffer: Optional[bytes] = None
+        self._data_buffer: bytes | None = None
         self._device.set_raw_data_handler(self._handler)
 
         self._timeout = timeout
@@ -73,7 +77,7 @@ class USBHIDMixin(Instrument):
     def _handler(self, data: bytes) -> None:
         self._data_buffer = data
 
-    def _get_data_buffer(self) -> Optional[bytes]:
+    def _get_data_buffer(self) -> bytes | None:
         data = self._data_buffer
         self._data_buffer = None
         return data
@@ -169,9 +173,13 @@ class MiniCircuitsHIDMixin(USBHIDMixin):
         timeout: Specify a timeout for this instrument in seconds
     """
 
-    def __init__(self, name: str, instance_id: Optional[str] = None,
-                 timeout: float = 2,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        instance_id: str | None = None,
+        timeout: float = 2,
+        **kwargs: Any,
+    ):
         # USB interrupt code for sending SCPI commands
         self._sending_scpi_cmds_code = 1
         self._usb_endpoint = 0

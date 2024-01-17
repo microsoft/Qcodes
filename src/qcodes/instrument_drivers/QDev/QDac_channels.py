@@ -4,7 +4,7 @@ import logging
 import time
 from collections.abc import Sequence
 from functools import partial
-from typing import Any, Optional, Union
+from typing import Any
 
 import pyvisa
 import pyvisa.constants
@@ -102,9 +102,9 @@ class QDevQDacChannel(InstrumentChannel):
                            )
 
     def snapshot_base(
-            self,
-            update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None
+        self,
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
@@ -218,7 +218,7 @@ class QDevQDac(VisaInstrument):
         self.num_chans = num_chans
 
         # Assigned slopes. Entries will eventually be [chan, slope]
-        self._slopes: list[tuple[int, Union[str, float]]] = []
+        self._slopes: list[tuple[int, str | float]] = []
         # Function generators (used in _set_voltage)
         self._fgs = set(range(1, 9))
         self._assigned_fgs: dict[int, int] = {}  # {chan: fg}
@@ -274,9 +274,9 @@ class QDevQDac(VisaInstrument):
         log.info('[+] Done')
 
     def snapshot_base(
-            self,
-            update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None
+        self,
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:
@@ -539,7 +539,7 @@ class QDevQDac(VisaInstrument):
         else:
             return 0
 
-    def _setslope(self, chan: int, slope: Union[float, str]) -> None:
+    def _setslope(self, chan: int, slope: float | str) -> None:
         """
         set_cmd for the chXX_slope parameter, the maximum slope of a channel.
 
@@ -589,7 +589,7 @@ class QDevQDac(VisaInstrument):
         self._slopes.append((chan, slope))
         return
 
-    def _getslope(self, chan: int) -> Union[str, float]:
+    def _getslope(self, chan: int) -> str | float:
         """
         get_cmd of the chXX_slope parameter
         """
@@ -687,9 +687,9 @@ class QDevQDac(VisaInstrument):
         time.sleep(delay)
         self.visa_handle.clear()
 
-    def connect_message(self,
-                        idn_part: str = "IDN",
-                        being_time: Optional[float] = None) -> None:
+    def connect_message(
+        self, idn_part: str = "IDN", being_time: float | None = None
+    ) -> None:
         """
         Override of the standard Instrument class connect_message.
         Usually, the response to `*IDN?` is printed. Here, the

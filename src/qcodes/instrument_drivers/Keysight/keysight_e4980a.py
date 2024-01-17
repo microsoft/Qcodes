@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from packaging import version
 from pyvisa.errors import VisaIOError
@@ -207,7 +207,7 @@ class KeysightE4980A(VisaInstrument):
         ) >= version.parse(convert_legacy_version_to_supported_version("A.02.10"))
 
         self.has_option_001 = '001' in self._options()
-        self._dc_bias_v_level_range: Union[Numbers, Enum]
+        self._dc_bias_v_level_range: Numbers | Enum
         if self.has_option_001:
             self._v_level_range = Numbers(0, 20)
             self._i_level_range = Numbers(0, 0.1)

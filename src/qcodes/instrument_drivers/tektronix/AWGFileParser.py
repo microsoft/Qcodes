@@ -2,7 +2,7 @@
 # This module parses an awg file using THREE sub-parser. This code could
 # probably be streamlined somewhat.
 import struct
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -298,10 +298,10 @@ _parser3_output = tuple[
     list[list[dict[Any, Any]]],
     list[list[dict[Any, Any]]],
     list[list[dict[Any, Any]]],
-    list[Union[str, int]],
-    list[Union[str, int]],
-    list[Union[str, int]],
-    list[Union[str, int]],
+    list[str | int],
+    list[str | int],
+    list[str | int],
+    list[str | int],
     list[int],
 ]
 
@@ -340,7 +340,7 @@ def _unpacker(
     return wf, m1, m2
 
 
-def _unwrap(bites: bytes, fmt: str) -> Union[str, int, tuple[Any, ...]]:
+def _unwrap(bites: bytes, fmt: str) -> str | int | tuple[Any, ...]:
     """
     Helper function for interpreting the bytes from the awg file.
 
@@ -349,7 +349,7 @@ def _unwrap(bites: bytes, fmt: str) -> Union[str, int, tuple[Any, ...]]:
         fmt: the format string (either 's', 'h' or 'd')
 
     """
-    value: Union[str, int, tuple[Any, ...]]
+    value: str | int | tuple[Any, ...]
     if fmt == 's':
         value = bites[:-1].decode('ascii')
     elif fmt == 'ignore':
@@ -394,9 +394,7 @@ awgfilepath2 = (
 
 def _parser1(
     awgfilepath: str,
-) -> tuple[
-    dict[str, Union[str, int, tuple[Any, ...]]], list[list[Any]], list[list[Any]]
-]:
+) -> tuple[dict[str, str | int | tuple[Any, ...]], list[list[Any]], list[list[Any]]]:
     """
     Helper function doing the heavy lifting of reading and understanding the
     binary .awg file format.
@@ -411,7 +409,7 @@ def _parser1(
     instdict = {}
     waveformlist: list[list[Any]] = [[], []]
     sequencelist: list[list[Any]] = [[], []]
-    wfmlen: Optional[int] = None
+    wfmlen: int | None = None
 
     with open(awgfilepath, 'rb') as fid:
 
@@ -489,7 +487,7 @@ def _parser2(waveformlist: list[list[Any]]) -> dict[str, dict[str, np.ndarray]]:
     """
 
     outdict = {}
-    name: Optional[Any] = None
+    name: Any | None = None
 
     for (fieldname, fieldvalue) in zip(waveformlist[0], waveformlist[1]):
         if 'NAME' in fieldname:
@@ -564,7 +562,7 @@ def _parser3(sequencelist: list[list[Any]], wfmdict: dict[Any, Any]) -> _parser3
 
 def parse_awg_file(
         awgfilepath: str
-) -> tuple[_parser3_output, dict[str, Union[str, int, tuple[Any, ...]]]]:
+) -> tuple[_parser3_output, dict[str, str | int | tuple[Any, ...]]]:
     """
     Parser for a binary .awg file. Returns a tuple matching the call signature
     of make_send_and_load_awg_file and a dictionary with instrument settings

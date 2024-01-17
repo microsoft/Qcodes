@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, Literal
+from collections.abc import Callable
+from typing import Literal
 
 import numpy as np
 import pytest

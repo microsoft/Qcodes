@@ -2,7 +2,7 @@
 #
 # Written by Bruno Buijtendorp (brunobuijtendorp@gmail.com)
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
@@ -20,14 +20,15 @@ class HP83650A(VisaInstrument):
 
     """
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 verbose: int = 1,
-                 reset: bool = False,
-                 server_name: Optional[str] = None,
-                 **kwargs: Any):
-
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        verbose: int = 1,
+        reset: bool = False,
+        server_name: str | None = None,
+        **kwargs: Any,
+    ):
         self.verbose = verbose
         log.debug('Initializing instrument')
         super().__init__(name, address, **kwargs)

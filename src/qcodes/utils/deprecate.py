@@ -1,8 +1,8 @@
 import types
 import warnings
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from typing import Any, Callable, Optional, cast
+from typing import Any, cast
 
 import wrapt  # type: ignore[import-untyped]
 
@@ -15,9 +15,7 @@ class QCoDeSDeprecationWarning(RuntimeWarning):
 
 
 def deprecation_message(
-    what: str,
-    reason: Optional[str] = None,
-    alternative: Optional[str] = None
+    what: str, reason: str | None = None, alternative: str | None = None
 ) -> str:
     msg = f'The {what} is deprecated'
     if reason is not None:
@@ -30,8 +28,8 @@ def deprecation_message(
 
 def issue_deprecation_warning(
     what: str,
-    reason: Optional[str] = None,
-    alternative: Optional[str] = None,
+    reason: str | None = None,
+    alternative: str | None = None,
     stacklevel: int = 3,
 ) -> None:
     """
@@ -44,8 +42,7 @@ def issue_deprecation_warning(
 
 
 def deprecate(
-        reason: Optional[str] = None,
-        alternative: Optional[str] = None
+    reason: str | None = None, alternative: str | None = None
 ) -> Callable[..., Any]:
     """
     A utility function to decorate deprecated functions and classes.
@@ -70,7 +67,7 @@ def deprecate(
         return func(*args, **kwargs)
 
     def actual_decorator(obj: Any) -> Any:
-        if isinstance(obj, (types.FunctionType, types.MethodType)):
+        if isinstance(obj, types.FunctionType | types.MethodType):
             func = cast(Callable[..., Any], obj)
             # pylint: disable=no-value-for-parameter
             return decorate_callable(func)  # pyright: ignore[reportGeneralTypeIssues]
@@ -79,7 +76,7 @@ def deprecate(
             # this would need to be recursive
             for m_name in dir(obj):
                 m = getattr(obj, m_name)
-                if isinstance(m, (types.FunctionType, types.MethodType)):
+                if isinstance(m, types.FunctionType | types.MethodType):
                     # skip static methods, since they are not wrapped correctly
                     # by wrapt.
                     # if anyone reading this knows how the following line
@@ -87,7 +84,7 @@ def deprecate(
                     # wrapt cannot wrap class methods in 3.11.0
                     # see https://github.com/python/cpython/issues/63272
                     if isinstance(
-                        obj.__dict__.get(m_name, None), (staticmethod, classmethod)
+                        obj.__dict__.get(m_name, None), staticmethod | classmethod
                     ):
                         continue
                     # pylint: disable=no-value-for-parameter

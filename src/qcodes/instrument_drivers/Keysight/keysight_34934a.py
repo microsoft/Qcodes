@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Callable, Optional, Union
+from collections.abc import Callable
 
 from qcodes import validators
 from qcodes.instrument import InstrumentChannel, VisaInstrument
@@ -17,10 +17,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         slot: the slot the module is installed
     """
     def __init__(
-            self,
-            parent: Union[VisaInstrument, InstrumentChannel],
-            name: str,
-            slot: int
+        self, parent: VisaInstrument | InstrumentChannel, name: str, slot: int
     ) -> None:
 
         super().__init__(parent, name, slot)
@@ -83,7 +80,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
 
     def to_channel_list(
-        self, paths: list[tuple[int, int]], wiring_config: Optional[str] = ""
+        self, paths: list[tuple[int, int]], wiring_config: str | None = ""
     ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
@@ -114,9 +111,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
 
     @staticmethod
     def get_numbering_function(
-            rows: int,
-            columns: int,
-            wiring_config: Optional[str] = ''
+        rows: int, columns: int, wiring_config: str | None = ""
     ) -> Callable[[int, int], str]:
         """
         to select the correct numbering function based on the matrix layout.

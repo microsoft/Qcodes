@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
@@ -26,7 +26,7 @@ class BaselSP983a(VisaInstrument):
         self,
         name: str,
         address: str,
-        input_offset_voltage: Optional[Parameter] = None,
+        input_offset_voltage: Parameter | None = None,
         terminator: str = "\r\n",
         **kwargs: Any,
     ) -> None:
@@ -75,7 +75,7 @@ class BaselSP983a(VisaInstrument):
             parameter_class=DelegateParameter,
         )
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = "Physics Basel"
         model = "SP 983A"
         serial = None

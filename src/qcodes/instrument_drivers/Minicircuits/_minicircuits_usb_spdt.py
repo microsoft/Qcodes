@@ -1,5 +1,5 @@
 import os
-from typing import Any, Optional
+from typing import Any
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
@@ -45,8 +45,8 @@ class MiniCircuitsUsbSPDT(SPDT_Base):
     def __init__(
         self,
         name: str,
-        driver_path: Optional[str] = None,
-        serial_number: Optional[str] = None,
+        driver_path: str | None = None,
+        serial_number: str | None = None,
         **kwargs: Any,
     ):
         # we are eventually overwriting this but since it's called
@@ -94,7 +94,7 @@ class MiniCircuitsUsbSPDT(SPDT_Base):
         self.connect_message()
         self.add_channels()
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         # the arguments in those functions is the serial number or none if
         # there is only one switch.
         fw = self.switch.GetFirmware()

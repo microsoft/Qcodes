@@ -1,4 +1,3 @@
-from typing import Optional
 
 from .BaselSP983 import BaselSP983
 
@@ -29,7 +28,7 @@ class BaselSP983c(BaselSP983):
             connected to the "Offset Input Voltage" connector of the SP983C.
     """
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = "Physics Basel"
         model = "SP 983c"
         serial = None

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from .constants import ChNr, ModuleKind
 from .KeysightB1500_module import B1500Module
@@ -29,7 +29,7 @@ class KeysightB1530A(B1500Module):
     def __init__(
         self,
         parent: "KeysightB1500",
-        name: Optional[str],
+        name: str | None,
         slot_nr: int,
         **kwargs: Any,
     ):

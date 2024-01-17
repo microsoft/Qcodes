@@ -1,4 +1,3 @@
-from typing import Optional, Union
 
 from qcodes.instrument import InstrumentChannel, VisaInstrument
 
@@ -13,10 +12,7 @@ class KeysightSubModule(InstrumentChannel):
         slot: the slot the module is installed
     """
     def __init__(
-            self,
-            parent: Union[VisaInstrument, InstrumentChannel],
-            name: str,
-            slot: int
+        self, parent: VisaInstrument | InstrumentChannel, name: str, slot: int
     ) -> None:
 
         super().__init__(parent, name)
@@ -40,7 +36,7 @@ class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
         raise NotImplementedError("Please subclass this")
 
     def to_channel_list(
-        self, paths: list[tuple[int, int]], wiring_config: Optional[str] = None
+        self, paths: list[tuple[int, int]], wiring_config: str | None = None
     ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where

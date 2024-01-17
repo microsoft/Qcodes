@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from .constants import IMeasRange, IOutputRange
 from .KeysightB1517A import KeysightB1517A
@@ -24,7 +24,7 @@ class KeysightB1511B(KeysightB1517A):
     def __init__(
         self,
         parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
-        name: Optional[str],
+        name: str | None,
         slot_nr: int,
         **kwargs: Any
     ):

@@ -1,4 +1,3 @@
-from typing import Union
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -12,7 +11,7 @@ from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from tests.common import retry_until_does_not_throw
 
-VALUE = Union[str, float, list, np.ndarray, bool]
+VALUE = str | float | list | np.ndarray | bool
 
 
 @pytest.mark.usefixtures("experiment")

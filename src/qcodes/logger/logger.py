@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from opencensus.ext.azure.common.protocol import (  # type: ignore[import-untyped]
@@ -39,7 +39,7 @@ from qcodes.utils import (
 
 log: logging.Logger = logging.getLogger(__name__)
 
-LevelType = Union[int, str]
+LevelType = int | str
 
 LOGGING_DIR = "logs"
 LOGGING_SEPARATOR = ' ¦ '
@@ -64,8 +64,8 @@ FORMAT_STRING_DICT = OrderedDict([
 # The handler of the root logger that get set up by `start_logger` are globals
 # for this modules scope, as it is intended to only use a single file and
 # console hander.
-console_handler: Optional[logging.Handler] = None
-file_handler: Optional[logging.Handler] = None
+console_handler: logging.Handler | None = None
+file_handler: logging.Handler | None = None
 telemetry_handler: Optional["AzureLogHandler"] = None
 
 
@@ -111,7 +111,7 @@ def get_formatter_for_telemetry() -> logging.Formatter:
     return logging.Formatter(format_string)
 
 
-def get_console_handler() -> Optional[logging.Handler]:
+def get_console_handler() -> logging.Handler | None:
     """
     Get handle that prints messages from the root logger to the console.
     Returns ``None`` if :func:`start_logger` has not been called.
@@ -120,7 +120,7 @@ def get_console_handler() -> Optional[logging.Handler]:
     return console_handler
 
 
-def get_file_handler() -> Optional[logging.Handler]:
+def get_file_handler() -> logging.Handler | None:
     """
     Get a handle that streams messages from the root logger to the qcodes log
     file. To setup call :func:`start_logger`.
@@ -130,7 +130,7 @@ def get_file_handler() -> Optional[logging.Handler]:
     return file_handler
 
 
-def get_level_name(level: Union[str, int]) -> str:
+def get_level_name(level: str | int) -> str:
     """
     Get a logging level name from either a logging level code or logging level
     name. Will return the output of :func:`logging.getLevelName` if called with
@@ -147,7 +147,7 @@ def get_level_name(level: Union[str, int]) -> str:
                            'string or int.')
 
 
-def get_level_code(level: Union[str, int]) -> int:
+def get_level_code(level: str | int) -> int:
     """
     Get a logging level code from either a logging level string or a logging
     level code. Will return the output of :func:`logging.getLevelName` if
@@ -320,7 +320,7 @@ def start_logger() -> None:
     print(f'Qcodes Logfile : {filename}')
 
 
-def start_command_history_logger(log_dir: Optional[str] = None) -> None:
+def start_command_history_logger(log_dir: str | None = None) -> None:
     """
     Start logging of the history of the interactive command shell.
     Works only with IPython and Jupyter. Call function again to set new path
@@ -425,9 +425,9 @@ def conditionally_start_all_logging() -> None:
 
 
 @contextmanager
-def handler_level(level: LevelType,
-                  handler: Union[logging.Handler,
-                                 Sequence[logging.Handler]]) -> Iterator[None]:
+def handler_level(
+    level: LevelType, handler: logging.Handler | Sequence[logging.Handler]
+) -> Iterator[None]:
     """
     Context manager to temporarily change the level of handlers.
 
@@ -485,8 +485,11 @@ class LogCapture:
 
     """
 
-    def __init__(self, logger: logging.Logger = logging.getLogger(),
-                 level: Optional[LevelType] = None) -> None:
+    def __init__(
+        self,
+        logger: logging.Logger = logging.getLogger(),
+        level: LevelType | None = None,
+    ) -> None:
         self.logger = logger
         self.level = level or logging.NOTSET
 
@@ -503,9 +506,9 @@ class LogCapture:
 
     def __exit__(
         self,
-        exception_type: Optional[type[BaseException]],
-        exception_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()

@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 
 def qcodes_abstractmethod(funcobj: Callable[..., Any]) -> Callable[..., Any]:

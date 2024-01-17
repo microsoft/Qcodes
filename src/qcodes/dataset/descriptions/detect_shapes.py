@@ -87,7 +87,7 @@ def _get_shape_of_step(step: int | np.integer[Any] | Sized | np.ndarray) -> int:
 
 
 def _param_is_array_like(meas_param: ParameterBase) -> bool:
-    if isinstance(meas_param, (ArrayParameter, ParameterWithSetpoints)):
+    if isinstance(meas_param, ArrayParameter | ParameterWithSetpoints):
         return True
     elif isinstance(meas_param.vals, Arrays):
         return True

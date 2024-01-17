@@ -4,7 +4,7 @@
 import logging
 import time
 import warnings
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 from packaging import version
@@ -445,11 +445,16 @@ class RohdeSchwarzRTO1000(VisaInstrument):
 
     """
 
-    def __init__(self, name: str, address: str,
-                 model: Optional[str] = None, timeout: float = 5.,
-                 HD: bool = True,
-                 terminator: str = '\n',
-                 **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        model: str | None = None,
+        timeout: float = 5.0,
+        HD: bool = True,
+        terminator: str = "\n",
+        **kwargs: Any,
+    ) -> None:
         """
         Args:
             name: name of the instrument

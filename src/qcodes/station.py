@@ -20,7 +20,7 @@ from functools import partial
 from io import StringIO
 from pathlib import Path
 from types import ModuleType
-from typing import IO, Any, AnyStr, ClassVar, NoReturn, Union, cast, overload
+from typing import IO, Any, AnyStr, ClassVar, NoReturn, cast, overload
 
 import jsonschema
 import jsonschema.exceptions
@@ -73,7 +73,7 @@ def get_config_use_monitor() -> str | None:
     return qcodes.config["station"]["use_monitor"]
 
 
-ChannelOrInstrumentBase = Union[InstrumentBase, ChannelTuple]
+ChannelOrInstrumentBase = InstrumentBase | ChannelTuple
 
 
 class ValidationWarning(Warning):
@@ -208,9 +208,7 @@ class Station(Metadatable, DelegateAttributes):
                     snap['instruments'][name] = itm.snapshot(update=update)
                 else:
                     components_to_remove.append(name)
-            elif isinstance(itm, (Parameter,
-                                  ManualParameter
-                                  )):
+            elif isinstance(itm, Parameter | ManualParameter):
                 if not itm.snapshot_exclude:
                     snap['parameters'][name] = itm.snapshot(update=update)
             else:

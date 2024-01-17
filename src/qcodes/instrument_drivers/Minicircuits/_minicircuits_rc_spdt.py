@@ -1,4 +1,3 @@
-from typing import Optional
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, IPInstrument
@@ -74,12 +73,12 @@ class MiniCircuitsRCSPDT(IPInstrument):
         ret = ret.strip()
         return ret
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         fw = self.ask("FIRMWARE?")
         MN = self.ask("MN?")
         SN = self.ask("SN?")
 
-        id_dict: dict[str, Optional[str]] = {
+        id_dict: dict[str, str | None] = {
             "firmware": fw,
             "model": MN[3:],
             "serial": SN[3:],

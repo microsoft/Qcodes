@@ -8,16 +8,16 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import Any, Generic, Literal, Optional, TypeVar, Union, cast
+from typing import Any, Generic, Literal, TypeVar, cast
 
 import numpy as np
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
-numbertypes = Union[float, int, np.floating, np.integer]
-shape_type = Union[int, typing.Callable[[], int]]
-shape_tuple_type = Optional[tuple[shape_type, ...]]
+numbertypes = float | int | np.floating | np.integer
+shape_type = int | typing.Callable[[], int]
+shape_tuple_type = tuple[shape_type, ...] | None
 
 
 def validate_all(*args: tuple[Validator[Any], Any], context: str = "") -> None:
@@ -151,7 +151,7 @@ class Nothing(Validator[Any]):
         self._reason = reason
 
 
-class Bool(Validator[Union[bool, np.bool_]]):
+class Bool(Validator[bool | np.bool_]):
     """
     Requires a boolean.
     """
@@ -309,7 +309,7 @@ class Numbers(Validator[numbertypes]):
         return float(self._max_value)
 
 
-class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
+class Ints(Validator["int | np.integer[Any] | bool"]):
     """
     Requires an integer.
     Optional parameters min_value and max_value, enforce
@@ -325,7 +325,7 @@ class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
     """
 
     validtypes = (int, np.integer)
-    inttypes = Union[int, np.integer]
+    inttypes = int | np.integer
 
     def __init__(
         self, min_value: inttypes = -BIGINT, max_value: inttypes = BIGINT
@@ -403,7 +403,7 @@ class PermissiveInts(Ints):
             TypeError: If not an int or close to it.
         """
         castvalue: int | np.integer[Any]
-        if isinstance(value, (float, np.floating)):
+        if isinstance(value, float | np.floating):
             intrepr = int(np.round(value))
             remainder = np.abs(value - intrepr)
             if remainder < 1e-05:
@@ -417,7 +417,7 @@ class PermissiveInts(Ints):
         super().validate(castvalue, context=context)
 
 
-class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
+class ComplexNumbers(Validator["complex | np.complexfloating[Any,Any]"]):
     """
     A validator for complex numbers.
     """

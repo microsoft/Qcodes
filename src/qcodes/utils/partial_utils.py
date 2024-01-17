@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable
+from typing import Any
 
 
 def partial_with_docstring(

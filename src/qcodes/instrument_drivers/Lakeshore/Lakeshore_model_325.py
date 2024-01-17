@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 from enum import IntFlag
 from itertools import takewhile
-from typing import Any, Optional, TextIO, cast
+from typing import Any, TextIO, cast
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter
@@ -181,7 +181,7 @@ class LakeshoreModel325Curve(InstrumentChannel):
         return sensor_unit
 
     def set_data(
-        self, data_dict: dict[Any, Any], sensor_unit: Optional[str] = None
+        self, data_dict: dict[Any, Any], sensor_unit: str | None = None
     ) -> None:
         """
         Set the curve data according to the values found the the dictionary.

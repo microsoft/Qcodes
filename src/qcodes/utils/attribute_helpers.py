@@ -1,6 +1,6 @@
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar
 
 
 class DelegateAttributes:
@@ -106,7 +106,7 @@ def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
 
 
 def checked_getattr(
-    instance: Any, attribute: str, expected_type: Union[type, tuple[type, ...]]
+    instance: Any, attribute: str, expected_type: type | tuple[type, ...]
 ) -> Any:
     """
     Like ``getattr`` but raises type error if not of expected type.

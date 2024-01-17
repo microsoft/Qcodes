@@ -9,10 +9,10 @@ import concurrent.futures
 import itertools
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import partial
 from types import TracebackType
-from typing import TYPE_CHECKING, Callable, Protocol, TypeVar, Union
+from typing import TYPE_CHECKING, Protocol, TypeAlias, TypeVar
 
 from qcodes.utils import RespondingThread
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import values_type
     from qcodes.parameters import ParamDataType, ParameterBase
 
-ParamMeasT = Union["ParameterBase", Callable[[], None]]
+ParamMeasT: TypeAlias = "ParameterBase | Callable[[], None]"
 OutType = list[tuple["ParameterBase", "values_type"]]
 
 T = TypeVar("T")

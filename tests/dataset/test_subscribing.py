@@ -1,7 +1,7 @@
 # Test some subscription scenarios
 import logging
 from numbers import Number
-from typing import Any, Union
+from typing import Any
 
 import pytest
 from numpy import ndarray
@@ -14,7 +14,7 @@ from tests.common import retry_until_does_not_throw
 
 log = logging.getLogger(__name__)
 
-VALUE = Union[str, Number, list[Any], ndarray, bool]
+VALUE = str | Number | list[Any] | ndarray | bool
 
 
 class MockSubscriber:

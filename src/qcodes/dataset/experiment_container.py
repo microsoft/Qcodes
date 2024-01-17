@@ -122,7 +122,7 @@ class Experiment(Sized):
         finish_time = select_one_where(
             self.conn, "experiments", "end_time", "exp_id", self.exp_id
         )
-        assert isinstance(finish_time, (float, type(None)))
+        assert isinstance(finish_time, float | type(None))
         return finish_time
 
     @property

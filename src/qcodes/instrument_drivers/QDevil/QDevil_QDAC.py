@@ -9,7 +9,7 @@ from collections import namedtuple
 from collections.abc import Sequence
 from enum import Enum
 from functools import partial
-from typing import Any, Optional, Union
+from typing import Any
 
 import pyvisa
 import pyvisa.constants
@@ -140,9 +140,9 @@ class QDacChannel(InstrumentChannel):
                         )
 
     def snapshot_base(
-            self,
-            update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None
+        self,
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
@@ -315,7 +315,7 @@ class QDac(VisaInstrument):
         synchronization outputs.
         """
         # Assigned slopes. Entries will eventually be {chan: slope}
-        self._slopes: dict[int, Union[str, float]] = {}
+        self._slopes: dict[int, str | float] = {}
         # Function generators and triggers (used in ramping)
         self._fgs = set(range(1, 9))
         self._assigned_fgs: dict[int, Generator] = {}  # {chan: fg}
@@ -425,9 +425,9 @@ class QDac(VisaInstrument):
         self._reset_bookkeeping()
 
     def snapshot_base(
-            self,
-            update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None
+        self,
+        update: bool | None = False,
+        params_to_skip_update: Sequence[str] | None = None,
     ) -> dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:
@@ -689,7 +689,7 @@ class QDac(VisaInstrument):
         for chan, sync in sorted(self._syncoutputs.items()):
             print(f'Channel {chan}, SYNC: {sync} (V/s)')
 
-    def _setslope(self, chan: int, slope: Union[float, str]) -> None:
+    def _setslope(self, chan: int, slope: float | str) -> None:
         """
         set_cmd for the chXX_slope parameter, the maximum slope of a channel.
         With a finite slope the channel will be ramped using a generator.
@@ -726,7 +726,7 @@ class QDac(VisaInstrument):
         else:
             self._slopes[chan] = slope
 
-    def _getslope(self, chan: int) -> Union[str, float]:
+    def _getslope(self, chan: int) -> str | float:
         """
         get_cmd of the chXX_slope parameter
         """
@@ -797,9 +797,9 @@ class QDac(VisaInstrument):
         time.sleep(delay)
         self.visa_handle.clear()
 
-    def connect_message(self,
-                        idn_param: str = 'IDN',
-                        begin_time: Optional[float] = None) -> None:
+    def connect_message(
+        self, idn_param: str = "IDN", begin_time: float | None = None
+    ) -> None:
         """
         Override of the standard Instrument class connect_message.
         Usually, the response to `*IDN?` is printed. Here, the

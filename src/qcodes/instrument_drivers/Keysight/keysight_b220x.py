@@ -1,8 +1,8 @@
 import re
 import warnings
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Enum, Ints, Lists, MultiType

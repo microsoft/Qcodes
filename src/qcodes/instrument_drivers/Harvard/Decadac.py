@@ -1,11 +1,11 @@
 from functools import partial
 from time import time
-from typing import Union, cast
+from typing import cast
 
 import qcodes.validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 
-number = Union[float, int]
+number = float | int
 
 
 class HarvardDecadacException(Exception):

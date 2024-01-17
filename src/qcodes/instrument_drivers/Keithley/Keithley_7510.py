@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from types import TracebackType
-from typing import Any, ClassVar, Optional, TypedDict, Union, cast
+from typing import Any, ClassVar, TypedDict, cast
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class DataArray7510(MultiParameter):
         self,
         names: Sequence[str],
         shapes: Sequence[Sequence[int]],
-        setpoints: Optional[Sequence[Sequence[Any]]],
+        setpoints: Sequence[Sequence[Any]] | None,
         **kwargs: Any,
     ):
         super().__init__(
@@ -40,7 +40,7 @@ class DataArray7510(MultiParameter):
         for param_name in self.names:
             self.__dict__.update({param_name: []})
 
-    def get_raw(self) -> Optional[tuple[ParamRawDataType, ...]]:
+    def get_raw(self) -> tuple[ParamRawDataType, ...] | None:
         return self._data
 
 
@@ -100,7 +100,7 @@ class Keithley7510Buffer(InstrumentChannel):
         self,
         parent: "Keithley7510",
         name: str,
-        size: Optional[int] = None,
+        size: int | None = None,
         style: str = "",
     ) -> None:
         super().__init__(parent, name)
@@ -245,7 +245,7 @@ class Keithley7510Buffer(InstrumentChannel):
         return self.data_end() - self.data_start() + 1
 
     def set_setpoints(
-        self, start: Parameter, stop: Parameter, label: Optional[str] = None
+        self, start: Parameter, stop: Parameter, label: str | None = None
     ) -> None:
         self.setpoints_start.source = start
         self.setpoints_stop.source = stop
@@ -258,9 +258,9 @@ class Keithley7510Buffer(InstrumentChannel):
 
     def __exit__(
         self,
-        exception_type: Optional[type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        exception_type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         self.delete()
 
@@ -392,7 +392,7 @@ class Keithley7510Buffer(InstrumentChannel):
 class _FunctionMode(TypedDict):
     name: str
     unit: str
-    range_vals: Optional[Numbers]
+    range_vals: Numbers | None
 
 
 class Keithley7510Sense(InstrumentChannel):
@@ -579,7 +579,7 @@ class Keithley7510Sense(InstrumentChannel):
         )
         self.write(set_cmd)
 
-    def _measure(self) -> Union[float, str]:
+    def _measure(self) -> float | str:
         buffer_name = self.parent.buffer_name()
         return float(self.ask(f":MEASure? '{buffer_name}'"))
 
@@ -672,7 +672,7 @@ class Keithley7510DigitizeSense(InstrumentChannel):
             "measurement is requested",
         )
 
-    def _measure(self) -> Union[float, str]:
+    def _measure(self) -> float | str:
         buffer_name = self.parent.buffer_name()
         return float(self.ask(f":MEASure:DIGitize? '{buffer_name}'"))
 
@@ -810,7 +810,7 @@ class Keithley7510(VisaInstrument):
         return cast(Keithley7510DigitizeSense, submodule)
 
     def buffer(
-        self, name: str, size: Optional[int] = None, style: str = ""
+        self, name: str, size: int | None = None, style: str = ""
     ) -> Keithley7510Buffer:
         self.buffer_name(name)
         if f"_buffer_{name}" in self.submodules:

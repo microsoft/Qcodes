@@ -1,7 +1,7 @@
 import logging
 import threading
-from collections.abc import Sequence
-from typing import Any, Callable, Generic, Optional, TypeVar
+from collections.abc import Callable, Sequence
+from typing import Any, Generic, TypeVar
 
 _LOG = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class RespondingThread(threading.Thread, Generic[T]):
         self,
         target: Callable[..., T],
         args: Sequence[Any] = (),
-        kwargs: Optional[dict[str, Any]] = None,
+        kwargs: dict[str, Any] | None = None,
         *args2: Any,
         **kwargs2: Any,
     ):
@@ -41,8 +41,8 @@ class RespondingThread(threading.Thread, Generic[T]):
         self._target = target
         self._args = args
         self._kwargs = kwargs
-        self._exception: Optional[Exception] = None
-        self._output: Optional[T] = None
+        self._exception: Exception | None = None
+        self._output: T | None = None
 
     def run(self) -> None:
         _LOG.debug(f"Executing {self._target} on thread: {threading.get_ident()}")
@@ -51,7 +51,7 @@ class RespondingThread(threading.Thread, Generic[T]):
         except Exception as e:
             self._exception = e
 
-    def output(self, timeout: Optional[float] = None) -> Optional[T]:
+    def output(self, timeout: float | None = None) -> T | None:
         self.join(timeout=timeout)
 
         if self._exception:
@@ -64,9 +64,9 @@ class RespondingThread(threading.Thread, Generic[T]):
 
 def thread_map(
     callables: Sequence[Callable[..., T]],
-    args: Optional[Sequence[Sequence[Any]]] = None,
-    kwargs: Optional[Sequence[dict[str, Any]]] = None,
-) -> list[Optional[T]]:
+    args: Sequence[Sequence[Any]] | None = None,
+    kwargs: Sequence[dict[str, Any]] | None = None,
+) -> list[T | None]:
     """
     Evaluate a sequence of callables in separate threads, returning
     a list of their return values.

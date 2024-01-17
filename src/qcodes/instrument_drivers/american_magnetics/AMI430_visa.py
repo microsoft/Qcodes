@@ -5,10 +5,10 @@ import numbers
 import time
 import warnings
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, ClassVar, TypeVar, cast
+from typing import Any, ClassVar, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -600,7 +600,7 @@ class AMIModel4303D(Instrument):
             (instrument_x, instrument_y, instrument_z),
             ("instrument_x", "instrument_y", "instrument_z"),
         ):
-            if not isinstance(instrument, (AMIModel430, str)):
+            if not isinstance(instrument, AMIModel430 | str):
                 raise ValueError(
                     f"Instruments need to be instances of the class AMIModel430 "
                     f"or be valid names of already instantiated instances "
@@ -955,7 +955,7 @@ class AMIModel4303D(Instrument):
     def _verify_safe_setpoint(
         self, setpoint_values: tuple[float, float, float]
     ) -> bool:
-        if isinstance(self._field_limit, (int, float)):
+        if isinstance(self._field_limit, int | float):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any(

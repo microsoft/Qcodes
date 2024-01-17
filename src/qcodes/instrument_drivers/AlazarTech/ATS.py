@@ -7,7 +7,7 @@ import time
 import warnings
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, Generic, TypeVar, Union, cast
+from typing import Any, Generic, TypeVar, cast
 
 import numpy as np
 
@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 OutputType = TypeVar('OutputType')
 
-CtypesTypes = Union[
-    type[ctypes.c_uint8],
-    type[ctypes.c_uint16],
-    type[ctypes.c_uint32],
-    type[ctypes.c_int32],
-    type[ctypes.c_float],
-]
+CtypesTypes = (
+    type[ctypes.c_uint8]
+    | type[ctypes.c_uint16]
+    | type[ctypes.c_uint32]
+    | type[ctypes.c_int32]
+    | type[ctypes.c_float]
+)
 
 
 class AlazarTech_ATS(Instrument):

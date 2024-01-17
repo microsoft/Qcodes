@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import Any, ClassVar, Union, cast
+from typing import Any, ClassVar, cast
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
@@ -267,7 +267,7 @@ class RigolDG1062Channel(InstrumentChannel):
         Get all the parameters of the current waveform and
         """
 
-        def to_float(string: str) -> Union[float, str]:
+        def to_float(string: str) -> float | str:
             try:
                 return float(string)
             except ValueError:
@@ -277,7 +277,7 @@ class RigolDG1062Channel(InstrumentChannel):
         parts = waveform_str.strip('"').split(",")
 
         current_waveform = self.waveform_translate[parts[0]]
-        param_vals: list[Union[str, float]] = [current_waveform]
+        param_vals: list[str | float] = [current_waveform]
         param_vals += [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + list(self.waveform_params[current_waveform])
         params_dict = dict(zip(param_names, param_vals))
@@ -298,7 +298,7 @@ class RigolDG1062Channel(InstrumentChannel):
 
         return self._set_waveform_params(**params_dict)
 
-    def _set_waveform_params(self, **params_dict: Union[int, float]) -> None:
+    def _set_waveform_params(self, **params_dict: int | float) -> None:
         """
         Apply a waveform with values given in a dictionary.
         """

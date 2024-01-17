@@ -1,8 +1,9 @@
 import logging
 import re
 import warnings
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument
@@ -60,7 +61,7 @@ class Keysight34980A(VisaInstrument):
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         self._total_slot = 8
-        self._system_slots_info_dict: Optional[dict[int, dict[str, str]]] = None
+        self._system_slots_info_dict: dict[int, dict[str, str]] | None = None
         self.module = dict.fromkeys(self.system_slots_info.keys())
         self.scan_slots()
         self.connect_message()
@@ -158,7 +159,7 @@ class Keysight34980A(VisaInstrument):
                 slots_dict[i] = dict(zip(keys, identity))
         return slots_dict
 
-    def disconnect_all(self, slot: Optional[int] = None) -> None:
+    def disconnect_all(self, slot: int | None = None) -> None:
         """
         to open/disconnect all connections on select module
 

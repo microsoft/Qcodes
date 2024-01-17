@@ -3,7 +3,7 @@ import random
 import re
 from collections.abc import Sequence
 from copy import copy
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 import hypothesis.strategies as hst
 import numpy as np
@@ -1306,8 +1306,8 @@ def parameter_test_helper(
     expected_names: dict[str, list[str]],
     expected_shapes: dict[str, list[tuple[int, ...]]],
     expected_values: dict[str, list[np.ndarray]],
-    start: Optional[int] = None,
-    end: Optional[int] = None,
+    start: int | None = None,
+    end: int | None = None,
 ):
     """
     A helper function to compare the data we actually read out of a given

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from qcodes.instrument import Instrument
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -109,7 +109,7 @@ class Ithaco1211(Instrument):
                            vals=Enum(0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30,
                                      100, 300, 1000))
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = 'Ithaco (DL Instruments)'
         model = '1211'
         serial = None

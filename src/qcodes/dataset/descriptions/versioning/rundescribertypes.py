@@ -15,8 +15,6 @@ interdependencies_, which is an instance of InterDependencies_
 """
 from __future__ import annotations
 
-from typing import Union
-
 from typing_extensions import TypedDict
 
 from ..param_spec import ParamSpecBaseDict, ParamSpecDict
@@ -55,7 +53,6 @@ class RunDescriberV3Dict(RunDescriberV2Dict):
     # dict from dependent to dict from depenency to num points in grid
 
 
-RunDescriberDicts = Union[RunDescriberV0Dict,
-                          RunDescriberV1Dict,
-                          RunDescriberV2Dict,
-                          RunDescriberV3Dict]
+RunDescriberDicts = (
+    RunDescriberV0Dict | RunDescriberV1Dict | RunDescriberV2Dict | RunDescriberV3Dict
+)

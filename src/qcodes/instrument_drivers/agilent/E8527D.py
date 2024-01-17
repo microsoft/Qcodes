@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -17,10 +17,15 @@ class Agilent_E8527D(VisaInstrument):
     This driver does not contain all commands available for the E8527D but
     only the ones most commonly used.
     """
-    def __init__(self, name: str, address: str,
-                 step_attenuator: Optional[bool] = None,
-                 terminator: str = '\n',
-                 **kwargs: Any) -> None:
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        step_attenuator: bool | None = None,
+        terminator: str = "\n",
+        **kwargs: Any,
+    ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
         if step_attenuator is not None:
@@ -122,12 +127,12 @@ class Agilent_E8527D(VisaInstrument):
     # Note it would be useful to have functions like this in some module instead
     # of repeated in every instrument driver.
     @staticmethod
-    def rad_to_deg(angle_rad: Union[float, np.floating, np.integer]) -> float:
+    def rad_to_deg(angle_rad: float | np.floating | np.integer) -> float:
         angle_deg = float(angle_rad) / (2 * np.pi) * 360
         return angle_deg
 
     @staticmethod
-    def deg_to_rad(angle_deg: Union[float, np.floating, np.integer]) -> float:
+    def deg_to_rad(angle_deg: float | np.floating | np.integer) -> float:
         angle_rad = float(angle_deg) / 360 * 2 * np.pi
         return angle_rad
 

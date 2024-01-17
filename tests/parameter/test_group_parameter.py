@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 
@@ -17,11 +17,14 @@ def close_all_instruments():
 
 
 class Dummy(Instrument):
-    def __init__(self, name: str,
-                 initial_a: Optional[int] = None,
-                 initial_b: Optional[int] = None,
-                 scale_a: Optional[float] = None,
-                 get_cmd: Optional[str] = "CMD?") -> None:
+    def __init__(
+        self,
+        name: str,
+        initial_a: int | None = None,
+        initial_b: int | None = None,
+        scale_a: float | None = None,
+        get_cmd: str | None = "CMD?",
+    ) -> None:
         super().__init__(name)
 
         self._a = 0

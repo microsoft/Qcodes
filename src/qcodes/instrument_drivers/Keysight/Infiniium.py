@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import Any, ClassVar, Literal, Optional, Union
+from typing import Any, ClassVar, Literal
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -96,7 +96,7 @@ class DSOTraceParam(ParameterWithSetpoints):
     def __init__(
         self,
         name: str,
-        instrument: Union["KeysightInfiniiumChannel", "KeysightInfiniiumFunction"],
+        instrument: "KeysightInfiniiumChannel | KeysightInfiniiumFunction",
         channel: str,
         **kwargs: Any,
     ):
@@ -171,12 +171,12 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         self.update_setpoints()
 
-    def update_setpoints(self, preamble: Optional[Sequence[str]] = None) -> None:
+    def update_setpoints(self, preamble: Sequence[str] | None = None) -> None:
         """
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False
         """
-        instrument: Union[KeysightInfiniiumChannel, KeysightInfiniiumFunction]
+        instrument: KeysightInfiniiumChannel | KeysightInfiniiumFunction
         instrument = self.instrument  # type: ignore[assignment]
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
@@ -463,7 +463,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 class KeysightInfiniiumBoundMeasurement(AbstractMeasurementSubsystem):
     def __init__(
         self,
-        parent: Union["KeysightInfiniiumChannel", "KeysightInfiniiumFunction"],
+        parent: "KeysightInfiniiumChannel | KeysightInfiniiumFunction",
         name: str,
         **kwargs: Any,
     ):
@@ -1104,7 +1104,7 @@ class KeysightInfiniium(VisaInstrument):
         # Sample Rate
         try:
             # Set BW to auto in order to query this
-            bw_set: Union[float, Literal["AUTO"]] = float(self.ask(":ACQ:BAND?"))
+            bw_set: float | Literal["AUTO"] = float(self.ask(":ACQ:BAND?"))
             if np.isclose(bw_set, self.max_bw):
                 # Auto returns max bandwidth
                 bw_set = "AUTO"
@@ -1181,7 +1181,7 @@ class KeysightInfiniium(VisaInstrument):
             if channel.display():
                 channel.update_setpoints()
 
-    def digitize(self, timeout: Optional[int] = None) -> None:
+    def digitize(self, timeout: int | None = None) -> None:
         """
         Digitize a full waveform and block until the acquisition is complete.
 
