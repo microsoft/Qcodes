@@ -53,7 +53,7 @@ class LakeshoreModel335Channel(BaseSensorChannel):
                 "platinum_rtd": 2,
                 "ntc_rtd": 3,
                 "thermocouple": 4,
-            },            
+            },
             parameter_class=GroupParameter,
         )
         self.add_parameter(
