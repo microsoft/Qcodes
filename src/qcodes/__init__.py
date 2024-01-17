@@ -10,9 +10,12 @@
 import warnings
 from typing import Any
 
+from typing_extensions import deprecated
+
 import qcodes._version
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.utils.spyder_utils import add_to_spyder_UMR_excludelist
 
 __version__ = qcodes._version.__version__
@@ -81,7 +84,6 @@ from qcodes.utils import deprecate
 atexit.register(Instrument.close_all)
 
 if config.core.import_legacy_api:
-    from qcodes.utils import QCoDeSDeprecationWarning
 
     warnings.warn(
         "`core.import_legacy_api` and `gui.plotlib` config option has no effect "
@@ -91,9 +93,9 @@ if config.core.import_legacy_api:
     )
 
 
-@deprecate(
-    reason="tests are no longer shipped as part of QCoDeS",
-    alternative="Clone git repo to matching tag and run `pytest tests` from the root of the repo.",
+@deprecated(
+    "tests are no longer shipped as part of QCoDeS Clone git repo to matching tag and run `pytest tests` from the root of the repo.",
+    category=QCoDeSDeprecationWarning,
 )
 def test(**kwargs: Any) -> int:
     """
