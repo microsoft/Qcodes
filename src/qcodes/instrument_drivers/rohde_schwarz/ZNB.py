@@ -13,7 +13,6 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
-from qcodes.utils import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -758,12 +757,6 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
     def _enable_auto_sweep_time(self, val: str) -> None:
         channel = self._instrument_channel
         self.write(f"SENS{channel}:SWE:TIME:AUTO {val}")
-
-    @deprecate(reason="the method has been renamed",
-               alternative="update_lin_traces")
-    def update_traces(self) -> None:
-        """ updates start, stop and npts of all trace parameters"""
-        self.update_lin_traces()
 
     def update_lin_traces(self) -> None:
         """

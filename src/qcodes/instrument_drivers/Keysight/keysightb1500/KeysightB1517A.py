@@ -9,7 +9,6 @@ from typing_extensions import NotRequired, TypedDict
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
-from qcodes.utils import deprecate
 
 from . import constants
 from .constants import (
@@ -951,23 +950,6 @@ class KeysightB1517A(B1500Module):
             "compl_polarity": compl_polarity,
             "min_compliance_range": min_compliance_range,
         }
-
-    @deprecate(reason='the method confuses ranges for voltage and current '
-                      'measurements',
-               alternative='v_measure_range_config or i_measure_range_config')
-    def measure_config(self, measure_range: constants.MeasureRange) -> None:
-        """Configure measuring voltage/current
-
-        Args:
-            measure_range: voltage/current measurement range
-        """
-        if measure_range in (VMeasRange.AUTO, IMeasRange.AUTO):
-            self.v_measure_range_config(VMeasRange.AUTO)
-            self.i_measure_range_config(IMeasRange.AUTO)
-        elif isinstance(measure_range, constants.VMeasRange):
-            self.v_measure_range_config(measure_range)
-        elif isinstance(measure_range, constants.IMeasRange):
-            self.i_measure_range_config(measure_range)
 
     def v_measure_range_config(self,
                                v_measure_range: constants.VMeasRange) -> None:
