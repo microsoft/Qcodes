@@ -926,7 +926,7 @@ class KeysightInfiniium(VisaInstrument):
         self.trigger_level_aux = Parameter(
             name="trigger_level_aux",
             instrument=self,
-            label="Tirgger level AUX",
+            label="Trigger level AUX",
             unit="V",
             get_cmd=":TRIGger:LEVel? AUX",
             set_cmd=":TRIGger:LEVel AUX,{}",
