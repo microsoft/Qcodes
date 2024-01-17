@@ -81,7 +81,6 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.utils import (
     NumpyJSONEncoder,
-    issue_deprecation_warning,
 )
 
 from .data_set_cache import DataSetCacheWithDBBackend
@@ -1409,15 +1408,6 @@ class DataSet(BaseDataSet):
         if writer_status.write_in_background and block:
             log.debug("Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
-
-    @property
-    def export_path(self) -> str | None:
-        issue_deprecation_warning("method export_path", alternative="export_info")
-        known_export_paths = list(self.export_info.export_paths.values())
-        if len(known_export_paths) > 0:
-            return known_export_paths[-1]
-        else:
-            return None
 
     @property
     def export_info(self) -> ExportInfo:
