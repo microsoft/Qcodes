@@ -29,7 +29,6 @@ from qcodes.dataset.sqlite import queries as mut_queries
 from qcodes.dataset.sqlite import query_helpers as mut_help
 from qcodes.dataset.sqlite.connection import atomic_transaction, path_to_dbfile
 from qcodes.dataset.sqlite.database import get_DB_location
-from qcodes.utils import QCoDeSDeprecationWarning
 from tests.common import error_caused_by
 
 from .helper_functions import verify_data_dict
@@ -310,17 +309,6 @@ def test_runs_table_columns(empty_temp_db) -> None:
         colnames.remove(row[description["name"]])
 
     assert colnames == []
-
-
-def test_get_data_no_columns(scalar_dataset) -> None:
-    ds = scalar_dataset
-    with pytest.warns(QCoDeSDeprecationWarning) as record:
-        ref = mut_queries.get_data(ds.conn, ds.table_name, [])
-
-    assert ref == [tuple()]
-    assert len(record) == 2
-    assert str(record[0].message).startswith("The function <get_data>")
-    assert str(record[1].message).startswith("get_data")
 
 
 def test_get_parameter_data(scalar_dataset) -> None:
