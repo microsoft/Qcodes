@@ -1,16 +1,13 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
-from typing import Any, cast
 
 import numpy as np
 from typing_extensions import TypedDict
 
-from qcodes.dataset.data_set import load_by_id
 from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
-from qcodes.utils import deprecate, list_of_data_to_maybe_ragged_nd_array
+from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)
 
@@ -24,69 +21,6 @@ class DSPlotData(TypedDict):
     label: str
     data: np.ndarray
     shape: tuple[int, ...] | None
-
-
-@deprecate(alternative="ndarray.flatten()")
-def flatten_1D_data_for_plot(
-    rawdata: Sequence[Sequence[Any]] | np.ndarray,
-) -> np.ndarray:
-    """
-    Cast the return value of the database query to
-    a 1D numpy array
-
-    Args:
-        rawdata: The return of the get_values function
-
-    Returns:
-        A one-dimensional numpy array
-
-    """
-    dataarray = np.array(rawdata).flatten()
-    return dataarray
-
-
-@deprecate(alternative="dataset.get_parameter_data")
-def get_data_by_id(run_id: int) -> list[list[DSPlotData]]:
-    """
-    Load data from database and reshapes into 1D arrays with minimal
-    name, unit and label metadata.
-    Only returns data from parameters that depend on other parameters or
-    parameters that other parameters depend on, i.e. data for standalone
-    parameters are not returned.
-
-    Args:
-        run_id: run ID from the database
-
-    Returns:
-        a list of lists of dictionaries like this:
-
-    ::
-
-        [
-          # each element in this list refers
-          # to one dependent (aka measured) parameter
-            [
-              # each element in this list refers
-              # to one independent (aka setpoint) parameter
-              # that the dependent parameter depends on;
-              # a dictionary with the data and metadata of the dependent
-              # parameter is in the *last* element in this list
-                ...
-                {
-                    'data': <1D numpy array of points>,
-                    'name': <name of the parameter>,
-                    'label': <label of the parameter or ''>,
-                    'unit': <unit of the parameter or ''>
-                },
-                ...
-            ],
-            ...
-        ]
-
-    """
-    ds = load_by_id(run_id)
-    output = _get_data_from_ds(ds)
-    return output
 
 
 def _get_data_from_ds(ds: DataSetProtocol) -> list[list[DSPlotData]]:
@@ -410,49 +344,3 @@ def reshape_2D_data(
     z_to_plot[y_index, x_index] = z
 
     return xrow, yrow, z_to_plot
-
-
-@deprecate(alternative="dataset.get_parameter_data")
-def get_shaped_data_by_runid(run_id: int) -> list[list[dict[str, str | np.ndarray]]]:
-    """
-    Get data for a given run ID, but shaped according to its nature
-
-    The data might get flattened, and additionally reshaped if it falls on a
-    grid (equidistant or not).
-
-    Args:
-        run_id: The ID of the run for which to get data
-
-    Returns:
-        List of lists of dictionaries, the same as for `get_data_by_id`
-    """
-    mydata = get_data_by_id(run_id)
-
-    for independet in mydata:
-        data_length_long_enough = len(independet) == 3 \
-                                  and len(independet[0]['data']) > 0 \
-                                  and len(independet[1]['data']) > 0
-
-        if data_length_long_enough:
-            independet[0]['data'] = flatten_1D_data_for_plot(
-                independet[0]['data'])
-            independet[1]['data'] = flatten_1D_data_for_plot(
-                independet[1]['data'])
-
-            datatype = datatype_from_setpoints_2d(
-                cast(np.ndarray, independet[0]['data']),
-                cast(np.ndarray, independet[1]['data'])
-            )
-
-            if datatype in ('2D_grid', '2D_equidistant'):
-                (
-                    independet[0]['data'],
-                    independet[1]['data'],
-                    independet[2]['data']
-                ) = reshape_2D_data(
-                    cast(np.ndarray, independet[0]['data']),
-                    cast(np.ndarray, independet[1]['data']),
-                    cast(np.ndarray, independet[2]['data'])
-                )
-
-    return mydata

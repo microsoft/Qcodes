@@ -20,7 +20,6 @@ from qcodes.dataset.sqlite.connection import (
     transaction,
 )
 from qcodes.dataset.sqlite.settings import SQLiteSettings
-from qcodes.utils import deprecate
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, complex, list, ndarray, bool, None]
@@ -315,63 +314,6 @@ def insert_many_values(conn: ConnectionPlus,
     if return_value is None:
         raise RuntimeError(f"insert_many_values into {formatted_name} failed ")
     return return_value
-
-
-@deprecate("Unused private method to be removed in a future version")
-def modify_values(
-    conn: ConnectionPlus,
-    formatted_name: str,
-    index: int,
-    columns: list[str],
-    values: VALUES,
-) -> int:
-    """
-    Modify values for the specified columns.
-    If a column is in the table but not in the columns list is
-    left untouched.
-    If a column is mapped to None, it will be a null value.
-    """
-    name_val_template = []
-    for name in columns:
-        name_val_template.append(f"{name}=?")
-    name_val_templates = ",".join(name_val_template)
-    query = f"""
-    UPDATE "{formatted_name}"
-    SET
-        {name_val_templates}
-    WHERE
-        rowid = {index+1}
-    """
-    c = atomic_transaction(conn, query, *values)
-    return c.rowcount
-
-
-@deprecate("Unused private method to be removed in a future version")
-def modify_many_values(
-    conn: ConnectionPlus,
-    formatted_name: str,
-    start_index: int,
-    columns: list[str],
-    list_of_values: list[VALUES],
-) -> None:
-    """
-    Modify many values for the specified columns.
-    If a column is in the table but not in the column list is
-    left untouched.
-    If a column is mapped to None, it will be a null value.
-    """
-    _len = length(conn, formatted_name)
-    len_requested = start_index + len(list_of_values[0])
-    available = _len - start_index
-    if len_requested > _len:
-        reason = f"""Modify operation Out of bounds.
-        Trying to modify {len(list_of_values)} results,
-        but therere are only {available} results.
-        """
-        raise ValueError(reason)
-    for values in list_of_values:
-        modify_values(conn, formatted_name, start_index, columns, values)
-        start_index += 1
 
 
 def length(conn: ConnectionPlus,

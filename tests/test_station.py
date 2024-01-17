@@ -20,8 +20,7 @@ from qcodes.instrument_drivers.mock_instruments import (
 from qcodes.monitor import Monitor
 from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.station import SCHEMA_PATH, Station, ValidationWarning, update_config_schema
-from qcodes.utils import NumpyJSONEncoder, QCoDeSDeprecationWarning, get_qcodes_path
-from qcodes.utils.deprecate import deprecation_message
+from qcodes.utils import NumpyJSONEncoder, get_qcodes_path
 
 from .common import DummyComponent
 
@@ -760,44 +759,6 @@ def test_monitor_not_loaded_if_specified(example_station_config) -> None:
     st = Station(config_file=example_station_config, use_monitor=False)
     st.load_instrument("mock_dac")
     assert Monitor.running is None
-
-
-def test_deprecated_driver_keyword() -> None:
-    st = station_from_config_str(
-        """
-instruments:
-  mock:
-    driver: qcodes.instrument_drivers.mock_instruments
-    type: DummyChannelInstrument
-    """
-    )
-    message = deprecation_message(
-        'use of the "driver"-keyword in the station configuration file',
-        alternative='the "type"-keyword instead, prepending the driver value to it',
-    )
-    with pytest.warns(QCoDeSDeprecationWarning, match=message):
-        st.load_instrument("mock")
-
-
-def test_deprecated_limits_keyword_as_string() -> None:
-    st = station_from_config_str(
-        """
-instruments:
-  mock:
-    type: qcodes.instrument_drivers.mock_instruments.DummyInstrument
-    init:
-      gates: {"ch1"}
-    parameters:
-      ch1:
-        limits: -10, 10
-    """
-    )
-    message = deprecation_message(
-        "use of a comma separated string for the limits keyword",
-        alternative=r'an array like "\[lower_lim, upper_lim\]"',
-    )
-    with pytest.warns(QCoDeSDeprecationWarning, match=message):
-        st.load_instrument("mock")
 
 
 def test_config_validation_failure() -> None:

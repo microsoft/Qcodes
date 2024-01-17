@@ -44,7 +44,7 @@ from qcodes.dataset.sqlite.database import (
     connect,
     get_DB_location,
 )
-from qcodes.dataset.sqlite.queries import (  # noqa: F401 for backwards compatibility
+from qcodes.dataset.sqlite.queries import (
     _check_if_table_found,
     _get_result_table_name_by_guid,
     _query_guids_from_run_spec,
@@ -57,7 +57,6 @@ from qcodes.dataset.sqlite.queries import (  # noqa: F401 for backwards compatib
     get_experiment_name_from_experiment_id,
     get_guid_from_expid_and_counter,
     get_guid_from_run_id,
-    get_guids_from_run_spec,
     get_metadata_from_run_id,
     get_parameter_data,
     get_parent_dataset_links,
@@ -82,8 +81,6 @@ from qcodes.dataset.sqlite.query_helpers import (
 )
 from qcodes.utils import (
     NumpyJSONEncoder,
-    deprecate,
-    issue_deprecation_warning,
 )
 
 from .data_set_cache import DataSetCacheWithDBBackend
@@ -871,54 +868,6 @@ class DataSet(BaseDataSet):
         dfs_dict = load_to_dataframe_dict(datadict)
         return dfs_dict
 
-    @deprecate(
-        reason="This method will be removed due to inconcise naming, please "
-        "use the renamed method to_pandas_dataframe_dict",
-        alternative="to_pandas_dataframe_dict",
-    )
-    def get_data_as_pandas_dataframe(
-        self,
-        *params: str | ParamSpec | ParameterBase,
-        start: int | None = None,
-        end: int | None = None,
-    ) -> dict[str, pd.DataFrame]:
-        """
-        Returns the values stored in the :class:`.DataSet` for the specified parameters
-        and their dependencies as a dict of :py:class:`pandas.DataFrame` s
-        Each element in the dict is indexed by the names of the requested
-        parameters.
-
-        Each DataFrame contains a column for the data and is indexed by a
-        :py:class:`pandas.MultiIndex` formed from all the setpoints
-        of the parameter.
-
-        If no parameters are supplied data will be be
-        returned for all parameters in the :class:`.DataSet` that are not them self
-        dependencies of other parameters.
-
-        If provided, the start and end arguments select a range of results
-        by result count (index). If the range is empty - that is, if the end is
-        less than or equal to the start, or if start is after the current end
-        of the :class:`.DataSet` – then a dict of empty :py:class:`pandas.DataFrame` s is
-        returned.
-
-        Args:
-            *params: string parameter names, QCoDeS Parameter objects, and
-                ParamSpec objects. If no parameters are supplied data for
-                all parameters that are not a dependency of another
-                parameter will be returned.
-            start: start value of selection range (by result count); ignored
-                if None
-            end: end value of selection range (by results count); ignored if
-                None
-
-        Returns:
-            Dictionary from requested parameter names to
-            :py:class:`pandas.DataFrame` s with the requested parameter as
-            a column and a indexed by a :py:class:`pandas.MultiIndex` formed
-            by the dependencies.
-        """
-        return self.to_pandas_dataframe_dict(*params, start=start, end=end)
 
     def to_pandas_dataframe(
         self,
@@ -1459,15 +1408,6 @@ class DataSet(BaseDataSet):
         if writer_status.write_in_background and block:
             log.debug("Waiting for write queue to empty.")
             writer_status.data_write_queue.join()
-
-    @property
-    def export_path(self) -> str | None:
-        issue_deprecation_warning("method export_path", alternative="export_info")
-        known_export_paths = list(self.export_info.export_paths.values())
-        if len(known_export_paths) > 0:
-            return known_export_paths[-1]
-        else:
-            return None
 
     @property
     def export_info(self) -> ExportInfo:

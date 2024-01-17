@@ -43,7 +43,6 @@ from qcodes.utils import (
     checked_getattr,
     get_qcodes_path,
     get_qcodes_user_path,
-    issue_deprecation_warning,
 )
 
 log = logging.getLogger(__name__)
@@ -564,18 +563,8 @@ class Station(Metadatable, DelegateAttributes):
         instr_kwargs.update(kwargs)
         name = instr_kwargs.pop('name', identifier)
 
-        if 'driver' in instr_cfg:
-            issue_deprecation_warning(
-                'use of the "driver"-keyword in the station '
-                'configuration file',
-                alternative='the "type"-keyword instead, prepending the '
-                'driver value'
-                ' to it')
-            module_name = instr_cfg['driver']
-            instr_class_name = instr_cfg['type']
-        else:
-            module_name = '.'.join(instr_cfg['type'].split('.')[:-1])
-            instr_class_name = instr_cfg['type'].split('.')[-1]
+        module_name = ".".join(instr_cfg["type"].split(".")[:-1])
+        instr_class_name = instr_cfg["type"].split(".")[-1]
         module = importlib.import_module(module_name)
         instr_class = getattr(module, instr_class_name)
         instr = instr_class(name=name, **instr_kwargs)
@@ -629,17 +618,7 @@ class Station(Metadatable, DelegateAttributes):
                     setattr(parameter, attr, val)
                 # extra attributes that need parsing
                 elif attr == 'limits':
-                    if isinstance(val, str):
-                        issue_deprecation_warning(
-                            (
-                                "use of a comma separated string for the limits "
-                                "keyword"
-                            ),
-                            alternative='an array like "[lower_lim, upper_lim]"',
-                        )
-                        lower, upper = (float(x) for x in val.split(","))
-                    else:
-                        lower, upper = val
+                    lower, upper = val
                     parameter.vals = validators.Numbers(lower, upper)
                 elif attr == 'monitor' and val is True:
                     if isinstance(parameter, Parameter):

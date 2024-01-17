@@ -4,12 +4,11 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from numpy.testing import assert_allclose
 
-from qcodes.dataset.data_export import _get_data_from_ds, get_data_by_id
+from qcodes.dataset.data_export import _get_data_from_ds
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import Measurement
 from qcodes.parameters import ManualParameter
-from qcodes.utils import QCoDeSDeprecationWarning
 
 
 def test_get_data_by_id_order(dataset) -> None:
@@ -39,19 +38,15 @@ def test_get_data_by_id_order(dataset) -> None:
                           'indep1': 1}])
     dataset.mark_completed()
 
-    with pytest.warns(QCoDeSDeprecationWarning):
-        data1 = get_data_by_id(dataset.run_id)
+    data = _get_data_from_ds(dataset)
 
-    data2 = _get_data_from_ds(dataset)
+    data_dict = {el["name"]: el["data"] for el in data[0]}
+    assert data_dict["indep1"] == 1
+    assert data_dict["indep2"] == 2
 
-    for data in (data1, data2):
-        data_dict = {el['name']: el['data'] for el in data[0]}
-        assert data_dict['indep1'] == 1
-        assert data_dict['indep2'] == 2
-
-        data_dict = {el['name']: el['data'] for el in data[1]}
-        assert data_dict['indep1'] == 1
-        assert data_dict['indep2'] == 2
+    data_dict = {el["name"]: el["data"] for el in data[1]}
+    assert data_dict["indep1"] == 1
+    assert data_dict["indep2"] == 2
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])

@@ -17,7 +17,6 @@ else:
     # 3.9 and earlier
     from importlib_metadata import distributions
 
-from qcodes.utils.deprecate import deprecate
 
 log = logging.getLogger(__name__)
 
@@ -43,15 +42,6 @@ def is_qcodes_installed_editably() -> Optional[bool]:
         answer = None
 
     return answer
-
-
-@deprecate("function 'get_qcodes_version'", alternative="qcodes.__version__")
-def get_qcodes_version() -> str:
-    """
-    Get the version of the currently installed QCoDeS
-    """
-    from qcodes._version import __version__
-    return __version__
 
 
 def get_all_installed_package_versions() -> dict[str, str]:

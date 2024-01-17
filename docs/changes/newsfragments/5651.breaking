@@ -1,0 +1,56 @@
+The following long deprecated functions and methods and functionalities have been removed.
+Here ordered by top level module for clarity.
+
+* ``qcodes.dataset``
+
+    * ``flatten_1D_data_for_plot``
+
+    * ``get_shaped_data_by_runid``
+
+    * ``get_guids_from_run_spec``
+
+    * ``dataset.get_data_as_pandas_dataframe``
+
+    * ``dataset.export_path``
+
+    * ``_conditional_parameter_set``
+
+    * ``_make_nested_setpoints``
+
+    * ``_select_active_actions_delays``
+
+    * ``_create_measurements``
+
+    * ``_extract_paramters_by_type_and_group``
+
+    * ``_build_data_query``
+
+    * ``get_data``
+
+    * ``get_interdeps_from_result_table_name``
+
+    * ``get_values``
+
+    * ``get_setpoints``
+
+    * ``get_guids_from_run_spec``
+
+    * ``data_sets``
+
+    * ``modify_values``
+
+    * ``modify_many_values``
+
+* ``qcodes.instrument_drivers.devices`` / ``codes.parameters``
+
+  * ``VoltageDivider``
+
+* ``qcodes.station``
+
+    * Support for driver kwarg in yaml config
+
+    * Support for limits as a string.
+
+* ``qcodes.utils``
+
+    * ``get_qcodes_version``

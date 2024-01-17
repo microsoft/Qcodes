@@ -47,7 +47,7 @@ from qcodes.dataset.sqlite.query_helpers import (
     sql_placeholder_string,
     update_where,
 )
-from qcodes.utils import deprecate, list_of_data_to_maybe_ragged_nd_array
+from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
 
 log = logging.getLogger(__name__)
 
@@ -113,71 +113,6 @@ def is_run_id_in_database(conn: ConnectionPlus, *run_ids: int) -> dict[int, bool
     rows = cursor.fetchall()
     existing_ids = [row[0] for row in rows]
     return {run_id: (run_id in existing_ids) for run_id in run_ids}
-
-
-@deprecate("Unused private method to be removed in a future version")
-def _build_data_query(
-    table_name: str,
-    columns: list[str],
-    start: int | None = None,
-    end: int | None = None,
-) -> str:
-
-    _columns = ",".join(columns)
-    query = f"""
-            SELECT {_columns}
-            FROM "{table_name}"
-            """
-
-    start_specified = start is not None
-    end_specified = end is not None
-
-    where = ' WHERE' if start_specified or end_specified else ''
-    start_condition = f' rowid >= {start}' if start_specified else ''
-    end_condition = f' rowid <= {end}' if end_specified else ''
-    and_ = ' AND' if start_specified and end_specified else ''
-
-    query += where + start_condition + and_ + end_condition
-    return query
-
-
-@deprecate(
-    "This method does not accurately represent the dataset.",
-    "Use `get_parameter_data` instead.",
-)
-def get_data(
-    conn: ConnectionPlus,
-    table_name: str,
-    columns: list[str],
-    start: int | None = None,
-    end: int | None = None,
-) -> list[tuple[Any, ...]]:
-    """
-    Get data from the columns of a table.
-    Allows to specify a range of rows (1-based indexing, both ends are
-    included).
-
-    Args:
-        conn: database connection
-        table_name: name of the table
-        columns: list of columns
-        start: start of range; if None, then starts from the top of the table
-        end: end of range; if None, then ends at the bottom of the table
-
-    Returns:
-        the data requested in the format of list of rows of values
-    """
-    if len(columns) == 0:
-        warnings.warn(
-            'get_data: requested data without specifying parameters/columns.'
-            'Returning empty list.'
-        )
-        return [tuple()]
-    query = _build_data_query(table_name, columns, start, end)
-    c = atomic_transaction(conn, query)
-    res = many_many(c, *columns)
-
-    return res
 
 
 def get_parameter_data(
@@ -282,13 +217,6 @@ def get_rundescriber_from_result_table_name(
     run_id = one(c, 'run_id')
     rd = serial.from_json_to_current(get_run_description(conn, run_id))
     return rd
-
-
-@deprecate("Unused and untested method, to be removed in a future version")
-def get_interdeps_from_result_table_name(conn: ConnectionPlus, result_table_name: str) -> InterDependencies_:
-    rd = get_rundescriber_from_result_table_name(conn, result_table_name)
-    interdeps = rd.interdeps
-    return interdeps
 
 
 def get_parameter_data_for_one_paramtree(
@@ -421,34 +349,6 @@ def _get_data_for_one_param_tree(
     )
     n_rows = len(res)
     return res, paramspecs, n_rows
-
-
-@deprecate(
-    "This method does not accurately represent the dataset.",
-    "Use `get_parameter_data` instead.",
-)
-def get_values(
-    conn: ConnectionPlus, table_name: str, param_name: str
-) -> list[tuple[Any, ...]]:
-    """
-    Get the not-null values of a parameter
-
-    Args:
-        conn: Connection to the database
-        table_name: Name of the table that holds the data
-        param_name: Name of the parameter to get the setpoints of
-
-    Returns:
-        The values
-    """
-    sql = f"""
-    SELECT {param_name} FROM "{table_name}"
-    WHERE {param_name} IS NOT NULL
-    """
-    c = atomic_transaction(conn, sql)
-    res = many_many(c, param_name)
-
-    return res
 
 
 def get_parameter_db_row(conn: ConnectionPlus, table_name: str, param_name: str) -> int:
@@ -638,76 +538,6 @@ def get_parameter_tree_values(
     return res
 
 
-@deprecate(alternative="get_parameter_data")
-def get_setpoints(
-    conn: ConnectionPlus, table_name: str, param_name: str
-) -> dict[str, list[tuple[Any, ...]]]:
-    """
-    Get the setpoints for a given dependent parameter
-
-    Args:
-        conn: Connection to the database
-        table_name: Name of the table that holds the data
-        param_name: Name of the parameter to get the setpoints of
-
-    Returns:
-        A list of returned setpoint values. Each setpoint return value
-        is a list of lists of Any. The first list is a list of run points,
-        the second list is a list of parameter values.
-    """
-    # TODO: We do this in no less than 5 table lookups, surely
-    # this number can be reduced
-
-    # get run_id
-    sql = """
-    SELECT run_id FROM runs WHERE result_table_name = ?
-    """
-    c = atomic_transaction(conn, sql, table_name)
-    run_id = one(c, 'run_id')
-
-    # get the parameter layout id
-    sql = """
-    SELECT layout_id FROM layouts
-    WHERE parameter = ?
-    and run_id = ?
-    """
-    c = atomic_transaction(conn, sql, param_name, run_id)
-    layout_id = one(c, 'layout_id')
-
-    # get the setpoint layout ids
-    sql = """
-    SELECT independent FROM dependencies
-    WHERE dependent = ?
-    """
-    c = atomic_transaction(conn, sql, layout_id)
-    indeps = many_many(c, 'independent')
-    indeps = [idp[0] for idp in indeps]
-
-    # get the setpoint names
-    sql = f"""
-    SELECT parameter FROM layouts WHERE layout_id
-    IN {str(indeps).replace('[', '(').replace(']', ')')}
-    """
-    c = atomic_transaction(conn, sql)
-    setpoint_names_temp = many_many(c, 'parameter')
-    setpoint_names = [spn[0] for spn in setpoint_names_temp]
-    setpoint_names = cast(list[str], setpoint_names)
-
-    # get the actual setpoint data
-    output: dict[str, list[tuple[Any, ...]]] = {}
-    for sp_name in setpoint_names:
-        sql = f"""
-        SELECT {sp_name}
-        FROM "{table_name}"
-        WHERE {param_name} IS NOT NULL
-        """
-        c = atomic_transaction(conn, sql)
-        sps = many_many(c, sp_name)
-        output[sp_name] = sps
-
-    return output
-
-
 def get_runid_from_expid_and_counter(conn: ConnectionPlus, exp_id: int,
                                      counter: int) -> int:
     """
@@ -857,27 +687,6 @@ def _query_guids_from_run_spec(
         cursor.execute(query)
 
     return [guid for guid, in cursor.fetchall()]
-
-
-@deprecate(
-    "Unused part of private api.",
-    alternative="qcodes.dataset.data_set.get_guids_by_run_spec",
-)
-def get_guids_from_run_spec(
-    conn: ConnectionPlus,
-    captured_run_id: int | None = None,
-    captured_counter: int | None = None,
-    experiment_name: str | None = None,
-    sample_name: str | None = None,
-) -> list[str]:
-
-    return _query_guids_from_run_spec(
-        conn,
-        captured_run_id=captured_run_id,
-        captured_counter=captured_counter,
-        experiment_name=experiment_name,
-        sample_name=sample_name,
-    )
 
 
 def _get_layout_id(
@@ -1299,20 +1108,6 @@ def run_exists(conn: ConnectionPlus, run_id: int) -> bool:
     """
     res: tuple[int] = atomic_transaction(conn, query, run_id).fetchone()
     return bool(res[0])
-
-
-@deprecate(alternative="get_runs")
-def data_sets(conn: ConnectionPlus) -> list[int]:
-    """Get a list of datasets
-    Args:
-        conn: database connection
-
-    Returns:
-        list of rows
-    """
-    sql = "SELECT run_id FROM runs"
-    c = atomic_transaction(conn, sql)
-    return [run_id for run_id, in c.fetchall()]
 
 
 def format_table_name(fmt_str: str, name: str, exp_id: int,
