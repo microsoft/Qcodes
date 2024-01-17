@@ -50,6 +50,10 @@ def deprecate(
     """
     A utility function to decorate deprecated functions and classes.
 
+    Note that this is not recommended to be used for deprecation any new code.
+    It is recommended to use typing_extensions.deprecated (which will be added
+    to the std lib as warnings.deprecated in python 3.13)
+
     Args:
         reason: The reason of deprecation.
         alternative: The alternative function or class to put in use instead of
