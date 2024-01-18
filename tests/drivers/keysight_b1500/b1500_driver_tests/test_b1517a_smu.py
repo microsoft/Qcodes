@@ -58,33 +58,6 @@ def test_snapshot() -> None:
     assert isinstance(s['_timing_parameters']['number'], int)
 
 
-@pytest.mark.filterwarnings("ignore:The function <measure_config>")
-def test_measure_config(smu) -> None:
-    smu.measure_config(VMeasRange.AUTO)
-    s = smu.snapshot()
-
-    assert s['_measure_config']['v_measure_range'] == 0
-    assert s['_measure_config']['i_measure_range'] == 0
-
-    smu.measure_config(VMeasRange.FIX_0V5)
-    s = smu.snapshot()
-
-    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
-    assert s['_measure_config']['v_measure_range'] == -5
-
-    smu.measure_config(IMeasRange.FIX_1nA)
-    s = smu.snapshot()
-
-    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
-    assert s['_measure_config']['i_measure_range'] == -11
-
-    smu.measure_config(IMeasRange.AUTO)
-    s = smu.snapshot()
-
-    assert s['_measure_config']['v_measure_range'] == 0
-    assert s['_measure_config']['i_measure_range'] == 0
-
-
 def test_v_measure_range_config_raises_type_error(smu) -> None:
     msg = re.escape("Expected valid voltage measurement range, got 42.")
 

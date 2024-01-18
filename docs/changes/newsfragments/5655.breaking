@@ -1,0 +1,22 @@
+The following deprecated instrument drivers have been removed:
+
+* ``QDevil.QDac`` Use driver from qcodes_contrib_drivers instead.
+
+* ``Agilent_34400A`` Use Keysight 344xxA drivers or Agilent34401A, Agilent34410A, Agilent34411A instead.
+
+* ``E8267`` use  ``AgilentE8267C`` instead.
+
+* ``Agilent_E8527D`` use AgilentE8257D instead.
+
+The following deprecated instrument driver methods have been removed:
+
+*  ``KeysightInfiniium``  ``DSOTimeAxisParam.prepare_curvedata``
+
+*  ``KeysightB1517A.measure_config`` replaced by ``v_measure_range_config`` and ``i_measure_range_config``
+
+* ``RohdeSchwarz ZNB`` ``RohdeSchwarzZNBChannel.update_traces`` use ``update_lin_traces``
+
+
+``qcodes.utils.deprecate`` decorator has been soft deprecated. In the future qcodes will use the ``deprecated`` decorator from
+the ``typing_extensions`` package (to be part of the std library warnings module from Python 3.13). We recommend anyone else to
+do the same.

@@ -20,7 +20,6 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
-from qcodes.utils import deprecate
 
 
 class DSOTimeAxisParam(Parameter):
@@ -163,13 +162,6 @@ class DSOTraceParam(ParameterWithSetpoints):
         Stub to allow initialization.
         """
         return
-
-    @deprecate("DSOTraceParam.update_setpoints")
-    def prepare_curvedata(self) -> None:
-        """
-        Deprecated method to update waveform parameters.
-        """
-        self.update_setpoints()
 
     def update_setpoints(self, preamble: Optional[Sequence[str]] = None) -> None:
         """
