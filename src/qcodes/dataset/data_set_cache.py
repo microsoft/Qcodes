@@ -456,9 +456,9 @@ class DataSetCacheInMem(DataSetCache["DataSetInMem"]):
 
 
 class DataSetCacheDeferred(DataSetCacheInMem):
-    def __init__(self, dataset: DataSetInMem, loaded_data: Path):
+    def __init__(self, dataset: DataSetInMem, loaded_data: Path | str):
         super().__init__(dataset)
-        self._xr_dataset_path = loaded_data
+        self._xr_dataset_path = Path(loaded_data)
 
     def load_data_from_db(self) -> None:
         if self._data == {}:
