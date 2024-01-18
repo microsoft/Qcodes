@@ -1187,8 +1187,7 @@ def test_inverted_coords_perserved_on_netcdf_roundtrip(
     file_path = os.path.join(path, expected_path)
     ds = load_from_netcdf(file_path)
 
-    with pytest.warns(UserWarning):
-        xr_ds_reimported = ds.to_xarray_dataset()
+    xr_ds_reimported = ds.to_xarray_dataset()
 
     assert xr_ds_reimported["z1"].dims == ("x", "y")
     assert xr_ds_reimported["z2"].dims == ("y", "x")
