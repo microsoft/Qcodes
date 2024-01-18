@@ -94,7 +94,7 @@ if config.core.import_legacy_api:
 
 
 @deprecated(
-    "tests are no longer shipped as part of QCoDeS Clone git repo to matching tag and run `pytest tests` from the root of the repo.",
+    "tests are no longer shipped as part of QCoDeS. Clone git repo to matching tag and run `pytest tests` from the root of the repo.",
     category=QCoDeSDeprecationWarning,
 )
 def test(**kwargs: Any) -> int:
