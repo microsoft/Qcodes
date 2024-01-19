@@ -1,3 +1,3 @@
 When loading a QCoDeS dataset from a netcdf file using load_from_netcdf and converted to a Xarray dataset using
 ``to_xarray_dataset`` or ``cache.to_xarray_dataset`` we avoid converting the data to QCoDeS format and back to Xarray format.
-This should safe time and avoid any potential corner cases when roundtripping the data.
+This should save time and avoid any potential corner cases when roundtripping the data.
