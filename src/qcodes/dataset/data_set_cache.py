@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 import numpy as np
 
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.exporters.export_info import ExportInfo
 from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
 
@@ -25,7 +27,7 @@ if TYPE_CHECKING:
 
     # used in forward refs that cannot be detected
     from .data_set import DataSet  # noqa F401
-    from .data_set_in_memory import DataSetInMem  # noqa F401
+    from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol, ParameterData
 
 DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
@@ -451,6 +453,42 @@ def _expand_single_param_dict(
 
 class DataSetCacheInMem(DataSetCache["DataSetInMem"]):
     pass
+
+
+class DataSetCacheDeferred(DataSetCacheInMem):
+    def __init__(self, dataset: DataSetInMem, loaded_data: Path | str):
+        super().__init__(dataset)
+        self._xr_dataset_path = Path(loaded_data)
+
+    def load_data_from_db(self) -> None:
+        if self._data == {}:
+            loaded_data = self._load_xr_dataset()
+            self._data = self._dataset._from_xarray_dataset_to_qcodes_raw_data(
+                loaded_data
+            )
+
+    def _load_xr_dataset(self) -> xr.Dataset:
+        import cf_xarray as cfxr
+        import xarray as xr
+
+        loaded_data = xr.load_dataset(self._xr_dataset_path, engine="h5netcdf")
+        loaded_data = cfxr.coding.decode_compress_to_multi_index(loaded_data)
+        export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
+        export_info.export_paths["nc"] = str(self._xr_dataset_path)
+        loaded_data.attrs["export_info"] = export_info.to_str()
+        return loaded_data
+
+    def to_xarray_dataset(
+        self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
+    ) -> xr.Dataset:
+        loaded_data = self._load_xr_dataset()
+        if use_multi_index == "always":
+            ds = loaded_data.stack()
+        elif use_multi_index == "never":
+            ds = loaded_data.unstack()
+        else:
+            ds = loaded_data
+        return ds
 
 
 class DataSetCacheWithDBBackend(DataSetCache["DataSet"]):

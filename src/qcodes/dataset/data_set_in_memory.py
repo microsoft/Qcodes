@@ -44,7 +44,7 @@ from qcodes.dataset.sqlite.queries import (
 )
 from qcodes.utils import NumpyJSONEncoder
 
-from .data_set_cache import DataSetCacheInMem
+from .data_set_cache import DataSetCacheDeferred, DataSetCacheInMem
 from .dataset_helpers import _add_run_to_runs_table
 from .descriptions.versioning import serialization as serial
 from .experiment_settings import get_default_experiment_id
@@ -228,78 +228,74 @@ class DataSetInMem(BaseDataSet):
         # in the code below floats and ints loaded from attributes are explicitly casted
         # this is due to some older versions of qcodes writing them with a different backend
         # reading them back results in a numpy array of one element
-        import cf_xarray as cfxr
         import xarray as xr
 
-        loaded_data = xr.load_dataset(path, engine="h5netcdf")
+        with xr.open_dataset(path, engine="h5netcdf") as loaded_data:
 
-        loaded_data = cfxr.coding.decode_compress_to_multi_index(loaded_data)
+            parent_dataset_links = str_to_links(
+                loaded_data.attrs.get("parent_dataset_links", "[]")
+            )
+            if path_to_db is not None:
+                path_to_db = str(path_to_db)
 
-        parent_dataset_links = str_to_links(
-            loaded_data.attrs.get("parent_dataset_links", "[]")
-        )
-        if path_to_db is not None:
-            path_to_db = str(path_to_db)
+            with contextlib.closing(
+                conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
+            ) as conn:
+                run_data = get_raw_run_attributes(conn, guid=loaded_data.guid)
+                path_to_db = conn.path_to_dbfile
 
-        with contextlib.closing(
-            conn_from_dbpath_or_conn(conn=None, path_to_db=path_to_db)
-        ) as conn:
-            run_data = get_raw_run_attributes(conn, guid=loaded_data.guid)
-            path_to_db = conn.path_to_dbfile
+            if run_data is not None:
+                run_id = run_data["run_id"]
+                counter = run_data["counter"]
+            else:
+                run_id = int(loaded_data.captured_run_id)
+                counter = int(loaded_data.captured_counter)
 
-        if run_data is not None:
-            run_id = run_data["run_id"]
-            counter = run_data["counter"]
-        else:
-            run_id = int(loaded_data.captured_run_id)
-            counter = int(loaded_data.captured_counter)
+            path = str(path)
+            path = os.path.abspath(path)
 
-        path = str(path)
-        path = os.path.abspath(path)
+            export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
+            export_info.export_paths["nc"] = path
+            non_metadata = {
+                "run_timestamp_raw",
+                "completed_timestamp_raw",
+                "ds_name",
+                "exp_name",
+                "sample_name",
+                "export_info",
+                "parent_dataset_links",
+            }
 
-        export_info = ExportInfo.from_str(loaded_data.attrs.get("export_info", ""))
-        export_info.export_paths["nc"] = path
-        non_metadata = {
-            "run_timestamp_raw",
-            "completed_timestamp_raw",
-            "ds_name",
-            "exp_name",
-            "sample_name",
-            "export_info",
-            "parent_dataset_links",
-        }
+            metadata_keys = (
+                set(loaded_data.attrs.keys()) - set(RUNS_TABLE_COLUMNS) - non_metadata
+            )
+            metadata = {}
+            for key in metadata_keys:
+                data = loaded_data.attrs[key]
+                if isinstance(data, np.ndarray) and data.size == 1:
+                    data = data[0]
+                metadata[str(key)] = data
 
-        metadata_keys = (
-            set(loaded_data.attrs.keys()) - set(RUNS_TABLE_COLUMNS) - non_metadata
-        )
-        metadata = {}
-        for key in metadata_keys:
-            data = loaded_data.attrs[key]
-            if isinstance(data, np.ndarray) and data.size == 1:
-                data = data[0]
-            metadata[str(key)] = data
-
-        ds = cls(
-            run_id=run_id,
-            captured_run_id=int(loaded_data.captured_run_id),
-            counter=counter,
-            captured_counter=int(loaded_data.captured_counter),
-            name=loaded_data.ds_name,
-            exp_id=0,
-            exp_name=loaded_data.exp_name,
-            sample_name=loaded_data.sample_name,
-            guid=loaded_data.guid,
-            path_to_db=path_to_db,
-            run_timestamp_raw=float(loaded_data.run_timestamp_raw),
-            completed_timestamp_raw=float(loaded_data.completed_timestamp_raw),
-            metadata=metadata,
-            rundescriber=serial.from_json_to_current(loaded_data.run_description),
-            parent_dataset_links=parent_dataset_links,
-            export_info=export_info,
-            snapshot=loaded_data.snapshot,
-        )
-        ds._cache = DataSetCacheInMem(ds)
-        ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(loaded_data)
+            ds = cls(
+                run_id=run_id,
+                captured_run_id=int(loaded_data.captured_run_id),
+                counter=counter,
+                captured_counter=int(loaded_data.captured_counter),
+                name=loaded_data.ds_name,
+                exp_id=0,
+                exp_name=loaded_data.exp_name,
+                sample_name=loaded_data.sample_name,
+                guid=loaded_data.guid,
+                path_to_db=path_to_db,
+                run_timestamp_raw=float(loaded_data.run_timestamp_raw),
+                completed_timestamp_raw=float(loaded_data.completed_timestamp_raw),
+                metadata=metadata,
+                rundescriber=serial.from_json_to_current(loaded_data.run_description),
+                parent_dataset_links=parent_dataset_links,
+                export_info=export_info,
+                snapshot=loaded_data.snapshot,
+            )
+            ds._cache = DataSetCacheDeferred(ds, path)
 
         return ds
 
