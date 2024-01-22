@@ -130,7 +130,7 @@ rsa==4.9
 ruamel.yaml==0.18.5
 ruamel.yaml.clib==0.2.8
 schema==0.7.5
-scipy~=1.11.2
+scipy~=1.12.0
 Send2Trash~=1.8.0
 six~=1.16.0
 snowballstemmer~=2.2.0
