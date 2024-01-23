@@ -16,3 +16,8 @@ updates:
   rebase-strategy: "disabled"
   schedule:
     interval: "daily"
+
+- package-ecosystem: pip
+  directory: /.binder
+  schedule:
+    interval: daily
