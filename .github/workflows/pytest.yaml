@@ -45,6 +45,11 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
 
     steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@v2
+      with:
+        egress-policy: audit
+
     - uses: actions/checkout@v4.1.1
       with:
         submodules: true
