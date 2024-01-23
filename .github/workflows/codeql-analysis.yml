@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '42 15 * * 0'
+  push:
+    branches:
+      - 'main'
+      - 'release/*'
+  pull_request:
+
 
 permissions:
   contents: read
