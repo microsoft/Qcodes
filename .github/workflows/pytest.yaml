@@ -45,13 +45,13 @@ jobs:
       PYTHON: ${{ matrix.python-version }}
 
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
         submodules: true
         # we need full history with tags for the version number
         fetch-depth: '0'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -75,7 +75,7 @@ jobs:
       run: |
         pip install .[test] -c requirements.txt
       if: ${{ !matrix.min-version }}
-    - uses: jakebailey/pyright-action@v2.0.1
+    - uses: jakebailey/pyright-action@03ab3c98073356eb56161009632b39fc2666321b # v2.0.1
       with:
         version: 1.1.339
       if: ${{ !matrix.min-version }}
@@ -90,7 +90,7 @@ jobs:
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci tests
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3.1.4
+      uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON
