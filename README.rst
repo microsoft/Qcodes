@@ -1,6 +1,6 @@
 QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
 =================================================
-|Build Status Github| |Build Status Github Docs| |Codacy badge|
+|Build Status Github| |Build Status Github Docs| |Codacy badge| |OpenSSF|
 
 QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
@@ -113,3 +113,5 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/main/LICENSE>`__.
    :target: http://microsoft.github.io/Qcodes
 .. |DOI| image:: https://zenodo.org/badge/37137879.svg
    :target: https://zenodo.org/badge/latestdoi/37137879
+.. |OpenSSF| image:: https://api.securityscorecards.dev/projects/github.com/microsoft/Qcodes/badge
+   :target: https://securityscorecards.dev/viewer/?uri=github.com/microsoft/Qcodes
