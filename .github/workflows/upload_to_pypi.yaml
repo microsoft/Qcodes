@@ -13,6 +13,11 @@ jobs:
     permissions:
       id-token: write
     steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@v2
+      with:
+        egress-policy: audit
+
     - uses: actions/checkout@v4.1.1
     - name: Set up Python
       uses: actions/setup-python@v5
