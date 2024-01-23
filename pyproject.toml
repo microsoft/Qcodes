@@ -29,7 +29,7 @@ dependencies = [
     "h5py>=3.0.0",
     "importlib-metadata>=4.4; python_version < '3.10'",
     "ipywidgets>=8.0.0,<9.0.0",
-    "ipykernel>=6.0.0", # implicitly required by ipywidgets >=8.0.5
+    "ipykernel>=6.6.0", # implicitly required by ipywidgets >=8.0.5
     "jsonschema>=4.9.0",
     "matplotlib>=3.3.3",
     "numpy>=1.21.0",
