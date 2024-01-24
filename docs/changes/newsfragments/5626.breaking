@@ -1,1 +1,0 @@
-The deprecated method `DataSetProtocol.cache.to_pandas` has been removed. Use the to_pandas_dataframe or to_pandas_dataframe_dict methods as an alternative.

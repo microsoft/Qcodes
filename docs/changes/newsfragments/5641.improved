@@ -1,1 +1,0 @@
-Fixed an issue where datasets with categorical setpoints could fail to correctly export to Pandas dataframes or Xarray dataset.
