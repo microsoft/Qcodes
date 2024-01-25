@@ -55,7 +55,7 @@ dependencies = [
     # ensure that we always use versions that do not have",
     # known security vulnerabilities",
     "tornado>=6.3.3",
-    "ipython>=8.20.0",
+    "ipython>=8.20",
     "pillow>=9.0.0",
     "rsa>=4.7",
 ]
