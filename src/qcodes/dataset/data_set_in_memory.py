@@ -345,6 +345,7 @@ class DataSetInMem(BaseDataSet):
         if xr_path is not None and xr_path.is_file():
             ds._cache = DataSetCacheDeferred(ds, xr_path)
         elif xr_path is not None and not xr_path.is_file():
+            success = False
             warnings.warn(
                 "Could not load raw data for dataset with guid : {ds.guid} from location {xr_path}"
             )
