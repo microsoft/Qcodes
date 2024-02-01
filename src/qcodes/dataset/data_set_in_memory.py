@@ -333,33 +333,21 @@ class DataSetInMem(BaseDataSet):
             snapshot=run_attributes["snapshot"],
         )
         xr_path = export_info.export_paths.get("nc")
+        xr_path = Path(xr_path) if xr_path is not None else None
 
         cls._set_cache_from_netcdf(ds, xr_path)
         return ds
 
     @classmethod
-    def _set_cache_from_netcdf(cls, ds: DataSetInMem, xr_path: str | None) -> bool:
-        import cf_xarray as cfxr
-        import xarray as xr
+    def _set_cache_from_netcdf(cls, ds: DataSetInMem, xr_path: Path | None) -> bool:
 
         success = True
-        if xr_path is not None:
-            try:
-                loaded_data = xr.load_dataset(xr_path, engine="h5netcdf")
-                loaded_data = cfxr.coding.decode_compress_to_multi_index(loaded_data)
-                ds._cache = DataSetCacheInMem(ds)
-                ds._cache._data = cls._from_xarray_dataset_to_qcodes_raw_data(
-                    loaded_data
-                )
-            except (
-                FileNotFoundError,
-                OSError,
-            ):  # older versions of h5py may throw a OSError here
-                success = False
-                warnings.warn(
-                    "Could not load raw data for dataset with guid :"
-                    f"{ds.guid} from location {xr_path}"
-                )
+        if xr_path is not None and xr_path.is_file():
+            ds._cache = DataSetCacheDeferred(ds, xr_path)
+        elif xr_path is not None and not xr_path.is_file():
+            warnings.warn(
+                "Could not load raw data for dataset with guid : {ds.guid} from location {xr_path}"
+            )
         else:
             warnings.warn(f"No raw data stored for dataset with guid : {ds.guid}")
             success = False
@@ -375,12 +363,12 @@ class DataSetInMem(BaseDataSet):
         be able to use this method to update the metadata in the database to refer to
         the new location.
         """
-        if isinstance(path, Path):
-            path = str(path)
+        if isinstance(path, str):
+            path = Path(path)
         data_loaded = self._set_cache_from_netcdf(self, path)
         if data_loaded:
             export_info = self.export_info
-            export_info.export_paths["nc"] = path
+            export_info.export_paths["nc"] = str(path)
             self._set_export_info(export_info)
         else:
             raise FileNotFoundError(f"Could not load a netcdf file from {path}")
