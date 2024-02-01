@@ -332,8 +332,8 @@ class DataSetInMem(BaseDataSet):
             export_info=export_info,
             snapshot=run_attributes["snapshot"],
         )
-        xr_path = export_info.export_paths.get("nc")
-        xr_path = Path(xr_path) if xr_path is not None else None
+        xr_path_temp = export_info.export_paths.get("nc")
+        xr_path = Path(xr_path_temp) if xr_path_temp is not None else None
 
         cls._set_cache_from_netcdf(ds, xr_path)
         return ds
