@@ -20,6 +20,7 @@ from qcodes.dataset import (
     DataSetType,
     Measurement,
     get_data_export_path,
+    load_by_guid,
     load_by_id,
     load_from_netcdf,
     new_data_set,
@@ -129,6 +130,21 @@ def _make_mock_dataset_grid(experiment) -> DataSet:
             dataset.add_results(results)
     dataset.mark_completed()
     return dataset
+
+
+@pytest.fixture(name="mock_dataset_in_mem_grid")
+def _make_mock_dataset_in_mem_grid(experiment) -> DataSetProtocol:
+    meas = Measurement(exp=experiment, name="in_mem_ds")
+    meas.register_custom_parameter("x", paramtype="numeric")
+    meas.register_custom_parameter("y", paramtype="numeric")
+    meas.register_custom_parameter("z", paramtype="numeric", setpoints=("x", "y"))
+
+    with meas.run(dataset_class=DataSetType.DataSetInMem) as datasaver:
+        for x in range(10):
+            for y in range(20, 25):
+                results: list[tuple[str, int]] = [("x", x), ("y", y), ("z", x + y)]
+                datasaver.add_result(*results)
+    return datasaver.dataset
 
 
 @pytest.fixture(name="mock_dataset_grid_with_shapes")
@@ -1408,3 +1424,68 @@ def test_export_lazy_load(
     getattr(ds, function_name)()
 
     assert ds.cache._data != {}
+
+
+@given(
+    function_name=hst.sampled_from(
+        [
+            "to_xarray_dataarray_dict",
+            "to_pandas_dataframe",
+            "to_pandas_dataframe_dict",
+            "get_parameter_data",
+        ]
+    )
+)
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=None)
+def test_export_lazy_load_in_mem_dataset(
+    tmp_path_factory: TempPathFactory,
+    mock_dataset_in_mem_grid: DataSet,
+    function_name: str,
+) -> None:
+    tmp_path = tmp_path_factory.mktemp("export_netcdf")
+    path = str(tmp_path)
+    mock_dataset_in_mem_grid.export(
+        export_type="netcdf", path=tmp_path, prefix="qcodes_"
+    )
+
+    xr_ds = mock_dataset_in_mem_grid.to_xarray_dataset()
+    assert xr_ds["z"].dims == ("x", "y")
+
+    expected_path = f"qcodes_{mock_dataset_in_mem_grid.captured_run_id}_{mock_dataset_in_mem_grid.guid}.nc"
+    assert os.listdir(path) == [expected_path]
+    file_path = os.path.join(path, expected_path)
+    ds = load_from_netcdf(file_path)
+
+    # loading the dataset should not load the actual data into cache
+    assert ds.cache._data == {}
+    # loading directly into xarray should not round
+    # trip to qcodes format and  therefor not fill the cache
+    xr_ds_reimported = ds.to_xarray_dataset()
+    assert ds.cache._data == {}
+
+    assert xr_ds_reimported["z"].dims == ("x", "y")
+    assert xr_ds.identical(xr_ds_reimported)
+
+    # but loading with any of these functions
+    # will currently fill the cache
+    getattr(ds, function_name)()
+
+    assert ds.cache._data != {}
+
+    dataset_loaded_by_guid = load_by_guid(mock_dataset_in_mem_grid.guid)
+
+    # loading the dataset should not load the actual data into cache
+    assert dataset_loaded_by_guid.cache._data == {}
+    # loading directly into xarray should not round
+    # trip to qcodes format and  therefor not fill the cache
+    xr_ds_reimported = dataset_loaded_by_guid.to_xarray_dataset()
+    assert dataset_loaded_by_guid.cache._data == {}
+
+    assert xr_ds_reimported["z"].dims == ("x", "y")
+    assert xr_ds.identical(xr_ds_reimported)
+
+    # but loading with any of these functions
+    # will currently fill the cache
+    getattr(dataset_loaded_by_guid, function_name)()
+
+    assert dataset_loaded_by_guid.cache._data != {}
