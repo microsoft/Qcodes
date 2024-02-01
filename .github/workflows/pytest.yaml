@@ -21,6 +21,7 @@ jobs:
   pytestmypy:
 
     runs-on: ${{ matrix.os }}
+    environment: testing-environment
     strategy:
       # don't stop other jobs if one fails
       # this is often due to network issues
@@ -103,6 +104,8 @@ jobs:
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       if: ${{ github.event_name != 'merge_group' }}
       # we don't trigger coverage from merge groups since that would
       # make twice the number of coverage reports be uploded from a given commit
