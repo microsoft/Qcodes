@@ -228,6 +228,11 @@ filterwarnings = [
 ]
 
 [tool.ruff]
+
+extend-include = ["*.ipynb"]
+extend-exclude = ["typings"]
+
+[tool.ruff.lint]
 # Enable Pyflakes `E` and `F` codes by default.
 # UP pyupgrade
 # PT025 invalid use of pytest fixtures in other fixtures
@@ -245,15 +250,11 @@ select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC"
 # code.
 ignore = ["E501", "G004", "NPY002"]
 
-extend-include = ["*.ipynb"]
-
-extend-exclude = ["typings"]
-
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 
 known-first-party = ["qcodes"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 # deprecated modules left
 # for backwards compatibility
 "src/qcodes/utils/validators.py" = ["F401"]
@@ -297,7 +298,7 @@ known-first-party = ["qcodes"]
 "src/qcodes/tests/*" = ["TID253"]
 "tests/*" = ["TID253"]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 # There modules are relatively slow to import
 # and only required in specific places so
 # don't import them at module level
