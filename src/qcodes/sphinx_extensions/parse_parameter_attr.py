@@ -63,7 +63,7 @@ def find_init_func(
     for child in node.children:
         if (
             isinstance(child, parso.python.tree.Function)
-            and child.name.value  # pyright: ignore[reportGeneralTypeIssues]
+            and child.name.value  # pyright: ignore[reportAttributeAccessIssue]
             == "__init__"
         ):
             nodes.append(child)

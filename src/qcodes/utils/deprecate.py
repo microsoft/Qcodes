@@ -77,7 +77,7 @@ def deprecate(
         if isinstance(obj, (types.FunctionType, types.MethodType)):
             func = cast(Callable[..., Any], obj)
             # pylint: disable=no-value-for-parameter
-            return decorate_callable(func)  # pyright: ignore[reportGeneralTypeIssues]
+            return decorate_callable(func)  # pyright: ignore[reportCallIssue]
             # pylint: enable=no-value-for-parameter
         else:
             # this would need to be recursive
@@ -98,9 +98,7 @@ def deprecate(
                     setattr(
                         obj,
                         m_name,
-                        decorate_callable(
-                            m
-                        ),  # pyright: ignore[reportGeneralTypeIssues]
+                        decorate_callable(m),  # pyright: ignore[reportCallIssue]
                     )
                     # pylint: enable=no-value-for-parameter
             return obj

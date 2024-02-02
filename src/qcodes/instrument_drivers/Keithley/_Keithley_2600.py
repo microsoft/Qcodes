@@ -259,7 +259,7 @@ class _ParameterWithStatus(Parameter):
 
         status = _from_bits_tuple_to_status[
             (status_bits[0], status_bits[1])
-        ]  # pyright: ignore[reportGeneralTypeIssues]
+        ]  # pyright: ignore[reportArgumentType]
 
         return float(value), status
 
