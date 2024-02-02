@@ -1,5 +1,5 @@
-# type: ignore # this triggers deprecation warnings from pyright
-# lets just disable these
+# pyright: reportDeprecated=none
+# This deprecated code calls it self triggering deprecation warnings
 from __future__ import annotations
 
 import collections.abc
