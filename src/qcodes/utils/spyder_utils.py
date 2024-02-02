@@ -44,7 +44,7 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
         if modulename not in excludednamelist:
             _LOG.info(f"adding {modulename} to excluded modules")
             excludednamelist.append(modulename)
-            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(  # pyright: ignore[reportUnboundVariable]
+            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(  # pyright: ignore[reportPossiblyUnboundVariable]
                 namelist=excludednamelist
             )
             os.environ["SPY_UMR_NAMELIST"] = ",".join(excludednamelist)

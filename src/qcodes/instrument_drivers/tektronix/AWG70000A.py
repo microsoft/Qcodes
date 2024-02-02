@@ -493,15 +493,17 @@ class AWG70000A(VisaInstrument):
             if add_channel_list:
                 # pyright does not seem to understand
                 # that this code can only run iff chanliss is created
-                chanlist.append(channel)  # pyright: ignore[reportUnboundVariable]
+                chanlist.append(  # pyright: ignore[reportPossiblyUnboundVariable]
+                    channel
+                )
 
         if add_channel_list:
             self.add_submodule(
                 "channels",
-                chanlist.to_channel_tuple(),  # pyright: ignore[reportUnboundVariable]
+                chanlist.to_channel_tuple(),  # pyright: ignore[reportPossiblyUnboundVariable]
             )
 
-        # Folder on the AWG where to files are uplaoded by default
+        # Folder on the AWG where to files are uploaded by default
         self.wfmxFileFolder = "\\Users\\OEM\\Documents"
         self.seqxFileFolder = "\\Users\\OEM\\Documents"
 

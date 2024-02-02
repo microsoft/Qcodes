@@ -209,7 +209,9 @@ reportMissingTypeStubs = true
 stubPath = "typings/stubs"
 # we would like to move this to at least standard
 # eventually. From 1.1.339 onwards standard is the default
-typeCheckingMode = "basic"
+typeCheckingMode = "standard"
+reportIncompatibleMethodOverride = false # we have a lot of these. We should eventually enable this
+
 
 [tool.pytest.ini_options]
 minversion = "7.2"

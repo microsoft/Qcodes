@@ -47,7 +47,7 @@ class USBHIDMixin(Instrument):
                  **kwargs: Any):
         self._check_hid_import()
 
-        devs = hid.HidDeviceFilter(
+        devs = hid.HidDeviceFilter(  # pyright: ignore[reportPossiblyUnboundVariable]
             product_id=self.product_id,
             vendor_id=self.vendor_id,
             instance_id=instance_id
@@ -144,7 +144,7 @@ class USBHIDMixin(Instrument):
         """
         cls._check_hid_import()
 
-        devs = hid.HidDeviceFilter(
+        devs = hid.HidDeviceFilter(  # pyright: ignore[reportPossiblyUnboundVariable]
             porduct_id=cls.product_id,
             vendor_id=cls.vendor_id
         ).get_devices()
