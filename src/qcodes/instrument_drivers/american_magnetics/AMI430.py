@@ -1,3 +1,5 @@
+# type: ignore # this triggers deprecation warnings from pyright
+# lets just disable these
 from __future__ import annotations
 
 import collections.abc

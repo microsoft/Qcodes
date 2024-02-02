@@ -6,7 +6,9 @@ from typing import Any
 from typing_extensions import deprecated
 
 import qcodes.validators as vals
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (
+    AMI430,  # pyright: ignore[reportDeprecated]
+)
 from qcodes.logger import get_instrument_logger
 from qcodes.utils import QCoDeSDeprecationWarning, strip_attrs
 
