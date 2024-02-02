@@ -13,18 +13,26 @@ from hypothesis.strategies import floats, tuples
 from pytest import FixtureRequest, LogCaptureFixture
 
 from qcodes.instrument import Instrument
-from qcodes.instrument.ip_to_visa import AMI430_VISA
 from qcodes.instrument_drivers.american_magnetics.AMI430 import (
-    AMI430,
-    AMI430_3D,
-    AMI430Warning,
+    AMI430,  # pyright: ignore[reportDeprecated]
+    AMI430_3D,  # pyright: ignore[reportDeprecated]
+    AMI430Warning,  # pyright: ignore[reportDeprecated]
 )
 from qcodes.math_utils import FieldVector
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.utils.types import (
     numpy_concrete_ints,
     numpy_floats,
     numpy_non_concrete_ints_instantiable,
 )
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=QCoDeSDeprecationWarning)
+
+    from qcodes.instrument.ip_to_visa import (
+        AMI430_VISA,  # pyright: ignore[reportDeprecated]
+    )
+
 
 _time_resolution = time.get_clock_info('time').resolution
 
@@ -44,27 +52,28 @@ def magnet_axes_instances():
     Start three mock instruments representing current drivers for the x, y,
     and z directions.
     """
-    mag_x = AMI430_VISA(
-        "x",
-        address="GPIB::1::INSTR",
-        pyvisa_sim_file="AMI430.yaml",
-        terminator="\n",
-        port=1,
-    )
-    mag_y = AMI430_VISA(
-        "y",
-        address="GPIB::2::INSTR",
-        pyvisa_sim_file="AMI430.yaml",
-        terminator="\n",
-        port=1,
-    )
-    mag_z = AMI430_VISA(
-        "z",
-        address="GPIB::3::INSTR",
-        pyvisa_sim_file="AMI430.yaml",
-        terminator="\n",
-        port=1,
-    )
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        mag_x = AMI430_VISA(  # pyright: ignore[reportDeprecated]
+            "x",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+            port=1,
+        )
+        mag_y = AMI430_VISA(  # pyright: ignore[reportDeprecated]
+            "y",
+            address="GPIB::2::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+            port=1,
+        )
+        mag_z = AMI430_VISA(  # pyright: ignore[reportDeprecated]
+            "z",
+            address="GPIB::3::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+            port=1,
+        )
 
     yield mag_x, mag_y, mag_z
 
@@ -80,8 +89,10 @@ def _make_current_driver(magnet_axes_instances):
     representing current drivers for the x, y, and z directions.
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
-
-    driver = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        driver = AMI430_3D(  # pyright: ignore[reportDeprecated]
+            "AMI430_3D", mag_x, mag_y, mag_z, field_limit
+        )
 
     yield driver
 
@@ -90,13 +101,14 @@ def _make_current_driver(magnet_axes_instances):
 
 @pytest.fixture(scope="function", name="ami430")
 def _make_ami430():
-    mag = AMI430_VISA(
-        "ami430",
-        address="GPIB::1::INSTR",
-        pyvisa_sim_file="AMI430.yaml",
-        terminator="\n",
-        port=1,
-    )
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        mag = AMI430_VISA(  # pyright: ignore[reportDeprecated]
+            "ami430",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+            port=1,
+        )
     yield mag
     mag.close()
 
@@ -142,9 +154,12 @@ def test_instantiation_from_names(
     names as opposed from their instances.
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMI430_3D.close_all)
+    request.addfinalizer(AMI430_3D.close_all)  # pyright: ignore[reportDeprecated]
 
-    driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        driver = AMI430_3D(  # pyright: ignore[reportDeprecated]
+            "AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit
+        )
 
     assert driver._instrument_x is mag_x
     assert driver._instrument_y is mag_y
@@ -155,60 +170,69 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMI430_3D.close_all)
+
+    request.addfinalizer(AMI430_3D.close_all)  # pyright: ignore[reportDeprecated]
 
     non_existent_instrument = mag_y.name + "foo"
 
-    with pytest.raises(
-            KeyError,
-            match=f"with name {non_existent_instrument} does not exist"
-    ):
-        AMI430_3D(
-            "AMI430_3D", mag_x.name, non_existent_instrument, mag_z.name, field_limit
-        )
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        with pytest.raises(
+            KeyError, match=f"with name {non_existent_instrument} does not exist"
+        ):
+            AMI430_3D(  # pyright: ignore[reportDeprecated]
+                "AMI430_3D",
+                mag_x.name,
+                non_existent_instrument,
+                mag_z.name,
+                field_limit,
+            )
 
 
 def test_instantiation_from_name_of_existing_non_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMI430_3D.close_all)
+    request.addfinalizer(AMI430_3D.close_all)  # pyright: ignore[reportDeprecated]
 
     non_ami_existing_instrument = Instrument("foo")
 
-    with pytest.raises(
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        with pytest.raises(
             TypeError,
             match=re.escape(
                 f"Instrument {non_ami_existing_instrument.name} is "
-                f"{type(non_ami_existing_instrument)} but {AMI430} "
+                f"{type(non_ami_existing_instrument)} but {AMI430} "  # pyright: ignore[reportDeprecated]
                 f"was requested"
+            ),
+        ):
+            AMI430_3D(  # pyright: ignore[reportDeprecated]
+                "AMI430_3D",
+                mag_x.name,
+                non_ami_existing_instrument.name,
+                mag_z.name,
+                field_limit,
             )
-    ):
-        AMI430_3D(
-            "AMI430_3D",
-            mag_x.name, non_ami_existing_instrument.name, mag_z.name,
-            field_limit
-        )
 
 
 def test_instantiation_from_badly_typed_argument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMI430_3D.close_all)
+    request.addfinalizer(AMI430_3D.close_all)  # pyright: ignore[reportDeprecated]
 
     badly_typed_instrument_z_argument = 123
 
-    with pytest.raises(
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        with pytest.raises(
             ValueError, match="instrument_z argument is neither of those"
-    ):
-        AMI430_3D(
-            "AMI430_3D",
-            mag_x.name,
-            mag_y,
-            badly_typed_instrument_z_argument,  # type: ignore[arg-type]
-            field_limit
-        )
+        ):
+            AMI430_3D(  # pyright: ignore[reportDeprecated]
+                "AMI430_3D",
+                mag_x.name,
+                mag_y,
+                badly_typed_instrument_z_argument,  # type: ignore[arg-type]
+                field_limit,
+            )
 
 
 @given(set_target=random_coordinates["cartesian"])
@@ -1000,7 +1024,9 @@ def test_current_and_field_params_interlink__permutations_of_tests(ami430) -> No
     with warnings.catch_warnings():
         # this is to avoid AMI430Warning about "maximum ramp rate", which
         # may show up but is not relevant to this test
-        warnings.simplefilter('ignore', category=AMI430Warning)
+        warnings.simplefilter(
+            "ignore", category=AMI430Warning  # pyright: ignore[reportDeprecated]
+        )
 
         test_current_and_field_params_interlink_at_init(ami430)
 
@@ -1080,7 +1106,10 @@ def test_numeric_field_limit(
     magnet_axes_instances, field_limit, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
-    ami = AMI430_3D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
+    with pytest.warns(expected_warning=QCoDeSDeprecationWarning):
+        ami = AMI430_3D(  # pyright: ignore[reportDeprecated]
+            "AMI430_3D", mag_x, mag_y, mag_z, field_limit
+        )
     request.addfinalizer(ami.close)
 
     assert isinstance(ami._field_limit, float)
