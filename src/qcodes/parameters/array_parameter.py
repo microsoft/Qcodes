@@ -32,7 +32,7 @@ try:
         np.ndarray,
     )
 except ImportError:
-    _SP_TYPES: tuple[type, ...] = (
+    _SP_TYPES = (
         type(None),
         collections.abc.Sequence,
         collections.abc.Iterator,
