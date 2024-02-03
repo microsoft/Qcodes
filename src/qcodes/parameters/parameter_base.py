@@ -675,6 +675,7 @@ class ParameterBase(MetadatableWithName):
 
         return get_wrapper
 
+    # TODO should be updated like _get_wrapper
     def _wrap_set(self, set_function: Callable[..., None]) -> Callable[..., None]:
         @wraps(set_function)
         def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:

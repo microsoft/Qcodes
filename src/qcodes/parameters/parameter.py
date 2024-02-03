@@ -205,6 +205,8 @@ class Parameter(ParameterBase):
             mylogger.debug(
                 "Setting raw value of parameter: %s to %s", self.full_name, x
             )
+            # TODO this really should set the cache via raw value
+            # at the moment set_raw does nothing on a manual parameter
             return x
 
         if instrument is not None and bind_to_instrument:
@@ -275,7 +277,7 @@ class Parameter(ParameterBase):
                     )
 
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
-
+                # TODO this should be a method like above
                 # mypy does not allow setting a method
                 self.get_raw = Command(  # type: ignore[method-assign]
                     arg_count=0,
@@ -292,6 +294,7 @@ class Parameter(ParameterBase):
                 " set_raw is an error."
             )
         elif not self.settable and set_cmd is not False:
+            # TODO We should also wrap this with a MethodType like get above
             if set_cmd is None:
                 self.set_raw: Callable[..., Any] = _set_manual_parameter
             else:
@@ -305,6 +308,7 @@ class Parameter(ParameterBase):
                 exec_str_write = (
                     getattr(instrument, "write", None) if instrument else None
                 )
+                # TODO this should also be a method
                 self.set_raw = Command(
                     arg_count=1, cmd=set_cmd, exec_str=exec_str_write
                 )
