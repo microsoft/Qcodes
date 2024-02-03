@@ -104,7 +104,9 @@ class DllWrapperMeta(type):
     # Only allow a single instance per DLL path.
     _instances: WeakValueDictionary[str, Any] = WeakValueDictionary()
 
-    def __call__(cls, dll_path: str, *args: Any, **kwargs: Any) -> Any:
+    def __call__(  # pyright: ignore[reportIncompatibleMethodOverride]
+        cls, dll_path: str, *args: Any, **kwargs: Any
+    ) -> Any:
         api = cls._instances.get(dll_path, None)
         if api is not None:
             logger.debug(
