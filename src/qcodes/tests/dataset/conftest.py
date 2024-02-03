@@ -575,7 +575,7 @@ def SpectrumAnalyzer():
     different types
     """
 
-    class Spectrum(ArrayParameter):
+    class BaseSpectrum(ArrayParameter):
 
         def __init__(self, name, instrument, **kwargs):
             super().__init__(
@@ -592,6 +592,8 @@ def SpectrumAnalyzer():
             self.npts = 100
             self.start = 0
             self.stop = 2e6
+
+    class Spectrum(BaseSpectrum):
 
         def get_raw(self):
             # This is how it should be: the setpoints are generated at the
@@ -630,13 +632,13 @@ def SpectrumAnalyzer():
         def get_raw(self):
             return np.random.randn(*self.npts)
 
-    class ListSpectrum(Spectrum):
+    class ListSpectrum(BaseSpectrum):
 
         def get_raw(self):
             output = super().get_raw()
             return list(output)
 
-    class TupleSpectrum(Spectrum):
+    class TupleSpectrum(BaseSpectrum):
 
         def get_raw(self):
             output = super().get_raw()
