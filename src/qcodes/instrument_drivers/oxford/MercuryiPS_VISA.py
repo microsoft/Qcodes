@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import logging
 import time
 from functools import partial
-from typing import Any, Callable, Optional, Union, cast
+from typing import Any, Callable, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -190,7 +192,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         return resp
 
-    def _param_setter(self, set_cmd: str, value: Union[float, str]) -> None:
+    def _param_setter(self, set_cmd: str, value: float | str) -> None:
         """
         General setter function for parameters
 
@@ -219,11 +221,14 @@ class OxfordMercuryiPS(VisaInstrument):
     supply
     """
 
-    def __init__(self, name: str, address: str, visalib: Optional[str] = None,
-                 field_limits: Optional[Callable[[float,
-                                                  float,
-                                                  float], bool]] = None,
-                 **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        visalib: str | None = None,
+        field_limits: Callable[[float, float, float], bool] | None = None,
+        **kwargs: Any,
+    ) -> None:
         """
         Args:
             name: The name to give this instrument internally in QCoDeS
@@ -347,7 +352,7 @@ class OxfordMercuryiPS(VisaInstrument):
         self.GRPY.field_ramp_rate(rate.y)
         self.GRPZ.field_ramp_rate(rate.z)
 
-    def _get_measured(self, coordinates: list[str]) -> Union[float, list[float]]:
+    def _get_measured(self, coordinates: list[str]) -> float | list[float]:
         """
         Get the measured value of a coordinate. Measures all three fields
         and computes whatever coordinate we asked for.
