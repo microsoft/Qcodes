@@ -135,7 +135,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         raise RuntimeError("Invalid type for parent instrument.")
 
     @setpoints.setter
-    def setpoints(self, val: Any) -> None:
+    def setpoints(self, setpoints: Any) -> None:
         """
         Stub to allow initialization. Ignore any set attempts on setpoint as we
         figure it out on the fly.
@@ -157,7 +157,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         return "''"
 
     @unit.setter
-    def unit(self, val: Any) -> None:
+    def unit(self, unit: Any) -> None:
         """
         Stub to allow initialization.
         """
