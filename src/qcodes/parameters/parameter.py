@@ -264,7 +264,8 @@ class Parameter(ParameterBase):
             )
         elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw = MethodType(_get_manual_parameter, self)
+                # mypy does not allow setting a method
+                self.get_raw = MethodType(_get_manual_parameter, self)  # type: ignore[method-assign]
             else:
                 if isinstance(get_cmd, str) and instrument is None:
                     raise TypeError(
@@ -275,7 +276,8 @@ class Parameter(ParameterBase):
 
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
 
-                self.get_raw = Command(
+                # mypy does not allow setting a method
+                self.get_raw = Command(  # type: ignore[method-assign]
                     arg_count=0,
                     cmd=get_cmd,
                     exec_str=exec_str_ask,
