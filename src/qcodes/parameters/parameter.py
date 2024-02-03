@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
+from types import MethodType
 from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from .command import Command
@@ -180,7 +181,7 @@ class Parameter(ParameterBase):
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
-        def _get_manual_parameter() -> ParamRawDataType:
+        def _get_manual_parameter(self: Parameter) -> ParamRawDataType:
             if self.root_instrument is not None:
                 mylogger: InstrumentLoggerAdapter | logging.Logger = (
                     self.root_instrument.log
@@ -263,7 +264,7 @@ class Parameter(ParameterBase):
             )
         elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
-                self.get_raw: Callable[[], Any] = _get_manual_parameter
+                self.get_raw = MethodType(_get_manual_parameter, self)
             else:
                 if isinstance(get_cmd, str) and instrument is None:
                     raise TypeError(
@@ -280,7 +281,7 @@ class Parameter(ParameterBase):
                     exec_str=exec_str_ask,
                 )
             self._gettable = True
-            self.get = self._wrap_get(self.get_raw)
+            self.get = self._wrap_get()
 
         if self.settable and set_cmd not in (None, False):
             raise TypeError(

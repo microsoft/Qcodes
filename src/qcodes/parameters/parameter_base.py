@@ -257,7 +257,7 @@ class ParameterBase(MetadatableWithName):
         )
         self._gettable = False
         if implements_get_raw:
-            self.get = self._wrap_get(self.get_raw)
+            self.get = self._wrap_get()
             self._gettable = True
         elif hasattr(self, "get"):
             raise RuntimeError(
@@ -646,9 +646,9 @@ class ParameterBase(MetadatableWithName):
         return value
 
     def _wrap_get(
-        self, get_function: Callable[..., ParamDataType]
+        self,
     ) -> Callable[..., ParamDataType]:
-        @wraps(get_function)
+        @wraps(self.get_raw)
         def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             if not self.gettable:
                 raise TypeError("Trying to get a parameter that is not gettable.")
@@ -658,7 +658,7 @@ class ParameterBase(MetadatableWithName):
                 )
             try:
                 # There might be cases where a .get also has args/kwargs
-                raw_value = get_function(*args, **kwargs)
+                raw_value = self.get_raw(*args, **kwargs)
 
                 value = self._from_raw_value_to_value(raw_value)
 

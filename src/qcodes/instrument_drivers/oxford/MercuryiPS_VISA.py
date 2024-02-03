@@ -256,10 +256,6 @@ class OxfordMercuryiPS(VisaInstrument):
 
         super().__init__(name, address, terminator='\n', visalib=visalib,
                          **kwargs)
-
-        # to ensure a correct snapshot, we must wrap the get function
-        self.IDN.get = self.IDN._wrap_get(self._idn_getter)
-
         self.firmware = self.IDN()['firmware']
 
         # TODO: Query instrument to ensure which PSUs are actually present
@@ -401,7 +397,7 @@ class OxfordMercuryiPS(VisaInstrument):
         for coord in 'xyz':
             self._set_target(coord, field[coord])
 
-    def _idn_getter(self) -> dict[str, str]:
+    def get_idn(self) -> dict[str, str | None]:
         """
         Parse the raw non-SCPI compliant IDN string into an IDN dict
 
@@ -411,8 +407,12 @@ class OxfordMercuryiPS(VisaInstrument):
         raw_idn_string = self.ask('*IDN?')
         resps = raw_idn_string.split(':')
 
-        idn_dict = {'model': resps[2], 'vendor': resps[1],
-                    'serial': resps[3], 'firmware': resps[4]}
+        idn_dict: dict[str, str | None] = {
+            "model": resps[2],
+            "vendor": resps[1],
+            "serial": resps[3],
+            "firmware": resps[4],
+        }
 
         return idn_dict
 
