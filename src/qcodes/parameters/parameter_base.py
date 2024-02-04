@@ -272,7 +272,7 @@ class ParameterBase(MetadatableWithName):
         )
         self._settable: bool = False
         if implements_set_raw:
-            self.set = self._wrap_set(self.set_raw)
+            self.set = self._wrap_set()
             self._settable = True
         elif hasattr(self, "set"):
             raise RuntimeError(
@@ -675,9 +675,10 @@ class ParameterBase(MetadatableWithName):
 
         return get_wrapper
 
-    # TODO should be updated like _get_wrapper
-    def _wrap_set(self, set_function: Callable[..., None]) -> Callable[..., None]:
-        @wraps(set_function)
+    def _wrap_set(
+        self,
+    ) -> Callable[..., None]:
+        @wraps(self.set_raw)
         def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
             try:
                 if not self.settable:
@@ -710,7 +711,7 @@ class ParameterBase(MetadatableWithName):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    set_function(raw_val_step, **kwargs)
+                    self.set_raw(raw_val_step, **kwargs)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()

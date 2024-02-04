@@ -195,7 +195,9 @@ class Parameter(ParameterBase):
             )
             return self.cache.raw_value
 
-        def _set_manual_parameter(x: ParamRawDataType) -> ParamRawDataType:
+        def _set_manual_parameter(
+            self: Parameter, x: ParamRawDataType
+        ) -> ParamRawDataType:
             if self.root_instrument is not None:
                 mylogger: InstrumentLoggerAdapter | logging.Logger = (
                     self.root_instrument.log
@@ -294,9 +296,8 @@ class Parameter(ParameterBase):
                 " set_raw is an error."
             )
         elif not self.settable and set_cmd is not False:
-            # TODO We should also wrap this with a MethodType like get above
             if set_cmd is None:
-                self.set_raw: Callable[..., Any] = _set_manual_parameter
+                self.set_raw = MethodType(_set_manual_parameter, self)  # type: ignore[method-assign]
             else:
                 if isinstance(set_cmd, str) and instrument is None:
                     raise TypeError(
@@ -309,11 +310,11 @@ class Parameter(ParameterBase):
                     getattr(instrument, "write", None) if instrument else None
                 )
                 # TODO this should also be a method
-                self.set_raw = Command(
+                self.set_raw = Command(  # type: ignore[method-assign]
                     arg_count=1, cmd=set_cmd, exec_str=exec_str_write
                 )
             self._settable = True
-            self.set = self._wrap_set(self.set_raw)
+            self.set = self._wrap_set()
 
         self._meta_attrs.extend(["label", "unit", "vals"])
 
