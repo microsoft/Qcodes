@@ -207,8 +207,7 @@ class Parameter(ParameterBase):
             mylogger.debug(
                 "Setting raw value of parameter: %s to %s", self.full_name, x
             )
-            # TODO this really should set the cache via raw value
-            # at the moment set_raw does nothing on a manual parameter
+            self.cache._set_from_raw_value(x)
             return x
 
         if instrument is not None and bind_to_instrument:
