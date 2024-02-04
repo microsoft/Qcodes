@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
+from functools import wraps
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -213,6 +214,20 @@ class Parameter(ParameterBase):
             self.cache._set_from_raw_value(x)
             return x
 
+        def _get_command_caller(parameter: Parameter, command: Command) -> MethodType:
+            @wraps(Command.__call__)
+            def call_command(self: Parameter) -> Any:
+                return command()
+
+            return MethodType(call_command, parameter)
+
+        def _set_command_caller(parameter: Parameter, command: Command) -> MethodType:
+            @wraps(Command.__call__)
+            def call_command(self: Parameter, val: ParamRawDataType) -> Any:
+                return command(val)
+
+            return MethodType(call_command, parameter)
+
         if instrument is not None and bind_to_instrument:
             existing_parameter = instrument.parameters.get(name, None)
 
@@ -280,13 +295,14 @@ class Parameter(ParameterBase):
                     )
 
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
-                # TODO get_raw should also be a method here. This should probably be done by wrapping
-                # it with MethodType like above
                 # ignore typeerror since mypy does not allow setting a method dynamically
-                self.get_raw = Command(  # type: ignore[method-assign]
-                    arg_count=0,
-                    cmd=get_cmd,
-                    exec_str=exec_str_ask,
+                self.get_raw = _get_command_caller(  # type: ignore[method-assign]
+                    self,
+                    Command(
+                        arg_count=0,
+                        cmd=get_cmd,
+                        exec_str=exec_str_ask,
+                    ),
                 )
             self._gettable = True
             # mypy resolves the type of self.get_raw to object here.
@@ -314,11 +330,10 @@ class Parameter(ParameterBase):
                 exec_str_write = (
                     getattr(instrument, "write", None) if instrument else None
                 )
-                # TODO get_raw should also be a method here. This should probably be done by wrapping
-                # it with MethodType like above
                 # ignore typeerror since mypy does not allow setting a method dynamically
-                self.set_raw = Command(  # type: ignore[assignment]
-                    arg_count=1, cmd=set_cmd, exec_str=exec_str_write
+                self.set_raw = _set_command_caller(  # type: ignore[method-assign]
+                    self,
+                    Command(arg_count=1, cmd=set_cmd, exec_str=exec_str_write),
                 )
             self._settable = True
             self.set = self._wrap_set(self.set_raw)
