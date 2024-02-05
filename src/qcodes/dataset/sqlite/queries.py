@@ -242,9 +242,7 @@ def get_parameter_data_for_one_paramtree(
     # faster than transposing the data using np.array.transpose
     res_t = map(list, zip(*data))
 
-    specs_and_data: zip_longest[
-        tuple[ParamSpecBase | Sequence[Any], Sequence[Any]]
-    ] = zip_longest(paramspecs, res_t, fillvalue=())
+    specs_and_data = zip_longest(paramspecs, res_t, fillvalue=())
 
     for paramspec, column_data in specs_and_data:
         assert isinstance(paramspec, ParamSpecBase)

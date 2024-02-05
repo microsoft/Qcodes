@@ -86,7 +86,7 @@ jobs:
       if: ${{ !matrix.min-version }}
     - uses: jakebailey/pyright-action@03ab3c98073356eb56161009632b39fc2666321b # v2.0.1
       with:
-        version: 1.1.339
+        version: 1.1.349
       if: ${{ !matrix.min-version }}
     - name: Run Mypy
       run: mypy -p qcodes
