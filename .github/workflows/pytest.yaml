@@ -21,7 +21,6 @@ jobs:
   pytestmypy:
 
     runs-on: ${{ matrix.os }}
-    environment: testing-environment
     strategy:
       # don't stop other jobs if one fails
       # this is often due to network issues
@@ -100,12 +99,11 @@ jobs:
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci tests
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@f30e4959ba63075080d4f7f90cacc18d9f3fafd7 # v4.0.0
+      uses: codecov/codecov-action@e0b68c6749509c5f83f984dd99a76a1c1a231044 # v4.0.1
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{ secrets.CODECOV_TOKEN }}
       if: ${{ github.event_name != 'merge_group' }}
       # we don't trigger coverage from merge groups since that would
       # make twice the number of coverage reports be uploded from a given commit
