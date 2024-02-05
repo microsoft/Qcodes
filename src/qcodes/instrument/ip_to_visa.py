@@ -3,10 +3,14 @@ from __future__ import annotations
 from importlib.resources import as_file, files
 from typing import Any
 
+from typing_extensions import deprecated
+
 import qcodes.validators as vals
-from qcodes.instrument_drivers.american_magnetics.AMI430 import AMI430
+from qcodes.instrument_drivers.american_magnetics.AMI430 import (
+    AMI430,  # pyright: ignore[reportDeprecated]
+)
 from qcodes.logger import get_instrument_logger
-from qcodes.utils import strip_attrs
+from qcodes.utils import QCoDeSDeprecationWarning, strip_attrs
 
 from .instrument import Instrument
 from .ip import IPInstrument
@@ -115,5 +119,9 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         self.remove_instance(self)
 
 
+@deprecated(
+    "The IP version of AMI430 is deprecated and this helper is therefor also deprecated",
+    category=QCoDeSDeprecationWarning,
+)
 class AMI430_VISA(AMI430, IPToVisa):  # type: ignore[misc]
     pass

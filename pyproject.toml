@@ -206,6 +206,7 @@ ignore = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
     ]
 reportMissingTypeStubs = true
+reportDeprecated = true
 stubPath = "typings/stubs"
 # we would like to move this to at least standard
 # eventually. From 1.1.339 onwards standard is the default

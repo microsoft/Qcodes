@@ -1,3 +1,5 @@
+# pyright: reportDeprecated=none
+# This deprecated code calls it self triggering deprecation warnings
 from __future__ import annotations
 
 import collections.abc
@@ -12,6 +14,7 @@ from functools import partial
 from typing import Any, Callable, ClassVar, TypeVar, cast
 
 import numpy as np
+from typing_extensions import deprecated
 
 from qcodes.instrument import Instrument, InstrumentChannel, IPInstrument
 from qcodes.math_utils import FieldVector
@@ -26,14 +29,26 @@ CartesianFieldLimitFunction = Callable[[float, float, float], bool]
 T = TypeVar('T')
 
 
+@deprecated(
+    "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMI430Exception from qcodes.instrument_drivers.american_magnetics",
+    category=QCoDeSDeprecationWarning,
+)
 class AMI430Exception(Exception):
     pass
 
 
+@deprecated(
+    "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMI430Warning from qcodes.instrument_drivers.american_magnetics",
+    category=QCoDeSDeprecationWarning,
+)
 class AMI430Warning(UserWarning):
     pass
 
 
+@deprecated(
+    "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMI430SwitchHeater from qcodes.instrument_drivers.american_magnetics",
+    category=QCoDeSDeprecationWarning,
+)
 class AMI430SwitchHeater(InstrumentChannel):
     class _Decorators:
         @classmethod
@@ -120,6 +135,10 @@ class AMI430SwitchHeater(InstrumentChannel):
         return bool(int(self.ask("PS?").strip()))
 
 
+@deprecated(
+    "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMIModel430 from qcodes.instrument_drivers.american_magnetics",
+    category=QCoDeSDeprecationWarning,
+)
 class AMI430(IPInstrument):
     """
     Driver for the American Magnetics Model 430 magnet power supply programmer.
@@ -475,6 +494,10 @@ class AMI430(IPInstrument):
         self.coil_constant()
 
 
+@deprecated(
+    "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMIModel4303D from qcodes.instrument_drivers.american_magnetics",
+    category=QCoDeSDeprecationWarning,
+)
 class AMI430_3D(Instrument):
     def __init__(
         self,
