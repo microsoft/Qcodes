@@ -104,15 +104,15 @@ To test and see the coverage (with missing lines) of a single module:
 
 ::
 
-    pytest --cov=qcodes.module.submodule --cov-report=term-missing qcodes/tests/test_file.py
+    pytest --cov=qcodes.module.submodule --cov-report=term-missing tests/test_file.py
 
 You can also run single tests with something like:
 
 ::
 
-    pytest.exe .\qcodes\tests\test_config.py
+    pytest.exe .\tests\test_config.py
     # or
-    pytest.exe .\qcodes\tests\test_config.py::test_add_and_describe
+    pytest.exe .\tests\test_config.py::test_add_and_describe
 
 
 If the tests pass, you should be ready to start developing!
