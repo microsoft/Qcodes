@@ -11,6 +11,7 @@ from weakref import finalize
 import pyvisa
 import pyvisa.constants as vi_const
 import pyvisa.resources
+from pyvisa.errors import InvalidSession
 
 import qcodes.validators as vals
 from qcodes.logger import get_instrument_logger
@@ -264,7 +265,15 @@ class VisaInstrument(Instrument):
             # The pyvisa-sim visalib has a session attribute but the resource manager is not generic in the
             # visalib type so we cannot get it in a type safe way
             known_sessions = getattr(self.resource_manager.visalib, "sessions", ())
-            session_found = self.resource_manager.session in known_sessions
+
+            try:
+                this_session = self.resource_manager.session
+            except InvalidSession:
+                # this may be triggered when the resource has already been closed
+                # in that case there is nothing that we can do.
+                this_session = None
+
+            session_found = this_session is not None and this_session in known_sessions
 
             n_sessions = len(known_sessions)
             # if this instrument is the last one or there are no connected instruments its safe to reset the device
