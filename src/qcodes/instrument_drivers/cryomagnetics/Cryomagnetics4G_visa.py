@@ -4,14 +4,15 @@ import logging
 import numbers
 import time
 import warnings
+from enum import Enum
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
-#from contextlib import ExitStack
-#from functools import partial
+from contextlib import ExitStack
+from functools import partial
 from typing import Any, Callable, ClassVar, TypeVar, cast
 #
-#import numpy as np
-#from pyvisa import VisaIOError
+import numpy as np
+from pyvisa import VisaIOError
 #
 from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
 #from qcodes.math_utils import FieldVector
@@ -24,6 +25,9 @@ log = logging.getLogger(__name__)
 T = TypeVar("T")
 #
 
+class FieldUnits(Enum):
+    GAUSS = "G"
+    AMPERE = "A"
 
 
 class Cryo4GException(Exception):
@@ -65,70 +69,72 @@ class Cryo4GSwitchHeater(InstrumentChannel):
             set_cmd=lambda x: (self.on() if x else self.off()),
             vals=Bool(),
         )
+        
+        #Not sure about this cmd being correct
         self.add_parameter(
             "in_persistent_mode",
             label="Persistent Mode",
-            get_cmd="PERS?",
-            val_mapping={True: 1, False: 0},
+            get_cmd="MODE?",
+            val_mapping={True: "Shim", False: "Manual"},
         )
 
         # Configuration Parameters
-        self.add_parameter(
-            "current",
-            label="Switch Heater Current",
-            unit="mA",
-            get_cmd="PS:CURR?",
-            get_parser=float,
-            set_cmd="CONF:PS:CURR {}",
-            vals=Numbers(0, 125),
-        )
-        self.add_parameter(
-            "heat_time",
-            label="Heating Time",
-            unit="s",
-            get_cmd="PS:HTIME?",
-            get_parser=int,
-            set_cmd="CONF:PS:HTIME {}",
-            vals=Ints(5, 120),
-        )
-        self.add_parameter(
-            "cool_time",
-            label="Cooling Time",
-            unit="s",
-            get_cmd="PS:CTIME?",
-            get_parser=int,
-            set_cmd="CONF:PS:CTIME {}",
-            vals=Ints(5, 3600),
-        )
+        #self.add_parameter(
+        #    "current",
+        #    label="Switch Heater Current",
+        #    unit="mA",
+        #    get_cmd="IMAG?",
+        #    get_parser=float,
+        #    set_cmd="IMAG {}",
+        #    vals=Numbers(0, 125),
+        #)
+        #self.add_parameter(
+        #    "heat_time",
+        #    label="Heating Time",
+        #    unit="s",
+        #    get_cmd="PS:HTIME?",
+        #    get_parser=int,
+        #    set_cmd="CONF:PS:HTIME {}",
+        #    vals=Ints(5, 120),
+        #)
+        #self.add_parameter(
+        #    "cool_time",
+        #    label="Cooling Time",
+        #    unit="s",
+        #    get_cmd="PS:CTIME?",
+        #    get_parser=int,
+        #    set_cmd="CONF:PS:CTIME {}",
+        #    vals=Ints(5, 3600),
+        #)
 
     def disable(self) -> None:
         """Turn measurement off"""
-        self.write("CONF:PS 0")
+        self.write("PSHTR 0")
         self._enabled = False
 
     def enable(self) -> None:
         """Turn measurement on"""
-        self.write("CONF:PS 1")
+        self.write("PSHTR 1")
         self._enabled = True
 
     def check_enabled(self) -> bool:
-        return bool(int(self.ask("PS:INST?").strip()))
+        return bool(int(self.ask("PSHTR?").strip()))
 
     @_Decorators.check_enabled
     def on(self) -> None:
-        self.write("PS 1")
+        self.write("PSHTR 1")
         while self._parent.ramping_state() == "heating switch":
             self._parent._sleep(0.5)
 
     @_Decorators.check_enabled
     def off(self) -> None:
-        self.write("PS 0")
+        self.write("PSHTR 0")
         while self._parent.ramping_state() == "cooling switch":
             self._parent._sleep(0.5)
 
     @_Decorators.check_enabled
     def check_state(self) -> bool:
-        return bool(int(self.ask("PS?").strip()))
+        return bool(int(self.ask("PSHTR?").strip()))
 
 
 class CryomagneticsModel4G(VisaInstrument):
@@ -153,6 +159,8 @@ class CryomagneticsModel4G(VisaInstrument):
         "minutes": "min",
         "tesla": "T",
         "kilogauss": "kG",
+        "guass": "G",
+        "amp": "A", 
     }
     _DEFAULT_CURRENT_RAMP_LIMIT = 0.06  # [A/s]
     _RETRY_WRITE_ASK = True
@@ -165,21 +173,12 @@ class CryomagneticsModel4G(VisaInstrument):
         reset: bool = False,
         terminator: str = "\r\n",
         current_ramp_limit: float | None = None,
-        **kwargs: Any,
     ):
-        if "has_current_rating" in kwargs.keys():
-            warnings.warn(
-                "'has_current_rating' kwarg to CryomagneticsModel4G "
-                "is deprecated and has no effect",
-                category=QCoDeSDeprecationWarning,
-            )
-            kwargs.pop("has_current_rating")
 
         super().__init__(
             name,
             address,
             terminator=terminator,
-            **kwargs,
         )
 
         simmode = getattr(self, "visabackend", False) == "sim"
@@ -192,7 +191,7 @@ class CryomagneticsModel4G(VisaInstrument):
             # if that is not the first reply likely there is left over messages
             # in the buffer so read until empty
             message1 = self.visa_handle.read()
-            if "American Magnetics Model 430 IP Interface" not in message1:
+            if "Cryomagnetics Model 4G Power Supply Interface" not in message1:
                 try:
                     while True:
                         self.visa_handle.read()
@@ -210,17 +209,18 @@ class CryomagneticsModel4G(VisaInstrument):
             self.reset()
 
         # Add parameters setting instrument units
-        self.add_parameter(
-            "ramp_rate_units",
-            get_cmd="RAMP:RATE:UNITS?",
-            set_cmd=(lambda units: self._update_units(ramp_rate_units=units)),
-            val_mapping={"seconds": 0, "minutes": 1},
-        )
+        #need to create this
+        #self.add_parameter(
+        #    "ramp_rate_units",
+        #    get_cmd="RAMP:RATE:UNITS?",
+        #    set_cmd=(lambda units: self._update_units(ramp_rate_units=units)),
+        #    val_mapping={"seconds": 0, "minutes": 1},
+        #)
         self.add_parameter(
             "field_units",
-            get_cmd="FIELD:UNITS?",
-            set_cmd=(lambda units: self._update_units(field_units=units)),
-            val_mapping={"kilogauss": 0, "tesla": 1},
+            get_cmd="UNITS?",
+            set_cmd=lambda units: self._update_units(units.value),  # Assuming _update_units takes the string representation.
+            val_mapping={FieldUnits.GAUSS: "G", FieldUnits.AMPERE: "A"},
         )
 
         # Set programmatic safety limits
@@ -271,7 +271,7 @@ class CryomagneticsModel4G(VisaInstrument):
         # Add current solenoid parameters
         # Note that field is validated in set_field
         self.add_parameter(
-            "field", get_cmd="FIELD:MAG?", get_parser=float, set_cmd=self.set_field
+            "field", get_cmd="IMAG?", get_parser=float, set_cmd=self.set_field
         )
         self.add_parameter(
             "ramp_rate", get_cmd=self._get_ramp_rate, set_cmd=self._set_ramp_rate
@@ -280,7 +280,7 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             "is_quenched", get_cmd="QU?", val_mapping={True: 1, False: 0}
         )
-        self.add_function("reset_quench", call_cmd="QU 0")
+        self.add_function("reset_quench", call_cmd="QRESET")
         self.add_function("set_quenched", call_cmd="QU 1")
         self.add_parameter(
             "ramping_state",
@@ -321,6 +321,11 @@ class CryomagneticsModel4G(VisaInstrument):
         self._update_units()
 
         self.connect_message()
+
+    def _update_units(self, field_units: FieldUnits) -> None:
+        # Convert the enum to its string value before sending it to the instrument.
+        unit_str: str = field_units.value
+        self.write(f"UNITS {unit_str}")
 
     def _sleep(self, t: float) -> None:
         """
@@ -374,15 +379,15 @@ class CryomagneticsModel4G(VisaInstrument):
                 checks.
         """
         # Check we aren't violating field limits
-        field_lim = float(self.ask("COIL?")) * self.current_limit()
+        field_lim = self.coil_constant * self.current_limit()
         if np.abs(value) > field_lim:
             msg = "Aborted _set_field; {} is higher than limit of {}"
             raise ValueError(msg.format(value, field_lim))
 
         # If part of a parent driver, set the value using that driver
-        if self._parent_instrument is not None and perform_safety_check:
-            self._parent_instrument._request_field_change(self, value)
-            return
+        #if self._parent_instrument is not None and perform_safety_check:
+        #    self._parent_instrument._request_field_change(self, value)
+        #    return
 
         # Check we can ramp
         if not self._can_start_ramping():
@@ -480,14 +485,14 @@ class CryomagneticsModel4G(VisaInstrument):
         if ramp_rate_units is None:
             ramp_rate_units_int: str = self.ramp_rate_units()
         else:
-            self.write(f"CONF:RAMP:RATE:UNITS {ramp_rate_units}")
+            self.write(f"UNITS {ramp_rate_units}")
             ramp_rate_units_int = self.ramp_rate_units.inverse_val_mapping[
                 ramp_rate_units
             ]
         if field_units is None:
             field_units_int: str = self.field_units()
         else:
-            self.write(f"CONF:FIELD:UNITS {field_units}")
+            self.write(f"UNITS {field_units}")
             field_units_int = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
