@@ -3,6 +3,7 @@ Test properties of the coordinate transforms in the field vector module to
 test if everything has been correctly implemented.
 """
 import json
+from functools import partial
 
 import numpy as np
 from hypothesis import given, settings
@@ -11,22 +12,26 @@ from hypothesis.strategies import floats, tuples
 from qcodes.math_utils.field_vector import FieldVector
 from qcodes.utils import NumpyJSONEncoder
 
+round10 = partial(round, ndigits=10)
+
+
+# to avoid floating point errors we round to 10 digits
 random_coordinates = {
     "cartesian": tuples(
-        floats(min_value=0, max_value=1),  # x
-        floats(min_value=0, max_value=1),  # y
-        floats(min_value=0, max_value=1)   # z
+        floats(min_value=0, max_value=1).map(round10),  # x
+        floats(min_value=0, max_value=1).map(round10),  # y
+        floats(min_value=0, max_value=1).map(round10),  # z
     ),
     "spherical": tuples(
-        floats(min_value=0, max_value=1),    # r
-        floats(min_value=0, max_value=180),  # theta
-        floats(min_value=0, max_value=180)   # phi
+        floats(min_value=0, max_value=1).map(round10),  # r
+        floats(min_value=0, max_value=180).map(round10),  # theta
+        floats(min_value=0, max_value=180).map(round10),  # phi
     ),
     "cylindrical": tuples(
-        floats(min_value=0, max_value=1),    # rho
-        floats(min_value=0, max_value=180),  # phi
-        floats(min_value=0, max_value=1)     # z
-    )
+        floats(min_value=0, max_value=1).map(round10),  # rho
+        floats(min_value=0, max_value=180).map(round10),  # phi
+        floats(min_value=0, max_value=1).map(round10),  # z
+    ),
 }
 
 
