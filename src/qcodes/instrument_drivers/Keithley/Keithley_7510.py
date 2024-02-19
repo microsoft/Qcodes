@@ -115,6 +115,7 @@ class Keithley7510Buffer(InstrumentChannel):
                 )
             self.write(f":TRACe:MAKE '{self.short_name}', {self._size}, {self.style}")
         elif size is not None:
+            # when referring to default buffer, "size" parameter is not needed.
             self.log.warning(
                 f"Please use method 'size()' to resize default buffer "
                 f"{self.short_name} size to {self._size}."

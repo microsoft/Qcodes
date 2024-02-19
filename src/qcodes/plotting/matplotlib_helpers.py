@@ -102,7 +102,7 @@ def apply_color_scale_limits(
             "You may not specify `data_lim` and `data_array` "
             "at the same time. Please refer to the docstring of "
             "`apply_color_scale_limits for details:\n\n`"
-            + str(apply_color_scale_limits.__doc__)
+            f"{apply_color_scale_limits.__doc__!s}"
         )
     else:
         data_lim = cast(tuple[float, float], tuple(sorted(data_lim)))
