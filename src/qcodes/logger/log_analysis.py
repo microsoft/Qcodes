@@ -54,7 +54,7 @@ def log_to_dataframe(
     Returns:
         A :class:`pd.DataFrame` containing the log content.
     """
-    import pandas as pd  # pylint: disable=import-outside-toplevel
+    import pandas as pd
 
     separator = separator or LOGGING_SEPARATOR
     columns = columns or list(FORMAT_STRING_DICT.keys())
@@ -121,7 +121,7 @@ def time_difference(
     Returns:
         A :class:`pd.Series`  with float values of the time difference (s)
     """
-    import pandas as pd  # pylint: disable=import-outside-toplevel
+    import pandas as pd
 
 
     if ',' in firsttimes.iloc[0]:

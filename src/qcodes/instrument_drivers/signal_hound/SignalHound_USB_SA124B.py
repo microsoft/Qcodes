@@ -26,7 +26,7 @@ class TraceParameter(Parameter):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value: Any) -> None:  # pylint: disable=method-hidden
+    def set_raw(self, value: Any) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
                 "TraceParameter only works with 'SignalHound_USB_SA124B'"
@@ -46,7 +46,7 @@ class ExternalRefParameter(TraceParameter):
     behavior to disconnect the reference input from the reference BNC port.
     """
 
-    def set_raw(self, value: bool) -> None:  # pylint: disable=method-hidden
+    def set_raw(self, value: bool) -> None:
         if self.get_latest() is True and value is False:
             raise RuntimeError(
                 "Signal Hound does not support disabling "
@@ -61,7 +61,7 @@ class ScaleParameter(TraceParameter):
     Parameter that handles changing the unit when the scale is changed.
     """
 
-    def set_raw(self, value: str) -> None:  # pylint: disable=method-hidden
+    def set_raw(self, value: str) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
                 "ScaleParameter only works with 'SignalHound_USB_SA124B'"
@@ -86,7 +86,7 @@ class SweepTraceParameter(TraceParameter):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value: Any) -> None:  # pylint: disable=method-hidden
+    def set_raw(self, value: Any) -> None:
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
             raise RuntimeError(
                 "SweepTraceParameter only works with 'SignalHound_USB_SA124B'"

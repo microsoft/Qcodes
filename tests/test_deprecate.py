@@ -189,7 +189,7 @@ def test_property_raises() -> None:
         with assert_deprecated(
                 'The function <method> is deprecated, because '
                 'this is a test.'):
-            _ = c.prop  # pylint: disable=pointless-statement
+            _ = c.prop
 
 
 def test_setter_uninhibited() -> None:

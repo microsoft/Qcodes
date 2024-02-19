@@ -54,7 +54,7 @@ def test_full_widget_on_one_dataset() -> None:
 
 def test_button_to_text(
     standalone_parameters_dataset,
-) -> None:  # pylint: disable=redefined-outer-name
+) -> None:
     box = interactive_widget.button_to_text("title", "body")
     (button,) = box.children
     button.click()
@@ -66,9 +66,7 @@ def test_button_to_text(
     assert len(box.children) == 1
 
 
-def test_snapshot_button(
-    tab, standalone_parameters_dataset
-) -> None:  # pylint: disable=redefined-outer-name
+def test_snapshot_button(tab, standalone_parameters_dataset) -> None:
     ds = standalone_parameters_dataset
     snapshot_button = interactive_widget._get_snapshot_button(ds, tab)
     snapshot_button.click()
@@ -78,9 +76,7 @@ def test_snapshot_button(
 
 
 @patch("matplotlib.pyplot.show")
-def test_plot_button(
-    tab, standalone_parameters_dataset
-) -> None:  # pylint: disable=redefined-outer-name
+def test_plot_button(tab, standalone_parameters_dataset) -> None:
     ds = standalone_parameters_dataset
     plot_button = interactive_widget._get_plot_button(ds, tab)
     plot_button.click()
@@ -98,7 +94,7 @@ def test_plot_button(
 )
 def test_get_experiment_button(
     get_button_function, standalone_parameters_dataset,
-) -> None:  # pylint: disable=redefined-outer-name
+) -> None:
     ds = standalone_parameters_dataset
     box = get_button_function(ds)
     snapshot_button = box.children[0]
@@ -117,7 +113,7 @@ def test_get_parameters(standalone_parameters_dataset) -> None:
 
 def test_editable_metadata(
     standalone_parameters_dataset,
-) -> None:  # pylint: disable=redefined-outer-name
+) -> None:
     ds = standalone_parameters_dataset
     box = interactive_widget.editable_metadata(ds)
     button = box.children[0]
