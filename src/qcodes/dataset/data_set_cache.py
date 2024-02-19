@@ -30,12 +30,12 @@ if TYPE_CHECKING:
     from .data_set_in_memory import DataSetInMem
     from .data_set_protocol import DataSetProtocol, ParameterData
 
-DatasetType = TypeVar("DatasetType", bound="DataSetProtocol", covariant=True)
+DatasetType_co = TypeVar("DatasetType_co", bound="DataSetProtocol", covariant=True)
 
 log = logging.getLogger(__name__)
 
 
-class DataSetCache(Generic[DatasetType]):
+class DataSetCache(Generic[DatasetType_co]):
     """
     The DataSetCache contains a in memory representation of the
     data in this dataset as well a a method to progressively read data
@@ -47,7 +47,7 @@ class DataSetCache(Generic[DatasetType]):
     :py:class:`.DataSet.to_pandas_dataframe_dict`
     """
 
-    def __init__(self, dataset: DatasetType):
+    def __init__(self, dataset: DatasetType_co):
         self._dataset = dataset
         self._data: ParameterData = {}
         #: number of rows read per parameter tree (by the name of the dependent parameter)

@@ -214,15 +214,14 @@ class _Cache:
 
         if cache_valid:
             return self._value
-        else:
-            if get_if_invalid:
-                if gettable:
-                    return self._parameter.get()
-                else:
-                    error_msg = self._construct_error_msg()
-                    raise RuntimeError(error_msg)
+        elif get_if_invalid:
+            if gettable:
+                return self._parameter.get()
             else:
-                return self._value
+                error_msg = self._construct_error_msg()
+                raise RuntimeError(error_msg)
+        else:
+            return self._value
 
     def _construct_error_msg(self) -> str:
         if self._timestamp is None:

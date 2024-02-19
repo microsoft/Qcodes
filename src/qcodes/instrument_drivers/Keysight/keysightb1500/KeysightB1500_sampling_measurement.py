@@ -100,7 +100,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
             if total_count == normal_count:
                 print('All measurements are normal')
             else:
-                indices = [i for i, x in enumerate(data.status) if x == "C" or x == "T"]
+                indices = [i for i, x in enumerate(data.status) if x in {"C", "T"}]
                 warnings.warn(
                     f"{exception_count!s} measurements were "
                     f"out of compliance at {indices!s}"

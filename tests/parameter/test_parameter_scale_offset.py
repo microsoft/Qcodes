@@ -51,14 +51,13 @@ def iterable_or_number(draw, values, size, values_scalar, is_values):
         # if parameter values are not scalar and parameter values are requested
         # return a list of values of the given size
         return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
+    # if parameter values are not scalar and scale/offset are requested
+    # make a random choice whether to return a list of the same size as
+    # the values or a simple scalar
+    elif draw(hst.booleans()):
+        return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
     else:
-        # if parameter values are not scalar and scale/offset are requested
-        # make a random choice whether to return a list of the same size as
-        # the values or a simple scalar
-        if draw(hst.booleans()):
-            return draw(hst.lists(values, min_size=draw(size), max_size=draw(size)))
-        else:
-            return draw(values)
+        return draw(values)
 
 
 @settings(max_examples=500)  # default:100 increased

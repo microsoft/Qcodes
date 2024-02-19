@@ -90,12 +90,11 @@ def test_rescaled_ticks_and_units(
     ticks_formatter, label = _make_rescaled_ticks_and_units(data_dict)
     if unit in _UNITS_FOR_RESCALING:
         expected_prefix = _ENGINEERING_PREFIXES[scale]
+    elif scale != 0 and unit != "":
+        expected_prefix = f"$10^{{{scale:.0f}}}$ "
     else:
-        if scale != 0 and unit != "":
-            expected_prefix = f'$10^{{{scale:.0f}}}$ '
-        else:
-            expected_prefix = ''
-    if param_label == '':
+        expected_prefix = ""
+    if param_label == "":
         base_label = param_name
     else:
         base_label = param_label

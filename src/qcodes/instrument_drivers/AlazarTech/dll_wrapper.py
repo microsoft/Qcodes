@@ -62,7 +62,7 @@ def _mark_params_as_updated(*args: Any) -> None:
 def _check_error_code(
     return_code: int, func: Callable[..., Any], arguments: tuple[Any, ...]
 ) -> tuple[Any, ...]:
-    if (return_code != API_SUCCESS) and (return_code != API_DMA_IN_PROGRESS):
+    if return_code not in {API_SUCCESS, API_DMA_IN_PROGRESS}:
         argrepr = repr(arguments)
         if len(argrepr) > 100:
             argrepr = argrepr[:96] + '...]'

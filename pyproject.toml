@@ -245,7 +245,7 @@ extend-exclude = ["typings"]
 # I isort
 # ISC flake8-implicit-str-concat
 # TID253 banned-module-level-imports
-select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY"]
+select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # G004 We have a lot of use of f strings in log messages
@@ -253,7 +253,7 @@ select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC"
 # NPY002 We have a lot of use of the legacy
 # random number generator. Eventually we should port this
 # code.
-ignore = ["E501", "G004", "NPY002"]
+ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901"]
 
 [tool.ruff.lint.isort]
 

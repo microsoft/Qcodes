@@ -114,13 +114,12 @@ class Keithley7510Buffer(InstrumentChannel):
                     "buffer() missing 1 required positional argument: 'size'"
                 )
             self.write(f":TRACe:MAKE '{self.short_name}', {self._size}, {self.style}")
-        else:
+        elif size is not None:
             # when referring to default buffer, "size" parameter is not needed.
-            if size is not None:
-                self.log.warning(
-                    f"Please use method 'size()' to resize default buffer "
-                    f"{self.short_name} size to {self._size}."
-                )
+            self.log.warning(
+                f"Please use method 'size()' to resize default buffer "
+                f"{self.short_name} size to {self._size}."
+            )
 
         self.add_parameter(
             "size",

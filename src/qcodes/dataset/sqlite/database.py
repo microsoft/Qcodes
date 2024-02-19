@@ -304,7 +304,7 @@ def conn_from_dbpath_or_conn(
     if conn is None and path_to_db is not None:
         conn = connect(path_to_db, get_DB_debug())
     elif conn is not None:
-        conn = conn
+        pass
     else:
         # this should be impossible but left here to keep mypy happy.
         raise RuntimeError("Could not obtain a connection from"

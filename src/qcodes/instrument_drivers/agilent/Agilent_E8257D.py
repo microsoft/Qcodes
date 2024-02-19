@@ -80,14 +80,13 @@ class AgilentE8257D(VisaInstrument):
             else:
                 self._min_power = -110
                 self._max_power = 5
+        elif frequency_option in ["513", "520", "521", "532", "540"]:
+            self._min_power = -20
+            self._max_power = 10
         else:
             # default minimal power is -20 dBm
-            if frequency_option in ["513", "520", "521", "532", "540"]:
-                self._min_power = -20
-                self._max_power = 10
-            else:
-                self._min_power = -20
-                self._max_power = 5
+            self._min_power = -20
+            self._max_power = 5
 
         self.add_parameter(
             name="frequency",

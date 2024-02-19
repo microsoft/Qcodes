@@ -446,9 +446,8 @@ class AbstractMeasurementSubsystem(InstrumentModule):
                 chan_str = f",{chan_str}"
             if post_cmd:
                 chan_str = f"{chan_str},"
-        else:
-            if pre_cmd and post_cmd:
-                pre_cmd = f"{pre_cmd},"
+        elif pre_cmd and post_cmd:
+            pre_cmd = f"{pre_cmd},"
         return f":MEAS:{cmd}? {pre_cmd}{chan_str}{post_cmd}".strip()
 
 
