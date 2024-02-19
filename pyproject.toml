@@ -245,7 +245,7 @@ extend-exclude = ["typings"]
 # I isort
 # ISC flake8-implicit-str-concat
 # TID253 banned-module-level-imports
-select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR"]
+select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # G004 We have a lot of use of f strings in log messages
