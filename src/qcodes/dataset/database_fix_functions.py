@@ -12,8 +12,8 @@ from typing import Any, cast
 from tqdm import tqdm
 
 import qcodes.dataset.descriptions.versioning.serialization as serial
-import qcodes.dataset.descriptions.versioning.v0 as v0
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
 from qcodes.dataset.descriptions.versioning.rundescribertypes import RunDescriberV1Dict
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction

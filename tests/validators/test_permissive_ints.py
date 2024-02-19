@@ -23,7 +23,7 @@ def test_bad_values() -> None:
     b = 10
     values = np.linspace(a, b, b - a + 2)
     for j, i in enumerate(values):
-        if j == 0 or j == 11:
+        if j in {0, 11}:
             validator.validate(i)
         else:
             with pytest.raises(TypeError):

@@ -97,16 +97,15 @@ def apply_color_scale_limits(
         if data_array is None:
             data_array = cast(np.ndarray, colorbar.mappable.get_array())
         data_lim = np.nanmin(data_array), np.nanmax(data_array)
+    elif data_array is not None:
+        raise RuntimeError(
+            "You may not specify `data_lim` and `data_array` "
+            "at the same time. Please refer to the docstring of "
+            "`apply_color_scale_limits for details:\n\n`"
+            + str(apply_color_scale_limits.__doc__)
+        )
     else:
-        if data_array is not None:
-            raise RuntimeError(
-                "You may not specify `data_lim` and `data_array` "
-                "at the same time. Please refer to the docstring of "
-                "`apply_color_scale_limits for details:\n\n`"
-                + str(apply_color_scale_limits.__doc__)
-            )
-        else:
-            data_lim = cast(tuple[float, float], tuple(sorted(data_lim)))
+        data_lim = cast(tuple[float, float], tuple(sorted(data_lim)))
     # if `None` is provided in the new limits don't change this limit
     vlim = [new or old for new, old in zip(new_lim, colorbar.mappable.get_clim())]
     # sort limits in case they were given in a wrong order

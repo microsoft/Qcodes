@@ -73,12 +73,10 @@ class FieldVector:
 
         if attr_value is None:
             setattr(self, "_" + attr_name, value)
-        else:
-            if not np.isclose(attr_value, value):
-                raise ValueError(
-                    f"Computed value of {attr_name} inconsistent with given "
-                    f"value"
-                )
+        elif not np.isclose(attr_value, value):
+            raise ValueError(
+                f"Computed value of {attr_name} inconsistent with given value"
+            )
 
     def _set_attribute_values(
         self, attr_names: Sequence[str], values: Sequence[float | None]

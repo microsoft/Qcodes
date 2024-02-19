@@ -844,19 +844,18 @@ class TektronixAWG5014(VisaInstrument):
                 Allowed values: 'h', 'd', 's'.
         """
         if len(dtype) == 1:
-            record_data = struct.pack('<' + dtype, value)
+            record_data = struct.pack("<" + dtype, value)
+        elif dtype[-1] == "s":
+            assert isinstance(value, str)
+            record_data = value.encode("ASCII")
         else:
-            if dtype[-1] == 's':
-                assert isinstance(value, str)
-                record_data = value.encode('ASCII')
+            assert isinstance(value, (abc.Sequence, np.ndarray))
+            if dtype[-1] == "H" and isinstance(value, np.ndarray):
+                # numpy conversion is fast
+                record_data = value.astype("<u2").tobytes()
             else:
-                assert isinstance(value, (abc.Sequence, np.ndarray))
-                if dtype[-1] == 'H' and isinstance(value, np.ndarray):
-                    # numpy conversion is fast
-                    record_data = value.astype('<u2').tobytes()
-                else:
-                    # argument unpacking is slow
-                    record_data = struct.pack('<' + dtype, *value)
+                # argument unpacking is slow
+                record_data = struct.pack("<" + dtype, *value)
 
         # the zero byte at the end the record name is the "(Include NULL.)"
         record_name = name.encode('ASCII') + b'\x00'

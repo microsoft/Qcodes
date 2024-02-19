@@ -7,7 +7,7 @@ import time
 from typing import Any, Optional
 
 try:
-    import pywinusb.hid as hid  # pyright: ignore[reportMissingModuleSource]
+    from pywinusb import hid  # pyright: ignore[reportMissingModuleSource]
 
     imported_hid = True
 except ImportError:

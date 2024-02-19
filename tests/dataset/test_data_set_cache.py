@@ -897,17 +897,14 @@ def _assert_completed_cache_is_as_expected(
                         cache_data.ravel()[:size],
                         param_data_trees[outer_key][inner_key].ravel()
                     )
+            elif cache_data.dtype.kind in approx_kinds:
+                np.testing.assert_array_almost_equal(
+                    cache_data, param_data_trees[outer_key][inner_key]
+                )
             else:
-                if cache_data.dtype.kind in approx_kinds:
-                    np.testing.assert_array_almost_equal(
-                        cache_data,
-                        param_data_trees[outer_key][inner_key]
-                    )
-                else:
-                    np.testing.assert_array_equal(
-                        cache_data,
-                        param_data_trees[outer_key][inner_key]
-                    )
+                np.testing.assert_array_equal(
+                    cache_data, param_data_trees[outer_key][inner_key]
+                )
 
 
 def _assert_partial_cache_is_as_expected(
@@ -974,17 +971,14 @@ def _assert_parameter_data_is_identical(
                         expected_np_array.ravel(),
                         actual_np_array.ravel()[:expected_np_array.size]
                     )
+            elif expected_np_array.dtype.kind in approx_kinds:
+                np.testing.assert_array_almost_equal(
+                    expected_np_array.ravel(), actual_np_array.ravel()
+                )
             else:
-                if expected_np_array.dtype.kind in approx_kinds:
-                    np.testing.assert_array_almost_equal(
-                        expected_np_array.ravel(),
-                        actual_np_array.ravel()
-                    )
-                else:
-                    np.testing.assert_array_equal(
-                        expected_np_array.ravel(),
-                        actual_np_array.ravel()
-                    )
+                np.testing.assert_array_equal(
+                    expected_np_array.ravel(), actual_np_array.ravel()
+                )
 
 
 def _array_param_used_in_tree(measurement: Measurement) -> bool:
