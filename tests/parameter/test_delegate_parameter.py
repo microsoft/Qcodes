@@ -15,9 +15,6 @@ from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
 
 from .conftest import BetterGettableParam
 
-# Disable warning that is created by using fixtures
-# pylint: disable=redefined-outer-name
-
 
 @pytest.fixture(name="numeric_val")
 def _make_numeric_val() -> Generator[int, None, None]:
@@ -36,10 +33,10 @@ class ObservableParam(Parameter):
         self.instr_val = None
         super().__init__(*args, **kwargs)
 
-    def set_raw(self, value: ParamRawDataType) -> None:  # pylint: disable=method-hidden
+    def set_raw(self, value: ParamRawDataType) -> None:
         self.instr_val = value
 
-    def get_raw(self) -> ParamRawDataType:  # pylint: disable=method-hidden
+    def get_raw(self) -> ParamRawDataType:
         return self.instr_val
 
     def get_instr_val(self) -> ParamRawDataType:

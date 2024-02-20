@@ -28,8 +28,6 @@ from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import parse_guid
 from qcodes.dataset.sqlite.connection import atomic_transaction
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
-
-# pylint: disable=unused-import
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
     perform_db_upgrade,

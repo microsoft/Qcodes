@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 import hypothesis.strategies as st
 import pytest
 from hypothesis import HealthCheck, given, settings

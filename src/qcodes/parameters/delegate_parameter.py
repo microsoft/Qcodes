@@ -225,7 +225,6 @@ class DelegateParameter(Parameter):
                 )
                 setattr(self, attr, attr_val)
 
-    # pylint: disable=method-hidden
     def get_raw(self) -> Any:
         if self.source is None:
             raise TypeError(
@@ -234,7 +233,6 @@ class DelegateParameter(Parameter):
             )
         return self.source.get()
 
-    # pylint: disable=method-hidden
     def set_raw(self, value: Any) -> None:
         if self.source is None:
             raise TypeError(

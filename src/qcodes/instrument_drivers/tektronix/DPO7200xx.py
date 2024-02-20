@@ -714,7 +714,7 @@ class TektronixDPOMeasurementParameter(Parameter):
     'TektronixDPOMeasurementStatistics'. Here we also find the method 'reset'
     to reset the values over which the statistics are gathered.
     """
-    # pylint: disable=method-hidden
+
     def _get(self, metric: str) -> float:
 
         measurement_channel = cast(TektronixDPOMeasurement, self.instrument)

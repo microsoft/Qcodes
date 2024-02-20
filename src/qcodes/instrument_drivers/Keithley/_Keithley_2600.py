@@ -187,7 +187,7 @@ class TimeTrace(ParameterWithSetpoints):
 
         return self.instrument._execute_lua(script, npts)
 
-    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
+    def get_raw(self) -> np.ndarray:
 
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
@@ -203,7 +203,7 @@ class TimeAxis(Parameter):
     measurement start) at which the points of the time trace were acquired.
     """
 
-    def get_raw(self) -> np.ndarray:  # pylint: disable=E0202
+    def get_raw(self) -> np.ndarray:
 
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
