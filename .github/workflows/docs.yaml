@@ -108,7 +108,7 @@ jobs:
     runs-on: "ubuntu-latest"
     permissions:
       contents: write  # we need to be allowed to push to gh-pages
-    # if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }} # enable before merge
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     steps:
 
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
