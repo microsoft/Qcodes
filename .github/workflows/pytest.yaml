@@ -71,12 +71,9 @@ jobs:
       run: python -m pip install --upgrade pip setuptools wheel
       shell: bash
     - name: install qcodes with minimum requirements
-#     Use fork of requirements-builder until official version
-#     has support for pyproject.toml (pep621)
       run: |
-        pip install git+https://github.com/jenshnielsen/requirements-builder.git
-        pip install versioningit
-        requirements-builder -l min -e test setup.py -o min-requirements.txt
+        pip install uv
+        uv pip compile pyproject.toml --extra test --resolution=lowest-direct --output-file min-requirements.txt
         pip install -r min-requirements.txt
         pip install .[test]
       if: ${{ matrix.min-version }}
