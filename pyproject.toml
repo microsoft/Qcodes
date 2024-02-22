@@ -37,6 +37,7 @@ dependencies = [
     "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
     "pandas>=1.2.0",
+    "pyarrow>=11.0.0", # will become a requirement of pandas. Installing explicitly silences a warning
     "pyvisa>=1.11.0, <1.15.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.8.0",
@@ -224,10 +225,12 @@ addopts = "-n auto --dist=loadfile"
 
 markers = "serial"
 
+# we ignore warnings
 # triggered by third party packages
 filterwarnings = [
     'ignore:Deprecated call to `pkg_resources\.declare_namespace:DeprecationWarning',  # google, sphinxcontrib
     'ignore:pkg_resources is deprecated as an API:DeprecationWarning', # pyvisa-sim
+    'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated and scheduled for removal in a future version:DeprecationWarning', # tqdm dateutil
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning' # jupyter
 ]
