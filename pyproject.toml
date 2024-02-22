@@ -223,7 +223,9 @@ markers = "serial"
 
 # we ignore warnings
 # triggered by third party packages
+# and error on all other warnings
 filterwarnings = [
+    'error',
     'ignore:Deprecated call to `pkg_resources\.declare_namespace:DeprecationWarning',  # google, sphinxcontrib
     'ignore:pkg_resources is deprecated as an API:DeprecationWarning', # pyvisa-sim
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
