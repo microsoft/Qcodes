@@ -111,7 +111,7 @@ h5py==3.10.0
     #   qcodes-loop
 hickle==5.0.2
     # via qcodes-loop
-hypothesis==6.98.10
+hypothesis==6.98.12
 idna==3.6
     # via requests
 imagesize==1.4.1
