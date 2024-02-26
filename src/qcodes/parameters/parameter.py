@@ -267,7 +267,7 @@ class Parameter(ParameterBase):
             )
         elif not self.gettable and get_cmd is not False:
             if get_cmd is None:
-                # mypy does not allow setting a method
+                # ignore typeerror since mypy does not allow setting a method dynamically
                 self.get_raw = MethodType(_get_manual_parameter, self)  # type: ignore[method-assign]
             else:
                 if isinstance(get_cmd, str) and instrument is None:
@@ -278,8 +278,9 @@ class Parameter(ParameterBase):
                     )
 
                 exec_str_ask = getattr(instrument, "ask", None) if instrument else None
-                # TODO this should be a method like above
-                # mypy does not allow setting a method
+                # TODO get_raw should also be a method here. This should probably be done by wrapping
+                # it with MethodType like above
+                # ignore typeerror since mypy does not allow setting a method dynamically
                 self.get_raw = Command(  # type: ignore[method-assign]
                     arg_count=0,
                     cmd=get_cmd,
@@ -296,6 +297,7 @@ class Parameter(ParameterBase):
             )
         elif not self.settable and set_cmd is not False:
             if set_cmd is None:
+                # ignore typeerror since mypy does not allow setting a method dynamically
                 self.set_raw = MethodType(_set_manual_parameter, self)  # type: ignore[method-assign]
             else:
                 if isinstance(set_cmd, str) and instrument is None:
@@ -308,7 +310,9 @@ class Parameter(ParameterBase):
                 exec_str_write = (
                     getattr(instrument, "write", None) if instrument else None
                 )
-                # TODO this should also be a method
+                # TODO get_raw should also be a method here. This should probably be done by wrapping
+                # it with MethodType like above
+                # ignore typeerror since mypy does not allow setting a method dynamically
                 self.set_raw = Command(  # type: ignore[method-assign]
                     arg_count=1, cmd=set_cmd, exec_str=exec_str_write
                 )
