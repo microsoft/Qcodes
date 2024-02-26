@@ -257,7 +257,7 @@ packaging==23.2
     #   sphinx
     #   versioningit
     #   xarray
-pandas==2.2.0
+pandas==2.2.1
     # via
     #   qcodes
     #   qcodes-loop
