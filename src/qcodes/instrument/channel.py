@@ -308,7 +308,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         Return the index of the given object
 
         Args:
-            obj: The object to find in the channel list.
+            value: The object to find in the channel list.
             start: Index to start searching from.
             stop: Index to stop searching at.
         """
@@ -318,7 +318,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """Returns number of instances of the given object in the list
 
         Args:
-            obj: The object to find in the ChannelTuple.
+            value: The object to find in the ChannelTuple.
         """
         return self._channels.count(value)
 
@@ -631,7 +631,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         locked and that the channel is of the same type as the ones in the list.
 
         Args:
-            obj: New channel to add to the list.
+            value: New channel to add to the list.
         """
         if self._locked:
             raise AttributeError("Cannot append to a locked channel list")
@@ -659,7 +659,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         Removes obj from ChannelList if not locked.
 
         Args:
-            obj: Channel to remove from the list.
+            value: Channel to remove from the list.
         """
         if self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
@@ -691,7 +691,7 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
 
         Args:
             index: Index to insert object.
-            obj: Object of type chan_type to insert.
+            value: Object of type chan_type to insert.
         """
         if self._locked:
             raise AttributeError("Cannot insert into a locked channel list")
