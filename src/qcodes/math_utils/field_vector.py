@@ -73,12 +73,10 @@ class FieldVector:
 
         if attr_value is None:
             setattr(self, "_" + attr_name, value)
-        else:
-            if not np.isclose(attr_value, value):
-                raise ValueError(
-                    f"Computed value of {attr_name} inconsistent with given "
-                    f"value"
-                )
+        elif not np.isclose(attr_value, value):
+            raise ValueError(
+                f"Computed value of {attr_name} inconsistent with given value"
+            )
 
     def _set_attribute_values(
         self, attr_names: Sequence[str], values: Sequence[float | None]
@@ -314,11 +312,7 @@ class FieldVector:
             for component in 'xyz'
         })
 
-    # NB: we disable the pylint warning here so that we can match
-    #     NumPy's naming convention for the norm method.
-    def norm(self,
-             ord: NormOrder = 2  # pylint: disable=redefined-builtin
-             ) -> float:
+    def norm(self, ord: NormOrder = 2) -> float:
         """
         Returns the norm of this field vector. See ``np.norm``
         for the definition of the ord keyword argument.
@@ -332,7 +326,7 @@ class FieldVector:
     def distance(
         self,
         other: FieldVector,
-        ord: NormOrder = 2,  # pylint: disable=redefined-builtin
+        ord: NormOrder = 2,
     ) -> float:
         return (self - other).norm(ord=ord)
 

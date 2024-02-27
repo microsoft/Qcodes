@@ -38,7 +38,7 @@ def test_idn(driver) -> None:
 def test_smu_channels_and_their_parameters(driver) -> None:
     assert {'smua', 'smub'} == set(list(driver.submodules.keys()))
 
-    for smu_name in {'smua', 'smub'}:
+    for smu_name in ("smua", "smub"):
         smu = getattr(driver, smu_name)
 
         smu.volt(1.0)

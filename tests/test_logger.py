@@ -11,7 +11,7 @@ import pytest
 from pytest import LogCaptureFixture
 
 import qcodes as qc
-import qcodes.logger as logger
+from qcodes import logger
 from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D
 from qcodes.instrument_drivers.tektronix import TektronixAWG5208

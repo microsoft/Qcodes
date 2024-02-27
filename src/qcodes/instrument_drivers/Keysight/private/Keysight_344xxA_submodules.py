@@ -312,7 +312,7 @@ class Display(InstrumentChannel):
         self.text.get()  # also update the parameter value
 
 
-class TimeTrace(ParameterWithSetpoints): # pylint: disable=abstract-method
+class TimeTrace(ParameterWithSetpoints):
     """
     A parameter class that holds the data for a time trace type measurement,
     i.e. a measurement of N voltage or current values measured at fixed time
@@ -395,7 +395,7 @@ class TimeTrace(ParameterWithSetpoints): # pylint: disable=abstract-method
 
         return data  # pyright: ignore[reportPossiblyUnboundVariable]
 
-    def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
+    def get_raw(self) -> np.ndarray:
 
         self._validate_dt()
         self._set_units_and_labels()
@@ -404,13 +404,13 @@ class TimeTrace(ParameterWithSetpoints): # pylint: disable=abstract-method
         return data
 
 
-class TimeAxis(Parameter): # pylint: disable=abstract-method
+class TimeAxis(Parameter):
     """
     A simple :class:`.Parameter` that holds all the times (relative to the
     measurement start) at which the points of the time trace were acquired.
     """
 
-    def get_raw(self) -> np.ndarray:  # pylint: disable=method-hidden
+    def get_raw(self) -> np.ndarray:
         """
         Construct a time axis by querying the number of points and step size
         from the instrument.

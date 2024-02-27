@@ -37,6 +37,7 @@ dependencies = [
     "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
     "pandas>=1.2.0",
+    "pyarrow>=11.0.0", # will become a requirement of pandas. Installing explicitly silences a warning
     "pyvisa>=1.11.0, <1.15.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.8.0",
@@ -224,10 +225,12 @@ addopts = "-n auto --dist=loadfile"
 
 markers = "serial"
 
+# we ignore warnings
 # triggered by third party packages
 filterwarnings = [
     'ignore:Deprecated call to `pkg_resources\.declare_namespace:DeprecationWarning',  # google, sphinxcontrib
     'ignore:pkg_resources is deprecated as an API:DeprecationWarning', # pyvisa-sim
+    'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated and scheduled for removal in a future version:DeprecationWarning', # tqdm dateutil
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning' # jupyter
 ]
@@ -245,7 +248,9 @@ extend-exclude = ["typings"]
 # I isort
 # ISC flake8-implicit-str-concat
 # TID253 banned-module-level-imports
-select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY"]
+# W pydocstyle
+# PLx pylint
+select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW", "W"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # G004 We have a lot of use of f strings in log messages
@@ -253,7 +258,9 @@ select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC"
 # NPY002 We have a lot of use of the legacy
 # random number generator. Eventually we should port this
 # code.
-ignore = ["E501", "G004", "NPY002"]
+# PLxxxx are pylint lints that generate a fair amount of warnings
+# it may be worth fixing some or these in the future
+ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901"]
 
 [tool.ruff.lint.isort]
 

@@ -63,6 +63,7 @@ def test_similar_output() -> None:
         assert add_one(1) == _add_one(1)
 
 
+@pytest.mark.filterwarnings("ignore:Some other warning")
 def test_deprecated_context_manager() -> None:
     with _catch_deprecation_warnings() as ws:
         issue_deprecation_warning('something')
@@ -189,7 +190,7 @@ def test_property_raises() -> None:
         with assert_deprecated(
                 'The function <method> is deprecated, because '
                 'this is a test.'):
-            _ = c.prop  # pylint: disable=pointless-statement
+            _ = c.prop
 
 
 def test_setter_uninhibited() -> None:

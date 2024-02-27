@@ -462,12 +462,11 @@ class ParameterBase(MetadatableWithName):
                 return self.get()
             else:
                 raise NotImplementedError(f"no get cmd found in Parameter {self.name}")
+        elif self.settable:
+            self.set(*args, **kwargs)
+            return None
         else:
-            if self.settable:
-                self.set(*args, **kwargs)
-                return None
-            else:
-                raise NotImplementedError(f"no set cmd found in Parameter {self.name}")
+            raise NotImplementedError(f"no set cmd found in Parameter {self.name}")
 
     def snapshot_base(
         self,

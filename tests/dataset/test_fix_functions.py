@@ -4,7 +4,6 @@ import os
 import pytest
 
 import qcodes.dataset.descriptions.versioning.serialization as serial
-import qcodes.dataset.descriptions.versioning.v0 as v0
 import tests.dataset
 from qcodes.dataset.database_fix_functions import (
     fix_version_4a_run_description_bug,
@@ -12,6 +11,7 @@ from qcodes.dataset.database_fix_functions import (
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
+from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
 from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.queries import get_run_description

@@ -15,11 +15,10 @@ on:
     branches: ['main']
 
 permissions:
-  contents: write  # we need to be allowed to push to gh-pages
+  contents: read
 
 jobs:
   builddocs:
-
     runs-on: ${{ matrix.os }}
     strategy:
       # don't stop other jobs if one fails
@@ -40,7 +39,6 @@ jobs:
             python-version: 3.11
     env:
       OS: ${{ matrix.os }}
-      UPLOAD_TO_GHPAGES: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       # we expect no warnings from Sphinx in 3.10
       # The std-lib docstring of IntEnum in 3.11.0 is not valid
       # causing errors like in the docstring of from_bytes (from Int)
@@ -105,13 +103,35 @@ jobs:
       with:
         name: docs_${{ matrix.python-version }}_${{ matrix.os }}
         path: ${{ github.workspace }}/docs/_build/html
+
+
+  deploydocs:
+    needs: builddocs
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write  # we need to be allowed to push to gh-pages
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+    steps:
+
+    - name: Harden Runner
+      uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+      with:
+        egress-policy: audit
+
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+    - name: Download artifact
+      uses: actions/download-artifact@87c55149d96e628cc2ef7e6fc2aab372015aec85 # v4.1.3
+      with:
+        name: docs_3.11_ubuntu-latest
+        path: build_docs
+
     - name: Deploy to gh pages
       uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # v4.5.0
       with:
         branch: gh-pages
-        folder: ${{ github.workspace }}/docs/_build/html
+        folder: ${{ github.workspace }}/build_docs/
         clean: true
         single-commit: true
         git-config-email: "bot"
         git-config-name: "Documentation Bot"
-      if: ${{ fromJSON(env.UPLOAD_TO_GHPAGES) }}

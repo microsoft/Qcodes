@@ -488,12 +488,13 @@ class RohdeSchwarzRTO1000(VisaInstrument):
                               "does not match the instrument's response."
                               " I am going to assume that this oscilloscope "
                               f"is a model {self.model}")
+        elif model is None:
+            raise ValueError(
+                "No model number provided. Please provide "
+                'a model number (eg. "RTO1024").'
+            )
         else:
-            if model is None:
-                raise ValueError('No model number provided. Please provide '
-                                 'a model number (eg. "RTO1024").')
-            else:
-                self.model = model
+            self.model = model
 
         self.HD = HD
 

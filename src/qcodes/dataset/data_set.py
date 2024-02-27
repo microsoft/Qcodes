@@ -749,9 +749,8 @@ class DataSet(BaseDataSet):
                 {'keys': 'finalize', 'values': self.run_id})
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
-        else:
-            if self.run_id in writer_status.active_datasets:
-                writer_status.active_datasets.remove(self.run_id)
+        elif self.run_id in writer_status.active_datasets:
+            writer_status.active_datasets.remove(self.run_id)
         if len(writer_status.active_datasets) == 0:
             writer_status.write_in_background = None
             if writer_status.bg_writer is not None:
