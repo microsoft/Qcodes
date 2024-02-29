@@ -1,6 +1,6 @@
 QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
 =================================================
-|Build Status Github| |Build Status Github Docs| |Codacy badge| |OpenSSF|
+|Build Status Github| |Build Status Github Docs| |Ruff| |OpenSSF|
 
 QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
@@ -102,9 +102,9 @@ See `License <https://github.com/QCoDeS/Qcodes/tree/main/LICENSE>`__.
     :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22
 .. |Build Status Github Docs| image:: https://github.com/QCoDeS/Qcodes/workflows/build%20docs/badge.svg
     :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22build+docs%22
-.. |Codacy badge| image:: https://api.codacy.com/project/badge/Grade/6c9e0e5712bf4c6285d6f717aa8e84fa
-    :alt: Codacy Badge
-    :target: https://app.codacy.com/manual/qcodes/Qcodes?utm_source=github.com&utm_medium=referral&utm_content=QCoDeS/Qcodes&utm_campaign=Badge_Grade_Settings
+.. |Ruff|  image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+    :target: https://github.com/astral-sh/ruff
+    :alt: Ruff
 .. |PyPi| image:: https://badge.fury.io/py/qcodes.svg
     :target: https://badge.fury.io/py/qcodes
 .. |PyPI python versions| image:: https://img.shields.io/pypi/pyversions/qcodes.svg
