@@ -687,9 +687,9 @@ class QDevQDac(VisaInstrument):
         time.sleep(delay)
         self.visa_handle.clear()
 
-    def connect_message(self,
-                        idn_part: str = "IDN",
-                        being_time: Optional[float] = None) -> None:
+    def connect_message(
+        self, idn_param: str = "IDN", begin_time: Optional[float] = None
+    ) -> None:
         """
         Override of the standard Instrument class connect_message.
         Usually, the response to `*IDN?` is printed. Here, the

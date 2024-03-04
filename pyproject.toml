@@ -209,13 +209,8 @@ ignore = [
 reportMissingTypeStubs = true
 reportDeprecated = true
 stubPath = "typings/stubs"
-# we would like to move this to at least standard
-# eventually. From 1.1.339 onwards standard is the default
-# for now we enable all of standard except for
-# incompatibleMethodOverride which we have a lot of
-typeCheckingMode = "standard"
-reportIncompatibleMethodOverride = false
 
+typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 minversion = "7.2"

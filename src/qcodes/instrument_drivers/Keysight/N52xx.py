@@ -97,7 +97,7 @@ class FormattedSweep(ParameterWithSetpoints):
             raise NotImplementedError(f"Axis for type {sweep_type} not implemented yet")
 
     @setpoints.setter
-    def setpoints(self, val: Any) -> None:
+    def setpoints(self, setpoints: Any) -> None:
         """
         Stub to allow initialization. Ignore any set attempts on setpoint as we
         figure it out on the fly.

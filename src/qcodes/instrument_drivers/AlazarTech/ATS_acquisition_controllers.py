@@ -95,16 +95,14 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         pass
 
     def handle_buffer(
-            self,
-            data: np.ndarray,
-            buffer_number: Optional[int] = None
+        self, buffer: np.ndarray, buffer_number: Optional[int] = None
     ) -> None:
         """
         See AcquisitionController
         :return:
         """
         assert self.buffer is not None
-        self.buffer += data
+        self.buffer += buffer
 
     def post_acquire(self) -> float:
         """
