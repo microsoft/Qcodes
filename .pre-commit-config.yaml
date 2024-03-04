@@ -1,7 +1,7 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: 'v0.2.2'
+    rev: 'v0.3.0'
     hooks:
     - id: ruff
       types_or: [python, pyi, jupyter, toml]
@@ -21,7 +21,7 @@ repos:
     - id: mixed-line-ending
       args: ['--fix=no']
   - repo: https://github.com/akaihola/darker
-    rev: 1.7.2
+    rev: 1.7.3
     hooks:
       - id: darker
   - repo: https://github.com/gitleaks/gitleaks
