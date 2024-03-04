@@ -302,25 +302,25 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         return name_parts
 
     def index(
-        self, value: InstrumentModuleType, start: int = 0, stop: int = sys.maxsize
+        self, obj: InstrumentModuleType, start: int = 0, stop: int = sys.maxsize
     ) -> int:
         """
         Return the index of the given object
 
         Args:
-            value: The object to find in the channel list.
+            obj: The object to find in the channel list.
             start: Index to start searching from.
             stop: Index to stop searching at.
         """
-        return self._channels.index(value, start, stop)
+        return self._channels.index(obj, start, stop)
 
-    def count(self, value: InstrumentModuleType) -> int:
+    def count(self, obj: InstrumentModuleType) -> int:
         """Returns number of instances of the given object in the list
 
         Args:
-            value: The object to find in the ChannelTuple.
+            obj: The object to find in the ChannelTuple.
         """
-        return self._channels.count(value)
+        return self._channels.count(obj)
 
     def get_channel_by_name(self: T, *names: str) -> InstrumentModuleType | T:
         """
@@ -625,24 +625,24 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
             channel.short_name: channel for channel in self._channels
         }
 
-    def append(self, value: InstrumentModuleType) -> None:
+    def append(self, obj: InstrumentModuleType) -> None:
         """
         Append a Channel to this list. Requires that the ChannelList is not
         locked and that the channel is of the same type as the ones in the list.
 
         Args:
-            value: New channel to add to the list.
+            obj: New channel to add to the list.
         """
         if self._locked:
             raise AttributeError("Cannot append to a locked channel list")
-        if not isinstance(value, self._chan_type):
+        if not isinstance(obj, self._chan_type):
             raise TypeError(
                 f"All items in a channel list must be of the same "
-                f"type. Adding {type(value).__name__} to a "
+                f"type. Adding {type(obj).__name__} to a "
                 f"list of {self._chan_type.__name__}."
             )
-        self._channel_mapping[value.short_name] = value
-        self._channels.append(value)
+        self._channel_mapping[obj.short_name] = obj
+        self._channels.append(obj)
 
     def clear(self) -> None:
         """
@@ -654,20 +654,20 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         self._channels.clear()
         self._channel_mapping.clear()
 
-    def remove(self, value: InstrumentModuleType) -> None:
+    def remove(self, obj: InstrumentModuleType) -> None:
         """
         Removes obj from ChannelList if not locked.
 
         Args:
-            value: Channel to remove from the list.
+            obj: Channel to remove from the list.
         """
         if self._locked:
             raise AttributeError("Cannot remove from a locked channel list")
         else:
-            self._channels.remove(value)
-            self._channel_mapping.pop(value.short_name)
+            self._channels.remove(obj)
+            self._channel_mapping.pop(obj.short_name)
 
-    def extend(self, values: Iterable[InstrumentModuleType]) -> None:
+    def extend(self, objects: Iterable[InstrumentModuleType]) -> None:
         """
         Insert an iterable of objects into the list of channels.
 
@@ -679,29 +679,29 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         # below so copy it into a tuple just in case.
         if self._locked:
             raise AttributeError("Cannot extend a locked channel list")
-        objects_tuple = tuple(values)
+        objects_tuple = tuple(objects)
         if not all(isinstance(obj, self._chan_type) for obj in objects_tuple):
             raise TypeError("All items in a channel list must be of the same type.")
         self._channels.extend(objects_tuple)
         self._channel_mapping.update({obj.short_name: obj for obj in objects_tuple})
 
-    def insert(self, index: int, value: InstrumentModuleType) -> None:
+    def insert(self, index: int, obj: InstrumentModuleType) -> None:
         """
         Insert an object into the ChannelList at a specific index.
 
         Args:
             index: Index to insert object.
-            value: Object of type chan_type to insert.
+            obj: Object of type chan_type to insert.
         """
         if self._locked:
             raise AttributeError("Cannot insert into a locked channel list")
-        if not isinstance(value, self._chan_type):
+        if not isinstance(obj, self._chan_type):
             raise TypeError(
                 f"All items in a channel list must be of the same "
-                f"type. Adding {type(value).__name__} to a list of {self._chan_type.__name__}."
+                f"type. Adding {type(obj).__name__} to a list of {self._chan_type.__name__}."
             )
-        self._channels.insert(index, value)
-        self._channel_mapping[value.short_name] = value
+        self._channels.insert(index, obj)
+        self._channel_mapping[obj.short_name] = obj
 
     def get_validator(self) -> ChannelTupleValidator:
         """
