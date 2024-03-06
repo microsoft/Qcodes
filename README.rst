@@ -99,9 +99,9 @@ License
 See `License <https://github.com/QCoDeS/Qcodes/tree/main/LICENSE>`__.
 
 .. |Build Status Github| image:: https://github.com/QCoDeS/Qcodes/workflows/Run%20mypy%20and%20pytest/badge.svg
-    :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22
+    :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22Run+mypy+and+pytest%22+branch%3Amain
 .. |Build Status Github Docs| image:: https://github.com/QCoDeS/Qcodes/workflows/build%20docs/badge.svg
-    :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22build+docs%22
+    :target: https://github.com/QCoDeS/Qcodes/actions?query=workflow%3A%22build+docs%22+branch%3Amain
 .. |Ruff|  image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
     :target: https://github.com/astral-sh/ruff
     :alt: Ruff
