@@ -354,10 +354,11 @@ class Tektronix70000AWGChannel(InstrumentChannel):
 
         # validate
         if frequency < 1 or frequency > max_freq:
-            raise ValueError('Can not set channel {} frequency to {} Hz.'
-                             ' Maximum frequency for function type {} is {} '
-                             'Hz, minimum is 1 Hz'.format(channel, frequency,
-                                                          functype, max_freq))
+            raise ValueError(
+                f"Can not set channel {channel} frequency to {frequency} Hz."
+                f" Maximum frequency for function type {functype} is {max_freq} "
+                "Hz, minimum is 1 Hz"
+            )
         else:
             self.root_instrument.write(f'FGEN:CHANnel{channel}:'
                                        f'FREQuency {frequency}')
