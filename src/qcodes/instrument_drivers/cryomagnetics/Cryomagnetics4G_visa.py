@@ -29,12 +29,33 @@ from pydantic import BaseModel, conlist
 #
 log = logging.getLogger(__name__)
 
-T = TypeVar("T")``
+T = TypeVar("T")
 #
 
+from enum import Enum
+from dataclasses import dataclass
 
+@dataclass
+class StatusByte:
+    sweep_mode_active: bool = False
+    standby_mode_active: bool = False
+    quench_condition_present: bool = False
+    power_module_failure: bool = False
+    message_available: bool = False
+    extended_status_byte: bool = False
+    master_summary_status: bool = False
+    menu_mode: bool = False
 
+class SweepMode(Enum):
+    UP = "sweep up"
+    DOWN = "sweep down"
+    PAUSED = "sweep paused"
+    ZEROING = "zeroing"
 
+@dataclass
+class SweepState:
+    mode: SweepMode=
+    fast: bool = False
 class Cryo4GException(Exception):
     pass
 
@@ -46,114 +67,9 @@ class Cryo4GWarning(UserWarning):
 class RangeRatePair(BaseModel):
     range_limit: float
     rate: float
-
+``
 class RangesModel(BaseModel):
     ranges: conlist(RangeRatePair, min_items=1)  # Ensure at least one range-rate pair is provided
-
-class Cryo4GSwitchHeater(InstrumentChannel):
-    class _Decorators:
-        @classmethod
-        def check_enabled(cls, f: Callable[..., T]) -> Callable[..., T]:
-            def check_enabled_decorator(
-                self: Cryo4GSwitchHeater, *args: Any, **kwargs: Any
-            ) -> T:
-                if not self.check_enabled():
-                    raise Cryo4GException("Switch not enabled")
-                return f(self, *args, **kwargs)
-
-            return check_enabled_decorator
-
-    def __init__(self, parent: CryomagneticsModel4G) -> None:
-        super().__init__(parent, "SwitchHeater")
-
-        # Add state parameters
-        self.add_parameter(
-            "enabled",
-            label="Switch Heater Enabled",
-            get_cmd=self.check_enabled,
-            set_cmd=lambda x: (self.enable() if x else self.disable()),
-            vals=Bool(),
-        )
-        self.add_parameter(
-            "state",
-            label="Switch Heater On",
-            get_cmd=self.check_state,
-            set_cmd=lambda x: (self.on() if x else self.off()),
-            vals=Bool(),
-        )
-
-        # Not sure about this cmd being correct
-        self.add_parameter(
-            "mode",
-            label="Persistent Mode",
-            get_cmd=self.in_persistent_mode,
-        )
-
-        self.add_parameter(
-            "heat_time",
-            label="Heating Time",
-            unit="s",
-            get_cmd=lambda: self._heat_time,
-            set_cmd=lambda x: setattr(self, "_heat_time", x),
-            vals=Ints(0, 120),
-            initial_value=0
-        )
-
-        self.add_parameter(
-            "cool_time",
-            label="Cooling Time",
-            unit="s",
-            get_cmd=lambda: self._cool_time,
-            set_cmd=lambda x: setattr(self, "_cool_time", x),
-            vals=Ints(0, 3600),
-            initial_value=0
-        )
-
-    def in_persistent_mode(self) -> bool:
-        """
-        Checks if the switch heater is in persistent mode.
-        Persistent mode is when the switch heater is enabled and on
-        This allows the switch heater to remain on even after
-        a persistent mode timeout occurs.
-
-        Returns:
-            bool: True if in persistent mode, False otherwise.
-        """
-
-        return (
-            self.get_parameter("mode").get_latest() == "Manual"
-            and self.get_parameter("state").get_latest() == "On"
-        )
-
-
-    def disable(self) -> None:
-        """Turn measurement off"""
-        self.write("PSHTR 0")
-        self._enabled = False
-
-    def enable(self) -> None:
-        """Turn measurement on"""
-        self.write("PSHTR 1")
-        self._enabled = True
-
-    def check_enabled(self) -> bool:
-        return bool(int(self.ask("PSHTR?").strip()))
-
-    @_Decorators.check_enabled
-    def on(self) -> None:
-        self.write("PSHTR 1")
-        while self._parent.ramping_state() == "heating switch":
-            self._parent._sleep(0.5)
-
-    @_Decorators.check_enabled
-    def off(self) -> None:
-        self.write("PSHTR 0")
-        while self._parent.ramping_state() == "cooling switch":
-            self._parent._sleep(0.5)
-
-    @_Decorators.check_enabled
-    def check_state(self) -> bool:
-        return bool(int(self.ask("PSHTR?").strip()))
 
 
 
@@ -186,27 +102,22 @@ class CryomagneticsModel4G(VisaInstrument):
     _RETRY_TIME = 5
 
     def __init__(
-            self, 
-            name: str, 
-            address: str,
-            max_rates: List[RangeRatePair],
-            coil_constant: float,
-            terminator: str = "\r\n", 
-            reset: bool = False,  # Add reset parameter with a default value
-            **kwargs
-        ) -> None:
+        self,
+        name: str,
+        address: str,
+        reset: bool = False,
+        terminator: str = "\r\n",
+        current_ramp_limit: float | None = None,
+        current_ramp_limits_per_range: list[float] | None = None,
+    ):
 
-        """
-        Initialize the Cryomagnetics 4G instrument driver.
+        super().__init__(
+            name,
+            address,
+            terminator=terminator,
+            **kwargs,
+        )
 
-        Args:
-            name (str): Name of the instrument.
-            address (str): VISA address of the instrument.
-            max_rates (List[RangeRatePair]): List of maximum ramp rates as RangeRatePair objects.
-            coil_constant (float): Coil constant for unit conversion.
-            terminator (str, optional): Command terminator. Defaults to "\r\n".
-        """
-        super().__init__(name, address, terminator=terminator, **kwargs)
 
         # Store the coil configuration
         self.max_rates = max_rates
@@ -298,9 +209,8 @@ class CryomagneticsModel4G(VisaInstrument):
                            )
        
 
+        self.status = self._get_status_byte()
         # Add persistent switch
-        switch_heater = Cryo4GSwitchHeater(self)
-        self.add_submodule("switch_heater", switch_heater)
 
         # Add interaction functions
         self.add_function("get_error", call_cmd="SYST:ERR?")
@@ -313,8 +223,51 @@ class CryomagneticsModel4G(VisaInstrument):
         # Set units to tesla by default
         self.units('T')
         #Set rates to max by default
-        self.ranges(self.max_rates)
-        self.connect_message()
+       # self.ranges(self.max_rates)
+       # self.connect_message()
+
+    def _get_status_byte(self) -> StatusByte:
+        return StatusByte(
+            sweep_mode_active=bool(status_byte & 1),
+            standby_mode_active=bool(status_byte & 2),
+            quench_condition_present=bool(status_byte & 4),
+            power_module_failure=bool(status_byte & 8),
+            message_available=bool(status_byte & 16),
+            extended_status_byte=bool(status_byte & 32),
+            master_summary_status=bool(status_byte & 64),
+            menu_mode=bool(status_byte & 128),
+        )
+
+    def _can_start_ramping(self) -> bool:
+        """
+        Check the current state of the magnet to see if we can start ramping
+        """
+        if self.status.quench_condition_present:
+            logging.error(f"{__name__}: Could not ramp because of quench")
+            return False
+
+        if self.status.standby_mode_active:
+            logging.error(f"{__name__}: Standby mode active, cannot ramp")
+            return False
+
+        if self.status.power_module_failure:
+            logging.error(f"{__name__}: Could not ramp power module failure detected")
+            return False
+
+        state = self.ramping_state()
+        if state == "ramping":
+            # If we don't have a persistent switch, or it's warm
+            if not self.switch_heater.enabled():
+                return True
+            elif self.switch_heater.state():
+                return True
+        elif state in ["holding", "paused", "at zero current"]:
+            return True
+
+        logging.error(f"{__name__}: Could not ramp, state: {state}")
+        return False
+
+
 
     def set_llim(self, value: float) -> None:
         """
