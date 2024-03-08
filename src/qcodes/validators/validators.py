@@ -600,9 +600,7 @@ class PermissiveMultiples(Validator[numbertypes]):
                 raise ValueError(f"{value} is not a multiple" + f" of {self._divisor}.")
 
     def __repr__(self) -> str:
-        repr_str = "<PermissiveMultiples, Multiples of {} to within {}>".format(
-            self._divisor, self._precision
-        )
+        repr_str = f"<PermissiveMultiples, Multiples of {self._divisor} to within {self._precision}>"
         return repr_str
 
     is_numeric = True
