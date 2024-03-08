@@ -1825,6 +1825,7 @@ def new_data_set(
         specs: list of parameters to create this dataset with
         values: the values to associate with the parameters
         metadata: the metadata to associate with the dataset
+        conn: Existing connection to the database.
         in_memory_cache: Should measured data be keep in memory
             and available as part of the `dataset.cache` object.
 

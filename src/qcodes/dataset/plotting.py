@@ -62,6 +62,7 @@ def _appropriate_kwargs(plottype: str, colorbar_present: bool, **kwargs: Any) ->
     Args:
         plottype: The plot type for which the kwargs should be adjusted
         colorbar_present: Is there a non-None colorbar in this plot iteration?
+        **kwargs: Keyword arguments passed to the plotting function.
     """
 
     def linehandler(**kwargs: Any) -> Any:
@@ -145,6 +146,7 @@ def plot_dataset(
         complex_plot_phase: Format of phase for plotting complex-valued data,
             either ``"radians"`` or ``"degrees"``. Applicable only for the
             cases where the dataset contains complex numbers
+        **kwargs: Keyword arguments passed to the plotting function.
 
     Returns:
         A list of axes and a list of colorbars of the same length. The
@@ -567,6 +569,7 @@ def plot_2d_scatterplot(
         z: The z values
         ax: The axis to plot onto
         colorbar: The colorbar to plot into
+        **kwargs: Keyword arguments passed to the plotting function.
 
     Returns:
         The matplotlib axis handles for plot and colorbar
@@ -637,6 +640,7 @@ def plot_on_a_plain_grid(
         z: The z values
         ax: The axis to plot onto
         colorbar: A colorbar to reuse the axis for
+        **kwargs: Keyword arguments passed to the plotting function.
 
     Returns:
         The matplotlib axes handle for plot and colorbar

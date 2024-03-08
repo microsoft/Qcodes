@@ -245,7 +245,7 @@ extend-exclude = ["typings"]
 # TID253 banned-module-level-imports
 # W pydocstyle
 # PLx pylint
-select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW", "W"]
+select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW", "W", "D417"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # G004 We have a lot of use of f strings in log messages
@@ -296,13 +296,18 @@ known-first-party = ["qcodes"]
 "src/qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
 "src/qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
 
+# this should eventually be fixed
+"src/qcodes/instrument_drivers/*" = ["D417"]
+"docs/examples/*" = ["D417"]
+
 # This triggeres in notebooks even with a md cell at the top
 "*.ipynb" = ["E402"]
 
-# these imports are fine at module level
+# TID253 these imports are fine at module level
 # in tests and examples
+# D417 no need to fix in deprecated module
 "docs/*" = ["TID253"]
-"src/qcodes/tests/*" = ["TID253"]
+"src/qcodes/tests/*" = ["TID253", "D417"]
 "tests/*" = ["TID253"]
 
 [tool.ruff.lint.flake8-tidy-imports]
@@ -310,6 +315,9 @@ known-first-party = ["qcodes"]
 # and only required in specific places so
 # don't import them at module level
 banned-module-level-imports = ["xarray", "pandas", "opencensus"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.towncrier]
 package = "qcodes"

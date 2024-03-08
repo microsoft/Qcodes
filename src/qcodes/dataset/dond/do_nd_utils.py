@@ -89,6 +89,7 @@ def _handle_plotting(
         data: a dataset to generate plots from
             as plot.
         do_plot: Should a plot be produced
+        interrupted: If the measurement was interrupted, this will be the exception.
 
     """
     res: AxesTupleListWithDataSet

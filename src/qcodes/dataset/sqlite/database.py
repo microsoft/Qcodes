@@ -249,8 +249,7 @@ def initialise_or_create_database_at(
     database file does not exist, it will be initiated.
 
     Args:
-        db_file_with_abs_path
-            Database file name with absolute path, for example
+        db_file_with_abs_path: Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
@@ -266,8 +265,7 @@ def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]
     Initializes or creates a database and restores the 'db_location' afterwards.
 
     Args:
-        db_file_with_abs_path
-            Database file name with absolute path, for example
+        db_file_with_abs_path: Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
     """
     db_location = qcodes.config["core"]["db_location"]

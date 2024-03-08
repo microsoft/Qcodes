@@ -352,7 +352,7 @@ def insert_column(
         conn: database connection
         table: destination for the insertion
         name: column name
-        type: sqlite type of the column
+        paramtype: sqlite type of the column
     """
     # first check that the column is not already there
     # and do nothing if it is

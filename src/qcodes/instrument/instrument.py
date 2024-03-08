@@ -463,7 +463,9 @@ def find_or_create_instrument(
     Args:
         instrument_class: Class of the instrument to find or create.
         name: Name of the instrument to find or create.
+        *args: Positional arguments passed to the instrument class.
         recreate: When ``True``, the instruments gets recreated if it is found.
+        **kwargs: Keyword arguments passed to the instrument class.
 
     Returns:
         The found or created instrument.

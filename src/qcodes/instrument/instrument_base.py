@@ -239,7 +239,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         Recursively get a component of the instrument by full_name.
 
         Args:
-            name: The name of the component to get.
+            full_name: The name of the component to get.
 
         Returns:
             The component with the given name.

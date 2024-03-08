@@ -376,6 +376,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
                 defaults to a value set in qcodes config
             path: Export path, defaults to value set in config
             prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.
+            automatic_export: Is this export automatic?
 
         Raises:
             ValueError: If the export data type is not specified or unknown,
@@ -431,6 +432,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
             export_type: Data export type, e.g. DataExportType.NETCDF
             path: Export path, defaults to value set in config
             prefix: File prefix, e.g. "qcodes_", defaults to value set in config.
+            automatic_export: Is this export automatic?
 
         Returns:
             str: Path file was saved to, returns None if no file was saved.
