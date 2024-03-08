@@ -44,12 +44,10 @@ def retry_until_does_not_throw(
                                 # the number of tries is exceeded.
 
     Args:
-        exception_class_to_expect
-            Only in case of this exception the function will be called again
-        tries
-            Number of times to retry calling the function before giving up
-        delay
-            Delay between retries of the function call, in seconds
+        exception_class_to_expect: Only in case of this exception the
+            function will be called again
+        tries: Number of times to retry calling the function before giving up
+        delay: Delay between retries of the function call, in seconds
 
     Returns:
         A callable that runs the decorated function until it does not throw
