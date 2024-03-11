@@ -135,8 +135,8 @@ class RigolDG1062Channel(InstrumentChannel):
         """
         Args:
             parent: The instrument this channel belongs to
-            name (str)
-            channel (int)
+            name: Name of the channel.
+            channel: Number of the channel.
         """
 
         super().__init__(parent, name)
