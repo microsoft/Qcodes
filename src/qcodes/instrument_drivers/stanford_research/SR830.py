@@ -28,6 +28,7 @@ class ChannelTrace(ParameterWithSetpoints):
             name: The name of the parameter
             channel: The relevant channel (1 or 2). The name should
                 match this.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
 

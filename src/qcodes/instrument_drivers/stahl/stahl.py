@@ -97,7 +97,7 @@ class StahlChannel(InstrumentChannel):
     def _set_voltage(self, voltage: float) -> None:
         """
         Args:
-            voltage
+            voltage: The voltage to set.
         """
         # Normalize the voltage in the range 0 to 1, where 0 is maximum negative
         # voltage and 1 is maximum positive voltage
