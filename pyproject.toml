@@ -296,9 +296,6 @@ known-first-party = ["qcodes"]
 "src/qcodes/instrument_drivers/Keysight/KtM960x.py" = ["F405"]
 "src/qcodes/instrument_drivers/Keysight/KtMAwg.py" = ["F405"]
 
-# this should eventually be fixed
-"src/qcodes/instrument_drivers/*" = ["D417"]
-
 # This triggeres in notebooks even with a md cell at the top
 "*.ipynb" = ["E402"]
 
