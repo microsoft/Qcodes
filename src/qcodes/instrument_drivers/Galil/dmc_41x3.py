@@ -36,6 +36,7 @@ class GalilMotionController(Instrument):
         Args:
             name: name for the instrument
             address: address of the controller
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name=name, **kwargs)
         self.g = gclib.py()
@@ -120,6 +121,7 @@ class GalilDMC4133VectorMode(InstrumentChannel):
         Args:
             parent: an instance of DMC4133Controller
             name: name of the vector mode plane
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(parent, name, **kwargs)
         self._plane = name
@@ -248,6 +250,7 @@ class GalilDMC4133Motor(InstrumentChannel):
         Args:
             parent: an instance of DMC4133Controller
             name: name of the motor to be controlled
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(parent, name, **kwargs)
         self._axis = name
@@ -456,6 +459,7 @@ class GalilDMC4133Controller(GalilMotionController):
         Args:
             name: name for the instance
             address: address of the controller burned in
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name=name, address=address, **kwargs)
 
