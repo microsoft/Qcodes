@@ -298,7 +298,6 @@ known-first-party = ["qcodes"]
 
 # this should eventually be fixed
 "src/qcodes/instrument_drivers/*" = ["D417"]
-"docs/examples/*" = ["D417"]
 
 # This triggeres in notebooks even with a md cell at the top
 "*.ipynb" = ["E402"]
