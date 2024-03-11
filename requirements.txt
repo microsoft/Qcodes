@@ -198,7 +198,7 @@ msal==1.27.0
     #   msal-extensions
 msal-extensions==1.1.0
     # via azure-identity
-mypy==1.8.0
+mypy==1.9.0
 mypy-extensions==1.0.0
     # via mypy
 nbclient==0.9.0
