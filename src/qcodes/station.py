@@ -836,6 +836,7 @@ def _merge_yamls(*yamls: str | Path) -> str:
 
     Args:
         yamls: string or Path to yaml files separated by comma.
+
     Returns:
         Full yaml file stored in the memory. Returns an empty string
         if no files are given.

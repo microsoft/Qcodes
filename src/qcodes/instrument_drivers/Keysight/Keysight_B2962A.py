@@ -90,6 +90,7 @@ class KeysightB2962A(VisaInstrument):
     Power Source
 
     Status: alpha-version.
+
     TODO:
         - Implement any remaining parameters supported by the device
         - Similar drivers have special handlers to map return values of

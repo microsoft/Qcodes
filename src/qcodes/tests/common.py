@@ -190,6 +190,7 @@ def compare_dictionaries(
                      differences string.
         dict_2_name: Optional name of the second dictionary used in the
                      differences string.
+
     Returns:
         Tuple: Are the dicts equal and the difference rendered as
                a string.

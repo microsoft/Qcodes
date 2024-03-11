@@ -11,6 +11,7 @@ from .keysight_34980a_submodules import KeysightSwitchMatrixSubModule
 class Keysight34934A(KeysightSwitchMatrixSubModule):
     """
     Create an instance for module 34933A.
+
     Args:
         parent: the system which the module is installed on
         name: user defined name for the module
