@@ -133,6 +133,7 @@ class DummyInstrument(DummyBase):
             name: name for the instrument
             gates: list of names that is used to create parameters for
                             the instrument
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
 
@@ -160,6 +161,7 @@ class DummyFailingInstrument(DummyBase):
         Args:
             name: name for the instrument
             fail: if true, instrument will throw a runtime error on creation.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
 
@@ -835,7 +837,7 @@ def setpoint_generator(
     (and MultiParameter) expects
 
     Args:
-        *sp_bases:
+        *sp_bases: 1D Sequence or Numpy array of setpoints
 
     Returns:
 
@@ -914,8 +916,9 @@ class MockField(DummyBase):
         """Mock instrument for emulating a magnetic field axis
 
         Args:
-            name (str): Instrument name
-            vals (Numbers, optional): Soft limits. Defaults to Numbers(min_value=-1., max_value=1.).
+            name: Instrument name
+            vals: Soft limits. Defaults to Numbers(min_value=-1., max_value=1.).
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name=name, **kwargs)
         self._field = 0.0
@@ -1069,6 +1072,8 @@ class MockDAC(DummyBase):
             name: name for the instrument
             gates: list of names that is used to create parameters for
                             the instrument
+            num_channels: Number of channels to add to the mock instrument.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
 

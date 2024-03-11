@@ -1357,6 +1357,8 @@ class Measurement:
                 and available as part of the `dataset.cache` object.
             dataset_class: Enum representing the Class used to store data
                 with.
+            parent_span: An optional opentelemetry span that this should be registered a
+                a child of if using opentelemetry.
         """
         if write_in_background is None:
             write_in_background = cast(bool, qc.config.dataset.write_in_background)

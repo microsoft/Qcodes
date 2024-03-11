@@ -273,6 +273,7 @@ class TektronixTPS2012(VisaInstrument):
             address: Instrument address as used by VISA
             timeout: visa timeout, in secs. long default (180)
               to accommodate large waveforms
+            **kwargs: kwargs are forwarded to base class.
         """
 
         super().__init__(name, address, timeout=timeout, **kwargs)

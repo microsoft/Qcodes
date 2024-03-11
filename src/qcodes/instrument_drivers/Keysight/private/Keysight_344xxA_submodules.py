@@ -453,6 +453,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             address: Visa-resolvable instrument address.
             silent: If True, the connect_message of the instrument
                 is supressed. Default: False
+            **kwargs: kwargs are forwarded to base class.
         """
 
         super().__init__(name, address, terminator='\n', **kwargs)

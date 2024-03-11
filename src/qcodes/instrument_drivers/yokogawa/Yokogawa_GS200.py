@@ -161,8 +161,8 @@ class YokogawaGS200Monitor(InstrumentChannel):
     def update_measurement_enabled(self, unit: ModeType, output_range: float) -> None:
         """
         Args:
-            unit
-            output_range
+            unit: Unit to update either VOLT or CURR.
+            output_range: new range.
         """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
@@ -584,7 +584,7 @@ class YokogawaGS200(VisaInstrument):
 
         Args:
             source_mode: "CURR" or "VOLT"
-            source_range
+            source_range: New range.
         """
         if not self.measure.present:
             return

@@ -980,6 +980,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             channel_list: Reference to the list that this channel is a member
                 of; this is used when deleting the channel so that it can remove
                 itself from the list
+            **kwargs: Keyword passed to the super class.
         """
         super().__init__(parent, name=name, **kwargs)
         self._exists_on_instrument = exists_on_instrument

@@ -55,9 +55,10 @@ class Keithley6500(VisaInstrument):
             Status: beta-version.
 
         Args:
-            name (str): The name used internally by QCoDeS in the DataSet.
-            address (str): The VISA device address.
-            reset_device (bool): Reset the device on startup if true.
+            name: The name used internally by QCoDeS in the DataSet.
+            address: The VISA device address.
+            reset_device: Reset the device on startup if true.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, address, terminator="\n", **kwargs)
 

@@ -26,6 +26,7 @@ def validate_all(*args: tuple[Validator[Any], Any], context: str = "") -> None:
     all valid, raising ValueError otherwise.
 
     Args:
+        *args: Values to validate.
         context: keyword-only arg with a string to include in the error message
             giving the user context for the error.
     """

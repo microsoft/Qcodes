@@ -192,7 +192,7 @@ class SignalHoundUSBSA124B(Instrument):
             name: Name of the instrument.
             dll_path: Path to ``sa_api.dll`` Defaults to the default dll within
                 Spike installation
-            **kwargs:
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
         self._parameters_synced = False

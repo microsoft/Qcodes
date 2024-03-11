@@ -93,7 +93,7 @@ def _rows_from_datapoints(inputsetpoints: np.ndarray) -> np.ndarray:
     but they can nonetheless be used to identify certain scan types
 
     Args:
-        setpoints: The raw setpoints as a one-dimensional array
+        inputsetpoints: The raw setpoints as a one-dimensional array
 
     Returns:
         A ndarray of the rows

@@ -188,6 +188,7 @@ class QDevQDac(VisaInstrument):
             num_chans: Number of channels to assign. Default: 48
             update_currents: Whether to query all channels for their
                 current current value on startup. Default: True.
+            **kwargs: kwargs are forwarded to base class.
 
         Returns:
             QDac object
@@ -621,6 +622,7 @@ class QDevQDac(VisaInstrument):
         Args:
             chan: The channel number (counting from 1)
             fg: The function generator (counting from 1)
+            v_start: The starting voltage
             setvoltage: The voltage to ramp to
             ramptime: The ramp time in seconds.
         """
