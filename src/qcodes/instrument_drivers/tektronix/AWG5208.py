@@ -15,6 +15,7 @@ class TektronixAWG5208(AWG70000A):
             name: The name used internally by QCoDeS in the DataSet
             address: The VISA resource name of the instrument
             timeout: The VISA timeout time (in seconds).
+            **kwargs: kwargs are forwarded to base class.
         """
 
         super().__init__(name, address, num_channels=8,

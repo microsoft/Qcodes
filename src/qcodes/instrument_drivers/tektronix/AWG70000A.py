@@ -417,6 +417,7 @@ class AWG70000A(VisaInstrument):
             address: The VISA resource name of the instrument
             timeout: The VISA timeout time (in seconds)
             num_channels: Number of channels on the AWG
+            **kwargs: kwargs are forwarded to base class.
         """
 
         self.num_channels = num_channels
