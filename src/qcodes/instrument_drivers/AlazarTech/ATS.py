@@ -91,7 +91,6 @@ class AlazarTech_ATS(Instrument):
             board_id: id of the board within the alazar system
 
         Return:
-
             Dictionary containing
 
                 - system_id

@@ -433,7 +433,6 @@ class HarvardDecadac(VisaInstrument, DacReader):
 
 
     Attributes:
-
         _ramp_state (bool): If True, ramp state is ON. Default False.
 
         _ramp_time (int): The ramp time in ms. Default 100 ms.

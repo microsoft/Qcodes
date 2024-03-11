@@ -111,7 +111,6 @@ class Group:
     group belong to the same instrument.
 
     Example:
-
         ::
 
             class InstrumentWithGroupParameters(VisaInstrument):

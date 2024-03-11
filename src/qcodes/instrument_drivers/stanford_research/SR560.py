@@ -67,7 +67,6 @@ class SR560(Instrument):
     This is a virtual driver only and will not talk to your instrument.
 
     Note:
-
     - The ``cutoff_lo`` and ``cutoff_hi`` parameters will interact with
       each other on the instrument (hi cannot be <= lo) but this is not
       managed here, you must ensure yourself that both are correct whenever
