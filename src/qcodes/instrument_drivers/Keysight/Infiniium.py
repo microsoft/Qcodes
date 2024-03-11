@@ -793,6 +793,7 @@ class KeysightInfiniium(VisaInstrument):
             timeout: Visa timeout, in secs.
             channels: The number of channels on the scope.
             silence_pyvisapy_warning: Don't warn about pyvisa-py at startup
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, address, timeout=timeout, terminator="\n", **kwargs)
         self.connect_message()

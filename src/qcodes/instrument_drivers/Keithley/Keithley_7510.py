@@ -688,6 +688,8 @@ class Keithley7510(VisaInstrument):
         Args:
             name: Name of the instrument instance
             address: Visa-resolvable instrument address
+            terminator: Character to terminate messages with.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 
