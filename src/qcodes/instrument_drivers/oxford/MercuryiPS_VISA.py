@@ -198,6 +198,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         Args:
             set_cmd: raw string for the command, e.g. 'SIG:FSET'
+            value: Value to set
         """
         dressed_cmd = f"SET:DEV:{self.uid}:{self.psu_string}:{set_cmd}:{value}"
         # the instrument always very verbosely responds
@@ -240,6 +241,7 @@ class OxfordMercuryiPS(VisaInstrument):
                 range (T). The function shall take (x, y, z) as an input and
                 return a boolean describing whether that field value is
                 acceptable.
+            **kwargs: kwargs are forwarded to base class.
         """
 
         if field_limits is not None and not(callable(field_limits)):
