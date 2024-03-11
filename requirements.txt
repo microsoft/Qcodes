@@ -244,7 +244,7 @@ opentelemetry-api==1.23.0
     # via qcodes
 ordered-set==4.1.0
     # via deepdiff
-packaging==23.2
+packaging==24.0
     # via
     #   dask
     #   h5netcdf
