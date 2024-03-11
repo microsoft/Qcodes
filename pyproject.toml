@@ -245,7 +245,7 @@ extend-exclude = ["typings"]
 # TID253 banned-module-level-imports
 # W pydocstyle
 # PLx pylint
-select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW", "W", "D417", "D416", "D410", "D411", "D412"]
+select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW", "W", "D417", "D416", "D410", "D411", "D412", "D405"]
 # darker will fix this as code is
 # reformatted when it is changed.
 # G004 We have a lot of use of f strings in log messages

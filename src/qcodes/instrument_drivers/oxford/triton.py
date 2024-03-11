@@ -28,7 +28,7 @@ class OxfordTriton(IPInstrument):
 
     Status: beta-version.
 
-        TODO:
+    Todo:
         fetch registry directly from fridge-computer
     """
 

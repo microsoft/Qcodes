@@ -36,7 +36,7 @@ class TektronixAWG5014(VisaInstrument):
         - The output channels are always in Amplitude/Offset mode
         - The output markers are always in High/Low mode
 
-    TODO:
+    Todo:
         - Implement support for cable transfer function compensation
         - Implement more instrument functionality in the driver
         - Remove double functionality
