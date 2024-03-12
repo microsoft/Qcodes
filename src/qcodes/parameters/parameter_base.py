@@ -968,7 +968,6 @@ class ParameterBase(MetadatableWithName):
         This may be overridden with ``allow_changes=True``.
 
         Examples:
-
             >>> from qcodes.parameters import Parameter
             >>> p = Parameter("p", set_cmd=None, get_cmd=None)
             >>> p.set(2)
@@ -994,7 +993,6 @@ class ParameterBase(MetadatableWithName):
         unintentionally modifies a parameter.
 
         Example:
-
             >>> p = Parameter("p", set_cmd=None, get_cmd=None)
             >>> p.set(2)
             >>> with p.restore_at_exit():

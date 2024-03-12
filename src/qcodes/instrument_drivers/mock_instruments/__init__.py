@@ -1101,6 +1101,7 @@ class MockCustomChannel(InstrumentChannel):
 
         It adds a parameter not found in the original channel, the
         current_valid_range.
+
         Args:
             parent: Instrument to which the original channel belongs to,
                 usually a dac.

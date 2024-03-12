@@ -67,14 +67,12 @@ class SR560(Instrument):
     This is a virtual driver only and will not talk to your instrument.
 
     Note:
-
-    - The ``cutoff_lo`` and ``cutoff_hi`` parameters will interact with
-      each other on the instrument (hi cannot be <= lo) but this is not
-      managed here, you must ensure yourself that both are correct whenever
-      you change one of them.
-
-    - ``gain`` has a vernier setting, which does not yield a well-defined
-      output. We restrict this driver to only the predefined gain values.
+        - The ``cutoff_lo`` and ``cutoff_hi`` parameters will interact with
+          each other on the instrument (hi cannot be <= lo) but this is not
+          managed here, you must ensure yourself that both are correct whenever
+          you change one of them.
+        - ``gain`` has a vernier setting, which does not yield a well-defined
+          output. We restrict this driver to only the predefined gain values.
 
     """
     def __init__(self, name: str, **kwargs: Any):

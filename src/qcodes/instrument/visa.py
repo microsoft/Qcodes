@@ -341,6 +341,7 @@ class VisaInstrument(Instrument):
                 different way (as in the qdac). If you want to skip the
                 update of certain parameters in all snapshots, use the
                 ``snapshot_get``  attribute of those parameters instead.
+
         Returns:
             dict: base snapshot
         """

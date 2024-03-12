@@ -949,12 +949,14 @@ def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
 
 
 def get_experiments(conn: ConnectionPlus) -> list[int]:
-    """Get a list of experiments
+    """
+    Get a list of experiments
+
     Args:
         conn: database connection
 
-     Returns:
-         list of rows
+    Returns:
+        list of rows
     """
     sql = "SELECT exp_id FROM experiments"
     c = atomic_transaction(conn, sql)

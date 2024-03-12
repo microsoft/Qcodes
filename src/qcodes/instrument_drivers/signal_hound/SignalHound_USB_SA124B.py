@@ -641,7 +641,7 @@ class SignalHoundUSBSA124B(Instrument):
     def QuerySweep(self) -> tuple[int, float, float]:
         """
         Queries the sweep for information on the parameters that defines the
-            x axis of the sweep
+        x axis of the sweep
 
         Returns:
             number of points in sweep, start frequency and step size
@@ -664,7 +664,7 @@ class SignalHoundUSBSA124B(Instrument):
         This function performs a sweep over the configured ranges.
         The result of the sweep is returned along with the sweep points
 
-        returns:
+        Returns:
             datamin numpy array
         """
         if not self._parameters_synced:
