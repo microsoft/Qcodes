@@ -440,7 +440,7 @@ towncrier==23.11.0
     # via sphinxcontrib-towncrier
 tqdm==4.66.2
     # via qcodes
-traitlets==5.14.1
+traitlets==5.14.2
     # via
     #   comm
     #   ipykernel
