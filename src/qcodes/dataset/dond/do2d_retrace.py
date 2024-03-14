@@ -1,32 +1,14 @@
 from __future__ import annotations
 
 import logging
-import sys
-import time
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, cast
-
-import numpy as np
+from typing import TYPE_CHECKING
 from opentelemetry import trace
-from tqdm.auto import tqdm
 
 from qcodes import config
-from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
-from qcodes.dataset.dond.do_nd_utils import (
-    BreakConditionInterrupt,
-    _handle_plotting,
-    _register_actions,
-    _register_parameters,
-    _set_write_period,
-    catch_interrupts,
-)
 from qcodes.dataset.experiment_container import Experiment
-from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.threading import (
-    SequentialParamsCaller,
-    ThreadPoolParamsCaller,
-    process_params_meas,
-)
+
+from qcodes.dataset import DataSetDefinition, LinSweeper, datasaver_builder, dond_into, LinSweep
 from qcodes.parameters import ParameterBase
 
 LOG = logging.getLogger(__name__)
@@ -38,8 +20,6 @@ if TYPE_CHECKING:
     from qcodes.dataset.dond.do_nd_utils import (
         ActionsT,
         AxesTupleListWithDataSet,
-        BreakConditionT,
-        ParamMeasT,
     )
 
 @TRACER.start_as_current_span("qcodes.dataset.do2d")
@@ -54,22 +34,15 @@ def do2d_retrace(
     stop2: float,
     num_points2: int,
     delay2: float,
-    *param_meas: ParamMeasT,
-    set_before_sweep: bool | None = True,
+    *param_meas: ParameterBase,
     enter_actions: ActionsT = (),
     exit_actions: ActionsT = (),
     before_inner_actions: ActionsT = (),
     after_inner_actions: ActionsT = (),
-    write_period: float | None = None,
     measurement_name: str = "",
     exp: Experiment | None = None,
-    flush_columns: bool = False,
-    do_plot: bool | None = None,
-    use_threads: bool | None = None,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
     show_progress: bool | None = None,
-    log_info: str | None = None,
-    break_condition: BreakConditionT | None = None,
 ) -> AxesTupleListWithDataSet:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
@@ -91,160 +64,80 @@ def do2d_retrace(
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
           supplied.
-        set_before_sweep: if True the outer parameter is set to its first value
-            before the inner parameter is swept to its next value.
         enter_actions: A list of functions taking no arguments that will be
             called before the measurements start
         exit_actions: A list of functions taking no arguments that will be
             called after the measurements ends
         before_inner_actions: Actions executed before each run of the inner loop
         after_inner_actions: Actions executed after each run of the inner loop
-        write_period: The time after which the data is actually written to the
-            database.
         measurement_name: Name of the measurement. This will be passed down to
             the dataset produced by the measurement. If not given, a default
             value of 'results' is used for the dataset.
         exp: The experiment to use for this measurement.
-        flush_columns: The data is written after a column is finished
-            independent of the passed time and write period.
         additional_setpoints: A list of setpoint parameters to be registered in
             the measurement but not scanned.
-        do_plot: should png and pdf versions of the images be saved after the
-            run. If None the setting will be read from ``qcodesrc.json``
-        use_threads: If True measurements from each instrument will be done on
-            separate threads. If you are measuring from several instruments
-            this may give a significant speedup.
         show_progress: should a progress bar be displayed during the
             measurement. If None the setting will be read from ``qcodesrc.json``
-        log_info: Message that is logged during the measurement. If None a default
-            message is used.
-        break_condition: Callable that takes no arguments. If returned True,
-            measurement is interrupted.
 
     Returns:
         The QCoDeS dataset.
     """
-
-    if do_plot is None:
-        do_plot = cast(bool, config.dataset.dond_plot)
+    
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
-
-    meas_up = Measurement(name=measurement_name, exp=exp)
-    meas_down = Measurement(name='retrace '+measurement_name, exp=exp)
-    if log_info is not None:
-        meas_up._extra_log_info = log_info
-        meas_down._extra_log_info = log_info
-    else:
-        meas_up._extra_log_info = "Using 'do2d_retrace'"
-        meas_down._extra_log_info = "Using 'do2d_retrace'"
-    all_setpoint_params = (
-        param_set1,
-        param_set2,
-    ) + tuple(s for s in additional_setpoints)
-
-    measured_parameters = tuple(
-        param for param in param_meas if isinstance(param, ParameterBase)
-    )
-
-    try:
-        loop_shape = (num_points1, num_points2) + tuple(1 for _ in additional_setpoints)
-        shapes: Shapes | None = detect_shape_of_measurement(
-            measured_parameters, loop_shape
-        )
-    except TypeError:
-        LOG.exception(
-            f"Could not detect shape of {measured_parameters} "
-            f"falling back to unknown shape."
-        )
-        shapes = None
-
-    _register_parameters(meas_up, all_setpoint_params)
-    _register_parameters(meas_up, param_meas, setpoints=all_setpoint_params, shapes=shapes)
-    _set_write_period(meas_up, write_period)
-    _register_actions(meas_up, enter_actions, exit_actions)
     
-    _register_parameters(meas_down, all_setpoint_params)
-    _register_parameters(meas_down, param_meas, setpoints=all_setpoint_params, shapes=shapes)
-    _set_write_period(meas_down, write_period)
-    _register_actions(meas_down, enter_actions, exit_actions)
-
-    if use_threads is None:
-        use_threads = config.dataset.use_threads
-
-    param_meas_caller = (
-        ThreadPoolParamsCaller(*param_meas)
-        if use_threads
-        else SequentialParamsCaller(*param_meas)
-    )
-
-    with catch_interrupts() as interrupted, meas_up.run() as datasaver_up, meas_down.run() as datasaver_down, param_meas_caller as call_param_meas:
-        dataset_up = datasaver_up.dataset
-        dataset_down = datasaver_down.dataset
-        additional_setpoints_data = process_params_meas(additional_setpoints)
-        setpoints1 = np.linspace(start1, stop1, num_points1)
-        for set_point1 in tqdm(setpoints1, disable=not show_progress):
-            if set_before_sweep:
-                param_set2.set(start2)
-
-            param_set1.set(set_point1)
-
+    dataset_definition = [
+        DataSetDefinition(
+            name=measurement_name,
+            independent=[param_set1, param_set2],
+            dependent=param_meas,
+            experiment=exp
+        ),
+        DataSetDefinition(
+            name=f"retrace {measurement_name}",
+            independent=[param_set1, param_set2],
+            dependent=param_meas,
+            experiment=exp
+        )
+    ]
+    
+    with datasaver_builder(dataset_definition) as datasavers:
+        for action in enter_actions:
+            action()
+        for _ in LinSweeper(param_set1, start1, stop1, num_points1, delay1):
+            sweep_up = LinSweep(
+                param_set2,
+                start2,
+                stop2,
+                num_points2,
+                delay2,
+                post_actions=after_inner_actions
+            )
+            sweep_down = LinSweep(
+                param_set2,
+                stop2,
+                start2,
+                num_points2,
+                delay2,
+                post_actions=after_inner_actions
+            )
             for action in before_inner_actions:
                 action()
-
-            time.sleep(delay1)
-
-            setpoints2 = np.linspace(start2, stop2, num_points2)
-
-            # flush to prevent unflushed print's to visually interrupt tqdm bar
-            # updates
-            sys.stdout.flush()
-            sys.stderr.flush()
-            for set_point2 in tqdm(setpoints2, disable=not show_progress, leave=False):
-                # skip first inner set point if `set_before_sweep`
-                if set_point2 == start2 and set_before_sweep:
-                    pass
-                else:
-                    param_set2.set(set_point2)
-                    time.sleep(delay2)
-
-                datasaver_up.add_result(
-                    (param_set1, set_point1),
-                    (param_set2, set_point2),
-                    *call_param_meas(),
-                    *additional_setpoints_data,
-                )
-
-                if callable(break_condition):
-                    if break_condition():
-                        raise BreakConditionInterrupt("Break condition was met.")
-
-            for action in after_inner_actions:
+            dond_into(
+                datasavers[0],
+                sweep_up,
+                *param_meas,
+                additional_setpoints=additional_setpoints
+            )
+            for action in before_inner_actions:
                 action()
-            if flush_columns:
-                datasaver_up.flush_data_to_database()
-                
-            for set_point2 in tqdm(setpoints2[::-1], disable=not show_progress, leave=False):
-                if set_point2 == start2 and set_before_sweep:
-                    pass
-                else:
-                    param_set2.set(set_point2)
-                    time.sleep(delay2)
-
-                datasaver_down.add_result(
-                    (param_set1, set_point1),
-                    (param_set2, set_point2),
-                    *call_param_meas(),
-                    *additional_setpoints_data,
-                )
-
-                if callable(break_condition):
-                    if break_condition():
-                        raise BreakConditionInterrupt("Break condition was met.")
-
-            for action in after_inner_actions:
+            dond_into(
+                datasavers[1],
+                sweep_down,
+                *param_meas,
+                additional_setpoints=additional_setpoints,
+            )
+            for action in exit_actions:
                 action()
-            if flush_columns:
-                datasaver_down.flush_data_to_database()
-
-    return _handle_plotting(dataset_up, do_plot, interrupted()), _handle_plotting(dataset_down, do_plot, interrupted())
+    datasets = [datasaver.dataset for datasaver in datasavers]
+    return datasets
