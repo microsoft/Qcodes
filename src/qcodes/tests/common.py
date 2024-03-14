@@ -190,6 +190,7 @@ def compare_dictionaries(
                      differences string.
         dict_2_name: Optional name of the second dictionary used in the
                      differences string.
+
     Returns:
         Tuple: Are the dicts equal and the difference rendered as
                a string.
@@ -222,17 +223,8 @@ def compare_dictionaries(
 
             if not match:
                 value_err += (
-                    'Value of "{}{}" ("{}", type"{}") not same as\n'
-                    '  "{}{}" ("{}", type"{}")\n\n'
-                ).format(
-                    dict_1_name,
-                    path,
-                    dict_1[k],
-                    type(dict_1[k]),
-                    dict_2_name,
-                    path,
-                    dict_2[k],
-                    type(dict_2[k]),
+                    f'Value of "{dict_1_name}{path}" ("{dict_1[k]}", type"{type(dict_1[k])}") not same as\n'
+                    f'  "{dict_2_name}{path}" ("{dict_2[k]}", type"{type(dict_2[k])}")\n\n'
                 )
 
     for k in dict_2.keys():

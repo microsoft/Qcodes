@@ -41,10 +41,15 @@ class FrequencyAxis(Parameter):
 class Trace(ParameterWithSetpoints):
     def __init__(self, number: int, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.instrument: (
+        # the parameter classes should ideally be generic in instrument
+        # and root instrument classes so we can specialize here.
+        # for now we have to ignore a type error from pyright
+        self.instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
             KeysightN9030BSpectrumAnalyzerMode | KeysightN9030BPhaseNoiseMode
         )
-        self.root_instrument: KeysightN9030B
+        self.root_instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
+            KeysightN9030B
+        )
 
         self.number = number
 

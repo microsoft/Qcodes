@@ -68,9 +68,9 @@ class Model_325(VisaInstrument):
 
         Args:
              index: The index to upload the curve to. We can only use
-                            indices reserved for user defined curves, 21-35
-             name
-             serial_number
+                indices reserved for user defined curves, 21-35
+             name: Name of the curve
+             serial_number: Serial number of the curve
              data_dict: A dictionary containing the curve data
         """
         if index not in range(21, 36):

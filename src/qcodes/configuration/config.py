@@ -240,7 +240,6 @@ class Config:
             default: default value, stored only in the schema
 
         Examples:
-
             >>> defaults.add("trace_color", "blue", "string", "description")
 
         will update the config:

@@ -143,9 +143,7 @@ class Function(MetadatableWithName):
 
         if len(args) != self._arg_count:
             raise TypeError(
-                "{} called with {} args but requires {}".format(
-                    func_name, len(args), self._arg_count
-                )
+                f"{func_name} called with {len(args)} args but requires {self._arg_count}"
             )
 
         validate_all(*zip(self._args, args), context="Function: " + func_name)

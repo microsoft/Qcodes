@@ -301,8 +301,13 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         name_parts.append(self.short_name)
         return name_parts
 
-    def index(
-        self, obj: InstrumentModuleType, start: int = 0, stop: int = sys.maxsize
+    # the parameter obj should be called value but that would
+    # be an incompatible change
+    def index(  #  pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        obj: InstrumentModuleType,
+        start: int = 0,
+        stop: int = sys.maxsize,
     ) -> int:
         """
         Return the index of the given object
@@ -314,7 +319,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """
         return self._channels.index(obj, start, stop)
 
-    def count(self, obj: InstrumentModuleType) -> int:
+    def count(  #  pyright: ignore[reportIncompatibleMethodOverride]
+        self, obj: InstrumentModuleType
+    ) -> int:
         """Returns number of instances of the given object in the list
 
         Args:
@@ -625,7 +632,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
             channel.short_name: channel for channel in self._channels
         }
 
-    def append(self, obj: InstrumentModuleType) -> None:
+    def append(  #  pyright: ignore[reportIncompatibleMethodOverride]
+        self, obj: InstrumentModuleType
+    ) -> None:
         """
         Append a Channel to this list. Requires that the ChannelList is not
         locked and that the channel is of the same type as the ones in the list.
@@ -654,7 +663,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         self._channels.clear()
         self._channel_mapping.clear()
 
-    def remove(self, obj: InstrumentModuleType) -> None:
+    def remove(  #  pyright: ignore[reportIncompatibleMethodOverride]
+        self, obj: InstrumentModuleType
+    ) -> None:
         """
         Removes obj from ChannelList if not locked.
 
@@ -667,7 +678,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
             self._channels.remove(obj)
             self._channel_mapping.pop(obj.short_name)
 
-    def extend(self, objects: Iterable[InstrumentModuleType]) -> None:
+    def extend(  #  pyright: ignore[reportIncompatibleMethodOverride]
+        self, objects: Iterable[InstrumentModuleType]
+    ) -> None:
         """
         Insert an iterable of objects into the list of channels.
 
@@ -685,7 +698,9 @@ class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type:
         self._channels.extend(objects_tuple)
         self._channel_mapping.update({obj.short_name: obj for obj in objects_tuple})
 
-    def insert(self, index: int, obj: InstrumentModuleType) -> None:
+    def insert(  #  pyright: ignore[reportIncompatibleMethodOverride]
+        self, index: int, obj: InstrumentModuleType
+    ) -> None:
         """
         Insert an object into the ChannelList at a specific index.
 
@@ -965,6 +980,7 @@ class AutoLoadableInstrumentChannel(InstrumentChannel):
             channel_list: Reference to the list that this channel is a member
                 of; this is used when deleting the channel so that it can remove
                 itself from the list
+            **kwargs: Keyword passed to the super class.
         """
         super().__init__(parent, name=name, **kwargs)
         self._exists_on_instrument = exists_on_instrument

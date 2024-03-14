@@ -12,7 +12,7 @@ attrs==23.2.0
     #   jsonschema
     #   referencing
 autodocsumm==0.2.12
-azure-core==1.30.0
+azure-core==1.30.1
     # via
     #   azure-identity
     #   opencensus-ext-azure
@@ -24,9 +24,9 @@ beautifulsoup4==4.12.3
     # via nbconvert
 bleach==6.1.0
     # via nbconvert
-broadbean==0.13.0
+broadbean==0.14.0
     # via qcodes
-cachetools==5.3.2
+cachetools==5.3.3
     # via google-auth
 certifi==2024.2.2
     # via requests
@@ -49,7 +49,7 @@ colorama==0.4.6
     #   pytest
     #   sphinx
     #   tqdm
-comm==0.2.1
+comm==0.2.2
     # via
     #   ipykernel
     #   ipywidgets
@@ -66,7 +66,7 @@ cryptography==42.0.5
     #   pyjwt
 cycler==0.12.1
     # via matplotlib
-dask==2024.2.1
+dask==2024.3.0
     # via qcodes
 debugpy==1.8.1
     # via ipykernel
@@ -97,9 +97,9 @@ future==1.0.0
     # via uncertainties
 google-api-core==2.17.1
     # via opencensus
-google-auth==2.28.1
+google-auth==2.28.2
     # via google-api-core
-googleapis-common-protos==1.62.0
+googleapis-common-protos==1.63.0
     # via google-api-core
 h5netcdf==1.3.0
     # via qcodes
@@ -111,7 +111,7 @@ h5py==3.10.0
     #   qcodes-loop
 hickle==5.0.2
     # via qcodes-loop
-hypothesis==6.98.12
+hypothesis==6.99.5
 idna==3.6
     # via requests
 imagesize==1.4.1
@@ -124,10 +124,10 @@ incremental==22.10.0
     # via towncrier
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.29.2
+ipykernel==6.29.3
     # via qcodes
 ipython==8.18.1; python_version == "3.9"
-ipython==8.22.1; python_version >= "3.10"
+ipython==8.22.2; python_version >= "3.10"
     # via
     #   ipykernel
     #   ipywidgets
@@ -154,11 +154,11 @@ jsonschema==4.21.1
     #   zhinst-toolkit
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.0
+jupyter-client==8.6.1
     # via
     #   ipykernel
     #   nbclient
-jupyter-core==5.7.1
+jupyter-core==5.7.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -198,14 +198,14 @@ msal==1.27.0
     #   msal-extensions
 msal-extensions==1.1.0
     # via azure-identity
-mypy==1.8.0
+mypy==1.9.0
 mypy-extensions==1.0.0
     # via mypy
-nbclient==0.9.0
+nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.1
+nbconvert==7.16.2
     # via nbsphinx
-nbformat==5.9.2
+nbformat==5.10.2
     # via
     #   nbclient
     #   nbconvert
@@ -222,6 +222,7 @@ numpy==1.26.4
     #   matplotlib
     #   pandas
     #   pandas-stubs
+    #   pyarrow
     #   qcodes
     #   qcodes-loop
     #   scipy
@@ -243,7 +244,7 @@ opentelemetry-api==1.23.0
     # via qcodes
 ordered-set==4.1.0
     # via deepdiff
-packaging==23.2
+packaging==24.0
     # via
     #   dask
     #   h5netcdf
@@ -291,6 +292,7 @@ psutil==5.9.8
     #   opencensus-ext-azure
 pure-eval==0.2.2
     # via stack-data
+pyarrow==15.0.1
 pyasn1==0.5.1
     # via
     #   pyasn1-modules
@@ -308,21 +310,21 @@ pygments==2.17.2
     #   sphinx
 pyjwt==2.8.0
     # via msal
-pyparsing==3.1.1
+pyparsing==3.1.2
     # via matplotlib
-pytest==8.0.2
+pytest==8.1.1
     # via
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.23.5
+pytest-asyncio==0.23.5.post1
 pytest-cov==4.1.0
 pytest-mock==3.12.0
-pytest-rerunfailures==13.0
+pytest-rerunfailures==14.0
 pytest-xdist==3.5.0
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
     #   matplotlib
@@ -438,7 +440,7 @@ towncrier==23.11.0
     # via sphinxcontrib-towncrier
 tqdm==4.66.2
     # via qcodes
-traitlets==5.14.1
+traitlets==5.14.2
     # via
     #   comm
     #   ipykernel
@@ -451,12 +453,12 @@ traitlets==5.14.1
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.21.0.20240118
+types-jsonschema==4.21.0.20240311
 types-pytz==2024.1.0.20240203
     # via pandas-stubs
-types-pywin32==306.0.0.20240130
-types-requests==2.31.0.20240218
-types-setuptools==69.1.0.20240223
+types-pywin32==306.0.0.20240313
+types-requests==2.31.0.20240311
+types-setuptools==69.1.0.20240310
 types-tabulate==0.9.0.20240106
 types-tqdm==4.66.0.20240106
 typing-extensions==4.10.0
@@ -502,7 +504,7 @@ xarray==2024.2.0
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==24.1.54288
+zhinst-core==24.1.55273
     # via
     #   zhinst-toolkit
     #   zhinst-utils
@@ -513,5 +515,5 @@ zhinst-toolkit==0.6.3
     # via zhinst-qcodes
 zhinst-utils==0.4.0
     # via zhinst-toolkit
-zipp==3.17.0
+zipp==3.18.0
     # via importlib-metadata

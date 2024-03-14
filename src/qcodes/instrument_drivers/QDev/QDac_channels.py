@@ -188,6 +188,7 @@ class QDevQDac(VisaInstrument):
             num_chans: Number of channels to assign. Default: 48
             update_currents: Whether to query all channels for their
                 current current value on startup. Default: True.
+            **kwargs: kwargs are forwarded to base class.
 
         Returns:
             QDac object
@@ -621,6 +622,7 @@ class QDevQDac(VisaInstrument):
         Args:
             chan: The channel number (counting from 1)
             fg: The function generator (counting from 1)
+            v_start: The starting voltage
             setvoltage: The voltage to ramp to
             ramptime: The ramp time in seconds.
         """
@@ -687,9 +689,9 @@ class QDevQDac(VisaInstrument):
         time.sleep(delay)
         self.visa_handle.clear()
 
-    def connect_message(self,
-                        idn_part: str = "IDN",
-                        being_time: Optional[float] = None) -> None:
+    def connect_message(
+        self, idn_param: str = "IDN", begin_time: Optional[float] = None
+    ) -> None:
         """
         Override of the standard Instrument class connect_message.
         Usually, the response to `*IDN?` is printed. Here, the

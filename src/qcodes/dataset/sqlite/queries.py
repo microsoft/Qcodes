@@ -949,12 +949,14 @@ def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
 
 
 def get_experiments(conn: ConnectionPlus) -> list[int]:
-    """Get a list of experiments
+    """
+    Get a list of experiments
+
     Args:
         conn: database connection
 
-     Returns:
-         list of rows
+    Returns:
+        list of rows
     """
     sql = "SELECT exp_id FROM experiments"
     c = atomic_transaction(conn, sql)
@@ -1593,6 +1595,8 @@ def _create_run_table(
     Args:
         conn: database connection
         formatted_name: the name of the table to create
+        parameters: Parameters to insert in the table.
+        values: Values for the parameters above.
     """
     _validate_table_name(formatted_name)
 
@@ -1652,28 +1656,29 @@ def create_run(
     Note that it is an error to supply both Parameters and RunDescriber
 
     Args:
-        - conn: the connection to the sqlite database
-        - exp_id: the experiment id we want to create the run into
-        - name: a friendly name for this run
-        - guid: the guid adhering to our internal guid format
-        - parameters: optional list of parameters this run has (as ParamSpec objects).
-            This is not recommended, please use description instead.
-        - values:  optional list of values for the parameters
-        - metadata: optional metadata dictionary
-        - captured_run_id: The run_id this data was originally captured with.
+        conn: the connection to the sqlite database
+        exp_id: the experiment id we want to create the run into
+        name: a friendly name for this run
+        guid: the guid adhering to our internal guid format
+        parameters: optional list of parameters this run has (as ParamSpec objects).
+           This is not recommended, please use description instead.
+        values:  optional list of values for the parameters
+        metadata: optional metadata dictionary
+        captured_run_id: The run_id this data was originally captured with.
             Should only be supplied when inserting an already completed run
             from another database into this database. Otherwise leave as None.
-        - captured_counter: The counter this data was originally captured with.
+        captured_counter: The counter this data was originally captured with.
             Should only be supplied when inserting an already completed run
             from another database into this database. Otherwise leave as None.
-        - create_run_table: Should we create a table to insert the run into.
-        - snapshot_raw: Raw string of the snapshot to add to the run.
-        - description: An optional RunDescriber
+        parent_dataset_links: A JSON string of the parent-child dataset links for the run.
+        create_run_table: Should we create a table to insert the run into.
+        snapshot_raw: Raw string of the snapshot to add to the run.
+        description: An optional RunDescriber
 
     Returns:
-        - run_counter: the id of the newly created run (not unique)
-        - run_id: the row id of the newly created run
-        - formatted_name: the name of the newly created table
+        run_counter: the id of the newly created run (not unique)
+        run_id: the row id of the newly created run
+        formatted_name: the name of the newly created table
     """
     formatted_name: str | None
 
@@ -1839,10 +1844,10 @@ def insert_data_in_dynamic_columns(
     (i.e. contain only alphanumeric characters and underscores).
 
     Args:
-        - conn: the connection to the sqlite database
-        - row_id: the row to add the metadata at
-        - table_name: the table to add to, defaults to runs
-        - data: A mapping from columns to data to add
+        conn: the connection to the sqlite database
+        row_id: the row to add the metadata at
+        table_name: the table to add to, defaults to runs
+        data: A mapping from columns to data to add
     """
     validate_dynamic_column_data(data)
     for key in data.keys():
@@ -1857,10 +1862,10 @@ def update_columns(
     Updates data in columns matching the given keys (they must exist already)
 
     Args:
-        - conn: the connection to the sqlite database
-        - row_id: the row to add the metadata at
-        - table_name: the table to add to, defaults to runs
-        - data: the data to add
+        conn: the connection to the sqlite database
+        row_id: the row to add the metadata at
+        table_name: the table to add to, defaults to runs
+        data: the data to add
     """
     validate_dynamic_column_data(data)
     update_where(conn, table_name, "rowid", row_id, **data)
@@ -1878,10 +1883,10 @@ def add_data_to_dynamic_columns(
     alphanumeric characters and underscores).
 
     Args:
-        - conn: the connection to the sqlite database
-        - row_id: the row to add the metadata at
-        - data: the data to add
-        - table_name: the table to add to, defaults to runs
+        conn: the connection to the sqlite database
+        row_id: the row to add the metadata at
+        data: the data to add
+        table_name: the table to add to, defaults to runs
     """
     try:
         insert_data_in_dynamic_columns(conn, row_id, table_name, data)

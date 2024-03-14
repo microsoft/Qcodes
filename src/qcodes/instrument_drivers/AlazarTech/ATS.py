@@ -91,7 +91,6 @@ class AlazarTech_ATS(Instrument):
             board_id: id of the board within the alazar system
 
         Return:
-
             Dictionary containing
 
                 - system_id
@@ -289,7 +288,7 @@ class AlazarTech_ATS(Instrument):
         )
         return buffer
 
-    def acquire(
+    def acquire(  # noqa: D417 (missing args documentation)
         self,
         mode: str | None = None,
         samples_per_record: int | None = None,
@@ -877,7 +876,9 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
     def __init__(self, name: str, alazar_name: str, **kwargs: Any):
         """
         Args:
+            name: The name of the AcquisitionController
             alazar_name: The name of the alazar instrument.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
         self._alazar: AlazarTech_ATS = self.find_instrument(

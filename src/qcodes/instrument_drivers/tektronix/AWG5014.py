@@ -36,7 +36,7 @@ class TektronixAWG5014(VisaInstrument):
         - The output channels are always in Amplitude/Offset mode
         - The output markers are always in High/Low mode
 
-    TODO:
+    Todo:
         - Implement support for cable transfer function compensation
         - Implement more instrument functionality in the driver
         - Remove double functionality
@@ -151,7 +151,7 @@ class TektronixAWG5014(VisaInstrument):
             timeout: visa timeout, in secs. long default (180)
                 to accommodate large waveforms
             num_channels: number of channels on the device
-
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, address, timeout=timeout, **kwargs)
 
