@@ -135,7 +135,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         raise RuntimeError("Invalid type for parent instrument.")
 
     @setpoints.setter
-    def setpoints(self, val: Any) -> None:
+    def setpoints(self, setpoints: Any) -> None:
         """
         Stub to allow initialization. Ignore any set attempts on setpoint as we
         figure it out on the fly.
@@ -157,7 +157,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         return "''"
 
     @unit.setter
-    def unit(self, val: Any) -> None:
+    def unit(self, unit: Any) -> None:
         """
         Stub to allow initialization.
         """
@@ -793,6 +793,7 @@ class KeysightInfiniium(VisaInstrument):
             timeout: Visa timeout, in secs.
             channels: The number of channels on the scope.
             silence_pyvisapy_warning: Don't warn about pyvisa-py at startup
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, address, timeout=timeout, terminator="\n", **kwargs)
         self.connect_message()

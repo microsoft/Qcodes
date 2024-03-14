@@ -41,7 +41,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def default_session_config(
-    tmpdir_factory: pytest.TempdirFactory,
+    tmp_path_factory: pytest.TempPathFactory,
 ) -> Generator[None, None, None]:
     """
     Set the config for the test session to be the default config.
@@ -58,7 +58,7 @@ def default_session_config(
     old_config: DotDict | None = copy.deepcopy(qc.config.current_config)
     qc.config.current_config = copy.deepcopy(qc.config.defaults)
 
-    tmp_path = tmpdir_factory.mktemp("qcodes_tests")
+    tmp_path = tmp_path_factory.mktemp("qcodes_tests")
 
     file_name = str(tmp_path / "user_config.json")
     file_name_schema = str(tmp_path / "user_config_schema.json")

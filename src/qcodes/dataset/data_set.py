@@ -1028,6 +1028,7 @@ class DataSet(BaseDataSet):
                 If set to "auto" multi index will be used if projecting the data onto
                 a grid requires filling non measured values with NaN  and the shapes
                 of the data has not been set in the run description.
+
         Returns:
             :py:class:`xr.Dataset` with the requested parameter(s) data as
             :py:class:`xr.DataArray` s and coordinates formed by the dependencies.
@@ -1825,6 +1826,7 @@ def new_data_set(
         specs: list of parameters to create this dataset with
         values: the values to associate with the parameters
         metadata: the metadata to associate with the dataset
+        conn: Existing connection to the database.
         in_memory_cache: Should measured data be keep in memory
             and available as part of the `dataset.cache` object.
 

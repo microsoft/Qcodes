@@ -214,7 +214,7 @@ class BaseOutput(InstrumentChannel):
         `range_limits` is the upper limit for using a certain heater current.
 
         Args:
-            temperature
+            temperature:
                 temperature to set the range from
 
         Returns:
@@ -398,7 +398,7 @@ class BaseSensorChannel(InstrumentChannel):
         an algorithm defined in `_get_sum_terms` method.
 
         Args:
-            sum_of_codes
+            sum_of_codes:
                 sum of status codes, it is an integer value in the form of a
                 string (e.g. "32"), as returned by the corresponding
                 instrument command

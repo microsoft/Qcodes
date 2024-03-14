@@ -36,9 +36,15 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
-
-        self.instrument: "KeysightB1517A"
-        self.root_instrument: "KeysightB1500"
+        # the parameter classes should ideally be generic in instrument
+        # and root instrument classes so we can specialize here.
+        # for now we have to ignore a type error from pyright
+        self.instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
+            "KeysightB1517A"
+        )
+        self.root_instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
+            "KeysightB1500"
+        )
 
         self.data = _FMTResponse(None, None, None, None)
 

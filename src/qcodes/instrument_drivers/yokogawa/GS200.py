@@ -166,8 +166,8 @@ class GS200_Monitor(InstrumentChannel):
     def update_measurement_enabled(self, unit: ModeType, output_range: float) -> None:
         """
         Args:
-            unit
-            output_range
+            unit: Unit to update either VOLT or CURR.
+            output_range: new range.
         """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
@@ -589,7 +589,7 @@ class GS200(VisaInstrument):
 
         Args:
             source_mode: "CURR" or "VOLT"
-            source_range
+            source_range: New range.
         """
         if not self.measure.present:
             return
@@ -626,9 +626,7 @@ class GS200(VisaInstrument):
         """
         if self.source_mode.get_latest() != mode:
             raise ValueError(
-                "Cannot get/set {} settings while in {} mode".format(
-                    mode, self.source_mode.get_latest()
-                )
+                f"Cannot get/set {mode} settings while in {self.source_mode.get_latest()} mode"
             )
 
     def _set_source_mode(self, mode: ModeType) -> None:

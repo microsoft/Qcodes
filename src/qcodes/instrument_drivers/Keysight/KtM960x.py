@@ -23,7 +23,12 @@ class Measure(MultiParameter):
                          instrument=instrument,
                          labels="Measurement Data",
                          docstring="param that returns measurement values")
-        self.instrument: "KeysightM960x"
+        # the parameter classes should ideally be generic in instrument
+        # and root instrument classes so we can specialize here.
+        # for now we have to ignore a type error from pyright
+        self.instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
+            "KeysightM960x"
+        )
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
         return self.instrument._measure()

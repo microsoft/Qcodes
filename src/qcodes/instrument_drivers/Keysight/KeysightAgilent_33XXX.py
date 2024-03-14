@@ -296,6 +296,7 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
                 by QCoDeS. Must be unique.
             address: The VISA resource name.
             silent: If True, no connect message is printed.
+            **kwargs: kwargs are forwarded to base class.
         """
 
         super().__init__(name, address, terminator='\n', **kwargs)

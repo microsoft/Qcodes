@@ -1323,6 +1323,8 @@ def parameter_test_helper(
             all the loaded parameters for a given requested parameter.
         expected_values: expected content of the data arrays stored in a
             sequenceexpected_names:
+        start: If given first row to compare.
+        end: If given last row to compare.
 
     """
 

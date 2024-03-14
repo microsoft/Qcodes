@@ -433,7 +433,6 @@ class HarvardDecadac(VisaInstrument, DacReader):
 
 
     Attributes:
-
         _ramp_state (bool): If True, ramp state is ON. Default False.
 
         _ramp_time (int): The ramp time in ms. Default 100 ms.
@@ -451,17 +450,15 @@ class HarvardDecadac(VisaInstrument, DacReader):
 
         Args:
             name: What this instrument is called locally.
-
             address: The address of the DAC. For a serial port this
                 is ASRLn::INSTR where n is replaced with the address set in the
                 VISA control panel. Baud rate and other serial parameters must
                 also be set in the VISA control panel.
-
             min_val: The minimum value in volts that can be output by the DAC.
                 This value should correspond to the DAC code 0.
-
             max_val: The maximum value in volts that can be output by the DAC.
                 This value should correspond to the DAC code 65536.
+            **kwargs: kwargs are forwarded to base class.
 
         """
 
@@ -536,7 +533,8 @@ class HarvardDecadac(VisaInstrument, DacReader):
         ``*IDN`` on the Harvard DAC
 
         Args:
-            begin_time (int, float): time.time() when init started.
+            idn_param: Unused
+            begin_time: time.time() when init started.
                 Default is self._t0, set at start of Instrument.__init__.
         """
         # start with an empty dict, just in case an instrument doesn't
