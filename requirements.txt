@@ -301,7 +301,7 @@ pyasn1-modules==0.3.0
     # via google-auth
 pycparser==2.21
     # via cffi
-pyelftools==0.30
+pyelftools==0.31
     # via zhinst-toolkit
 pygments==2.17.2
     # via
