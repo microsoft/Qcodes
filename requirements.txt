@@ -89,7 +89,7 @@ executing==2.0.1
     # via stack-data
 fastjsonschema==2.19.1
     # via nbformat
-fonttools==4.49.0
+fonttools==4.50.0
     # via matplotlib
 fsspec==2024.3.0
     # via dask
