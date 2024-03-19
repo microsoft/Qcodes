@@ -292,7 +292,7 @@ psutil==5.9.8
     #   opencensus-ext-azure
 pure-eval==0.2.2
     # via stack-data
-pyarrow==15.0.1
+pyarrow==15.0.2
 pyasn1==0.5.1
     # via
     #   pyasn1-modules
