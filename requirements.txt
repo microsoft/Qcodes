@@ -91,7 +91,7 @@ fastjsonschema==2.19.1
     # via nbformat
 fonttools==4.50.0
     # via matplotlib
-fsspec==2024.3.0
+fsspec==2024.3.1
     # via dask
 future==1.0.0
     # via uncertainties
