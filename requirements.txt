@@ -192,7 +192,7 @@ matplotlib-inline==0.1.6
     #   ipython
 mistune==3.0.2
     # via nbconvert
-msal==1.27.0
+msal==1.28.0
     # via
     #   azure-identity
     #   msal-extensions
