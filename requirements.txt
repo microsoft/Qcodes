@@ -203,7 +203,7 @@ mypy-extensions==1.0.0
     # via mypy
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.2
+nbconvert==7.16.3
     # via nbsphinx
 nbformat==5.10.3
     # via
