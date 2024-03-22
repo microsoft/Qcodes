@@ -57,7 +57,7 @@ contextlib2==21.6.0
     # via schema
 contourpy==1.2.0
     # via matplotlib
-coverage==7.4.3
+coverage==7.4.4
     # via pytest-cov
 cryptography==42.0.5
     # via
@@ -66,7 +66,7 @@ cryptography==42.0.5
     #   pyjwt
 cycler==0.12.1
     # via matplotlib
-dask==2024.3.0
+dask==2024.3.1
     # via qcodes
 debugpy==1.8.1
     # via ipykernel
@@ -89,15 +89,15 @@ executing==2.0.1
     # via stack-data
 fastjsonschema==2.19.1
     # via nbformat
-fonttools==4.49.0
+fonttools==4.50.0
     # via matplotlib
-fsspec==2024.2.0
+fsspec==2024.3.1
     # via dask
 future==1.0.0
     # via uncertainties
-google-api-core==2.17.1
+google-api-core==2.18.0
     # via opencensus
-google-auth==2.28.2
+google-auth==2.29.0
     # via google-api-core
 googleapis-common-protos==1.63.0
     # via google-api-core
@@ -111,7 +111,7 @@ h5py==3.10.0
     #   qcodes-loop
 hickle==5.0.2
     # via qcodes-loop
-hypothesis==6.99.5
+hypothesis==6.99.11
 idna==3.6
     # via requests
 imagesize==1.4.1
@@ -192,7 +192,7 @@ matplotlib-inline==0.1.6
     #   ipython
 mistune==3.0.2
     # via nbconvert
-msal==1.27.0
+msal==1.28.0
     # via
     #   azure-identity
     #   msal-extensions
@@ -203,9 +203,9 @@ mypy-extensions==1.0.0
     # via mypy
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.2
+nbconvert==7.16.3
     # via nbsphinx
-nbformat==5.10.2
+nbformat==5.10.3
     # via
     #   nbclient
     #   nbconvert
@@ -263,7 +263,7 @@ pandas==2.2.1
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==2.2.0.240218
+pandas-stubs==2.2.1.240316
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.3
@@ -292,7 +292,7 @@ psutil==5.9.8
     #   opencensus-ext-azure
 pure-eval==0.2.2
     # via stack-data
-pyarrow==15.0.1
+pyarrow==15.0.2
 pyasn1==0.5.1
     # via
     #   pyasn1-modules
@@ -301,7 +301,7 @@ pyasn1-modules==0.3.0
     # via google-auth
 pycparser==2.21
     # via cffi
-pyelftools==0.30
+pyelftools==0.31
     # via zhinst-toolkit
 pygments==2.17.2
     # via
@@ -319,9 +319,9 @@ pytest==8.1.1
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.23.5.post1
+pytest-asyncio==0.23.6
 pytest-cov==4.1.0
-pytest-mock==3.12.0
+pytest-mock==3.14.0
 pytest-rerunfailures==14.0
 pytest-xdist==3.5.0
 python-dateutil==2.9.0.post0
@@ -350,7 +350,7 @@ pyzmq==25.1.2
     #   ipykernel
     #   jupyter-client
 qcodes-loop==0.1.2
-referencing==0.33.0
+referencing==0.34.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -456,9 +456,9 @@ traitlets==5.14.2
 types-jsonschema==4.21.0.20240311
 types-pytz==2024.1.0.20240203
     # via pandas-stubs
-types-pywin32==306.0.0.20240313
+types-pywin32==306.0.0.20240319
 types-requests==2.31.0.20240311
-types-setuptools==69.1.0.20240310
+types-setuptools==69.2.0.20240317
 types-tabulate==0.9.0.20240106
 types-tqdm==4.66.0.20240106
 typing-extensions==4.10.0
@@ -480,7 +480,7 @@ urllib3==2.2.1
     # via
     #   requests
     #   types-requests
-versioningit==3.0.0
+versioningit==3.1.0
     # via
     #   broadbean
     #   qcodes
@@ -515,5 +515,5 @@ zhinst-toolkit==0.6.3
     # via zhinst-qcodes
 zhinst-utils==0.4.0
     # via zhinst-toolkit
-zipp==3.18.0
+zipp==3.18.1
     # via importlib-metadata
