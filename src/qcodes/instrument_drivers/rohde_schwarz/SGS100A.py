@@ -107,7 +107,6 @@ class RohdeSchwarzSGS100A(VisaInstrument):
                            get_cmd='SOUR:ROSC:EXT:FREQ?',
                            set_cmd='SOUR:ROSC:EXT:FREQ {}',
                            vals=vals.Enum('10MHz', '100MHz', '1000MHz'))
-
         # IQ impairments
         self.add_parameter('IQ_impairments',
                            label='IQ Impairments',
@@ -139,7 +138,90 @@ class RohdeSchwarzSGS100A(VisaInstrument):
                            set_cmd='SOUR:IQ:IMP:QUAD {:.2f}',
                            get_parser=float,
                            vals=vals.Numbers(-8, 8))
-
+        # Determines the signal at the input/output of the multi purpose [TRIG] connector.
+        self.add_parameter('trigger_connector_mode',
+                           label='Trigger Connector Mode',
+                           get_cmd='CONN:TRIG:OMOD?',
+                           set_cmd='CONN:TRIG:OMOD {}',
+                           vals=vals.Enum('SVAL',   # SVALid - Signal valid
+                                          'SNVAL',  # SNValid - Signal not valid
+                                          'PVO',    # PVOut - Pulse video out (K22 Only)
+                                          'PET',    # PETrigger - Pulse mod ext trigger - PETrigger (K22 Only)
+                                          'PEMS',   # PEMSource - Pulse mode ext source (K22 Only)
+                                          'sval', 'snval', 'pvo', 'pet', 'pems'))
+        # Pulse modulator
+        self.add_parameter('pulsemod_delay',
+                           label='Pulse delay',
+                           unit="s",
+                           get_cmd='SOUR:PULM:DEL?',
+                           set_cmd='SOUR:PULM:DEL {:g}',
+                           get_parser=float,
+                           vals=vals.Numbers(0, 100))
+        self.add_parameter('pulsemod_double_delay',
+                           label='Pulse double delay',
+                           unit="s",
+                           get_cmd='SOUR:PULM:DOUB:DEL?',
+                           set_cmd='SOUR:PULM:DOUB:DEL {:g}',
+                           get_parser=float,
+                           vals=vals.Numbers(40e-9, 100))
+        self.add_parameter('pulsemod_double_width',
+                           label='Double pulse second width',
+                           unit="s",
+                           get_cmd='SOUR:PULM:DOUB:WIDT?',
+                           set_cmd='SOUR:PULM:DOUB:WIDT {:g}',
+                           get_parser=float,
+                           vals=vals.Numbers(20e-9, 100))
+        self.add_parameter('pulsemod_mode',
+                           label='Pulse modulation mode',
+                           get_cmd='SOUR:PULM:MODE?',
+                           set_cmd='SOUR:PULM:MODE {}',
+                           vals=vals.Enum('SING', 'DOUB', 
+                                          'sing', 'doub', 
+                                          'single', 'double'))
+        self.add_parameter('pulsemod_period',
+                           label='Pulse mode period',
+                           unit="s",
+                           get_cmd='SOUR:PULM:PER?',
+                           set_cmd='SOUR:PULM:PER {:g}',
+                           get_parser=float,
+                           vals=vals.Numbers(100e-9, 100))
+        self.add_parameter('pulsemod_polarity',
+                           label='Pulse modulator signal polarity',
+                           get_cmd='SOUR:PULM:POL?',
+                           set_cmd='SOUR:PULM:POL {}',
+                           vals=vals.Enum('NORM', 'INV', 'norm', 'inv',
+                                          'normal', 'inverted'))
+        self.add_parameter('pulsemod_trig_ext_gate_polarity',
+                           label='Polarity of the Gate signal',
+                           get_cmd='SOUR:PULM:TRIG:EXT:GATE:POL?',
+                           set_cmd='SOUR:PULM:TRIG:EXT:GATE:POL {}',
+                           vals=vals.Enum('NORM', 'INV', 'norm', 'inv',
+                                          'normal', 'inverted'))
+        self.add_parameter('pulsemod_trig_ext_impedance',
+                           label='Impedance of the external pulse trigger',
+                           get_cmd='SOUR:PULM:TRIG:EXT:IMP?',
+                           set_cmd='SOUR:PULM:TRIG:EXT:IMP {}',
+                           vals=vals.Enum('G50', 'G10K'))
+        # Sets the polarity of the active slope of an externally applied trigger signal.
+        self.add_parameter('pulsemod_trig_ext_slope',
+                           label='external pulse trigger active slope',
+                           get_cmd='SOUR:PULM:TRIG:EXT:SLOP?',
+                           set_cmd='SOUR:PULM:TRIG:EXT:SLOP {}',
+                           vals=vals.Enum('NEG', 'POS', 'neg', 'pos',
+                                          'negative', 'positive'))
+        self.add_parameter('pulsemod_trig_mode',
+                           label='external pulse trigger active slope',
+                           get_cmd='SOUR:PULM:TRIG:MODE?',
+                           set_cmd='SOUR:PULM:TRIG:MODE {}',
+                           vals=vals.Enum('AUTO', 'EXT', 'EGAT', 'auto', 'ext', 'egat',
+                                          'external', 'egate'))
+        self.add_parameter('pulsemod_width',
+                           label='Pulse width',
+                           unit="s",
+                           get_cmd='SOUR:PULM:WIDT?',
+                           set_cmd='SOUR:PULM:WIDT {:g}',
+                           get_parser=float,
+                           vals=vals.Numbers(20e-9, 100))
         self.add_function('reset', call_cmd='*RST')
         self.add_function('run_self_tests', call_cmd='*TST?')
 
