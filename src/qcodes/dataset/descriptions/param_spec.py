@@ -136,8 +136,10 @@ class ParamSpec(ParamSpecBase):
             name: name of the parameter
             paramtype: type of the parameter, i.e. the SQL storage class
             label: label of the parameter
+            unit: unit of the parameter
             inferred_from: the parameters that this parameter is inferred from
             depends_on: the parameters that this parameter depends on
+            **metadata: additional metadata to be stored with the parameter
         """
 
         super().__init__(name, paramtype, label, unit)

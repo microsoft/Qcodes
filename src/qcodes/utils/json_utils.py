@@ -13,7 +13,7 @@ class NumpyJSONEncoder(json.JSONEncoder):
     ``default`` method for the description of all conversions.
     """
 
-    def default(self, obj: Any) -> Any:
+    def default(self, o: Any) -> Any:
         """
         List of conversions that this encoder performs:
 
@@ -41,50 +41,50 @@ class NumpyJSONEncoder(json.JSONEncoder):
         """
         import uncertainties  # type: ignore[import-untyped]
 
-        if isinstance(obj, np.generic) and not isinstance(obj, np.complexfloating):
+        if isinstance(o, np.generic) and not isinstance(o, np.complexfloating):
             # for numpy scalars
-            return obj.item()
-        elif isinstance(obj, np.ndarray):
+            return o.item()
+        elif isinstance(o, np.ndarray):
             # for numpy arrays
-            return obj.tolist()
-        elif isinstance(obj, numbers.Complex) and not isinstance(obj, numbers.Real):
+            return o.tolist()
+        elif isinstance(o, numbers.Complex) and not isinstance(o, numbers.Real):
             return {
                 "__dtype__": "complex",
-                "re": float(obj.real),
-                "im": float(obj.imag),
+                "re": float(o.real),
+                "im": float(o.imag),
             }
-        elif isinstance(obj, uncertainties.UFloat):
+        elif isinstance(o, uncertainties.UFloat):
             return {
                 "__dtype__": "UFloat",
-                "nominal_value": float(obj.nominal_value),
-                "std_dev": float(obj.std_dev),
+                "nominal_value": float(o.nominal_value),
+                "std_dev": float(o.std_dev),
             }
-        elif hasattr(obj, "_JSONEncoder"):
+        elif hasattr(o, "_JSONEncoder"):
             # Use object's custom JSON encoder
-            jsosencode = getattr(obj, "_JSONEncoder")
+            jsosencode = getattr(o, "_JSONEncoder")
             return jsosencode()
         else:
             try:
-                s = super().default(obj)
+                s = super().default(o)
             except TypeError:
                 # json does not support dumping UserDict but
                 # we can dump the dict stored internally in the
                 # UserDict
-                if isinstance(obj, collections.UserDict):
-                    return obj.data
+                if isinstance(o, collections.UserDict):
+                    return o.data
                 # See if the object supports the pickle protocol.
                 # If so, we should be able to use that to serialize.
                 # __getnewargs__ will return bytes for a bytes object
                 # causing an infinte recursion, so we do not
                 # try to pickle bytes or bytearrays
-                if hasattr(obj, "__getnewargs__") and not isinstance(
-                    obj, (bytes, bytearray)
+                if hasattr(o, "__getnewargs__") and not isinstance(
+                    o, (bytes, bytearray)
                 ):
                     return {
-                        "__class__": type(obj).__name__,
-                        "__args__": getattr(obj, "__getnewargs__")(),
+                        "__class__": type(o).__name__,
+                        "__args__": getattr(o, "__getnewargs__")(),
                     }
                 else:
                     # we cannot convert the object to JSON, just take a string
-                    s = str(obj)
+                    s = str(o)
             return s

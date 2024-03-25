@@ -590,6 +590,7 @@ class AMIModel4303D(Instrument):
             field_limit: a number for maximum allows magnetic field or an
                 iterable of callable field limit functions that define
                 region(s) of allowed values in 3D magnetic field space
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
 

@@ -29,6 +29,8 @@ class Keithley3706A(VisaInstrument):
         Args:
             name: Name to use internally in QCoDeS
             address: VISA resource address
+            terminator: Character to terminate messages with.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, address, terminator=terminator, **kwargs)
 

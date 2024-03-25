@@ -461,6 +461,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
                 16 bit vertical resolution)
             terminator: Command termination character to strip from VISA
                 commands.
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name=name, address=address, timeout=timeout,
                          terminator=terminator, **kwargs)

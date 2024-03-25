@@ -789,6 +789,7 @@ class Keithley2600(VisaInstrument):
         Args:
             name: Name to use internally in QCoDeS
             address: VISA resource address
+            **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, address, terminator="\n", **kwargs)
 
@@ -978,7 +979,8 @@ class Keithley2600(VisaInstrument):
 
         Args:
             program: A list of program instructions. One line per
-            list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
+                list item, e.g. ['for ii = 1, 10 do', 'print(ii)', 'end' ]
+            debug: log additional debug output
         """
         mainprog = "\r\n".join(program) + "\r\n"
         wrapped = f"loadandrunscript\r\n{mainprog}endscript"

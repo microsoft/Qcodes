@@ -949,8 +949,8 @@ class ZNB(VisaInstrument):
             of initialization are reset and removed.
         **kwargs: passed to base class
 
-    TODO:
-    - check initialisation settings and test functions
+    Todo:
+        - check initialisation settings and test functions
     """
 
     CHANNEL_CLASS = ZNBChannel

@@ -54,7 +54,7 @@ jobs:
       with:
         egress-policy: audit
 
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
       with:
         submodules: true
         # we need full history with tags for the version number
@@ -81,9 +81,9 @@ jobs:
       run: |
         pip install .[test] -c requirements.txt
       if: ${{ !matrix.min-version }}
-    - uses: jakebailey/pyright-action@7e7f09e52a331b25d6d2e8ad7af8ed99a46c8d73 # v2.0.2
+    - uses: jakebailey/pyright-action@b8ffdb7aa4a15fab942303261611eaa541f3f8b0 # v2.2.1
       with:
-        version: 1.1.349
+        version: 1.1.351
       if: ${{ !matrix.min-version }}
     - name: Run Mypy
       run: mypy -p qcodes

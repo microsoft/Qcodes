@@ -224,7 +224,7 @@ def _do_in_tab(
 ) -> Callable[[Button], None]:
     """Performs an operation inside of a subtab of a `ipywidgets.Tab`.
 
-    Args
+    Args:
         tab: Instance of `ipywidgets.Tab`.
         ds: A qcodes.DataSet instance.
         which: Either "plot" or "snapshot".

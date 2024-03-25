@@ -100,9 +100,7 @@ def temporarily_copied_DB(filepath: str, **kwargs):
 
     Args:
         filepath: path to the db-file
-
-    Kwargs:
-        kwargs to be passed to connect
+        **kwargs: to be passed to connect
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         dbname_new = os.path.join(tmpdir, 'temp.db')
@@ -575,7 +573,7 @@ def SpectrumAnalyzer():
     different types
     """
 
-    class Spectrum(ArrayParameter):
+    class BaseSpectrum(ArrayParameter):
 
         def __init__(self, name, instrument, **kwargs):
             super().__init__(
@@ -588,18 +586,21 @@ def SpectrumAnalyzer():
                 instrument=instrument,
                 **kwargs,
             )
-
             self.npts = 100
             self.start = 0
             self.stop = 2e6
 
-        def get_raw(self):
+        def get_data(self):
             # This is how it should be: the setpoints are generated at the
             # time we get. But that will of course not work with the old Loop
             self.setpoints = (tuple(np.linspace(self.start, self.stop,
                                                 self.npts)),)
             # not the best SA on the market; it just returns noise...
             return np.random.randn(self.npts)
+
+    class Spectrum(BaseSpectrum):
+        def get_raw(self):
+            return super().get_data()
 
     class MultiDimSpectrum(ArrayParameter):
 
@@ -630,16 +631,16 @@ def SpectrumAnalyzer():
         def get_raw(self):
             return np.random.randn(*self.npts)
 
-    class ListSpectrum(Spectrum):
+    class ListSpectrum(BaseSpectrum):
 
         def get_raw(self):
-            output = super().get_raw()
+            output = super().get_data()
             return list(output)
 
-    class TupleSpectrum(Spectrum):
+    class TupleSpectrum(BaseSpectrum):
 
         def get_raw(self):
-            output = super().get_raw()
+            output = super().get_data()
             return tuple(output)
 
     SA = DummyInstrument('dummy_SA')

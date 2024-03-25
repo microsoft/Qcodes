@@ -27,7 +27,8 @@ class OxfordTriton(IPInstrument):
         timeout: Defaults to 20.
 
     Status: beta-version.
-        TODO:
+
+    Todo:
         fetch registry directly from fridge-computer
     """
 

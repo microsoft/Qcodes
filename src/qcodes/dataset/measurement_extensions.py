@@ -46,7 +46,7 @@ def setup_measurement_instances(
     Args:
         dataset_definitions: A set of DataSetDefinitions to create and register
             parameters for
-        experiment: The Experiment all Measurement objects will be part of
+        override_experiment: The Experiment all Measurement objects will be part of
 
     Returns:
         A list of Measurement objects

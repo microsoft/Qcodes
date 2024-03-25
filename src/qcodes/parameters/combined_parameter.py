@@ -36,8 +36,9 @@ def combine(
         *parameters: The parameters to combine.
         name: The name of the paramter.
         label: The label of the combined parameter.
-        unit: the unit of the combined parameter.
-        aggregator: a function to aggregate
+        unit: The unit of the combined parameter.
+        units: Deprecated argument left for backwards compatibility. Do not use.
+        aggregator: A function to aggregate
             the set values into one.
     """
     my_parameters = list(parameters)
@@ -56,6 +57,7 @@ class CombinedParameter(Metadatable):
         name: The name of the parameter
         label: The label of the combined parameter
         unit: The unit of the combined parameter
+        units: Deprecated argument left for backwards compatibility. Do not use.
         aggregator: A function to aggregate the set values into one
     """
 
