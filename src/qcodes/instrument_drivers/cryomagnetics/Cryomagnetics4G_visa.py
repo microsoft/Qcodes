@@ -71,12 +71,7 @@ class CryomagneticsModel4G(VisaInstrument):
         current_ramp_limits_per_range: list[float] | None = None,
         **kwargs,
     ):
-        super().__init__(
-            name,
-            address,
-            terminator=terminator,
-            **kwargs,
-        )
+        super().__init__(name, address, terminator=terminator, **kwargs)
         self._parent_instrument = None
 
         self.add_function("reset", call_cmd="*RST")
@@ -95,8 +90,8 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="llim",
             unit="T",
-            set_cmd=self.set_llim,
-            get_cmd=self.get_llim,
+            set_cmd=self._set_llim,
+            get_cmd=self._get_llim,
             get_parser=float,
             vals=Numbers(-90.001, 0),
             docstring="Lower Ramp Limit",
@@ -105,8 +100,8 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="ulim",
             unit="T",
-            set_cmd=self.set_ulim,
-            get_cmd=self.get_ulim,
+            set_cmd=self._set_ulim,
+            get_cmd=self._get_ulim,
             get_parser=float,
             vals=Numbers(0, 90.001),
             docstring="Upper Ramp Limit",
@@ -115,8 +110,8 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="field",
             unit="T",
-            set_cmd=self.set_field,
-            get_cmd=self.get_field,
+            set_cmd=self._set_field,
+            get_cmd=self._get_field,
             get_parser=float,
             vals=Numbers(-90.001, 90.001),
             docstring="Field",
@@ -125,7 +120,7 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="Vmag",
             unit="V",
-            get_cmd=self.get_vmag,
+            get_cmd=self._get_vmag,
             get_parser=float,
             vals=Numbers(-10, 10),
             docstring="Magnet sense voltage",
@@ -134,7 +129,7 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="Vout",
             unit="V",
-            get_cmd=self.get_vout,
+            get_cmd=self._get_vout,
             get_parser=float,
             vals=Numbers(-12.8, 12.8),
             docstring="Magnet output voltage",
@@ -143,7 +138,7 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="Iout",
             unit="kG",
-            get_cmd=self.get_Iout,
+            get_cmd=self._get_Iout,
             get_parser=float,
             vals=Numbers(-90.001, 90.001),
             docstring="Magnet output field/current",
@@ -152,8 +147,8 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="ranges",
             unit="A",
-            get_cmd=self.get_ranges,
-            set_cmd=self.set_ranges,
+            get_cmd=self._get_ranges,
+            set_cmd=self._set_ranges,
             get_parser=list,
             vals=Numbers(-90.001, 90.001),
             docstring="Ramp rate ranges",
@@ -162,8 +157,8 @@ class CryomagneticsModel4G(VisaInstrument):
         self.add_parameter(
             name="rate",
             unit="T/s",
-            get_cmd=self.get_rate,
-            set_cmd=self.set_rate,
+            get_cmd=self._get_rate,
+            set_cmd=self._set_rate,
             get_parser=list,
             vals=Numbers(-90.001, 90.001),
             docstring="Ramp rate ranges",
@@ -213,37 +208,37 @@ class CryomagneticsModel4G(VisaInstrument):
         logging.error(f"{__name__}: Could not ramp, state: {state}")
         return False
 
-    def set_llim(self, value: float) -> None:
+    def _set_llim(self, value: float) -> None:
         self._set_limit("LLIM", value)
 
-    def get_llim(self) -> float:
+    def _get_llim(self) -> float:
         return self._get_limit("LLIM?")
 
-    def set_ulim(self, value: float) -> None:
+    def _set_ulim(self, value: float) -> None:
         self._set_limit("ULIM", value)
 
-    def get_ulim(self) -> float:
+    def _get_ulim(self) -> float:
         return self._get_limit("ULIM?")
 
-    def set_field(self, value: float, block: bool = True) -> None:
+    def _set_field(self, value: float, block: bool = True) -> None:
         if self.units() == "A":
             raise ValueError("Current units are set to Amperes (A). Cannot retrieve magnetic field in these units.")
 
         value_in_kG = value * 10
 
         if value_in_kG == 0:
-            self.sweep('ZERO')
+            self._sweep('ZERO')
         elif value_in_kG < 0:
-            self.set_llim(value_in_kG)
-            self.sweep('DOWN')
+            self._set_llim(value_in_kG)
+            self._sweep('DOWN')
         elif value_in_kG > 0:
-            self.set_ulim(value_in_kG)
-            self.sweep('UP')
+            self._set_ulim(value_in_kG)
+            self._sweep('UP')
 
         if block:
             self._wait_for_field_setpoint(value_in_kG)
 
-    def get_field(self) -> float:
+    def _get_field(self) -> float:
         if self.units() == "A":
             raise ValueError("Current units are set to Amperes (A). Cannot retrieve magnetic field in these units.")
 
@@ -256,7 +251,7 @@ class CryomagneticsModel4G(VisaInstrument):
 
         return field_value_in_kG / 10
 
-    def sweep(self, direction: str) -> None:
+    def _sweep(self, direction: str) -> None:
         if direction.upper() in ["UP", "DOWN", "ZERO"]:
             self.write_raw(f"SWEEP {direction.upper()}")
         else:
@@ -265,12 +260,12 @@ class CryomagneticsModel4G(VisaInstrument):
             )
 
     def _wait_for_field_setpoint(self, setpoint: float, tolerance: float = 0.002) -> None:
-        current_field = self.get_field()
+        current_field = self._get_field()
         while abs(setpoint - current_field) > tolerance:
             time.sleep(5)
-            current_field = self.get_field()
+            current_field = self._get_field()
 
-    def get_ranges(self) -> list[RangeRatePair]:
+    def _get_ranges(self) -> list[RangeRatePair]:
         ranges = []
         for range_index in range(5):
             range_limit = float(self.ask_raw(f"RANGE? {range_index}"))
@@ -278,7 +273,7 @@ class CryomagneticsModel4G(VisaInstrument):
             ranges.append(RangeRatePair(range_limit=range_limit, rate=rate))
         return ranges
 
-    def set_ranges(self, ranges_input: list[dict]) -> None:
+    def _set_ranges(self, ranges_input: list[dict]) -> None:
         try:
             ranges_model = RangesModel(ranges=[RangeRatePair(**range_rate) for range_rate in ranges_input])
         except ValueError as e:
@@ -330,10 +325,26 @@ class CryomagneticsModel4G(VisaInstrument):
                     raise err
 
     def write_raw(self, cmd: str) -> None:
+        """
+        Write a raw command to the instrument.
+
+        Args:
+            cmd (str): The raw command to send to the instrument.
+        """
         self._retry_communication(super().write_raw, cmd)
 
     def ask_raw(self, cmd: str) -> str | int | None:
+        """
+        Send a raw query to the instrument and return the response.
+
+        Args:
+            cmd (str): The raw query to send to the instrument.
+
+        Returns:
+            str | int | None: The response from the instrument.
+        """
         return self._retry_communication(super().ask_raw, cmd)
 
 class Cryo4G(CryomagneticsModel4G):
     pass
+
