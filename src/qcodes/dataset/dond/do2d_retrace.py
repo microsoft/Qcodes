@@ -17,10 +17,8 @@ TRACER = trace.get_tracer(__name__)
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-    from qcodes.dataset.dond.do_nd_utils import (
-        ActionsT,
-        AxesTupleListWithDataSet,
-    )
+    from qcodes.dataset.dond.do_nd_utils import ActionsT
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 @TRACER.start_as_current_span("qcodes.dataset.do2d")
 def do2d_retrace(
@@ -43,7 +41,7 @@ def do2d_retrace(
     exp: Experiment | None = None,
     additional_setpoints: Sequence[ParameterBase] = tuple(),
     show_progress: bool | None = None,
-) -> AxesTupleListWithDataSet:
+) -> tuple[DataSetProtocol, DataSetProtocol]:
     """
     Perform a 1D scan of ``param_set1`` from ``start1`` to ``stop1`` in
     ``num_points1`` and ``param_set2`` from ``start2`` to ``stop2`` in
@@ -139,5 +137,5 @@ def do2d_retrace(
             )
             for action in exit_actions:
                 action()
-    datasets = [datasaver.dataset for datasaver in datasavers]
+    datasets = (datasavers[0].dataset, datasavers[1].dataset)
     return datasets
