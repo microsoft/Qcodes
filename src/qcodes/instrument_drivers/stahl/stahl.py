@@ -31,7 +31,7 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
 
     def make_iter(args: Any) -> Iterable[Any]:
         if not isinstance(args, Iterable) or isinstance(args, str):
-            return args,
+            return (args,)
         return args
 
     def inner(*args: Any) -> Any:
@@ -63,39 +63,33 @@ class StahlChannel(InstrumentChannel):
         self._channel_string = f"{channel_number:02d}"
         self._channel_number = channel_number
 
-        FLOATING_POINT_RE = r"[+\-]?(?:[.,]\d+|\d+(?:[.,]\d*)?)(?:[eE][-+]?\d+)?"
+        _FLOATING_POINT_RE = r"[+\-]?(?:[.,]\d+|\d+(?:[.,]\d*)?)(?:[eE][-+]?\d+)?"
 
         self.add_parameter(
             "voltage",
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
             get_parser=chain(
-                re.compile(f"^({FLOATING_POINT_RE})[ ]?V$").findall,
+                re.compile(f"^({_FLOATING_POINT_RE})[ ]?V$").findall,
                 partial(re.sub, ",", "."),
-                float
+                float,
             ),
             set_cmd=self._set_voltage,
             unit="V",
-            vals=Numbers(
-                -self.parent.voltage_range,
-                self.parent.voltage_range
-            )
+            vals=Numbers(-self.parent.voltage_range, self.parent.voltage_range),
         )
 
         self.add_parameter(
             "current",
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
             get_parser=chain(
-                re.compile(f"^({FLOATING_POINT_RE})[ ]?mA$").findall,
+                re.compile(f"^({_FLOATING_POINT_RE})[ ]?mA$").findall,
                 partial(re.sub, ",", "."),
-                lambda ma: float(ma) / 1000  # Convert mA to A
+                lambda ma: float(ma) / 1000,  # Convert mA to A
             ),
             unit="A",
         )
 
-        self.add_parameter(
-            "is_locked",
-            get_cmd=self._get_lock_status
-        )
+        self.add_parameter("is_locked", get_cmd=self._get_lock_status)
 
     def _set_voltage(self, voltage: float) -> None:
         """
@@ -105,9 +99,7 @@ class StahlChannel(InstrumentChannel):
         # Normalize the voltage in the range 0 to 1, where 0 is maximum negative
         # voltage and 1 is maximum positive voltage
         voltage_normalized = np.interp(
-            voltage,
-            self.parent.voltage_range * np.array([-1, 1]),
-            [0, 1]
+            voltage, self.parent.voltage_range * np.array([-1, 1]), [0, 1]
         )
 
         send_string = (
@@ -118,7 +110,8 @@ class StahlChannel(InstrumentChannel):
 
         if response != self.acknowledge_reply:
             self.log.warning(
-                f"Command {send_string} did not produce an acknowledge reply\n    response was: {response}")
+                f"Command {send_string} did not produce an acknowledge reply\n    response was: {response}"
+            )
 
     def _get_lock_status(self) -> bool:
         """
@@ -130,9 +123,7 @@ class StahlChannel(InstrumentChannel):
         send_string = f"{self.parent.identifier} LOCK"
 
         response = self.parent.visa_handle.query_binary_values(
-            send_string,
-            datatype='B',
-            header_fmt="empty"
+            send_string, datatype="B", header_fmt="empty"
         )
 
         channel_index = self._channel_number - 1
@@ -147,7 +138,8 @@ class Stahl(VisaInstrument):
 
     Args:
         name
-        address: A serial port address or TCP-IP visa address
+        address: A serial port or TCP/IP VISA address
+        **kwargs: forwarded to base class
 
     The TCP/IP scenario can be used when the Stahl is connected to
     a different computer for example a Raspberry Pi running Linux and exposed
@@ -169,29 +161,24 @@ class Stahl(VisaInstrument):
     def __init__(self, name: str, address: str, **kwargs: Any):
         super().__init__(name, address, terminator="\r", **kwargs)
         if isinstance(self.visa_handle, TCPIPSocket):
-            pass # allow connection to remote serial device
-        else:
-            assert isinstance(self.visa_handle, SerialInstrument)
+            pass  # allow connection to remote serial device
+        elif isinstance(self.visa_handle, SerialInstrument):
             self.visa_handle.baud_rate = 115200
+        else:
+            raise TypeError(
+                "VisaHandle must be either a 'SerialInstrument' or a 'TCPIPSocket'"
+            )
 
-        instrument_info = self.parse_idn_string(
-            self.ask("IDN")
-        )
+        instrument_info = self.parse_idn_string(self.ask("IDN"))
 
         for key, value in instrument_info.items():
             setattr(self, key, value)
 
-        channels = ChannelList(
-            self, "channel", StahlChannel, snapshotable=False
-        )
+        channels = ChannelList(self, "channel", StahlChannel, snapshotable=False)
 
         for channel_number in range(1, self.n_channels + 1):
             name = f"channel{channel_number}"
-            channel = StahlChannel(
-                self,
-                name,
-                channel_number
-            )
+            channel = StahlChannel(self, name, channel_number)
             self.add_submodule(name, channel)
             channels.append(channel)
 
@@ -200,11 +187,8 @@ class Stahl(VisaInstrument):
         self.add_parameter(
             "temperature",
             get_cmd=f"{self.identifier} TEMP",
-            get_parser=chain(
-                re.compile("^TEMP (.*)°C$").findall,
-                float
-            ),
-            unit="C"
+            get_parser=chain(re.compile("^TEMP (.*)°C$").findall, float),
+            unit="C",
         )
 
         self.connect_message()
@@ -227,10 +211,7 @@ class Stahl(VisaInstrument):
              dict: The dict contains the following keys "model",
              "serial_number", "voltage_range","n_channels", "output_type"
         """
-        result = re.search(
-            r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])",
-            idn_string
-        )
+        result = re.search(r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])", idn_string)
 
         if result is None:
             raise RuntimeError(
@@ -270,7 +251,7 @@ class Stahl(VisaInstrument):
             "vendor": "Stahl",
             "model": self.model,
             "serial": self.serial_number,
-            "firmware": None
+            "firmware": None,
         }
 
     @property
