@@ -116,7 +116,7 @@ idna==3.6
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==6.11.0
+importlib-metadata==7.1.0
     # via
     #   dask
     #   opentelemetry-api
