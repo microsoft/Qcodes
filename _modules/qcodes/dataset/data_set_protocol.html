@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.data_set_protocol &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.data_set_protocol</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.data_set_protocol</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">Protocol</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+    <span class="n">runtime_checkable</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeAlias</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset.descriptions.dependencies</span> <span class="kn">import</span> <span class="n">InterDependencies_</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.descriptions.param_spec</span> <span class="kn">import</span> <span class="n">ParamSpec</span><span class="p">,</span> <span class="n">ParamSpecBase</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.descriptions.rundescriber</span> <span class="kn">import</span> <span class="n">RunDescriber</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.descriptions.versioning.rundescribertypes</span> <span class="kn">import</span> <span class="n">Shapes</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.export_config</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DataExportType</span><span class="p">,</span>
+    <span class="n">get_data_export_name_elements</span><span class="p">,</span>
+    <span class="n">get_data_export_path</span><span class="p">,</span>
+    <span class="n">get_data_export_prefix</span><span class="p">,</span>
+    <span class="n">get_data_export_type</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.linked_datasets.links</span> <span class="kn">import</span> <span class="n">Link</span>
+
+<span class="kn">from</span> <span class="nn">.descriptions.versioning.converters</span> <span class="kn">import</span> <span class="n">new_to_old</span>
+<span class="kn">from</span> <span class="nn">.exporters.export_info</span> <span class="kn">import</span> <span class="n">ExportInfo</span>
+<span class="kn">from</span> <span class="nn">.exporters.export_to_csv</span> <span class="kn">import</span> <span class="n">dataframe_to_csv</span>
+<span class="kn">from</span> <span class="nn">.exporters.export_to_xarray</span> <span class="kn">import</span> <span class="n">xarray_to_h5netcdf_with_complex_numbers</span>
+<span class="kn">from</span> <span class="nn">.sqlite.queries</span> <span class="kn">import</span> <span class="n">raw_time_to_str_time</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="c1"># new entrypoints api was added in 3.10</span>
+    <span class="kn">from</span> <span class="nn">importlib.metadata</span> <span class="kn">import</span> <span class="n">entry_points</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="c1"># 3.9 and earlier</span>
+    <span class="kn">from</span> <span class="nn">importlib_metadata</span> <span class="kn">import</span> <span class="n">entry_points</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+    <span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">ParameterBase</span>
+
+    <span class="kn">from</span> <span class="nn">.data_set_cache</span> <span class="kn">import</span> <span class="n">DataSetCache</span>
+
+<span class="c1"># for unknown reason entrypoints registered in pyproct.toml shows up</span>
+<span class="c1"># twice here convert to set to ensure no duplication.</span>
+<span class="n">_EXPORT_CALLBACKS</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">entry_points</span><span class="p">(</span><span class="n">group</span><span class="o">=</span><span class="s2">&quot;qcodes.dataset.on_export&quot;</span><span class="p">))</span>
+
+<span class="c1"># even with from __future__ import annotations</span>
+<span class="c1"># type aliases must use the old format until we drop 3.8/3.9</span>
+<span class="n">array_like_types</span> <span class="o">=</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+<span class="n">scalar_res_types</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
+    <span class="nb">str</span><span class="p">,</span> <span class="nb">complex</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">complexfloating</span>
+<span class="p">]</span>
+<span class="n">values_type</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">scalar_res_types</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">scalar_res_types</span><span class="p">]]</span>
+<span class="n">res_type</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="s2">&quot;ParameterBase&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">values_type</span><span class="p">]</span>
+<span class="n">setpoints_type</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;ParameterBase&quot;</span><span class="p">]]</span>
+<span class="n">SPECS</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">]</span>
+<span class="c1"># Transition period type: SpecsOrInterDeps. We will allow both as input to</span>
+<span class="c1"># the DataSet constructor for a while, then deprecate SPECS and finally remove</span>
+<span class="c1"># the ParamSpec class</span>
+<span class="n">SpecsOrInterDeps</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">SPECS</span><span class="p">,</span> <span class="n">InterDependencies_</span><span class="p">]</span>
+<span class="n">ParameterData</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span>
+
+<span class="n">LOG</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">CompletedError</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="DataSetProtocol">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol">[docs]</a>
+<span class="nd">@runtime_checkable</span>
+<span class="k">class</span> <span class="nc">DataSetProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+
+    <span class="c1"># the &quot;persistent traits&quot; are the attributes/properties of the DataSet</span>
+    <span class="c1"># that are NOT tied to the representation of the DataSet in any particular</span>
+    <span class="c1"># database</span>
+    <span class="n">persistent_traits</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;guid&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;number_of_results&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;exp_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sample_name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;completed&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;snapshot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;run_timestamp_raw&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;description&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;completed_timestamp_raw&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;metadata&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;parent_dataset_links&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;captured_run_id&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;captured_counter&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="DataSetProtocol.prepare">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.prepare">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">snapshot</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">interdeps</span><span class="p">:</span> <span class="n">InterDependencies_</span><span class="p">,</span>
+        <span class="n">shapes</span><span class="p">:</span> <span class="n">Shapes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">parent_datasets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">write_in_background</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">pristine</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">running</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">completed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DataSetProtocol.mark_completed">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.mark_completed">[docs]</a>
+    <span class="k">def</span> <span class="nf">mark_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="c1"># dataset attributes</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">run_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">captured_run_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">counter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">captured_counter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">guid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">number_of_results</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">exp_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">exp_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sample_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DataSetProtocol.run_timestamp">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.run_timestamp">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">run_timestamp_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DataSetProtocol.completed_timestamp">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.completed_timestamp">[docs]</a>
+    <span class="k">def</span> <span class="nf">completed_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">completed_timestamp_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="c1"># snapshot and metadata</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">snapshot</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DataSetProtocol.add_snapshot">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.add_snapshot">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_snapshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snapshot</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_snapshot_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DataSetProtocol.add_metadata">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.add_metadata">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="c1"># dataset description and links</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">paramspecs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParamSpec</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">description</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunDescriber</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parent_dataset_links</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Link</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+    <span class="c1"># data related members</span>
+
+<div class="viewcode-block" id="DataSetProtocol.export">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.export">[docs]</a>
+    <span class="k">def</span> <span class="nf">export</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">export_type</span><span class="p">:</span> <span class="n">DataExportType</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">automatic_export</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">export_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExportInfo</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cache</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSetCache</span><span class="p">[</span><span class="n">DataSetProtocol</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DataSetProtocol.get_parameter_data">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.get_parameter_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_parameter_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ParamSpec</span> <span class="o">|</span> <span class="n">ParameterBase</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">end</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParameterData</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+
+<div class="viewcode-block" id="DataSetProtocol.get_parameters">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.get_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SPECS</span><span class="p">:</span>
+        <span class="c1"># used by plottr</span>
+        <span class="o">...</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dependent_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+    <span class="c1"># exporters to other in memory formats</span>
+
+<div class="viewcode-block" id="DataSetProtocol.to_xarray_dataarray_dict">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.to_xarray_dataarray_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_xarray_dataarray_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ParamSpec</span> <span class="o">|</span> <span class="n">ParameterBase</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">end</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">use_multi_index</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;always&quot;</span><span class="p">,</span> <span class="s2">&quot;never&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">]:</span>
+        <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="DataSetProtocol.to_xarray_dataset">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.to_xarray_dataset">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_xarray_dataset</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ParamSpec</span> <span class="o">|</span> <span class="n">ParameterBase</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">end</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">use_multi_index</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;always&quot;</span><span class="p">,</span> <span class="s2">&quot;never&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">xr</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="DataSetProtocol.to_pandas_dataframe_dict">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.to_pandas_dataframe_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_pandas_dataframe_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ParamSpec</span> <span class="o">|</span> <span class="n">ParameterBase</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">end</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+        <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="DataSetProtocol.to_pandas_dataframe">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.to_pandas_dataframe">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_pandas_dataframe</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ParamSpec</span> <span class="o">|</span> <span class="n">ParameterBase</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">end</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="o">...</span></div>
+
+
+    <span class="c1"># private members called by various other parts or the api</span>
+
+    <span class="k">def</span> <span class="nf">_enqueue_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result_dict</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">_flush_data_to_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">_set_export_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">export_info</span><span class="p">:</span> <span class="n">ExportInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="DataSetProtocol.the_same_dataset_as">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetProtocol.the_same_dataset_as">[docs]</a>
+    <span class="k">def</span> <span class="nf">the_same_dataset_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="o">...</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">BaseDataSet</span><span class="p">(</span><span class="n">DataSetProtocol</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">):</span>
+
+    <span class="c1"># shared methods between all implementations of the dataset</span>
+
+    <span class="k">def</span> <span class="nf">the_same_dataset_as</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if two datasets correspond to the same run by comparing</span>
+<span class="sd">        all their persistent traits. Note that this method</span>
+<span class="sd">        does not compare the data itself.</span>
+
+<span class="sd">        This function raises if the GUIDs match but anything else doesn&#39;t</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            other: the dataset to compare self to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">DataSetProtocol</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">guids_match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">guid</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">guid</span>
+
+        <span class="c1"># note that the guid is in itself a persistent trait of the DataSet.</span>
+        <span class="c1"># We therefore do not need to handle the case of guids not equal</span>
+        <span class="c1"># but all persistent traits equal, as this is not possible.</span>
+        <span class="c1"># Thus, if all persistent traits are the same we can safely return True</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">persistent_traits</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">guids_match</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="s2">&quot;Critical inconsistency detected! &quot;</span>
+                        <span class="s2">&quot;The two datasets have the same GUID, &quot;</span>
+                        <span class="sa">f</span><span class="s1">&#39;but their &quot;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s1">&quot; differ.&#39;</span>
+                    <span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SPECS</span><span class="p">:</span>
+        <span class="n">old_interdeps</span> <span class="o">=</span> <span class="n">new_to_old</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">interdeps</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">old_interdeps</span><span class="o">.</span><span class="n">paramspecs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">export</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">export_type</span><span class="p">:</span> <span class="n">DataExportType</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">automatic_export</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export data to disk with file name `{prefix}{name_elements}.{ext}`.</span>
+<span class="sd">        Name elements are names of dataset object attributes that are taken</span>
+<span class="sd">        from the dataset and inserted into the name of the export file, for</span>
+<span class="sd">        example if name elements are ``[&quot;captured_run_id&quot;, &quot;guid&quot;]``, then</span>
+<span class="sd">        the file name will be `{prefix}{captured_run_id}_{guid}.{ext}`.</span>
+<span class="sd">        Values for the export type, path, export_name_elements and prefix can</span>
+<span class="sd">        also be set in the &quot;dataset&quot; section of qcodes config.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            export_type: Data export type, e.g. &quot;netcdf&quot; or ``DataExportType.NETCDF``,</span>
+<span class="sd">                defaults to a value set in qcodes config</span>
+<span class="sd">            path: Export path, defaults to value set in config</span>
+<span class="sd">            prefix: File prefix, e.g. ``qcodes_``, defaults to value set in config.</span>
+<span class="sd">            automatic_export: Is this export automatic?</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the export data type is not specified or unknown,</span>
+<span class="sd">                raise an error</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="n">parsed_export_type</span> <span class="o">=</span> <span class="n">get_data_export_type</span><span class="p">(</span><span class="n">export_type</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">parsed_export_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">export_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No data export type specified. Please set the export data type &quot;</span>
+                <span class="s2">&quot;by using ``qcodes.dataset.export_config.set_data_export_type`` or &quot;</span>
+                <span class="s2">&quot;give an explicit export_type when calling ``dataset.export`` manually.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">parsed_export_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Export type </span><span class="si">{</span><span class="n">export_type</span><span class="si">}</span><span class="s2"> is unknown. Export type &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;should be a member of the `DataExportType` enum&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">export_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_data</span><span class="p">(</span>
+            <span class="n">export_type</span><span class="o">=</span><span class="n">parsed_export_type</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+            <span class="n">automatic_export</span><span class="o">=</span><span class="n">automatic_export</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">export_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_info</span>
+        <span class="k">if</span> <span class="n">export_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">export_info</span><span class="o">.</span><span class="n">export_paths</span><span class="p">[</span><span class="n">parsed_export_type</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span>
+                <span class="n">export_path</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_export_info</span><span class="p">(</span><span class="n">export_info</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_export_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">export_type</span><span class="p">:</span> <span class="n">DataExportType</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">automatic_export</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export data to disk with file name `{prefix}{name_elements}.{ext}`.</span>
+<span class="sd">        Name elements are names of dataset object attributes that are taken</span>
+<span class="sd">        from the dataset and inserted into the name of the export file, for</span>
+<span class="sd">        example if name elements are ``[&quot;captured_run_id&quot;, &quot;guid&quot;]``, then</span>
+<span class="sd">        the file name will be `{prefix}{captured_run_id}_{guid}.{ext}`.</span>
+<span class="sd">        Values for the export type, path, export_name_elements and prefix can</span>
+<span class="sd">        also be set in the &quot;dataset&quot; section of qcodes config.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            export_type: Data export type, e.g. DataExportType.NETCDF</span>
+<span class="sd">            path: Export path, defaults to value set in config</span>
+<span class="sd">            prefix: File prefix, e.g. &quot;qcodes_&quot;, defaults to value set in config.</span>
+<span class="sd">            automatic_export: Is this export automatic?</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Path file was saved to, returns None if no file was saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set defaults to values in config if the value was not set</span>
+        <span class="c1"># (defaults to None)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">path</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">get_data_export_path</span><span class="p">()</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefix</span> <span class="k">if</span> <span class="n">prefix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">get_data_export_prefix</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">DataExportType</span><span class="o">.</span><span class="n">NETCDF</span> <span class="o">==</span> <span class="n">export_type</span><span class="p">:</span>
+            <span class="n">file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_file_name</span><span class="p">(</span>
+                <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">export_type</span><span class="o">=</span><span class="n">DataExportType</span><span class="o">.</span><span class="n">NETCDF</span>
+            <span class="p">)</span>
+            <span class="n">export_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_export_as_netcdf</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">file_name</span><span class="o">=</span><span class="n">file_name</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">DataExportType</span><span class="o">.</span><span class="n">CSV</span> <span class="o">==</span> <span class="n">export_type</span><span class="p">:</span>
+            <span class="n">file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_export_file_name</span><span class="p">(</span>
+                <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">export_type</span><span class="o">=</span><span class="n">DataExportType</span><span class="o">.</span><span class="n">CSV</span>
+            <span class="p">)</span>
+            <span class="n">export_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_export_as_csv</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">file_name</span><span class="o">=</span><span class="n">file_name</span><span class="p">))</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">export_path</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">export_callback</span> <span class="ow">in</span> <span class="n">_EXPORT_CALLBACKS</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">export_callback_function</span> <span class="o">=</span> <span class="n">export_callback</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+                <span class="n">LOG</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Executing on_export callback </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">export_callback</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">export_callback_function</span><span class="p">(</span><span class="n">export_path</span><span class="p">,</span> <span class="n">automatic_export</span><span class="o">=</span><span class="n">automatic_export</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">LOG</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Exception during export callback function&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">export_path</span>
+
+    <span class="k">def</span> <span class="nf">_export_file_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">export_type</span><span class="p">:</span> <span class="n">DataExportType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get export file name&quot;&quot;&quot;</span>
+        <span class="n">extension</span> <span class="o">=</span> <span class="n">export_type</span><span class="o">.</span><span class="n">value</span>
+        <span class="n">name_elements</span> <span class="o">=</span> <span class="n">get_data_export_name_elements</span><span class="p">()</span>
+        <span class="n">post_fix</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">name_elements</span><span class="p">])</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">post_fix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">extension</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_export_as_netcdf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export data as netcdf to a given path with file prefix&quot;&quot;&quot;</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">path</span> <span class="o">/</span> <span class="n">file_name</span>
+        <span class="n">xarr_dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_xarray_dataset</span><span class="p">()</span>
+        <span class="n">xarray_to_h5netcdf_with_complex_numbers</span><span class="p">(</span><span class="n">xarr_dataset</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">file_path</span>
+
+    <span class="k">def</span> <span class="nf">_export_as_csv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">file_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Export data as csv to a given path with file prefix.&quot;&quot;&quot;</span>
+        <span class="n">dfdict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_pandas_dataframe_dict</span><span class="p">()</span>
+        <span class="n">dataframe_to_csv</span><span class="p">(</span>
+            <span class="n">dfdict</span><span class="o">=</span><span class="n">dfdict</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">single_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">single_file_name</span><span class="o">=</span><span class="n">file_name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">path</span> <span class="o">/</span> <span class="n">file_name</span>
+
+    <span class="k">def</span> <span class="nf">_add_metadata_to_netcdf_if_nc_exported</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tag</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">export_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">export_info</span><span class="o">.</span><span class="n">export_paths</span>
+        <span class="n">nc_file</span> <span class="o">=</span> <span class="n">export_paths</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">DataExportType</span><span class="o">.</span><span class="n">NETCDF</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nc_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">h5netcdf</span>  <span class="c1"># type: ignore[import-untyped]</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">h5netcdf</span><span class="o">.</span><span class="n">File</span><span class="p">(</span>
+                    <span class="n">nc_file</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r+&quot;</span><span class="p">,</span> <span class="n">decode_vlen_strings</span><span class="o">=</span><span class="kc">False</span>
+                <span class="p">)</span> <span class="k">as</span> <span class="n">h5nc_file</span><span class="p">:</span>
+                    <span class="n">h5nc_file</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">except</span> <span class="p">(</span>
+                <span class="ne">FileNotFoundError</span><span class="p">,</span>
+                <span class="ne">OSError</span><span class="p">,</span>
+            <span class="p">):</span>  <span class="c1"># older versions of h5py may throw a OSError here</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Could not add metadata to the exported NetCDF file, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;was the file moved? GUID </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">guid</span><span class="si">}</span><span class="s2">, NetCDF file </span><span class="si">{</span><span class="n">nc_file</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_validate_parameters</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">ParamSpec</span> <span class="o">|</span> <span class="n">ParameterBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate that the provided parameters have a name and return those</span>
+<span class="sd">        names as a list.</span>
+<span class="sd">        The Parameters may be a mix of strings, ParamSpecs or ordinary</span>
+<span class="sd">        QCoDeS parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">valid_param_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">maybe_param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maybe_param</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">valid_param_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">maybe_param</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">maybe_param_name</span> <span class="o">=</span> <span class="n">maybe_param</span><span class="o">.</span><span class="n">name</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This parameter does not have  a name&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+                <span class="n">valid_param_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">maybe_param_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">valid_param_names</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_reshape_array_for_cache</span><span class="p">(</span>
+        <span class="n">param</span><span class="p">:</span> <span class="n">ParamSpecBase</span><span class="p">,</span> <span class="n">param_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shape cache data so it matches data read from database.</span>
+<span class="sd">        This means:</span>
+
+<span class="sd">        - Add an extra singleton dim to array data</span>
+<span class="sd">        - flatten non array data into a linear array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">param_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">param_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;array&quot;</span><span class="p">:</span>
+            <span class="n">new_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">param_data</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="n">param_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_data</span> <span class="o">=</span> <span class="n">param_data</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">new_data</span>
+
+    <span class="k">def</span> <span class="nf">run_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns run timestamp in a human-readable format</span>
+
+<span class="sd">        The run timestamp is the moment when the measurement for this run</span>
+<span class="sd">        started. If the run has not yet been started, this function returns</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        Consult with :func:`time.strftime` for information about the format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">raw_time_to_str_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_timestamp_raw</span><span class="p">,</span> <span class="n">fmt</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">completed_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fmt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns timestamp when measurement run was completed</span>
+<span class="sd">        in a human-readable format</span>
+
+<span class="sd">        If the run (or the dataset) is not completed, then returns None.</span>
+
+<span class="sd">        Consult with ``time.strftime`` for information about the format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">raw_time_to_str_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">completed_timestamp_raw</span><span class="p">,</span> <span class="n">fmt</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dependent_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return all the parameters that explicitly depend on other parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">interdeps</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="DataSetType">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetType">[docs]</a>
+<span class="k">class</span> <span class="nc">DataSetType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+
+    <span class="n">DataSet</span> <span class="o">=</span> <span class="s2">&quot;DataSet&quot;</span>
+    <span class="n">DataSetInMem</span> <span class="o">=</span> <span class="s2">&quot;DataSetInMem&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

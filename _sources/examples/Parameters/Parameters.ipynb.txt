@@ -1,0 +1,532 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Parameters in QCoDeS\n",
+    "\n",
+    "A `Parameter` is the basis of measurements and control within QCoDeS. Anything that you want to either measure or control within QCoDeS goes thought the `Parameter` interface as it represents the state variables of the system. While many Parameters represent a setting or measurement for a particular `Instrument`, it is possible to define `Parameters` that represent more powerful abstractions.\n",
+    "\n",
+    "QCoDeS accomodates setting (i.e. settable parameters) and getting (i.e. gettable parameters) parameter values in a configurable manner. Moreover, various types of data may be accomodated by `Parameters` including simple numbers, strings or a complicated data structure that contains numerical, textual, or other elements.\n",
+    "\n",
+    "The value of such a Parameter may be of many types:\n",
+    "- A single numeric value, such as a voltage measurement\n",
+    "- A string that represents a discrete instrument setting, such as the orientation of a vector\n",
+    "- Multiple related values, such as the magnitude and phase or Cartesian components of a vector\n",
+    "- A sequence of values, such as a sampled waveform or a power spectrum\n",
+    "- Multiple sequences of values, such as waveforms sampled on multiple channels\n",
+    "- Any other shape that appropriately represents a characteristic of the Instrument.\n",
+    "\n",
+    "## Responsibilities\n",
+    "\n",
+    "Parameters have specific responsibilities in QCodes:\n",
+    "\n",
+    "- Generating the commands to pass to the Instrument and interpreting its response\n",
+    "- Testing whether an input is valid, via a validator method\n",
+    "- Providing get or set methods for mathematical abstractions\n",
+    "- Providing context and meaning to its data through descriptive attributes (e.g. name, units) \n",
+    "\n",
+    "Parameters hold onto their latest set or measured value via an internal cache, as well as the timestamp of the latest cache update. \n",
+    "\n",
+    "## Examples\n",
+    "\n",
+    "In this notebook we provide examples of some parameters and their usage in a QCoDeS environment with dummy instruments. These examples can be used as a starting point to develop parameters and instruments for your applications.\n",
+    "\n",
+    "\n",
+    "### Imports\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2021-06-17T08:58:10.954951Z",
+     "start_time": "2021-06-17T08:58:10.944950Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "from typing import Optional\n",
+    "\n",
+    "from qcodes import validators\n",
+    "from qcodes.instrument import InstrumentBase\n",
+    "from qcodes.instrument_drivers.mock_instruments import DummyInstrument\n",
+    "from qcodes.parameters import Parameter"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Simple parameter subclass\n",
+    "\n",
+    "It is possible to use the `Parameter` class to represent instrument parameters that include custom get and set methods. However, we advise that users be familiar with developing their own parameter sub-classes in order to facilitate instrument communications.\n",
+    "\n",
+    "Where the parameter class have user-facing set and get methods, parameter subclasses feature instrument facing set_raw and get_raw methods. This enables instrument inputs and outputs to be parsed and validated from simple method calls, and provides a layer of abstraction between the QCoDeS interface and the physcial device."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Parameter definition"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "class MyCounter(Parameter):\n",
+    "    def __init__(self, name):\n",
+    "        # only name is required\n",
+    "        super().__init__(name, label='Times this has been read',\n",
+    "                         vals=validators.Ints(min_value=0),\n",
+    "                         docstring='counts how many times get has been called '\n",
+    "                                   'but can be reset to any integer >= 0 by set')\n",
+    "        self._count = 0\n",
+    "\n",
+    "    # you must provide a get method, a set method, or both.\n",
+    "    def get_raw(self):\n",
+    "        self._count += 1\n",
+    "        return self._count\n",
+    "\n",
+    "    def set_raw(self, val):\n",
+    "        self._count = val\n",
+    "        return self._count"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Demonstration of the get method"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Successive calls of c.get(): 1 2 3 4 5\n"
+     ]
+    }
+   ],
+   "source": [
+    "c = MyCounter('c')\n",
+    "\n",
+    "# c() is equivalent to c.get()\n",
+    "print('Successive calls of c.get():', c(), c(), c(), c(), c())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Demonstration of the set method"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "setting counter to 22: None\n",
+      "After, we can get 23\n"
+     ]
+    }
+   ],
+   "source": [
+    "# We can also set the value here\n",
+    "print ('setting counter to 22:', c(22))\n",
+    "\n",
+    "print('After, we can get', c())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Inspecting parameter attributes\n",
+    "\n",
+    "When developing protocols, it may be useful to inspect if a parameter is settable or gettable. This can be seen in the respective .settable and .gettable attributes produced by the `Parameter` base class.  \n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Is c is gettable? True\n",
+      "Is c is settable? True\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(f\"Is c is gettable? {c.gettable}\")\n",
+    "print(f\"Is c is settable? {c.settable}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Virtual Parameters\n",
+    "\n",
+    "Users will frequently create a parameter which overlays an existing parameter, creating a further layer of abstraction. This is often done to provide a simple interface to include data processing or validation on top of existing communication infrastructure. We refer to these abstractions as \"virtual parameters\".\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Normally virtual parameters are most easily created using the ``DelegateParameter`` class."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from qcodes.parameters import DelegateParameter"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "First we instantiate our virtual instrument:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "dac:\n",
+      "\tparameter value\n",
+      "--------------------------------------------------------------------------------\n",
+      "IDN :\tNone \n",
+      "ch1 :\t0 (V)\n",
+      "ch2 :\t1 (V)\n"
+     ]
+    }
+   ],
+   "source": [
+    "dac = DummyInstrument('dac', gates=['ch1', 'ch2'])\n",
+    "dac.ch2.set(1)\n",
+    "dac.print_readable_snapshot()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Then we create a DelegateParameter. Note that the DelegateParameter supports changing name, label, unit, scale and offset. Its therefor possible to use a DelegateParameter to perform a simple unit conversion."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "my_delegate_param = DelegateParameter('my_delegated_parameter', dac.ch2, scale=1/1000, unit='mV')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1000.0\n",
+      "mV\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(my_delegate_param.get())\n",
+    "print(my_delegate_param.unit)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "####  Manually creating a virtual parameter"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "In some cases it may make sense to manually create a virtual parameter. In this example we will create a virtual parameter that abstracts channel 1 of a digital-to-analog converter (`dac`).\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "We define our virtual parameter to abstract a single parameter of `dac` (i.e. either `ch1` or `ch2`). We will also include a method to return the instance of the underlying instrument (`dac`) from this abstraction."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2021-06-17T08:58:52.491912Z",
+     "start_time": "2021-06-17T08:58:52.473919Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "class VirtualParameter(Parameter):\n",
+    "    def __init__(self, name, dac_param):\n",
+    "        self._dac_param = dac_param\n",
+    "        super().__init__(name)\n",
+    "\n",
+    "    @property\n",
+    "    def underlying_instrument(self) -> Optional[InstrumentBase]:\n",
+    "        return self._dac_param.root_instrument\n",
+    "\n",
+    "    def get_raw(self):\n",
+    "        return self._dac_param.get()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "> `underlying_insturment`: We advise that this property is included with virtual parameters to avoid race conditions when multi-theading (e.g. using the `dond` function with `use_threads=true`). This allows qcodes to know which instrument in accessed when accessing the parameter. This ensures that a given instrument is ever only accessed from one thread.\n",
+    "\n",
+    "Now we will instantiate this to abstract the first channel (`dac.ch1`) using this virtual parameter:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {
+    "ExecuteTime": {
+     "end_time": "2021-06-17T08:58:48.861043Z",
+     "start_time": "2021-06-17T08:58:48.853047Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "vp1 = VirtualParameter('dac_channel_1', dac.ch1)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Notice we have no set method, so we are locked out from accidentally changing the current output voltage."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Is our virtual parameter is gettable? True\n",
+      "Is our virtual parameter is settable? False\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(f\"Is our virtual parameter is gettable? {vp1.gettable}\")\n",
+    "print(f\"Is our virtual parameter is settable? {vp1.settable}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#### Instrument Parameters\n",
+    "\n",
+    "The most useful `Parameters` are part of an `Instrument`. These `Parameters` are created using the `Instrument's` `add_parameter` method and facilitate low-level communication between QCoDeS and the device.\n",
+    "\n",
+    "A settable Parameter typically represents a configuration setting or other controlled characteristic of the Instrument. Most such Parameters have a simple numeric value, but the value can be a string or other data type if necessary. If a settable Parameter is also gettable, getting it typically just reads back the value that was previously set but there can be differences due to processing (e.g. rounding, truncation, etc.).  A Parameter that is only gettable typically represents a single measurement command, and may feature some processing.\n",
+    "\n",
+    "These parameters are identical in implementation to the above cases, using set_raw and get_raw methods for instrument facing communications. In order to see examples of these parameters, we advise reviewing our notebooks on insturments and instrument drivers.\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Validating parameters"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "When a parameter is set it is automatically validated against any validator set for that parameter. Most QCoDeS instrument drivers are configured to only validate input that the instrument can actually set. In the example of dac.ch1 the values that can be set are between -800 and 400. Sometimes it may however, be useful to be able to restrict the valid values even further, perhaps due to limitations in the range of a device under test or a specific calibration range. This can be done either by adding an additional validator or by using the `extra_validator` context manager. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 36,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Default validators: (<Numbers -800<=v<=400>,)\n",
+      "Failed to validate setting to 450.\n",
+      "Validator added: (<Numbers -800<=v<=400>, <Numbers -500<=v<=300>)\n",
+      "Failed to validate setting to 350.\n",
+      "Validator context: (<Numbers -800<=v<=400>, <Numbers -500<=v<=-100>)\n",
+      "Failed to validate setting to 250 within context manager.\n"
+     ]
+    }
+   ],
+   "source": [
+    "dac.ch1\n",
+    "print(f\"Default validators: {dac.ch1.validators}\")\n",
+    "\n",
+    "# if we try to set a value outside the range of the default validator we get an error.\n",
+    "try:\n",
+    "   dac.ch1(450)\n",
+    "except Exception:\n",
+    "    print(\"Failed to validate setting to 450.\")\n",
+    "\n",
+    "\n",
+    "dac.ch1.add_validator(validators.Numbers(-500,300))\n",
+    "print(f\"Validator added: {dac.ch1.validators}\")\n",
+    "\n",
+    "# with the new validator set we cannot set the value outside its range.\n",
+    "try:\n",
+    "    dac.ch1(350)\n",
+    "except Exception:\n",
+    "    print(\"Failed to validate setting to 350.\")\n",
+    "\n",
+    "# but once it is removed we can again set any value in the range of the original validator.\n",
+    "dac.ch1.remove_validator()\n",
+    "dac.ch1(350)\n",
+    "\n",
+    "# we can also temorarily add a validator using a context manager.\n",
+    "\n",
+    "with dac.ch1.extra_validator(validators.Numbers(-500,-100)):\n",
+    "    print(f\"Validator context: {dac.ch1.validators}\")\n",
+    "    # with the new validator set we cannot set the value outside its range.\n",
+    "    try:\n",
+    "        dac.ch1(250)\n",
+    "    except Exception:\n",
+    "        print(\"Failed to validate setting to 250 within context manager.\")\n",
+    "\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.5"
+  },
+  "toc": {
+   "base_numbering": 1,
+   "nav_menu": {},
+   "number_sections": true,
+   "sideBar": true,
+   "skip_h1_title": false,
+   "title_cell": "Table of Contents",
+   "title_sidebar": "Contents",
+   "toc_cell": false,
+   "toc_position": {},
+   "toc_section_display": true,
+   "toc_window_display": false
+  },
+  "varInspector": {
+   "cols": {
+    "lenName": 16,
+    "lenType": 16,
+    "lenVar": 40
+   },
+   "kernels_config": {
+    "python": {
+     "delete_cmd_postfix": "",
+     "delete_cmd_prefix": "del ",
+     "library": "var_list.py",
+     "varRefreshCmd": "print(var_dic_list())"
+    },
+    "r": {
+     "delete_cmd_postfix": ") ",
+     "delete_cmd_prefix": "rm(",
+     "library": "var_list.r",
+     "varRefreshCmd": "cat(var_dic_list()) "
+    }
+   },
+   "types_to_exclude": [
+    "module",
+    "function",
+    "builtin_function_or_method",
+    "instance",
+    "_Feature"
+   ],
+   "window_display": false
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

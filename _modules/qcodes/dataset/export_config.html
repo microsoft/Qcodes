@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.export_config &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.export_config</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.export_config</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">enum</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">qcodes</span>
+
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">DATASET_CONFIG_SECTION</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+<span class="n">EXPORT_AUTOMATIC</span> <span class="o">=</span> <span class="s2">&quot;export_automatic&quot;</span>
+<span class="n">EXPORT_TYPE</span> <span class="o">=</span> <span class="s2">&quot;export_type&quot;</span>
+<span class="n">EXPORT_PATH</span> <span class="o">=</span> <span class="s2">&quot;export_path&quot;</span>
+<span class="n">EXPORT_PREFIX</span> <span class="o">=</span> <span class="s2">&quot;export_prefix&quot;</span>
+<span class="n">EXPORT_NAME_ELEMENTS</span> <span class="o">=</span> <span class="s2">&quot;export_name_elements&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">DataExportType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;File extensions for supported data types to export data&quot;&quot;&quot;</span>
+    <span class="n">NETCDF</span> <span class="o">=</span> <span class="s2">&quot;nc&quot;</span>
+    <span class="n">CSV</span> <span class="o">=</span> <span class="s2">&quot;csv&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">set_data_export_type</span><span class="p">(</span><span class="n">export_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set data export type</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        export_type: Export type to use.</span>
+<span class="sd">            Currently supported values: netcdf, csv.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># disable file export</span>
+    <span class="k">if</span> <span class="n">export_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_TYPE</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">DataExportType</span><span class="p">,</span> <span class="n">export_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()):</span>
+        <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_TYPE</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">_log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">&quot;Could not set export type to &#39;</span><span class="si">%s</span><span class="s2">&#39; because it is not supported.&quot;</span>
+            <span class="o">%</span> <span class="n">export_type</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">set_data_export_path</span><span class="p">(</span><span class="n">export_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set path to export data to at the end of a measurement.</span>
+<span class="sd">    The directory is automatically created if it doesn&#39;t already</span>
+<span class="sd">    exist.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        export_path: An existing file path on disk</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">export_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">export_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">export_path</span><span class="p">)</span>
+    <span class="n">export_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_AUTOMATIC</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">export_path</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_data_export_type</span><span class="p">(</span>
+    <span class="n">export_type</span><span class="p">:</span> <span class="n">DataExportType</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataExportType</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the file type for exporting data to disk at the end of</span>
+<span class="sd">    a measurement from config</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        export_type: Export type string format to convert to DataExportType.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Data export type</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If export_type is None, get value from config</span>
+    <span class="n">export_type</span> <span class="o">=</span> <span class="n">export_type</span> <span class="ow">or</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_TYPE</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">export_type</span><span class="p">,</span> <span class="n">DataExportType</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">export_type</span>
+    <span class="k">elif</span> <span class="n">export_type</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">DataExportType</span><span class="p">,</span> <span class="n">export_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">DataExportType</span><span class="p">,</span> <span class="n">export_type</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span> <span class="nf">get_data_export_automatic</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Should the data be exported automatically?&quot;&quot;&quot;</span>
+    <span class="n">export_automatic</span> <span class="o">=</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_AUTOMATIC</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">export_automatic</span>
+
+
+<span class="k">def</span> <span class="nf">_expand_export_path</span><span class="p">(</span><span class="n">export_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">db_location</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;core&quot;</span><span class="p">][</span><span class="s2">&quot;db_location&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
+    <span class="n">expanded_export_folder</span> <span class="o">=</span> <span class="n">db_location</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">db_location</span><span class="o">.</span><span class="n">stem</span><span class="p">,</span> <span class="n">db_location</span><span class="o">.</span><span class="n">suffix</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">export_path</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{db_location}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">expanded_export_folder</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="get_data_export_path">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.get_data_export_path">[docs]</a>
+<span class="k">def</span> <span class="nf">get_data_export_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the path to export data to at the end of a measurement from config</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Path</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">Path</span><span class="p">(</span><span class="n">_expand_export_path</span><span class="p">(</span><span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_PATH</span><span class="p">]))</span>
+        <span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">set_data_export_prefix</span><span class="p">(</span><span class="n">export_prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the data export file name prefix to export data to at the end of</span>
+<span class="sd">    a measurement</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        export_prefix: Prefix, e.g. &quot;qcodes_&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_PREFIX</span><span class="p">]</span> <span class="o">=</span> <span class="n">export_prefix</span>
+
+
+<span class="k">def</span> <span class="nf">get_data_export_prefix</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the data export file name prefix to export data to at the end of</span>
+<span class="sd">    a measurement from config</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Prefix, e.g. &quot;qcodes_&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_PREFIX</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">get_data_export_name_elements</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the elements to include in the export name.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">DATASET_CONFIG_SECTION</span><span class="p">][</span><span class="n">EXPORT_NAME_ELEMENTS</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Parameters in QCoDeS &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="ScaledParameter" href="Scaled_Parameter.html" />
+    <link rel="prev" title="ParameterWithSetpoints with setpoints defined on another instrument." href="Parameter-With-Setpoints-defined-on-a-different-instrument.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#parameters">Parameters</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Parameters in QCoDeS</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Responsibilities">Responsibilities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Parameters in QCoDeS</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/Parameters/Parameters.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/Parameters/Parameters.ipynb">docs/examples/Parameters/Parameters.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/Parameters/Parameters.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+<section id="Parameters-in-QCoDeS">
+<h1>Parameters in QCoDeS<a class="headerlink" href="#Parameters-in-QCoDeS" title="Link to this heading"></a></h1>
+<p>A <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> is the basis of measurements and control within QCoDeS. Anything that you want to either measure or control within QCoDeS goes thought the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> interface as it represents the state variables of the system. While many Parameters represent a setting or measurement for a particular <code class="docutils literal notranslate"><span class="pre">Instrument</span></code>, it is possible to define <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> that represent more powerful abstractions.</p>
+<p>QCoDeS accomodates setting (i.e. settable parameters) and getting (i.e. gettable parameters) parameter values in a configurable manner. Moreover, various types of data may be accomodated by <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> including simple numbers, strings or a complicated data structure that contains numerical, textual, or other elements.</p>
+<p>The value of such a Parameter may be of many types: - A single numeric value, such as a voltage measurement - A string that represents a discrete instrument setting, such as the orientation of a vector - Multiple related values, such as the magnitude and phase or Cartesian components of a vector - A sequence of values, such as a sampled waveform or a power spectrum - Multiple sequences of values, such as waveforms sampled on multiple channels - Any other shape that appropriately represents a
+characteristic of the Instrument.</p>
+<section id="Responsibilities">
+<h2>Responsibilities<a class="headerlink" href="#Responsibilities" title="Link to this heading"></a></h2>
+<p>Parameters have specific responsibilities in QCodes:</p>
+<ul class="simple">
+<li><p>Generating the commands to pass to the Instrument and interpreting its response</p></li>
+<li><p>Testing whether an input is valid, via a validator method</p></li>
+<li><p>Providing get or set methods for mathematical abstractions</p></li>
+<li><p>Providing context and meaning to its data through descriptive attributes (e.g. name, units)</p></li>
+</ul>
+<p>Parameters hold onto their latest set or measured value via an internal cache, as well as the timestamp of the latest cache update.</p>
+</section>
+<section id="Examples">
+<h2>Examples<a class="headerlink" href="#Examples" title="Link to this heading"></a></h2>
+<p>In this notebook we provide examples of some parameters and their usage in a QCoDeS environment with dummy instruments. These examples can be used as a starting point to develop parameters and instruments for your applications.</p>
+<section id="Imports">
+<h3>Imports<a class="headerlink" href="#Imports" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">qcodes</span> <span class="kn">import</span> <span class="n">validators</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">InstrumentBase</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.mock_instruments</span> <span class="kn">import</span> <span class="n">DummyInstrument</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Qcodes Logfile : /home/runner/.qcodes/logs/240328-20219-qcodes.log
+</pre></div></div>
+</div>
+</section>
+<section id="Simple-parameter-subclass">
+<h3>Simple parameter subclass<a class="headerlink" href="#Simple-parameter-subclass" title="Link to this heading"></a></h3>
+<p>It is possible to use the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class to represent instrument parameters that include custom get and set methods. However, we advise that users be familiar with developing their own parameter sub-classes in order to facilitate instrument communications.</p>
+<p>Where the parameter class have user-facing set and get methods, parameter subclasses feature instrument facing set_raw and get_raw methods. This enables instrument inputs and outputs to be parsed and validated from simple method calls, and provides a layer of abstraction between the QCoDeS interface and the physcial device.</p>
+<section id="Parameter-definition">
+<h4>Parameter definition<a class="headerlink" href="#Parameter-definition" title="Link to this heading"></a></h4>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">MyCounter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="c1"># only name is required</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Times this has been read&#39;</span><span class="p">,</span>
+                         <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                         <span class="n">docstring</span><span class="o">=</span><span class="s1">&#39;counts how many times get has been called &#39;</span>
+                                   <span class="s1">&#39;but can be reset to any integer &gt;= 0 by set&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># you must provide a get method, a set method, or both.</span>
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count</span>
+
+    <span class="k">def</span> <span class="nf">set_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_count</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Demonstration-of-the-get-method">
+<h4>Demonstration of the get method<a class="headerlink" href="#Demonstration-of-the-get-method" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">c</span> <span class="o">=</span> <span class="n">MyCounter</span><span class="p">(</span><span class="s1">&#39;c&#39;</span><span class="p">)</span>
+
+<span class="c1"># c() is equivalent to c.get()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Successive calls of c.get():&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">(),</span> <span class="n">c</span><span class="p">(),</span> <span class="n">c</span><span class="p">(),</span> <span class="n">c</span><span class="p">(),</span> <span class="n">c</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Successive calls of c.get(): 1 2 3 4 5
+</pre></div></div>
+</div>
+</section>
+<section id="Demonstration-of-the-set-method">
+<h4>Demonstration of the set method<a class="headerlink" href="#Demonstration-of-the-set-method" title="Link to this heading"></a></h4>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We can also set the value here</span>
+<span class="nb">print</span> <span class="p">(</span><span class="s1">&#39;setting counter to 22:&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">(</span><span class="mi">22</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;After, we can get&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+setting counter to 22: None
+After, we can get 23
+</pre></div></div>
+</div>
+</section>
+<section id="Inspecting-parameter-attributes">
+<h4>Inspecting parameter attributes<a class="headerlink" href="#Inspecting-parameter-attributes" title="Link to this heading"></a></h4>
+<p>When developing protocols, it may be useful to inspect if a parameter is settable or gettable. This can be seen in the respective .settable and .gettable attributes produced by the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> base class.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Is c is gettable? </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">gettable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Is c is settable? </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">settable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Is c is gettable? True
+Is c is settable? True
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Virtual-Parameters">
+<h3>Virtual Parameters<a class="headerlink" href="#Virtual-Parameters" title="Link to this heading"></a></h3>
+<p>Users will frequently create a parameter which overlays an existing parameter, creating a further layer of abstraction. This is often done to provide a simple interface to include data processing or validation on top of existing communication infrastructure. We refer to these abstractions as “virtual parameters”.</p>
+<p>Normally virtual parameters are most easily created using the <code class="docutils literal notranslate"><span class="pre">DelegateParameter</span></code> class.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">DelegateParameter</span>
+</pre></div>
+</div>
+</div>
+<p>First we instantiate our virtual instrument:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dac</span> <span class="o">=</span> <span class="n">DummyInstrument</span><span class="p">(</span><span class="s1">&#39;dac&#39;</span><span class="p">,</span> <span class="n">gates</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;ch1&#39;</span><span class="p">,</span> <span class="s1">&#39;ch2&#39;</span><span class="p">])</span>
+<span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">dac</span><span class="o">.</span><span class="n">print_readable_snapshot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+dac:
+        parameter value
+--------------------------------------------------------------------------------
+IDN :   None
+ch1 :   0 (V)
+ch2 :   1 (V)
+</pre></div></div>
+</div>
+<p>Then we create a DelegateParameter. Note that the DelegateParameter supports changing name, label, unit, scale and offset. Its therefor possible to use a DelegateParameter to perform a simple unit conversion.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">my_delegate_param</span> <span class="o">=</span> <span class="n">DelegateParameter</span><span class="p">(</span><span class="s1">&#39;my_delegated_parameter&#39;</span><span class="p">,</span> <span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="mi">1000</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;mV&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">my_delegate_param</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">my_delegate_param</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1000.0
+mV
+</pre></div></div>
+</div>
+<section id="Manually-creating-a-virtual-parameter">
+<h4>Manually creating a virtual parameter<a class="headerlink" href="#Manually-creating-a-virtual-parameter" title="Link to this heading"></a></h4>
+<p>In some cases it may make sense to manually create a virtual parameter. In this example we will create a virtual parameter that abstracts channel 1 of a digital-to-analog converter (<code class="docutils literal notranslate"><span class="pre">dac</span></code>).</p>
+<p>We define our virtual parameter to abstract a single parameter of <code class="docutils literal notranslate"><span class="pre">dac</span></code> (i.e. either <code class="docutils literal notranslate"><span class="pre">ch1</span></code> or <code class="docutils literal notranslate"><span class="pre">ch2</span></code>). We will also include a method to return the instance of the underlying instrument (<code class="docutils literal notranslate"><span class="pre">dac</span></code>) from this abstraction.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">VirtualParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dac_param</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dac_param</span> <span class="o">=</span> <span class="n">dac_param</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">underlying_instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">InstrumentBase</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_param</span><span class="o">.</span><span class="n">root_instrument</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_param</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">underlying_insturment</span></code>: We advise that this property is included with virtual parameters to avoid race conditions when multi-theading (e.g. using the <code class="docutils literal notranslate"><span class="pre">dond</span></code> function with <code class="docutils literal notranslate"><span class="pre">use_threads=true</span></code>). This allows qcodes to know which instrument in accessed when accessing the parameter. This ensures that a given instrument is ever only accessed from one thread.</p>
+</div></blockquote>
+<p>Now we will instantiate this to abstract the first channel (<code class="docutils literal notranslate"><span class="pre">dac.ch1</span></code>) using this virtual parameter:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vp1</span> <span class="o">=</span> <span class="n">VirtualParameter</span><span class="p">(</span><span class="s1">&#39;dac_channel_1&#39;</span><span class="p">,</span> <span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Notice we have no set method, so we are locked out from accidentally changing the current output voltage.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Is our virtual parameter is gettable? </span><span class="si">{</span><span class="n">vp1</span><span class="o">.</span><span class="n">gettable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Is our virtual parameter is settable? </span><span class="si">{</span><span class="n">vp1</span><span class="o">.</span><span class="n">settable</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Is our virtual parameter is gettable? True
+Is our virtual parameter is settable? False
+</pre></div></div>
+</div>
+</section>
+<section id="Instrument-Parameters">
+<h4>Instrument Parameters<a class="headerlink" href="#Instrument-Parameters" title="Link to this heading"></a></h4>
+<p>The most useful <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> are part of an <code class="docutils literal notranslate"><span class="pre">Instrument</span></code>. These <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> are created using the <code class="docutils literal notranslate"><span class="pre">Instrument's</span></code> <code class="docutils literal notranslate"><span class="pre">add_parameter</span></code> method and facilitate low-level communication between QCoDeS and the device.</p>
+<p>A settable Parameter typically represents a configuration setting or other controlled characteristic of the Instrument. Most such Parameters have a simple numeric value, but the value can be a string or other data type if necessary. If a settable Parameter is also gettable, getting it typically just reads back the value that was previously set but there can be differences due to processing (e.g. rounding, truncation, etc.). A Parameter that is only gettable typically represents a single
+measurement command, and may feature some processing.</p>
+<p>These parameters are identical in implementation to the above cases, using set_raw and get_raw methods for instrument facing communications. In order to see examples of these parameters, we advise reviewing our notebooks on insturments and instrument drivers.</p>
+</section>
+</section>
+<section id="Validating-parameters">
+<h3>Validating parameters<a class="headerlink" href="#Validating-parameters" title="Link to this heading"></a></h3>
+<p>When a parameter is set it is automatically validated against any validator set for that parameter. Most QCoDeS instrument drivers are configured to only validate input that the instrument can actually set. In the example of dac.ch1 the values that can be set are between -800 and 400. Sometimes it may however, be useful to be able to restrict the valid values even further, perhaps due to limitations in the range of a device under test or a specific calibration range. This can be done either by
+adding an additional validator or by using the <code class="docutils literal notranslate"><span class="pre">extra_validator</span></code> context manager.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Default validators: </span><span class="si">{</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">validators</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># if we try to set a value outside the range of the default validator we get an error.</span>
+<span class="k">try</span><span class="p">:</span>
+   <span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">(</span><span class="mi">450</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed to validate setting to 450.&quot;</span><span class="p">)</span>
+
+
+<span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">add_validator</span><span class="p">(</span><span class="n">validators</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span><span class="mi">300</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validator added: </span><span class="si">{</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">validators</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># with the new validator set we cannot set the value outside its range.</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">(</span><span class="mi">350</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed to validate setting to 350.&quot;</span><span class="p">)</span>
+
+<span class="c1"># but once it is removed we can again set any value in the range of the original validator.</span>
+<span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">remove_validator</span><span class="p">()</span>
+<span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">(</span><span class="mi">350</span><span class="p">)</span>
+
+<span class="c1"># we can also temorarily add a validator using a context manager.</span>
+
+<span class="k">with</span> <span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">extra_validator</span><span class="p">(</span><span class="n">validators</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span><span class="o">-</span><span class="mi">100</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Validator context: </span><span class="si">{</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">validators</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># with the new validator set we cannot set the value outside its range.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">(</span><span class="mi">250</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Failed to validate setting to 250 within context manager.&quot;</span><span class="p">)</span>
+<br/><br/><br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Default validators: (&lt;Numbers -800&lt;=v&lt;=400&gt;,)
+Failed to validate setting to 450.
+Validator added: (&lt;Numbers -800&lt;=v&lt;=400&gt;, &lt;Numbers -500&lt;=v&lt;=300&gt;)
+Failed to validate setting to 350.
+Validator context: (&lt;Numbers -800&lt;=v&lt;=400&gt;, &lt;Numbers -500&lt;=v&lt;=-100&gt;)
+Failed to validate setting to 250 within context manager.
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Parameter-With-Setpoints-defined-on-a-different-instrument.html" class="btn btn-neutral float-left" title="ParameterWithSetpoints with setpoints defined on another instrument." accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Scaled_Parameter.html" class="btn btn-neutral float-right" title="ScaledParameter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

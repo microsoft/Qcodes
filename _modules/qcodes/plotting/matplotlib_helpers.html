@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.plotting.matplotlib_helpers &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.plotting.matplotlib_helpers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.plotting.matplotlib_helpers</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.colorbar</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.auto_range</span> <span class="kn">import</span> <span class="n">DEFAULT_PERCENTILE</span><span class="p">,</span> <span class="n">auto_range_iqr</span>
+
+<span class="n">DEFAULT_COLOR_OVER</span> <span class="o">=</span> <span class="s2">&quot;Magenta&quot;</span>
+<span class="n">DEFAULT_COLOR_UNDER</span> <span class="o">=</span> <span class="s2">&quot;Cyan&quot;</span>
+
+<span class="n">_LOG</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">_EXTEND_TYPE</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;neither&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">_set_colorbar_extend</span><span class="p">(</span>
+    <span class="n">colorbar</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colorbar</span><span class="o">.</span><span class="n">Colorbar</span><span class="p">,</span>
+    <span class="n">extend</span><span class="p">:</span> <span class="n">_EXTEND_TYPE</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Workaround for a missing setter for the extend property of a matplotlib</span>
+<span class="sd">    colorbar.</span>
+
+<span class="sd">    The colorbar object in matplotlib has no setter method and setting the</span>
+<span class="sd">    colorbar extend does not take any effect.</span>
+<span class="sd">    Calling a subsequent update will cause a runtime</span>
+<span class="sd">    error because of the internal implementation of the rendering of the</span>
+<span class="sd">    colorbar. To circumvent this we need to manually specify the property</span>
+<span class="sd">    `_inside`, which is a slice that describes which of the colorbar levels</span>
+<span class="sd">    lie inside of the box and it is thereby dependent on the extend.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        colorbar: the colorbar for which to set the extend</span>
+<span class="sd">        extend: the desired extend (&#39;neither&#39;, &#39;both&#39;, &#39;min&#39; or &#39;max&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">colorbar</span><span class="o">.</span><span class="n">extend</span> <span class="o">=</span> <span class="n">extend</span>
+    <span class="n">_slice_dict</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;neither&quot;</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s2">&quot;both&quot;</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">colorbar</span><span class="o">.</span><span class="n">_inside</span> <span class="o">=</span> <span class="n">_slice_dict</span><span class="p">[</span><span class="n">extend</span><span class="p">]</span>  <span class="c1"># type: ignore[attr-defined]</span>
+
+
+<div class="viewcode-block" id="apply_color_scale_limits">
+<a class="viewcode-back" href="../../../api/plotting/index.html#qcodes.plotting.apply_color_scale_limits">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_color_scale_limits</span><span class="p">(</span>
+    <span class="n">colorbar</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colorbar</span><span class="o">.</span><span class="n">Colorbar</span><span class="p">,</span>
+    <span class="n">new_lim</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span>
+    <span class="n">data_lim</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">data_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">color_over</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">DEFAULT_COLOR_OVER</span><span class="p">,</span>
+    <span class="n">color_under</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">DEFAULT_COLOR_UNDER</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Applies limits to colorscale and updates extend.</span>
+
+<span class="sd">    This function applies the limits `new_lim` to the heatmap plot associated</span>
+<span class="sd">    with the provided `colorbar`, updates the colorbar limits, and also adds</span>
+<span class="sd">    the colorbar clipping indicators in form of small triangles on the top and</span>
+<span class="sd">    bottom of the colorbar, according to where the limits are exceeded.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        colorbar: The actual colorbar to be updated.</span>
+<span class="sd">        new_lim: 2-tuple of the desired minimum and maximum value of the color</span>
+<span class="sd">            scale. If any is `None` it will be left unchanged.</span>
+<span class="sd">        data_lim: 2-tuple of the actual minimum and maximum value of the data.</span>
+<span class="sd">            If left out the minimum and maximum are deduced from the provided</span>
+<span class="sd">            data, or the data associated with the colorbar.</span>
+<span class="sd">        data_array: Numpy array containing the data to be considered for</span>
+<span class="sd">            scaling. Must be left out if `data_lim` is provided. If neither is</span>
+<span class="sd">            provided the data associated with the colorbar is used.</span>
+<span class="sd">        color_over: Matplotlib color representing the datapoints clipped by the</span>
+<span class="sd">            upper limit.</span>
+<span class="sd">        color_under: Matplotlib color representing the datapoints clipped by</span>
+<span class="sd">            the lower limit.</span>
+
+<span class="sd">    Raise:</span>
+<span class="sd">        RuntimeError: If not received mesh data. Or if you specified both</span>
+<span class="sd">        `data_lim` and `data_array`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.collections</span>
+
+    <span class="c1"># browse the input data and make sure that `data_lim` and `new_lim` are</span>
+    <span class="c1"># available</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="p">,</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">collections</span><span class="o">.</span><span class="n">QuadMesh</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Can only scale mesh data, but received &quot;</span>
+            <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="p">)</span><span class="si">}</span><span class="s1">&quot; instead&#39;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">data_lim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">data_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data_array</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">get_array</span><span class="p">())</span>
+        <span class="n">data_lim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">data_array</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">data_array</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">data_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;You may not specify `data_lim` and `data_array` &quot;</span>
+            <span class="s2">&quot;at the same time. Please refer to the docstring of &quot;</span>
+            <span class="s2">&quot;`apply_color_scale_limits for details:</span><span class="se">\n\n</span><span class="s2">`&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">apply_color_scale_limits</span><span class="o">.</span><span class="vm">__doc__</span><span class="si">!s}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_lim</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">data_lim</span><span class="p">)))</span>
+    <span class="c1"># if `None` is provided in the new limits don&#39;t change this limit</span>
+    <span class="n">vlim</span> <span class="o">=</span> <span class="p">[</span><span class="n">new</span> <span class="ow">or</span> <span class="n">old</span> <span class="k">for</span> <span class="n">new</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">new_lim</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">get_clim</span><span class="p">())]</span>
+    <span class="c1"># sort limits in case they were given in a wrong order</span>
+    <span class="n">vlim</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">vlim</span><span class="p">)</span>
+    <span class="c1"># detect exceeding colorscale and apply new limits</span>
+    <span class="n">exceeds_min</span><span class="p">,</span> <span class="n">exceeds_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">data_lim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">vlim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">data_lim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">vlim</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">exceeds_min</span> <span class="ow">and</span> <span class="n">exceeds_max</span><span class="p">:</span>
+        <span class="n">extend</span><span class="p">:</span> <span class="n">_EXTEND_TYPE</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span>
+    <span class="k">elif</span> <span class="n">exceeds_min</span><span class="p">:</span>
+        <span class="n">extend</span> <span class="o">=</span> <span class="s2">&quot;min&quot;</span>
+    <span class="k">elif</span> <span class="n">exceeds_max</span><span class="p">:</span>
+        <span class="n">extend</span> <span class="o">=</span> <span class="s2">&quot;max&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">extend</span> <span class="o">=</span> <span class="s2">&quot;neither&quot;</span>
+    <span class="n">_set_colorbar_extend</span><span class="p">(</span><span class="n">colorbar</span><span class="p">,</span> <span class="n">extend</span><span class="p">)</span>
+    <span class="n">cmap</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">())</span>
+    <span class="n">cmap</span><span class="o">.</span><span class="n">set_over</span><span class="p">(</span><span class="n">color_over</span><span class="p">)</span>
+    <span class="n">cmap</span><span class="o">.</span><span class="n">set_under</span><span class="p">(</span><span class="n">color_under</span><span class="p">)</span>
+    <span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">set_cmap</span><span class="p">(</span><span class="n">cmap</span><span class="p">)</span>
+    <span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">set_clim</span><span class="p">(</span><span class="o">*</span><span class="n">vlim</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="apply_auto_color_scale">
+<a class="viewcode-back" href="../../../api/plotting/index.html#qcodes.plotting.apply_auto_color_scale">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_auto_color_scale</span><span class="p">(</span>
+    <span class="n">colorbar</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colorbar</span><span class="o">.</span><span class="n">Colorbar</span><span class="p">,</span>
+    <span class="n">data_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cutoff_percentile</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DEFAULT_PERCENTILE</span><span class="p">,</span>
+    <span class="n">color_over</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">DEFAULT_COLOR_OVER</span><span class="p">,</span>
+    <span class="n">color_under</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">DEFAULT_COLOR_UNDER</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets the color limits such that outliers are disregarded.</span>
+
+<span class="sd">    This method combines the automatic color scaling from</span>
+<span class="sd">    :meth:`auto_range_iqr` with the color bar setting from</span>
+<span class="sd">    :meth:`apply_color_scale_limits`.</span>
+<span class="sd">    If you want to adjust the color scale based on the configuration file</span>
+<span class="sd">    `qcodesrc.json`, use :meth:`auto_color_scale_from_config`, which is used</span>
+<span class="sd">    In :func:`qcodes.dataset.plotting.plot_by_id`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        colorbar: The matplotlib colorbar to which to apply.</span>
+<span class="sd">        data_array: The data on which the statistical analysis is based. If</span>
+<span class="sd">            left out, the data associated with the `colorbar` is used</span>
+<span class="sd">        cutoff_percentile: Percentile of data that may maximally be clipped</span>
+<span class="sd">            on both sides of the distribution.</span>
+<span class="sd">            If given a tuple (a,b) the percentile limits will be a and 100-b.</span>
+<span class="sd">        color_over: Matplotlib color representing the datapoints clipped by the</span>
+<span class="sd">            upper limit.</span>
+<span class="sd">        color_under: Matplotlib color representing the datapoints clipped by</span>
+<span class="sd">            the lower limit.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        RuntimeError: If not mesh data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.collections</span>
+    <span class="k">if</span> <span class="n">data_array</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="p">,</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">collections</span><span class="o">.</span><span class="n">QuadMesh</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Can only scale mesh data.&quot;</span><span class="p">)</span>
+        <span class="n">data_array</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">.</span><span class="n">mappable</span><span class="o">.</span><span class="n">get_array</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="n">data_array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">new_lim</span> <span class="o">=</span> <span class="n">auto_range_iqr</span><span class="p">(</span><span class="n">data_array</span><span class="p">,</span> <span class="n">cutoff_percentile</span><span class="p">)</span>
+    <span class="n">apply_color_scale_limits</span><span class="p">(</span>
+        <span class="n">colorbar</span><span class="p">,</span>
+        <span class="n">new_lim</span><span class="o">=</span><span class="n">new_lim</span><span class="p">,</span>
+        <span class="n">data_array</span><span class="o">=</span><span class="n">data_array</span><span class="p">,</span>
+        <span class="n">color_over</span><span class="o">=</span><span class="n">color_over</span><span class="p">,</span>
+        <span class="n">color_under</span><span class="o">=</span><span class="n">color_under</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="auto_color_scale_from_config">
+<a class="viewcode-back" href="../../../api/plotting/index.html#qcodes.plotting.auto_color_scale_from_config">[docs]</a>
+<span class="k">def</span> <span class="nf">auto_color_scale_from_config</span><span class="p">(</span>
+    <span class="n">colorbar</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colorbar</span><span class="o">.</span><span class="n">Colorbar</span><span class="p">,</span>
+    <span class="n">auto_color_scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">data_array</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cutoff_percentile</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">DEFAULT_PERCENTILE</span><span class="p">,</span>
+    <span class="n">color_over</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">color_under</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sets the color limits such that outliers are disregarded, depending on</span>
+<span class="sd">    the configuration file `qcodesrc.json`. If optional arguments are</span>
+<span class="sd">    passed the config values are overridden.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        colorbar: The colorbar to scale.</span>
+<span class="sd">        auto_color_scale: Enable smart colorscale. If `False` nothing happens.</span>
+<span class="sd">            Default value is read from</span>
+<span class="sd">            ``config.plotting.auto_color_scale.enabled``.</span>
+<span class="sd">        data_array: Numpy array containing the data to be considered for</span>
+<span class="sd">            scaling.</span>
+<span class="sd">        cutoff_percentile: The maxiumum percentile that is cut from the data.</span>
+<span class="sd">            Default value is read from</span>
+<span class="sd">            ``config.plotting.auto_color_scale.cutoff_percentile``.</span>
+<span class="sd">        color_over: Matplotlib color representing the datapoints clipped</span>
+<span class="sd">            by the upper limit. Default value is read from</span>
+<span class="sd">            ``config.plotting.auto_color_scale.color_over``.</span>
+<span class="sd">        color_under: Matplotlib color representing the datapoints clipped</span>
+<span class="sd">            by the lower limit. Default value is read from</span>
+<span class="sd">            ``config.plotting.auto_color_scale.color_under``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">qcodes</span>
+
+    <span class="k">if</span> <span class="n">colorbar</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_LOG</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s1">&#39;&quot;auto_color_scale_from_config&quot; did not receive a colorbar &#39;</span>
+            <span class="s2">&quot;for scaling. Are you trying to scale a plot without &quot;</span>
+            <span class="s2">&quot;colorbar?&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">auto_color_scale</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">auto_color_scale</span> <span class="o">=</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">plotting</span><span class="o">.</span><span class="n">auto_color_scale</span><span class="o">.</span><span class="n">enabled</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">auto_color_scale</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">color_over</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">color_over</span> <span class="o">=</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">plotting</span><span class="o">.</span><span class="n">auto_color_scale</span><span class="o">.</span><span class="n">color_over</span>
+    <span class="k">if</span> <span class="n">color_under</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">color_under</span> <span class="o">=</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">plotting</span><span class="o">.</span><span class="n">auto_color_scale</span><span class="o">.</span><span class="n">color_under</span>
+    <span class="k">if</span> <span class="n">cutoff_percentile</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cutoff_percentile</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">plotting</span><span class="o">.</span><span class="n">auto_color_scale</span><span class="o">.</span><span class="n">cutoff_percentile</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="n">apply_auto_color_scale</span><span class="p">(</span>
+        <span class="n">colorbar</span><span class="p">,</span> <span class="n">data_array</span><span class="p">,</span> <span class="n">cutoff_percentile</span><span class="p">,</span> <span class="n">color_over</span><span class="p">,</span> <span class="n">color_under</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

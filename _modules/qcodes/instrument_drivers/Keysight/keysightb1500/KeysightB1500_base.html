@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+    <link href="../../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">VisaInstrument</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">MultiParameter</span><span class="p">,</span> <span class="n">create_on_off_val_mapping</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">.KeysightB1500_module</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">B1500Module</span><span class="p">,</span>
+    <span class="n">StatusMixin</span><span class="p">,</span>
+    <span class="n">_FMTResponse</span><span class="p">,</span>
+    <span class="n">convert_dummy_val_to_nan</span><span class="p">,</span>
+    <span class="n">fmt_response_base_parser</span><span class="p">,</span>
+    <span class="n">parse_module_query_response</span><span class="p">,</span>
+    <span class="n">parse_spot_measurement_response</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.KeysightB1511B</span> <span class="kn">import</span> <span class="n">KeysightB1511B</span>
+<span class="kn">from</span> <span class="nn">.KeysightB1517A</span> <span class="kn">import</span> <span class="n">KeysightB1517A</span><span class="p">,</span> <span class="n">_ParameterWithStatus</span>
+<span class="kn">from</span> <span class="nn">.KeysightB1520A</span> <span class="kn">import</span> <span class="n">KeysightB1520A</span>
+<span class="kn">from</span> <span class="nn">.KeysightB1530A</span> <span class="kn">import</span> <span class="n">KeysightB1530A</span>
+<span class="kn">from</span> <span class="nn">.message_builder</span> <span class="kn">import</span> <span class="n">MessageBuilder</span>
+
+
+<div class="viewcode-block" id="KeysightB1500">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500">[docs]</a>
+<span class="k">class</span> <span class="nc">KeysightB1500</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Driver for Keysight B1500 Semiconductor Parameter Analyzer.</span>
+
+<span class="sd">    For the list of supported modules, refer to :meth:`from_model_name`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">calibration_time_out</span> <span class="o">=</span> <span class="mi">60</span>  <span class="c1"># 30 seconds suggested by manual</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">terminator</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">by_slot</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">SlotNr</span><span class="p">,</span> <span class="n">B1500Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">by_channel</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">,</span> <span class="n">B1500Module</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">by_kind</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ModuleKind</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">B1500Module</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_find_modules</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;autozero_enabled&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Autozero enabled of the high-resolution ADC&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_autozero</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span>
+                               <span class="n">on_val</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+                           <span class="n">initial_cache_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            Enable or disable cancelling of the offset of the</span>
+<span class="s2">            high-resolution A/D converter (ADC).</span>
+
+<span class="s2">            Set the function to OFF in cases that the measurement speed is</span>
+<span class="s2">            more important than the measurement accuracy. This roughly halves</span>
+<span class="s2">            the integration time.&quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;run_iv_staircase_sweep&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">IVSweepMeasurement</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">               This is MultiParameter. Running the sweep runs the measurement</span>
+<span class="s2">               on the list of source values defined using</span>
+<span class="s2">               `setup_staircase_sweep` method. The output is a</span>
+<span class="s2">               primary parameter (e.g. Gate current)  and a secondary</span>
+<span class="s2">               parameter (e.g. Source/Drain current) both of which use the same</span>
+<span class="s2">               setpoints. Note you must `set_measurement_mode` and specify</span>
+<span class="s2">               2 channels as the argument before running the sweep. First</span>
+<span class="s2">               channel (SMU) must be the channel on which you set the sweep (</span>
+<span class="s2">               WV) and second channel(SMU) must be the one which remains at</span>
+<span class="s2">               constants voltage.</span>
+<span class="s2">                              &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="KeysightB1500.write">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.write">[docs]</a>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extend write method from the super to ask for error message each</span>
+<span class="sd">        time a write command is called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">error_message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">error_message</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">error_message</span> <span class="o">!=</span> <span class="s1">&#39;+0,&quot;No Error.&quot;&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;While setting this parameter received &quot;</span>
+                               <span class="sa">f</span><span class="s2">&quot;error: </span><span class="si">{</span><span class="n">error_message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.add_module">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.add_module">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">B1500Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">by_kind</span><span class="p">[</span><span class="n">module</span><span class="o">.</span><span class="n">MODULE_KIND</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">by_slot</span><span class="p">[</span><span class="n">module</span><span class="o">.</span><span class="n">slot_nr</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">by_channel</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.reset">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Performs an instrument reset.</span>
+
+<span class="sd">        This does not reset error queue!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;*RST&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.get_status">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.get_status">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;*STB?&quot;</span><span class="p">))</span></div>
+
+
+    <span class="c1"># TODO: Data Output parser: At least for Format FMT1,0 and maybe for a</span>
+    <span class="c1"># second (binary) format. 8 byte binary format would be nice because it</span>
+    <span class="c1"># comes with time stamp</span>
+    <span class="c1"># FMT1,0: ASCII (12 digits data with header) &lt;CR/LF^EOI&gt;</span>
+
+    <span class="k">def</span> <span class="nf">_find_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">.constants</span> <span class="kn">import</span> <span class="n">UNT</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span>
+                     <span class="o">.</span><span class="n">unt_query</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">UNT</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">MODULE_INFO_ONLY</span><span class="p">)</span>
+                     <span class="o">.</span><span class="n">message</span>
+                     <span class="p">)</span>
+
+        <span class="n">slot_population</span> <span class="o">=</span> <span class="n">parse_module_query_response</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">slot_nr</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">slot_population</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_model_name</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">slot_nr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">module</span><span class="o">.</span><span class="n">short_name</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="n">module</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KeysightB1500.from_model_name">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.from_model_name">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_model_name</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">slot_nr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="s1">&#39;KeysightB1500&#39;</span><span class="p">,</span>
+                        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;B1500Module&#39;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates the correct instance of instrument module by model name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model: Model name such as &#39;B1517A&#39;</span>
+<span class="sd">            slot_nr: Slot number of this module (not channel number)</span>
+<span class="sd">            parent: Reference to B1500 mainframe instance</span>
+<span class="sd">            name: Name of the instrument instance to create. If `None`</span>
+<span class="sd">                (Default), then the name is autogenerated from the instrument</span>
+<span class="sd">                class.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A specific instance of :class:`.B1500Module`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;B1511B&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">KeysightB1511B</span><span class="p">(</span><span class="n">slot_nr</span><span class="o">=</span><span class="n">slot_nr</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;B1517A&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">KeysightB1517A</span><span class="p">(</span><span class="n">slot_nr</span><span class="o">=</span><span class="n">slot_nr</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;B1520A&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">KeysightB1520A</span><span class="p">(</span><span class="n">slot_nr</span><span class="o">=</span><span class="n">slot_nr</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;B1530A&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">KeysightB1530A</span><span class="p">(</span><span class="n">slot_nr</span><span class="o">=</span><span class="n">slot_nr</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Module type </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2"> in slot&quot;</span>
+                                      <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">slot_nr</span><span class="si">}</span><span class="s2"> not yet supported.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.enable_channels">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.enable_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">enable_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChannelList</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enable specified channels.</span>
+
+<span class="sd">        If channels is omitted or `None`, then all channels are enabled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">cn</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.disable_channels">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.disable_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">disable_channels</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">channels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChannelList</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Disable specified channels.</span>
+
+<span class="sd">        If channels is omitted or `None`, then all channels are disabled.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">cl</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+
+
+    <span class="c1"># Response parsing functions as static methods for user convenience</span>
+    <span class="n">parse_spot_measurement_response</span> <span class="o">=</span> <span class="n">parse_spot_measurement_response</span>
+    <span class="n">parse_module_query_response</span> <span class="o">=</span> <span class="n">parse_module_query_response</span>
+
+    <span class="k">def</span> <span class="nf">_setup_integration_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                <span class="n">adc_type</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span>
+                                <span class="n">mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+                                <span class="n">coeff</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                                <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;See :meth:`MessageBuilder.ait` for information&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">coeff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">coeff</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">coeff</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span>
+                   <span class="o">.</span><span class="n">ait</span><span class="p">(</span><span class="n">adc_type</span><span class="o">=</span><span class="n">adc_type</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">coeff</span><span class="o">=</span><span class="n">coeff</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">message</span>
+                   <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_reset_measurement_statuses_of_smu_spot_measurement_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">parameter_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">parameter_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;voltage&#39;</span><span class="p">,</span> <span class="s1">&#39;current&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parameter name should be one of [voltage,current], &#39;</span>
+                             <span class="sa">f</span><span class="s1">&#39;got </span><span class="si">{</span><span class="n">parameter_name</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">smu</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">by_kind</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ModuleKind</span><span class="o">.</span><span class="n">SMU</span><span class="p">]:</span>
+            <span class="n">param</span> <span class="o">=</span> <span class="n">smu</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">_ParameterWithStatus</span><span class="p">)</span>
+            <span class="n">param</span><span class="o">.</span><span class="n">_measurement_status</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="KeysightB1500.use_nplc_for_high_speed_adc">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.use_nplc_for_high_speed_adc">[docs]</a>
+    <span class="k">def</span> <span class="nf">use_nplc_for_high_speed_adc</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the high-speed ADC to NPLC mode, with optionally defining number</span>
+<span class="sd">        of averaging samples via argument `n`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: Value that defines the number of averaging samples given by</span>
+<span class="sd">                the following formula:</span>
+
+<span class="sd">                ``Number of averaging samples = n / 128``.</span>
+
+<span class="sd">                n=1 to 100. Default setting is 1 (if `None` is passed).</span>
+
+<span class="sd">                The Keysight B1500 gets 128 samples in a power line cycle,</span>
+<span class="sd">                repeats this for the times you specify, and performs</span>
+<span class="sd">                averaging to get the measurement data. (For more info see</span>
+<span class="sd">                Table 4-21.).  Note that the integration time will not be</span>
+<span class="sd">                updated if a non-integer value is written to the B1500.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_integration_time</span><span class="p">(</span>
+            <span class="n">adc_type</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">HIGH_SPEED</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">NPLC</span><span class="p">,</span>
+            <span class="n">coeff</span><span class="o">=</span><span class="n">n</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.use_nplc_for_high_resolution_adc">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.use_nplc_for_high_resolution_adc">[docs]</a>
+    <span class="k">def</span> <span class="nf">use_nplc_for_high_resolution_adc</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the high-resolution ADC to NPLC mode, with optionally defining</span>
+<span class="sd">        the number of PLCs per sample via argument `n`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: Value that defines the integration time given by the</span>
+<span class="sd">                following formula:</span>
+
+<span class="sd">                ``Integration time = n / power line frequency``.</span>
+
+<span class="sd">                n=1 to 100. Default setting is 1 (if `None` is passed).</span>
+<span class="sd">                (For more info see Table 4-21.).  Note that the integration</span>
+<span class="sd">                time will not be updated if a non-integer value is written</span>
+<span class="sd">                to the B1500.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_integration_time</span><span class="p">(</span>
+            <span class="n">adc_type</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">HIGH_RESOLUTION</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">NPLC</span><span class="p">,</span>
+            <span class="n">coeff</span><span class="o">=</span><span class="n">n</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.use_manual_mode_for_high_speed_adc">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.use_manual_mode_for_high_speed_adc">[docs]</a>
+    <span class="k">def</span> <span class="nf">use_manual_mode_for_high_speed_adc</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the high-speed ADC to manual mode, with optionally defining number</span>
+<span class="sd">        of averaging samples via argument `n`.</span>
+
+<span class="sd">        Use ``n=1`` to disable averaging (``n=None`` uses the default</span>
+<span class="sd">        setting from the instrument which is also ``n=1``).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n: Number of averaging samples, between 1 and 1023. Default</span>
+<span class="sd">                setting is 1. (For more info see Table 4-21.)</span>
+<span class="sd">                Note that the integration time will not be updated</span>
+<span class="sd">                if a non-integer value is written to the B1500.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setup_integration_time</span><span class="p">(</span>
+            <span class="n">adc_type</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">HIGH_SPEED</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">AIT</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">MANUAL</span><span class="p">,</span>
+            <span class="n">coeff</span><span class="o">=</span><span class="n">n</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_set_autozero</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">do_autozero</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">az</span><span class="p">(</span><span class="n">do_autozero</span><span class="o">=</span><span class="n">do_autozero</span><span class="p">)</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KeysightB1500.self_calibration">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.self_calibration">[docs]</a>
+    <span class="k">def</span> <span class="nf">self_calibration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                         <span class="n">slot</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">SlotNr</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+                         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">constants</span><span class="o">.</span><span class="n">CALResponse</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs the self calibration of the specified module (SMU) and</span>
+<span class="sd">        returns the result. Failed modules are disabled, and can only be</span>
+<span class="sd">        enabled by the ``RCV`` command.</span>
+
+<span class="sd">        Calibration takes about 30 seconds (the visa timeout for it is</span>
+<span class="sd">        controlled by :attr:`calibration_time_out` attribute).</span>
+
+<span class="sd">        Execution Conditions: No SMU may be in the high voltage state</span>
+<span class="sd">        (forcing more than ±42 V, or voltage compliance set to more than</span>
+<span class="sd">        ±42 V). Before starting the calibration, open the measurement</span>
+<span class="sd">        terminals.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot: Slot number of the slot that installs the module to perform</span>
+<span class="sd">                the self-calibration. For Ex:</span>
+<span class="sd">                constants.SlotNr.ALL, MAINFRAME, SLOT01, SLOT02 ...SLOT10</span>
+<span class="sd">                If not specified, the calibration is performed for all the</span>
+<span class="sd">                modules and the mainframe.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">cal_query</span><span class="p">(</span><span class="n">slot</span><span class="o">=</span><span class="n">slot</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calibration_time_out</span><span class="p">):</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constants</span><span class="o">.</span><span class="n">CALResponse</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">response</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.error_message">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.error_message">[docs]</a>
+    <span class="k">def</span> <span class="nf">error_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ERRX</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span>
+                                                 <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method reads one error code from the head of the error</span>
+<span class="sd">        queue and removes that code from the queue. The read error is</span>
+<span class="sd">        returned as the response of this method.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode: If no valued passed returns both the error value and the</span>
+<span class="sd">                error message. See :class:`.constants.ERRX.Mode` for possible</span>
+<span class="sd">                arguments.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            In the default case response message contains an error message</span>
+<span class="sd">            and a custom message containing additional information such as</span>
+<span class="sd">            the slot number. They are separated by a semicolon (;). For</span>
+<span class="sd">            example, if the error 305 occurs on the slot 1, this method</span>
+<span class="sd">            returns the following response. 305,&quot;Excess current in HPSMU.;</span>
+<span class="sd">            SLOT1&quot; If no error occurred, this command returns 0,&quot;No Error.&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">errx_query</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.clear_buffer_of_error_message">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.clear_buffer_of_error_message">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_buffer_of_error_message</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method clears the error message stored in buffer when the</span>
+<span class="sd">        error_message command is executed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">err_query</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.clear_timer_count">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.clear_timer_count">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_timer_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chnum</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This command clears the timer count. This command is effective for</span>
+<span class="sd">        all measurement modes, regardless of the TSC setting. This command</span>
+<span class="sd">        is not effective for the 4 byte binary data output format</span>
+<span class="sd">        (FMT3 and FMT4).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            chnum: SMU or MFCMU channel number. Integer expression. 1 to 10.</span>
+<span class="sd">                See Table 4-1 on page 16 of 2016 manual. If chnum is</span>
+<span class="sd">                specified, this command clears the timer count once at the</span>
+<span class="sd">                source output start by the DV, DI, or DCV command for the</span>
+<span class="sd">                specified channel. The channel output switch of the</span>
+<span class="sd">                specified channel must be ON when the timer count is</span>
+<span class="sd">                cleared.</span>
+
+<span class="sd">        If chnum is not specified, this command clears the timer count</span>
+<span class="sd">        immediately,</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">tsr</span><span class="p">(</span><span class="n">chnum</span><span class="o">=</span><span class="n">chnum</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.set_measurement_mode">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.set_measurement_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_measurement_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                             <span class="n">mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+                             <span class="n">channels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChannelList</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                             <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method specifies the measurement mode and the channels used</span>
+<span class="sd">        for measurements. This method must be entered to specify the</span>
+<span class="sd">        measurement mode. For the high speed spot measurements,</span>
+<span class="sd">        do not use this method.</span>
+<span class="sd">        NOTE Order of the channels are important. The SMU which is setup to</span>
+<span class="sd">        run the sweep goes first.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode: Measurement mode. See `constants.MM.Mode` for all possible</span>
+<span class="sd">                modes</span>
+<span class="sd">            channels: Measurement channel number. See `constants.ChannelList`</span>
+<span class="sd">                for all possible channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">)</span><span class="o">.</span><span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.get_measurement_mode">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.get_measurement_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_measurement_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method gets the measurement mode(MM) and the channels used</span>
+<span class="sd">        for measurements. It outputs a dictionary with &#39;mode&#39; and</span>
+<span class="sd">        &#39;channels&#39; as keys.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">lrn_query</span><span class="p">(</span><span class="n">type_id</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LRN</span><span class="o">.</span>
+                                         <span class="n">Type</span><span class="o">.</span><span class="n">TM_AV_CM_FMT_MM_SETTINGS</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;MM(?P&lt;mode&gt;.*?),(?P&lt;channels&gt;.*?)(;|$)&#39;</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Measurement Mode (MM) not found.&#39;</span><span class="p">)</span>
+
+        <span class="n">out_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">resp_dict</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+        <span class="n">out_dict</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]))</span>
+        <span class="n">out_dict</span><span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">resp_dict</span><span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">out_dict</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.get_response_format_and_mode">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.get_response_format_and_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_response_format_and_mode</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">FMT</span><span class="o">.</span><span class="n">Format</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">FMT</span><span class="o">.</span><span class="n">Mode</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method queries the the data output format and mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">lrn_query</span><span class="p">(</span><span class="n">type_id</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LRN</span><span class="o">.</span>
+                                         <span class="n">Type</span><span class="o">.</span><span class="n">TM_AV_CM_FMT_MM_SETTINGS</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;FMT(?P&lt;format&gt;.*?),(?P&lt;mode&gt;.*?)(;|$)&#39;</span><span class="p">,</span>
+                          <span class="n">response</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Measurement Mode (FMT) not found.&#39;</span><span class="p">)</span>
+
+        <span class="n">out_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">FMT</span><span class="o">.</span><span class="n">Format</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">FMT</span><span class="o">.</span><span class="n">Mode</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">resp_dict</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+        <span class="n">out_dict</span><span class="p">[</span><span class="s1">&#39;format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">FMT</span><span class="o">.</span><span class="n">Format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span>
+                                                          <span class="s1">&#39;format&#39;</span><span class="p">]))</span>
+        <span class="n">out_dict</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">FMT</span><span class="o">.</span><span class="n">Mode</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">out_dict</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1500.enable_smu_filters">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500.enable_smu_filters">[docs]</a>
+    <span class="k">def</span> <span class="nf">enable_smu_filters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">enable_filter</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+            <span class="n">channels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChannelList</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This methods sets the connection mode of a SMU filter for each channel.</span>
+<span class="sd">        A filter is mounted on the SMU. It assures clean source output with</span>
+<span class="sd">        no spikes or overshooting. A maximum of ten channels can be set.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            enable_filter : Status of the filter.</span>
+<span class="sd">                False: Disconnect (initial setting).</span>
+<span class="sd">                True: Connect.</span>
+<span class="sd">            channels : SMU channel number. Specify channel from</span>
+<span class="sd">                `constants.ChNr` If you do not specify chnum,  the FL</span>
+<span class="sd">                command sets the same mode for all channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">fl</span><span class="p">(</span><span class="n">enable_filter</span><span class="o">=</span><span class="n">enable_filter</span><span class="p">,</span>
+                                       <span class="n">channels</span><span class="o">=</span><span class="n">channels</span><span class="p">)</span><span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">IVSweepMeasurement</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">,</span> <span class="n">StatusMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    IV sweep measurement outputs a list of measured current parameters</span>
+<span class="sd">    as a result of voltage sweep.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: Name of the Parameter.</span>
+<span class="sd">        instrument: Instrument to which this parameter communicates to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument</span><span class="p">:</span> <span class="n">KeysightB1517A</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;param1&#39;</span><span class="p">,</span> <span class="s1">&#39;param2&#39;</span><span class="p">]),</span>
+            <span class="n">units</span><span class="o">=</span><span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">]),</span>
+            <span class="n">labels</span><span class="o">=</span><span class="nb">tuple</span><span class="p">([</span><span class="s1">&#39;Param1 Current&#39;</span><span class="p">,</span> <span class="s1">&#39;Param2 Current&#39;</span><span class="p">]),</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((</span><span class="mi">1</span><span class="p">,),)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">setpoint_names</span><span class="o">=</span><span class="p">((</span><span class="s1">&#39;Voltage&#39;</span><span class="p">,),)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">setpoint_labels</span><span class="o">=</span><span class="p">((</span><span class="s1">&#39;Voltage&#39;</span><span class="p">,),)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">setpoint_units</span><span class="o">=</span><span class="p">((</span><span class="s1">&#39;V&#39;</span><span class="p">,),)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="c1"># the parameter classes should ideally be generic in instrument</span>
+        <span class="c1"># and root instrument classes so we can specialize here.</span>
+        <span class="c1"># for now we have to ignore a type error from pyright</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">:</span> <span class="p">(</span>  <span class="c1"># pyright: ignore[reportIncompatibleMethodOverride]</span>
+            <span class="n">KeysightB1517A</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="p">:</span> <span class="p">(</span>  <span class="c1"># pyright: ignore[reportIncompatibleMethodOverride]</span>
+            <span class="n">KeysightB1500</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">param1</span> <span class="o">=</span> <span class="n">_FMTResponse</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param2</span> <span class="o">=</span> <span class="n">_FMTResponse</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_voltage</span> <span class="o">=</span> <span class="n">_FMTResponse</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fudge</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5</span>
+
+    <span class="k">def</span> <span class="nf">set_names_labels_and_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                   <span class="n">names</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">labels</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                                   <span class="n">units</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+                                   <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set names, labels, and units of the measured parts of the MultiParameter.</span>
+
+<span class="sd">        If units are not provided, &quot;A&quot; will be used because this parameter</span>
+<span class="sd">        measures currents.</span>
+
+<span class="sd">        If labels are not provided, names will be used.</span>
+
+<span class="sd">        If names are not provided, ``param#`` will be used as names; the number</span>
+<span class="sd">        of those names will be the same as the number of measured channels</span>
+<span class="sd">        that ``B1500.get_measurement_mode`` method returns. Note that it is</span>
+<span class="sd">        possible to not provide names and provide labels at the same time.</span>
+<span class="sd">        In case, neither names nor labels are provided, the labels will be</span>
+<span class="sd">        generated as ``Param# Current``.</span>
+
+<span class="sd">        The number of provided names, labels, and units must be the same.</span>
+<span class="sd">        Moreover, that number has to be equal to the number of channels</span>
+<span class="sd">        that ``B1500.get_measurement_mode`` method returns. It is</span>
+<span class="sd">        recommended to set measurement mode and number of channels first,</span>
+<span class="sd">        and only then call this method to provide names/labels/units.</span>
+
+<span class="sd">        The name/label/unit of the setpoint of this parameter will also be</span>
+<span class="sd">        updated to defaults dictated by the</span>
+<span class="sd">        ``set_setpoint_name_label_and_unit`` method.</span>
+
+<span class="sd">        Note that ``.shapes`` of this parameter will also be updated to</span>
+<span class="sd">        be in sync with the number of names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">measurement_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">get_measurement_mode</span><span class="p">()</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">measurement_mode</span><span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;param</span><span class="si">{</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">))]</span>
+            <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Param</span><span class="si">{</span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> Current&quot;</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">))]</span>
+
+        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">units</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">units</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">units</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;If provided, the number of names, labels, and units must be &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the same, instead got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s2"> names, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;labels, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">units</span><span class="p">)</span><span class="si">}</span><span class="s2"> units.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The number of names (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s2">) does not match the number &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;of channels expected for the IV sweep measurement, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;which is </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span><span class="si">}</span><span class="s2">. Please, when providing names, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;provide them for every channel.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">units</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;param</span><span class="si">{</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">_FMTResponse</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shapes</span> <span class="o">=</span> <span class="p">((</span><span class="mi">1</span><span class="p">,),)</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_setpoint_name_label_and_unit</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">set_setpoint_name_label_and_unit</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">unit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set name, label, and unit of the setpoint of the MultiParameter.</span>
+
+<span class="sd">        If unit is not provided, &quot;V&quot; will be used because this parameter</span>
+<span class="sd">        sweeps voltage.</span>
+
+<span class="sd">        If label is not provided, &quot;Voltage&quot; will be used.</span>
+
+<span class="sd">        If name are not provided, ``voltage`` will be used.</span>
+
+<span class="sd">        The attributes describing the setpoints of this MultiParameter</span>
+<span class="sd">        will be updated to match the number of measured parameters of</span>
+<span class="sd">        this MultiParameter, as dictated by ``.names``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># number of measured parameters of this MultiParameter</span>
+        <span class="n">n_names</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;voltage&quot;</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">label</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;Voltage&quot;</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;V&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoint_names</span> <span class="o">=</span> <span class="p">((</span><span class="n">name</span><span class="p">,),)</span> <span class="o">*</span> <span class="n">n_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoint_labels</span> <span class="o">=</span> <span class="p">((</span><span class="n">label</span><span class="p">,),)</span> <span class="o">*</span> <span class="n">n_names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoint_units</span> <span class="o">=</span> <span class="p">((</span><span class="n">unit</span><span class="p">,),)</span> <span class="o">*</span> <span class="n">n_names</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="n">measurement_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">get_measurement_mode</span><span class="p">()</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">measurement_mode</span><span class="p">[</span><span class="s1">&#39;channels&#39;</span><span class="p">]</span>
+        <span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_channels</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;At least one measurement channel is needed for &#39;</span>
+                             <span class="s1">&#39;an IV sweep.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_channels</span>
+                <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_channels</span>
+                <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_channels</span>
+                <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shapes</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_channels</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The number of `.names` (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s2">), &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;`.units` (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">)</span><span class="si">}</span><span class="s2">), `.labels` (&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span><span class="si">}</span><span class="s2">), or `.shapes` (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shapes</span><span class="p">)</span><span class="si">}</span><span class="s2">) &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;of the </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> parameter &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;does not match the number of channels expected for the IV &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;sweep measurement, which is </span><span class="si">{</span><span class="n">n_channels</span><span class="si">}</span><span class="s2">. One must set &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;enough names, units, and labels for all the channels that &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;are to be measured.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">smu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">by_channel</span><span class="p">[</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">smu</span><span class="o">.</span><span class="n">setup_fnc_already_run</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Sweep setup has not yet been run successfully &#39;</span>
+                            <span class="sa">f</span><span class="s1">&#39;on </span><span class="si">{</span><span class="n">smu</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">delay_time</span> <span class="o">=</span> <span class="n">smu</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">step_delay</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">smu</span><span class="o">.</span><span class="n">_average_coefficient</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># negative coefficient means nplc and positive means just</span>
+            <span class="c1"># averaging, see B1517A.set_average_samples_for_high_speed_adc</span>
+            <span class="c1"># for more info</span>
+            <span class="n">nplc</span> <span class="o">=</span> <span class="mi">128</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">smu</span><span class="o">.</span><span class="n">_average_coefficient</span><span class="p">)</span>
+            <span class="n">power_line_time_period</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">smu</span><span class="o">.</span><span class="n">power_line_frequency</span>
+            <span class="n">calculated_time</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">nplc</span> <span class="o">*</span> <span class="n">power_line_time_period</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">calculated_time</span> <span class="o">=</span> <span class="n">smu</span><span class="o">.</span><span class="n">_average_coefficient</span> <span class="o">*</span> <span class="n">delay_time</span>
+        <span class="n">num_steps</span> <span class="o">=</span> <span class="n">smu</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">sweep_steps</span><span class="p">()</span>
+        <span class="n">estimated_timeout</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">delay_time</span><span class="p">,</span> <span class="n">calculated_time</span><span class="p">)</span> <span class="o">*</span> <span class="n">num_steps</span>
+        <span class="n">new_timeout</span> <span class="o">=</span> <span class="n">estimated_timeout</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fudge</span>
+
+        <span class="n">format_and_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">get_response_format_and_mode</span><span class="p">()</span>
+        <span class="n">fmt_format</span> <span class="o">=</span> <span class="n">format_and_mode</span><span class="p">[</span><span class="s1">&#39;format&#39;</span><span class="p">]</span>
+        <span class="n">fmt_mode</span> <span class="o">=</span> <span class="n">format_and_mode</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">fmt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="n">new_timeout</span><span class="p">):</span>
+                <span class="n">raw_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">xe</span><span class="p">()</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">fmt</span><span class="p">(</span><span class="n">fmt_format</span><span class="p">,</span>
+                                                            <span class="n">fmt_mode</span><span class="p">)</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">parsed_data</span> <span class="o">=</span> <span class="n">fmt_response_base_parser</span><span class="p">(</span><span class="n">raw_data</span><span class="p">)</span>
+
+        <span class="c1"># The `4` comes from the len(_FMTResponse(None, None, None, None)),</span>
+        <span class="c1"># the _FMTResponse tuple declares these items that the instrument</span>
+        <span class="c1"># gives for each data point</span>
+        <span class="n">n_items_per_data_point</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="c1"># sourced voltage values are also returned, hence the `+1`</span>
+        <span class="n">n_all_data_channels</span> <span class="o">=</span> <span class="n">n_channels</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">channel_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_channels</span><span class="p">):</span>
+            <span class="n">parsed_data_items</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">parsed_data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">channel_index</span><span class="p">::</span><span class="n">n_all_data_channels</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_items_per_data_point</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="n">single_channel_data</span> <span class="o">=</span> <span class="n">_FMTResponse</span><span class="p">(</span><span class="o">*</span><span class="n">parsed_data_items</span><span class="p">)</span>
+            <span class="n">convert_dummy_val_to_nan</span><span class="p">(</span><span class="n">single_channel_data</span><span class="p">)</span>
+
+            <span class="c1"># Store the results to `.param#` attributes for convenient access</span>
+            <span class="c1"># to all the data, e.g. status of each value in the arrays</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;param</span><span class="si">{</span><span class="n">channel_index</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">single_channel_data</span><span class="p">)</span>
+
+        <span class="n">channel_values_to_return</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;param</span><span class="si">{</span><span class="n">n</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_channels</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">source_voltage_index</span> <span class="o">=</span> <span class="n">n_channels</span>
+        <span class="n">parsed_source_voltage_items</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">parsed_data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">source_voltage_index</span><span class="p">::</span><span class="n">n_all_data_channels</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_items_per_data_point</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_voltage</span> <span class="o">=</span> <span class="n">_FMTResponse</span><span class="p">(</span><span class="o">*</span><span class="n">parsed_source_voltage_items</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shapes</span> <span class="o">=</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_voltage</span><span class="o">.</span><span class="n">value</span><span class="p">),),)</span> <span class="o">*</span> <span class="n">n_channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">source_voltage</span><span class="o">.</span><span class="n">value</span><span class="p">,),)</span> <span class="o">*</span> <span class="n">n_channels</span>
+
+        <span class="k">return</span> <span class="n">channel_values_to_return</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

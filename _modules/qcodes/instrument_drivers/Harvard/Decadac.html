@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Harvard.Decadac &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Harvard.Decadac</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Harvard.Decadac</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">qcodes.validators</span> <span class="k">as</span> <span class="nn">vals</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">ChannelList</span><span class="p">,</span> <span class="n">InstrumentChannel</span><span class="p">,</span> <span class="n">VisaInstrument</span>
+
+<span class="n">number</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="HarvardDecadacException">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadacException">[docs]</a>
+<span class="k">class</span> <span class="nc">HarvardDecadacException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+
+<span class="n">DACException</span> <span class="o">=</span> <span class="n">HarvardDecadacException</span>
+
+<span class="k">class</span> <span class="nc">DacReader</span><span class="p">:</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_dac_parse</span><span class="p">(</span><span class="n">resp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parses responses from the DAC. They should take the form of</span>
+<span class="sd">        &quot;&lt;cmd&gt;&lt;resp&gt;!&quot; This command returns the value of resp.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;!&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unexpected terminator on response: </span><span class="si">{</span><span class="n">resp</span><span class="si">}</span><span class="s2">. Should end with &#39;!&#39;&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">resp</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_dac_v_to_code</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volt</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a voltage to the internal dac code (number between 0-65536)</span>
+<span class="sd">        based on the minimum/maximum values of a given channel.</span>
+<span class="sd">        Midrange is 32768.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">volt</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span> <span class="ow">or</span> <span class="n">volt</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot convert voltage </span><span class="si">{</span><span class="n">volt</span><span class="si">}</span><span class="s2"> V to a voltage code, value out of range &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="si">}</span><span class="s2"> V - </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_val</span><span class="si">}</span><span class="s2"> V).&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">frac</span> <span class="o">=</span> <span class="p">(</span><span class="n">volt</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">frac</span> <span class="o">*</span> <span class="mi">65536</span><span class="p">))</span>
+        <span class="c1"># extra check to be absolutely sure that the instrument does nothing</span>
+        <span class="c1"># receive an out-of-bounds value</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mi">65535</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Voltage (</span><span class="si">{</span><span class="n">volt</span><span class="si">}</span><span class="s2"> V) resulted in the voltage code </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">&quot;, which is not within the allowed range.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="nf">_dac_code_to_v</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a voltage to the internal dac code (number between 0-65536)</span>
+<span class="sd">        based on the minimum/maximum values of a given channel.</span>
+<span class="sd">        Midrange is 32768.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">frac</span> <span class="o">=</span> <span class="n">code</span><span class="o">/</span><span class="mf">65536.0</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">frac</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">))</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span>
+
+    <span class="k">def</span> <span class="nf">_set_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the active DAC slot</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;B</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_slot</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_parse</span><span class="p">(</span><span class="n">resp</span><span class="p">))</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slot</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span>
+                <span class="s2">&quot;Unexpected return from DAC when setting slot: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">resp</span><span class="si">}</span><span class="s2">. DAC slot may not have been set.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the active DAC channel</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;B</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_slot</span><span class="si">}</span><span class="s2">;C</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="sa">f</span><span class="s2">&quot;B</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_slot</span><span class="si">}</span><span class="s2">!C</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Unexpected return from DAC when setting &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;channel: </span><span class="si">{</span><span class="n">resp</span><span class="si">}</span><span class="s2">. DAC channel may not have &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;been set.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_query_address</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">count</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                       <span class="n">versa_eeprom</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Query the value at the dac address given.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            addr (int): The address to query.</span>
+
+<span class="sd">            count (int): The number of bytes to query.</span>
+
+<span class="sd">            versa_eeprom(bool): do we want to read from the versadac</span>
+<span class="sd">            (slot) EEPROM</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if we actually have anything to query</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="c1"># Validate address</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">addr</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">addr</span> <span class="o">&gt;</span> <span class="mi">1107296266</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid address </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Choose a poke command depending on whether we are querying a</span>
+        <span class="c1"># VERSADAC eeprom or main memory</span>
+        <span class="c1"># If we are writing to a VERSADAC, we must also set the slot.</span>
+        <span class="k">if</span> <span class="n">versa_eeprom</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_slot</span><span class="p">()</span>
+            <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;e;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;p;&quot;</span>
+
+        <span class="c1"># Read a number of bytes from the device and convert to an int</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">count</span><span class="p">):</span>
+            <span class="c1"># Set DAC to point to address</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_parse</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A</span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)))</span>  <span class="c1"># type: ignore[attr-defined]</span>
+            <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="n">addr</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to set EEPROM address </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span>  <span class="c1"># type: ignore[attr-defined]</span>
+                <span class="n">query_command</span><span class="p">)))</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="mi">32</span><span class="o">*</span><span class="p">(</span><span class="n">count</span><span class="o">-</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">addr</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="nf">_write_address</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                       <span class="n">versa_eeprom</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a value to a given DAC address</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            addr (int): The address to query.</span>
+
+<span class="sd">            val (int): The value to write.</span>
+
+<span class="sd">            versa_eeprom(bool): do we want to read</span>
+<span class="sd">             from the versadac (slot) EEPROM</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Validate address</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">addr</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">addr</span> <span class="o">&gt;</span> <span class="mi">1107296266</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid address </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate value</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Writing invalid value (</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">) to address </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Choose a poke command depending on whether we are querying a</span>
+        <span class="c1"># VERSADAC eeprom or main memory. If we are writing to a versadac</span>
+        <span class="c1"># channel we must also set the slot</span>
+        <span class="k">if</span> <span class="n">versa_eeprom</span><span class="p">:</span>
+            <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;e;&quot;</span>
+            <span class="n">write_command</span> <span class="o">=</span> <span class="s2">&quot;E&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_slot</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">query_command</span> <span class="o">=</span> <span class="s2">&quot;p;&quot;</span>
+            <span class="n">write_command</span> <span class="o">=</span> <span class="s2">&quot;P&quot;</span>
+
+        <span class="c1"># Write the value to the DAC</span>
+        <span class="c1"># Set DAC to point to address</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A</span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)))</span>   <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">if</span> <span class="n">ret</span> <span class="o">!=</span> <span class="n">addr</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to set EEPROM address </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">write_command</span><span class="si">}{</span><span class="n">val</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)</span>   <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="c1"># Check the write was successful</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">query_command</span><span class="p">)))</span> <span class="o">!=</span> <span class="n">val</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="n">HarvardDecadacException</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Failed to write value (</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">) to address </span><span class="si">{</span><span class="n">addr</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+
+
+<div class="viewcode-block" id="HarvardDecadacChannel">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel">[docs]</a>
+<span class="k">class</span> <span class="nc">HarvardDecadacChannel</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">,</span> <span class="n">DacReader</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single DAC channel of the DECADAC</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_CHANNEL_VAL</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Validate slot and channel values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_CHANNEL_VAL</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_slot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">_slot</span>
+
+        <span class="c1"># Calculate base address for querying channel parameters</span>
+        <span class="c1"># Note that the following values can be found using these offsets</span>
+        <span class="c1"># 0: Interrupt Period</span>
+        <span class="c1"># 4: DAC High Limit</span>
+        <span class="c1"># 5: DAC Low Limit</span>
+        <span class="c1"># 6: Slope (double)</span>
+        <span class="c1"># 8: DAC Value (double)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_base_addr</span> <span class="o">=</span> <span class="mi">1536</span> <span class="o">+</span> <span class="p">(</span><span class="mi">16</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_slot</span> <span class="o">+</span> <span class="mi">16</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span>
+
+        <span class="c1"># Store min/max voltages</span>
+        <span class="k">assert</span><span class="p">(</span><span class="n">min_val</span> <span class="o">&lt;</span> <span class="n">max_val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_val</span> <span class="o">=</span> <span class="n">min_val</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span> <span class="o">=</span> <span class="n">max_val</span>
+
+        <span class="c1"># Add channel parameters</span>
+        <span class="c1"># Note we will use the older addresses to read the value from the dac</span>
+        <span class="c1"># rather than the newer &#39;d&#39; command for backwards compatibility</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_volt_val</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;volt&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_base_addr</span> <span class="o">+</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_code_to_v</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_dac</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_v_to_code</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_volt_val</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;channel </span><span class="si">{</span><span class="n">channel</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">_slot</span><span class="o">*</span><span class="mi">4</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># The limit commands are used to sweep dac voltages. They are not</span>
+        <span class="c1"># safety features.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;lower_ramp_limit&quot;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">,</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">_base_addr</span><span class="o">+</span><span class="mi">5</span><span class="p">),</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_code_to_v</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;L</span><span class="si">{}</span><span class="s2">;&quot;</span><span class="p">,</span> <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_v_to_code</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_volt_val</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Lower_Ramp_Limit&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;upper_ramp_limit&quot;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">,</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">_base_addr</span><span class="o">+</span><span class="mi">4</span><span class="p">),</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_code_to_v</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;U</span><span class="si">{}</span><span class="s2">;&quot;</span><span class="p">,</span> <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_v_to_code</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_volt_val</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Upper_Ramp_Limit&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;update_period&quot;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">,</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">_base_addr</span><span class="p">),</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;T</span><span class="si">{}</span><span class="s2">;&quot;</span><span class="p">,</span> <span class="n">set_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">65535</span><span class="p">),</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Update_Period&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;us&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;slope&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">_base_addr</span><span class="o">+</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;S</span><span class="si">{}</span><span class="s2">;&quot;</span><span class="p">,</span> <span class="n">set_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">),</span> <span class="mi">2</span><span class="o">**</span><span class="mi">32</span><span class="p">),</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Ramp_Slope&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Manual parameters to control whether DAC channels should ramp to</span>
+        <span class="c1"># voltages or jump</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ramp_val</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;enable_ramp&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Bool</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;ramp_rate&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ramp_val</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V/s&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Add ramp function to the list of functions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;ramp&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ramp</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_volt_val</span><span class="p">,</span>
+                                                             <span class="bp">self</span><span class="o">.</span><span class="n">_ramp_val</span><span class="p">))</span>
+
+        <span class="c1"># If we have access to the VERSADAC (slot) EEPROM, we can set the</span>
+        <span class="c1"># initial value of the channel.</span>
+        <span class="c1"># NOTE: these values will be overwritten by a K3 calibration</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">_VERSA_EEPROM_available</span><span class="p">:</span>
+            <span class="n">_INITIAL_ADDR</span> <span class="o">=</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">32774</span><span class="p">,</span> <span class="mi">32776</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;initial_value&quot;</span><span class="p">,</span>
+                               <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">,</span>
+                                               <span class="n">_INITIAL_ADDR</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">],</span>
+                                               <span class="n">versa_eeprom</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                               <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_code_to_v</span><span class="p">,</span>
+                               <span class="n">set_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_write_address</span><span class="p">,</span>
+                                               <span class="n">_INITIAL_ADDR</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">],</span>
+                                               <span class="n">versa_eeprom</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+                               <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_v_to_code</span><span class="p">,</span>
+                               <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_val</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_val</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_ramp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ramp the DAC to a given voltage.</span>
+
+<span class="sd">        Params:</span>
+<span class="sd">            val (float): The voltage to ramp to in volts</span>
+
+<span class="sd">            rate (float): The ramp rate in units of volts/s</span>
+
+<span class="sd">            block (bool): Should the call block until the ramp is complete?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># We need to know the current dac value (in raw units), as well as the</span>
+        <span class="c1"># update rate</span>
+        <span class="n">c_volt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">volt</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>  <span class="c1"># Current Voltage</span>
+        <span class="k">if</span> <span class="n">c_volt</span> <span class="o">==</span> <span class="n">val</span><span class="p">:</span>
+            <span class="c1"># If we are already at the right voltage, we don&#39;t need to ramp</span>
+            <span class="k">return</span>
+        <span class="n">c_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_v_to_code</span><span class="p">(</span><span class="n">c_volt</span><span class="p">)</span>  <span class="c1"># Current voltage in DAC units</span>
+        <span class="n">e_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_v_to_code</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>  <span class="c1"># Endpoint in DAC units</span>
+        <span class="c1"># Number of refreshes per second</span>
+        <span class="n">t_rate</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_period</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">)</span>
+        <span class="c1"># Number of seconds to ramp</span>
+        <span class="n">secs</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">((</span><span class="n">c_volt</span> <span class="o">-</span> <span class="n">val</span><span class="p">)</span><span class="o">/</span><span class="n">rate</span><span class="p">)</span>
+
+        <span class="c1"># The formula to calculate the slope is: Number of DAC steps divided by</span>
+        <span class="c1"># the number of time steps in the ramp multiplied by 65536</span>
+        <span class="n">slope</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(((</span><span class="n">e_val</span> <span class="o">-</span> <span class="n">c_val</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">t_rate</span><span class="o">*</span><span class="n">secs</span><span class="p">))</span><span class="o">*</span><span class="mi">65536</span><span class="p">)</span>
+
+        <span class="c1"># Now let&#39;s set up our limits and ramo slope</span>
+        <span class="k">if</span> <span class="n">slope</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">upper_ramp_limit</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lower_ramp_limit</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slope</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">slope</span><span class="p">)</span>
+
+        <span class="c1"># Block until the ramp is complete is block is True</span>
+        <span class="k">if</span> <span class="n">block</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">slope</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">_set_dac</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the voltage on the dac channel, ramping if the enable_rate</span>
+<span class="sd">        parameter is set for this channel.</span>
+
+<span class="sd">        Params:</span>
+<span class="sd">            code (int): the DAC code to set the voltage to</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_ramp</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ramp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_code_to_v</span><span class="p">(</span><span class="n">code</span><span class="p">),</span> <span class="n">rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ramp_rate</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_channel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;U65535;L0;D</span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">;&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HarvardDecadacChannel.write">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.write">[docs]</a>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overload write to set channel prior to any channel operations.</span>
+<span class="sd">        Since all commands are echoed back, we must keep track of responses</span>
+<span class="sd">        as well, otherwise commands receive the wrong response.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_channel</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HarvardDecadacChannel.ask">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ask">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overload ask to set channel prior to operations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_channel</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">DacChannel</span> <span class="o">=</span> <span class="n">HarvardDecadacChannel</span>
+
+
+<div class="viewcode-block" id="HarvardDecadacSlot">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot">[docs]</a>
+<span class="k">class</span> <span class="nc">HarvardDecadacSlot</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">,</span> <span class="n">DacReader</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single DAC Slot of the DECADAC</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_SLOT_VAL</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">SLOT_MODE_DEFAULT</span> <span class="o">=</span> <span class="s2">&quot;Coarse&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">slot</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="c1"># Validate slot and channel values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SLOT_VAL</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_slot</span> <span class="o">=</span> <span class="n">slot</span>
+
+        <span class="c1"># Store whether we have access to the VERSADAC EEPROM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_VERSA_EEPROM_available</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">_VERSA_EEPROM_available</span>
+
+        <span class="c1"># Create a list of channels in the slot</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Slot_Channels&quot;</span><span class="p">,</span> <span class="n">parent</span><span class="o">.</span><span class="n">DAC_CHANNEL_CLASS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">DAC_CHANNEL_CLASS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Chan</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                                                     <span class="n">i</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="n">min_val</span><span class="p">,</span>
+                                                     <span class="n">max_val</span><span class="o">=</span><span class="n">max_val</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;channels&quot;</span><span class="p">,</span> <span class="n">channels</span><span class="p">)</span>
+        <span class="c1"># Set the slot mode. Valid modes are:</span>
+        <span class="c1">#   Off: Channel outputs are disconnected from the input, grounded</span>
+        <span class="c1">#       with 10MOhm.</span>
+        <span class="c1">#   Fine: 2-channel mode. Channels 0 and 1 are output, use 2 and 3</span>
+        <span class="c1">#       for fine adjustment of Channels 0 and 1 respectively</span>
+        <span class="c1">#   Coarse: All 4 channels are used as output</span>
+        <span class="c1">#   FineCald: Calibrated 2-channel mode, with 0 and 1 output, 2 and 3</span>
+        <span class="c1">#       used automatically for fine adjustment. This mode only works</span>
+        <span class="c1">#       for calibrated DecaDAC&#39;s</span>
+        <span class="c1">#</span>
+        <span class="c1"># Unfortunately there is no known way of reading the slot mode hence</span>
+        <span class="c1"># this will be set in initialization</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">_cal_supported</span><span class="p">:</span>
+            <span class="n">slot_modes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Off&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Fine&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Coarse&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;FineCald&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">slot_modes</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Off&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Fine&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Coarse&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;slot_mode&#39;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;m;&quot;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_parse</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;M</span><span class="si">{}</span><span class="s2">;&quot;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="n">slot_modes</span><span class="p">)</span>
+
+        <span class="c1"># Enable all slots in coarse mode.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">slot_mode</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SLOT_MODE_DEFAULT</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HarvardDecadacSlot.write">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.write">[docs]</a>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overload write to set channel prior to any channel operations.</span>
+<span class="sd">        Since all commands are echoed back, we must keep track of responses</span>
+<span class="sd">        as well, otherwise commands receive the wrong response.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_slot</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HarvardDecadacSlot.ask">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.ask">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overload ask to set channel prior to operations</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_slot</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+</div>
+
+
+<span class="n">DacSlot</span> <span class="o">=</span> <span class="n">HarvardDecadacSlot</span>
+
+
+<div class="viewcode-block" id="HarvardDecadac">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadac">[docs]</a>
+<span class="k">class</span> <span class="nc">HarvardDecadac</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">,</span> <span class="n">DacReader</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The qcodes driver for the Decadac.</span>
+
+<span class="sd">    Tested with a Decadac firmware revion number 14081 (Decadac 139).</span>
+
+<span class="sd">    The message strategy is the following: always keep the queue empty, so</span>
+<span class="sd">    that self.visa_handle.ask(XXX) will return the answer to XXX and not</span>
+<span class="sd">    some previous event.</span>
+
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        _ramp_state (bool): If True, ramp state is ON. Default False.</span>
+
+<span class="sd">        _ramp_time (int): The ramp time in ms. Default 100 ms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">DAC_CHANNEL_CLASS</span> <span class="o">=</span> <span class="n">HarvardDecadacChannel</span>
+    <span class="n">DAC_SLOT_CLASS</span> <span class="o">=</span> <span class="n">HarvardDecadacSlot</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">min_val</span><span class="p">:</span> <span class="n">number</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">max_val</span><span class="p">:</span> <span class="n">number</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Creates an instance of the Decadac instruments</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: What this instrument is called locally.</span>
+<span class="sd">            address: The address of the DAC. For a serial port this</span>
+<span class="sd">                is ASRLn::INSTR where n is replaced with the address set in the</span>
+<span class="sd">                VISA control panel. Baud rate and other serial parameters must</span>
+<span class="sd">                also be set in the VISA control panel.</span>
+<span class="sd">            min_val: The minimum value in volts that can be output by the DAC.</span>
+<span class="sd">                This value should correspond to the DAC code 0.</span>
+<span class="sd">            max_val: The maximum value in volts that can be output by the DAC.</span>
+<span class="sd">                This value should correspond to the DAC code 65536.</span>
+<span class="sd">            **kwargs: kwargs are forwarded to base class.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Do feature detection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feature_detect</span><span class="p">()</span>
+
+        <span class="c1"># Create channels</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Channels&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAC_CHANNEL_CLASS</span><span class="p">,</span>
+                               <span class="n">snapshotable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">slots</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Slots&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DAC_SLOT_CLASS</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>  <span class="c1"># Create the 6 DAC slots</span>
+            <span class="n">slots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">DAC_SLOT_CLASS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Slot</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span>
+                                             <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span><span class="p">))</span>
+            <span class="n">slot_channels</span> <span class="o">=</span> <span class="n">slots</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">channels</span>
+            <span class="n">slot_channels</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">ChannelList</span><span class="p">,</span> <span class="n">slot_channels</span><span class="p">)</span>
+            <span class="n">channels</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">slot_channels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;slots&quot;</span><span class="p">,</span> <span class="n">slots</span><span class="o">.</span><span class="n">to_channel_tuple</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;channels&quot;</span><span class="p">,</span> <span class="n">channels</span><span class="o">.</span><span class="n">to_channel_tuple</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="HarvardDecadac.set_all">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadac.set_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volt</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set all dac channels to a specific voltage. If channels are set to ramp</span>
+<span class="sd">        then the ramps will occur in sequence, not simultaneously.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            volt(float): The voltage to set all gates to.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+            <span class="n">chan</span><span class="o">.</span><span class="n">volt</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">volt</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HarvardDecadac.ramp_all">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadac.ramp_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">ramp_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">volt</span><span class="p">,</span> <span class="n">ramp_rate</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ramp all dac channels to a specific voltage at the given rate</span>
+<span class="sd">        simultaneously. Note that the ramps are not synchronized due to</span>
+<span class="sd">        communications time and DAC ramps starting as soon as the commands are</span>
+<span class="sd">        in.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            volt(float): The voltage to ramp all channels to.</span>
+
+<span class="sd">            ramp_rate(float): The rate in volts per second to ramp</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Start all channels ramping</span>
+        <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+            <span class="n">chan</span><span class="o">.</span><span class="n">_ramp</span><span class="p">(</span><span class="n">volt</span><span class="p">,</span> <span class="n">ramp_rate</span><span class="p">,</span> <span class="n">block</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Wait for all channels to complete ramping.</span>
+        <span class="c1"># The slope is reset to 0 once ramping is complete.</span>
+        <span class="k">for</span> <span class="n">chan</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+            <span class="k">while</span> <span class="n">chan</span><span class="o">.</span><span class="n">slope</span><span class="o">.</span><span class="n">get</span><span class="p">():</span>
+                <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="HarvardDecadac.get_idn">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadac.get_idn">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_idn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to identify the dac. Since we don&#39;t have standard SCPI</span>
+<span class="sd">        commands, ``*IDN`` will do nothing on this DAC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dict containing a serial and hardware version</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_feature_detect</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_no</span><span class="p">,</span> <span class="s2">&quot;hardware_version&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="HarvardDecadac.connect_message">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadac.connect_message">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idn_param</span><span class="o">=</span><span class="s1">&#39;IDN&#39;</span><span class="p">,</span> <span class="n">begin_time</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print a connect message, taking into account the lack of a standard</span>
+<span class="sd">        ``*IDN`` on the Harvard DAC</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            idn_param: Unused</span>
+<span class="sd">            begin_time: time.time() when init started.</span>
+<span class="sd">                Default is self._t0, set at start of Instrument.__init__.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># start with an empty dict, just in case an instrument doesn&#39;t</span>
+        <span class="c1"># heed our request to return all 4 fields.</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="n">begin_time</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span><span class="p">)</span>
+
+        <span class="n">con_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Connected to Harvard DecaDAC &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(hw ver: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s2">, serial: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">serial_no</span><span class="si">}</span><span class="s2">) in </span><span class="si">{</span><span class="n">t</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s&quot;</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">con_msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HarvardDecadac.__repr__">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadac.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simplified repr giving just the class and name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&gt;&quot;</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_feature_detect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Detect which features are available on the DAC by querying various</span>
+<span class="sd">        parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Check whether EEPROM is installed</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">(</span><span class="mi">1107296256</span><span class="p">)</span> <span class="o">==</span> <span class="mi">21930</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_EEPROM_available</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_EEPROM_available</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="n">HarvardDecadacException</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_EEPROM_available</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Check whether we can set startup values for the DAC.</span>
+        <span class="c1"># This requires access to the EEPROM on each slot</span>
+
+        <span class="c1"># note from DV: the value never gets set to True in this driver.</span>
+        <span class="c1"># To avoid an error of a non existing attribute, here I set it to</span>
+        <span class="c1"># False by default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_VERSA_EEPROM_available</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Let&#39;s temporarily pretend to be slot 0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_slot</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">versa_eeprom</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_slot</span>
+        <span class="k">except</span> <span class="n">HarvardDecadacException</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># Check whether calibration is supported</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;k;&quot;</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cal_supported</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">HarvardDecadacException</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cal_supported</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Finally try and read the DAC version and S/N.</span>
+        <span class="c1"># This is only possible if the EEPROM is queryable.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_EEPROM_available</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">(</span><span class="mi">1107296266</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">serial_no</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query_address</span><span class="p">(</span><span class="mi">1107296264</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">serial_no</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="HarvardDecadac.write">
+<a class="viewcode-back" href="../../../../drivers_api/Harvard.html#qcodes.instrument_drivers.Harvard.HarvardDecadac.write">[docs]</a>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Since all commands are echoed back, we must keep track of responses</span>
+<span class="sd">        as well, otherwise commands receive the wrong response. Hence</span>
+<span class="sd">        all writes must also read a response.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">Decadac</span> <span class="o">=</span> <span class="n">HarvardDecadac</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

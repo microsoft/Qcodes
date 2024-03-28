@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.sqlite.database &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.sqlite.database</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.sqlite.database</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module provides means of connecting to a QCoDeS database file and</span>
+<span class="sd">initialising it. Note that connecting/initialisation take into account</span>
+<span class="sd">database version and possibly perform database upgrades.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">sqlite3</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">expanduser</span><span class="p">,</span> <span class="n">normpath</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">qcodes</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.experiment_settings</span> <span class="kn">import</span> <span class="n">reset_default_experiment_id</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.connection</span> <span class="kn">import</span> <span class="n">ConnectionPlus</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.db_upgrades</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_latest_available_version</span><span class="p">,</span>
+    <span class="n">perform_db_upgrade</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.db_upgrades.version</span> <span class="kn">import</span> <span class="n">get_user_version</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.initial_schema</span> <span class="kn">import</span> <span class="n">init_db</span>
+<span class="kn">from</span> <span class="nn">qcodes.utils.types</span> <span class="kn">import</span> <span class="n">complex_types</span><span class="p">,</span> <span class="n">numpy_floats</span><span class="p">,</span> <span class="n">numpy_ints</span>
+
+<span class="n">JournalMode</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">,</span> <span class="s2">&quot;TRUNCATE&quot;</span><span class="p">,</span> <span class="s2">&quot;PERSIST&quot;</span><span class="p">,</span> <span class="s2">&quot;MEMORY&quot;</span><span class="p">,</span> <span class="s2">&quot;WAL&quot;</span><span class="p">,</span> <span class="s2">&quot;OFF&quot;</span><span class="p">]</span>
+
+
+<span class="c1"># utility function to allow sqlite/numpy type</span>
+<span class="k">def</span> <span class="nf">_adapt_array</span><span class="p">(</span><span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Binary</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    See this:</span>
+<span class="sd">    https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+    <span class="c1"># Directly use np.lib.format.write_array instead of np.save, force version to be</span>
+    <span class="c1"># 3.0 (when reading, version 1.0 and 2.0 can result in a slow clean up step to</span>
+    <span class="c1"># ensure backward compatibility with python 2) and disable pickle (slow and</span>
+    <span class="c1"># insecure)</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">write_array</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">arr</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Binary</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+
+<span class="k">def</span> <span class="nf">_convert_array</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="c1"># Using np.lib.format.read_array (counterpart of np.lib.format.write_array)</span>
+    <span class="c1"># npy format version 3.0 is 3 times faster than previous verions (no clean up step</span>
+    <span class="c1"># for python 2 backward compatibility)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">read_array</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_convert_complex</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">complexfloating</span><span class="p">:</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">out</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="n">this_session_default_encoding</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">getdefaultencoding</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_convert_numeric</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a converter for sqlite3 &#39;numeric&#39; type class.</span>
+
+<span class="sd">    This converter is capable of deducting whether a number is a float or an</span>
+<span class="sd">    int.</span>
+
+<span class="sd">    Note sqlite3 allows to save data to columns even if their type is not</span>
+<span class="sd">    compatible with the table type class (for example, it is possible to save</span>
+<span class="sd">    integers into &#39;text&#39; columns). Due to this fact, and for the reasons of</span>
+<span class="sd">    flexibility, the numeric converter is also made capable of handling</span>
+<span class="sd">    strings. An obvious exception to this is &#39;nan&#39; (case insensitive) which</span>
+<span class="sd">    gets converted to `np.nan`. Another exception to this is &#39;inf&#39;, which</span>
+<span class="sd">    gets converted to &#39;np.inf&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># First, try to convert bytes to float</span>
+        <span class="n">numeric</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="c1"># Let string casting fail if bytes encoding is invalid</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">this_session_default_encoding</span><span class="p">)</span>
+
+    <span class="c1"># If that worked, e.g. did not raise an exception, then we check if the outcome is</span>
+    <span class="c1"># either an infinity or a NaN</span>
+    <span class="c1"># For a single value, math.isfinite is 10 times faster than np.isinfinite (or</span>
+    <span class="c1"># combining np.isnan and np.isinf)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">numeric</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">numeric</span>
+
+    <span class="c1"># If it is not &#39;nan&#39; and not &#39;inf&#39;, then we need to see if the value is really an</span>
+    <span class="c1"># integer or with floating point digits</span>
+    <span class="n">numeric_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numeric</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">numeric</span> <span class="o">!=</span> <span class="n">numeric_int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numeric</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numeric_int</span>
+
+<span class="k">def</span> <span class="nf">_adapt_float</span><span class="p">(</span><span class="n">fl</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="c1"># For a single value, math.isnan is 10 times faster than np.isnan</span>
+    <span class="c1"># Overall, saving floats with numeric format is 2 times faster with math.isnan</span>
+    <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">fl</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;nan&quot;</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">fl</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_adapt_complex</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">complex</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">complexfloating</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Binary</span><span class="p">:</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">()</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">value</span><span class="p">]))</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">Binary</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="connect">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.connect">[docs]</a>
+<span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">debug</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConnectionPlus</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Connect or create  database. If debug the queries will be echoed back.</span>
+<span class="sd">    This function takes care of registering the numpy/sqlite type</span>
+<span class="sd">    converters that we need.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: name or path to the sqlite file</span>
+<span class="sd">        debug: should tracing be turned on.</span>
+<span class="sd">        version: which version to create. We count from 0. -1 means &#39;latest&#39;.</span>
+<span class="sd">            Should always be left at -1 except when testing.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        connection object to the database (note, it is</span>
+<span class="sd">        :class:`ConnectionPlus`, not :class:`sqlite3.Connection`)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># register numpy-&gt;binary(TEXT) adapter</span>
+    <span class="n">sqlite3</span><span class="o">.</span><span class="n">register_adapter</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">_adapt_array</span><span class="p">)</span>
+    <span class="c1"># register binary(TEXT) -&gt; numpy converter</span>
+    <span class="n">sqlite3</span><span class="o">.</span><span class="n">register_converter</span><span class="p">(</span><span class="s2">&quot;array&quot;</span><span class="p">,</span> <span class="n">_convert_array</span><span class="p">)</span>
+
+    <span class="n">sqlite3_conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">detect_types</span><span class="o">=</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">PARSE_DECLTYPES</span><span class="p">,</span>
+                                   <span class="n">check_same_thread</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">ConnectionPlus</span><span class="p">(</span><span class="n">sqlite3_conn</span><span class="p">)</span>
+
+    <span class="n">latest_supported_version</span> <span class="o">=</span> <span class="n">_latest_available_version</span><span class="p">()</span>
+    <span class="n">db_version</span> <span class="o">=</span> <span class="n">get_user_version</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">db_version</span> <span class="o">&gt;</span> <span class="n">latest_supported_version</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is version </span><span class="si">{</span><span class="n">db_version</span><span class="si">}</span><span class="s2"> but this &quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;version of QCoDeS supports up to &quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;version </span><span class="si">{</span><span class="n">latest_supported_version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Make sure numpy ints and floats types are inserted properly</span>
+    <span class="k">for</span> <span class="n">numpy_int</span> <span class="ow">in</span> <span class="n">numpy_ints</span><span class="p">:</span>
+        <span class="n">sqlite3</span><span class="o">.</span><span class="n">register_adapter</span><span class="p">(</span><span class="n">numpy_int</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+
+    <span class="n">sqlite3</span><span class="o">.</span><span class="n">register_converter</span><span class="p">(</span><span class="s2">&quot;numeric&quot;</span><span class="p">,</span> <span class="n">_convert_numeric</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">numpy_float</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">float</span><span class="p">,)</span> <span class="o">+</span> <span class="n">numpy_floats</span><span class="p">:</span>
+        <span class="n">sqlite3</span><span class="o">.</span><span class="n">register_adapter</span><span class="p">(</span><span class="n">numpy_float</span><span class="p">,</span> <span class="n">_adapt_float</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">complex_type</span> <span class="ow">in</span> <span class="n">complex_types</span><span class="p">:</span>
+        <span class="n">sqlite3</span><span class="o">.</span><span class="n">register_adapter</span><span class="p">(</span><span class="n">complex_type</span><span class="p">,</span> <span class="n">_adapt_complex</span><span class="p">)</span>
+    <span class="n">sqlite3</span><span class="o">.</span><span class="n">register_converter</span><span class="p">(</span><span class="s2">&quot;complex&quot;</span><span class="p">,</span> <span class="n">_convert_complex</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">set_trace_callback</span><span class="p">(</span><span class="nb">print</span><span class="p">)</span>
+
+    <span class="n">init_db</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+    <span class="n">perform_db_upgrade</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">conn</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">get_db_version_and_newest_available_version</span><span class="p">(</span>
+    <span class="n">path_to_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Connect to a DB without performing any upgrades and get the version of</span>
+<span class="sd">    that database file along with the newest available version (the one that</span>
+<span class="sd">    a normal &quot;connect&quot; will automatically upgrade to)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path_to_db: the absolute path to the DB file</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A tuple of (db_version, latest_available_version)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">path_to_db</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">db_version</span> <span class="o">=</span> <span class="n">get_user_version</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">db_version</span><span class="p">,</span> <span class="n">_latest_available_version</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">get_DB_location</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">normpath</span><span class="p">(</span><span class="n">expanduser</span><span class="p">(</span><span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;core&quot;</span><span class="p">][</span><span class="s2">&quot;db_location&quot;</span><span class="p">]))</span>
+
+
+<span class="k">def</span> <span class="nf">get_DB_debug</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;core&quot;</span><span class="p">][</span><span class="s2">&quot;db_debug&quot;</span><span class="p">])</span>
+
+
+<div class="viewcode-block" id="initialise_database">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.initialise_database">[docs]</a>
+<span class="k">def</span> <span class="nf">initialise_database</span><span class="p">(</span><span class="n">journal_mode</span><span class="p">:</span> <span class="n">JournalMode</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;WAL&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initialise a database in the location specified by the config object</span>
+<span class="sd">    and set ``atomic commit and rollback mode`` of the db. The db is created</span>
+<span class="sd">    with the latest supported version. If the database already exists the</span>
+<span class="sd">    ``atomic commit and rollback mode`` is set and the database is upgraded</span>
+<span class="sd">    to the latest version.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.</span>
+<span class="sd">            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None</span>
+<span class="sd">            no changes are made.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># calling connect performs all the needed actions to create and upgrade</span>
+    <span class="c1"># the db to the latest version.</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">get_DB_location</span><span class="p">(),</span> <span class="n">get_DB_debug</span><span class="p">())</span>
+    <span class="n">reset_default_experiment_id</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">journal_mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">set_journal_mode</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">journal_mode</span><span class="p">)</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="k">del</span> <span class="n">conn</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">set_journal_mode</span><span class="p">(</span><span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span><span class="p">,</span> <span class="n">journal_mode</span><span class="p">:</span> <span class="n">JournalMode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set the ``atomic commit and rollback mode`` of the sqlite database.</span>
+<span class="sd">    See https://www.sqlite.org/pragma.html#pragma_journal_mode for details.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        conn: Connection to the database.</span>
+<span class="sd">        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.</span>
+<span class="sd">            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">valid_journal_modes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;DELETE&quot;</span><span class="p">,</span> <span class="s2">&quot;TRUNCATE&quot;</span><span class="p">,</span> <span class="s2">&quot;PERSIST&quot;</span><span class="p">,</span> <span class="s2">&quot;MEMORY&quot;</span><span class="p">,</span> <span class="s2">&quot;WAL&quot;</span><span class="p">,</span> <span class="s2">&quot;OFF&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">journal_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_journal_modes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid journal_mode </span><span class="si">{</span><span class="n">journal_mode</span><span class="si">}</span><span class="s2"> &quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;Valid modes are </span><span class="si">{</span><span class="n">valid_journal_modes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;PRAGMA journal_mode=</span><span class="si">{</span><span class="n">journal_mode</span><span class="si">}</span><span class="s2">;&quot;</span>
+    <span class="n">cursor</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="initialise_or_create_database_at">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.initialise_or_create_database_at">[docs]</a>
+<span class="k">def</span> <span class="nf">initialise_or_create_database_at</span><span class="p">(</span>
+    <span class="n">db_file_with_abs_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">journal_mode</span><span class="p">:</span> <span class="n">JournalMode</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;WAL&quot;</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function sets up QCoDeS to refer to the given database file. If the</span>
+<span class="sd">    database file does not exist, it will be initiated.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        db_file_with_abs_path: Database file name with absolute path, for example</span>
+<span class="sd">            ``C:\\mydata\\majorana_experiments.db``</span>
+<span class="sd">        journal_mode: Which `journal_mode` should be used for atomic commit and rollback.</span>
+<span class="sd">            Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None</span>
+<span class="sd">            no changes are made.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">db_location</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">db_file_with_abs_path</span><span class="p">)</span>
+    <span class="n">initialise_database</span><span class="p">(</span><span class="n">journal_mode</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="initialised_database_at">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.initialised_database_at">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">initialised_database_at</span><span class="p">(</span><span class="n">db_file_with_abs_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initializes or creates a database and restores the &#39;db_location&#39; afterwards.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        db_file_with_abs_path: Database file name with absolute path, for example</span>
+<span class="sd">            ``C:\\mydata\\majorana_experiments.db``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db_location</span> <span class="o">=</span> <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;core&quot;</span><span class="p">][</span><span class="s2">&quot;db_location&quot;</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">db_file_with_abs_path</span><span class="p">)</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">qcodes</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;core&quot;</span><span class="p">][</span><span class="s2">&quot;db_location&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">db_location</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">conn_from_dbpath_or_conn</span><span class="p">(</span>
+    <span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">path_to_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConnectionPlus</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A small helper function to abstract the logic needed for functions</span>
+<span class="sd">    that take either a `ConnectionPlus` or the path to a db file.</span>
+<span class="sd">    If neither is given this will fall back to the default db location.</span>
+<span class="sd">    It is an error to supply both.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        conn: A ConnectionPlus object pointing to a sqlite database</span>
+<span class="sd">        path_to_db: The path to a db file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A `ConnectionPlus` object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">path_to_db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">conn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Received BOTH conn and path_to_db. Please &#39;</span>
+                         <span class="s1">&#39;provide only one or the other.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">conn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">path_to_db</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">path_to_db</span> <span class="o">=</span> <span class="n">get_DB_location</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">conn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">path_to_db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">path_to_db</span><span class="p">,</span> <span class="n">get_DB_debug</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="n">conn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># this should be impossible but left here to keep mypy happy.</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not obtain a connection from&quot;</span>
+                           <span class="s2">&quot;supplied information.&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">conn</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

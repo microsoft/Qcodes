@@ -1,0 +1,177 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Using the `register_name` kwarg to select how a parameter is saved to a dataset\n",
+    "\n",
+    "This example notebook shows how to use the `register_name` keyword argument to control the name used to save a parameter to a dataset\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Setup\n",
+    "\n",
+    "### Module Imports\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from functools import partial\n",
+    "from pprint import pprint\n",
+    "\n",
+    "import numpy as np\n",
+    "\n",
+    "from qcodes.dataset import (\n",
+    "    do0d,\n",
+    "    do1d,\n",
+    "    initialise_or_create_database_at,\n",
+    "    load_or_create_experiment,\n",
+    ")\n",
+    "from qcodes.parameters import ManualParameter, Parameter, ParameterWithSetpoints\n",
+    "from qcodes.validators import Arrays"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Database and Experiment creation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "initialise_or_create_database_at(\"./register_name_example.db\")\n",
+    "load_or_create_experiment(\"register_name\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Creating a Parameter with a `register_name`\n",
+    "\n",
+    "It is simple to create a parameter with a `register_name`. Simply provide the keyword and the desired name to the parameter initialization. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 5. Using 'qcodes.dataset.do1d'\n",
+      "[ParamSpec('renamed_indep_param', 'numeric', 'indep_param', '', inferred_from=[], depends_on=[]),\n",
+      " ParamSpec('renamed_dep_param', 'numeric', 'dep_param', '', inferred_from=[], depends_on=['renamed_indep_param'])]\n"
+     ]
+    }
+   ],
+   "source": [
+    "indep_param = ManualParameter(\"indep_param\", initial_value=1, register_name=\"renamed_indep_param\")\n",
+    "dep_param = ManualParameter(\"dep_param\", initial_value= 2, register_name=\"renamed_dep_param\")\n",
+    "\n",
+    "ds, _,_ = do1d(indep_param, 0, 1, 101, 0, dep_param)\n",
+    "pprint(ds.get_parameters())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Note that the dataset's ParamSpecs have replaced the usual parameter name with the register name.\n",
+    "\n",
+    "Why is this useful?\n",
+    "---\n",
+    "Imagine that you have a parameter that is defined as part of a complex instrument. The parameter's full_name may be something like:\n",
+    "\n",
+    "`instrument_submodule1_submodule2_param_full_name`\n",
+    "\n",
+    "But you only really care about `param_full_name`. The `register_name` allows the user to define the string saved to the dataset decoupling the structure in the instrument.\n",
+    "\n",
+    "## ParameterWithSetpoints\n",
+    "\n",
+    "`register_name` also works with the ParameterWithSetpoints"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 6. Using 'qcodes.dataset.do0d'\n",
+      "[ParamSpec('renamed_setpoints', 'array', 'setpoints_param', '', inferred_from=[], depends_on=[]),\n",
+      " ParamSpec('renamed_meas_param', 'array', 'meas_param', '', inferred_from=[], depends_on=['renamed_setpoints'])]\n"
+     ]
+    }
+   ],
+   "source": [
+    "setpoints_param = Parameter(\n",
+    "    name=\"setpoints_param\",\n",
+    "    get_cmd=partial(np.linspace, 0, 1, 101),\n",
+    "    vals=Arrays(shape=(101,)),\n",
+    "    register_name=\"renamed_setpoints\",\n",
+    ")\n",
+    "meas_param = ParameterWithSetpoints(\n",
+    "    \"meas_param\",\n",
+    "    setpoints=(setpoints_param,),\n",
+    "    get_cmd=partial(np.linspace, 0, -1, 101),\n",
+    "    vals=Arrays(\n",
+    "        shape=(101,),\n",
+    "        valid_types=[np.integer, np.floating, np.complexfloating],\n",
+    "    ),\n",
+    "    register_name=\"renamed_meas_param\",\n",
+    ")\n",
+    "\n",
+    "ds, _, _ = do0d(meas_param)\n",
+    "pprint(ds.get_parameters())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Note: `register_name` does not currently work with `MultiParameter` or `ArrayParameter`"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "py311",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.4"
+  },
+  "orig_nbformat": 4
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

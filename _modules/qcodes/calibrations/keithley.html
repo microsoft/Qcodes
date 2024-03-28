@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.calibrations.keithley &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.calibrations.keithley</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.calibrations.keithley</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">Instrument</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.Keithley</span> <span class="kn">import</span> <span class="n">Keithley26xx</span>
+
+<span class="n">src_FS_map</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;200e-3&quot;</span><span class="p">:</span> <span class="mf">180e-3</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mf">1.8</span><span class="p">,</span> <span class="s2">&quot;20&quot;</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span> <span class="s2">&quot;200&quot;</span><span class="p">:</span> <span class="mi">180</span><span class="p">,</span>
+    <span class="s2">&quot;100e-3&quot;</span><span class="p">:</span> <span class="mf">80e-3</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span> <span class="s2">&quot;6&quot;</span><span class="p">:</span> <span class="mf">5.6</span><span class="p">,</span> <span class="s2">&quot;40&quot;</span><span class="p">:</span> <span class="mi">38</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">setup_dmm</span><span class="p">(</span><span class="n">dmm</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">dmm</span><span class="o">.</span><span class="n">aperture_time</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">dmm</span><span class="o">.</span><span class="n">autozero</span><span class="p">(</span><span class="s2">&quot;OFF&quot;</span><span class="p">)</span>
+    <span class="n">dmm</span><span class="o">.</span><span class="n">autorange</span><span class="p">(</span><span class="s2">&quot;OFF&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">save_calibration</span><span class="p">(</span><span class="n">smu</span><span class="p">:</span> <span class="n">Keithley26xx</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">calibration_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">smu_channel</span> <span class="ow">in</span> <span class="n">smu</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">smu_channel</span><span class="o">.</span><span class="n">channel</span><span class="si">}</span><span class="s2">.cal.adjustdate = </span><span class="si">{</span><span class="n">calibration_date</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">smu_channel</span><span class="o">.</span><span class="n">channel</span><span class="si">}</span><span class="s2">.cal.save()&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="calibrate_keithley_smu_v">
+<a class="viewcode-back" href="../../../api/calibrations/index.html#qcodes.calibrations.calibrate_keithley_smu_v">[docs]</a>
+<span class="k">def</span> <span class="nf">calibrate_keithley_smu_v</span><span class="p">(</span>
+    <span class="n">smu</span><span class="p">:</span> <span class="n">Keithley26xx</span><span class="p">,</span>
+    <span class="n">dmm</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">,</span>
+    <span class="n">src_Z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-30</span><span class="p">,</span>
+    <span class="n">time_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
+    <span class="n">save_calibrations</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">dmm_range_per_smu_range_mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">dmm_range_per_smu_range_mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dmm_range_per_smu_range_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;200e-3&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;2&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s2">&quot;20&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">wrong_smu_range_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">dmm_range_per_smu_range_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">src_FS_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wrong_smu_range_keys</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;dmm_range_per_smu_range_mapping contains unknown keys </span><span class="si">{</span><span class="n">wrong_smu_range_keys</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;the possible keys are </span><span class="si">{</span><span class="nb">set</span><span class="p">(</span><span class="n">src_FS_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="n">setup_dmm</span><span class="p">(</span><span class="n">dmm</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">smu_channel</span> <span class="ow">in</span> <span class="n">smu</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+        <span class="nb">input</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Please connect channel </span><span class="si">{</span><span class="n">smu_channel</span><span class="o">.</span><span class="n">channel</span><span class="si">}</span><span class="s2"> to V input on calibrated DMM.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">smu_range</span><span class="p">,</span> <span class="n">dmm_range</span> <span class="ow">in</span> <span class="n">dmm_range_per_smu_range_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dmm</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="n">dmm_range</span><span class="p">)</span>
+            <span class="n">calibrate_keithley_smu_v_single</span><span class="p">(</span>
+                <span class="n">smu</span><span class="p">,</span> <span class="n">smu_channel</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">dmm</span><span class="o">.</span><span class="n">volt</span><span class="p">,</span> <span class="n">smu_range</span><span class="p">,</span> <span class="n">src_Z</span><span class="p">,</span> <span class="n">time_delay</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">save_calibrations</span><span class="p">:</span>
+        <span class="n">save_calibration</span><span class="p">(</span><span class="n">smu</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">calibrate_keithley_smu_v_single</span><span class="p">(</span>
+    <span class="n">smu</span><span class="p">:</span> <span class="n">Keithley26xx</span><span class="p">,</span>
+    <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">dmm_param_volt</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">v_range</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">src_Z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-30</span><span class="p">,</span>
+    <span class="n">time_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">channel</span> <span class="ow">in</span> <span class="p">{</span><span class="n">smu_channel</span><span class="o">.</span><span class="n">channel</span> <span class="k">for</span> <span class="n">smu_channel</span> <span class="ow">in</span> <span class="n">smu</span><span class="o">.</span><span class="n">channels</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="n">v_range</span> <span class="ow">in</span> <span class="n">src_FS_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+    <span class="n">src_FS</span> <span class="o">=</span> <span class="n">src_FS_map</span><span class="p">[</span><span class="n">v_range</span><span class="p">]</span>
+
+    <span class="n">sense_modes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;SENSE_LOCAL&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">sense_mode</span> <span class="ow">in</span> <span class="n">sense_modes</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sense mode: &quot;</span> <span class="o">+</span> <span class="n">sense_mode</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">.cal.unlock(&quot;KI0026XX&quot;)&#39;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.reset()&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.func = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_DCVOLTS&quot;</span><span class="p">)</span>
+
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.rangev = </span><span class="si">{</span><span class="n">v_range</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_OFF&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.sense = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.&quot;</span> <span class="o">+</span> <span class="n">sense_mode</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+
+        <span class="c1"># Start positive calibration:</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.cal.polarity = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.CAL_POSITIVE&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.levelv = </span><span class="si">{</span><span class="n">src_Z</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_ON&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Measure positive zero voltage with SMU and DMM:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Z_rdg = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.v()&quot;</span><span class="p">)</span>
+        <span class="n">DMM_Z_rdg</span> <span class="o">=</span> <span class="n">dmm_param_volt</span><span class="p">()</span>
+
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_OFF&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.levelv = </span><span class="si">{</span><span class="n">src_FS</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_ON&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Measure positive full scale voltage with SMU and DMM:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FS_rdg = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.v()&quot;</span><span class="p">)</span>
+        <span class="n">DMM_FS_rdg</span> <span class="o">=</span> <span class="n">dmm_param_volt</span><span class="p">()</span>
+
+        <span class="c1"># Write positive v_range calibration to SMU:</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_OFF&quot;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.calibratev(</span><span class="si">{</span><span class="n">v_range</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">src_Z</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">DMM_Z_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">src_FS</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">DMM_FS_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sense_mode</span> <span class="o">!=</span> <span class="s2">&quot;SENSE_CALA&quot;</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+            <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.calibratev(</span><span class="si">{</span><span class="n">v_range</span><span class="si">}</span><span class="s2">, Z_rdg, </span><span class="si">{</span><span class="n">DMM_Z_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">, FS_rdg, </span><span class="si">{</span><span class="n">DMM_FS_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+
+        <span class="c1"># Start negative calibration:</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.cal.polarity = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.CAL_NEGATIVE&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.levelv = -</span><span class="si">{</span><span class="n">src_Z</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_ON&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Measure negative zero voltage with SMU and DMM:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Z_rdg = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.v()&quot;</span><span class="p">)</span>
+        <span class="n">DMM_Z_rdg</span> <span class="o">=</span> <span class="n">dmm_param_volt</span><span class="p">()</span>
+
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_OFF&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.levelv = -</span><span class="si">{</span><span class="n">src_FS</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_ON&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Measure negative full scale voltage with DMM:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;FS_rdg = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.v()&quot;</span><span class="p">)</span>
+        <span class="n">DMM_FS_rdg</span> <span class="o">=</span> <span class="n">dmm_param_volt</span><span class="p">()</span>
+
+        <span class="c1"># Write negative v_range calibration to SMU:</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.output = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.OUTPUT_OFF&quot;</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.calibratev(-</span><span class="si">{</span><span class="n">v_range</span><span class="si">}</span><span class="s2">, -</span><span class="si">{</span><span class="n">src_Z</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">DMM_Z_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">, -</span><span class="si">{</span><span class="n">src_FS</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">DMM_FS_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sense_mode</span> <span class="o">!=</span> <span class="s2">&quot;SENSE_CALA&quot;</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+            <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.measure.calibratev(-</span><span class="si">{</span><span class="n">v_range</span><span class="si">}</span><span class="s2">, Z_rdg, </span><span class="si">{</span><span class="n">DMM_Z_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">, FS_rdg, </span><span class="si">{</span><span class="n">DMM_FS_rdg</span><span class="si">:</span><span class="s2">.8e</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">time_delay</span><span class="p">)</span>
+
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.cal.polarity = </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.CAL_AUTO&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Reset the smu to default state</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">.source.levelv = </span><span class="si">{</span><span class="n">src_Z</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

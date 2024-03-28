@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataSet class walkthrough &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Databases" href="Database.html" />
+    <link rel="prev" title="Dataset Benchmarking" href="Benchmarking.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">DataSet class walkthrough</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Note-on-DataSet-object-creation">Note on DataSet object creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Preparation:-a-DataSet-from-a-dummy-Measurement">Preparation: a DataSet from a dummy Measurement</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Note-on-immutability-of-DataSet">Note on immutability of DataSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DataSet-indentity">DataSet indentity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DataSet-info">DataSet info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Parameters-in-DataSet">Parameters in DataSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Data-access-in-DataSet">Data access in DataSet</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#What-about-the-rest?">What about the rest?</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">DataSet class walkthrough</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/DataSet/DataSet-class-walkthrough.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/DataSet-class-walkthrough.ipynb">docs/examples/DataSet/DataSet-class-walkthrough.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/DataSet-class-walkthrough.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="DataSet-class-walkthrough">
+<h1>DataSet class walkthrough<a class="headerlink" href="#DataSet-class-walkthrough" title="Link to this heading"></a></h1>
+<p>In this notebook we are going to go through the mighty <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> class, and get an overview of the most of it’s methods and properties. In this case, the more you know, the more you can achieve.</p>
+<section id="Note-on-DataSet-object-creation">
+<h2>Note on DataSet object creation<a class="headerlink" href="#Note-on-DataSet-object-creation" title="Link to this heading"></a></h2>
+<p>Users are expected to obtain <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> objects in the following ways:</p>
+<ul class="simple">
+<li><p>run a <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> and get a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> via a <code class="docutils literal notranslate"><span class="pre">DataSaver</span></code> after exiting the measurement context, as shown here:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
+<span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="o">...</span>
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="o">...</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>  <span class="c1"># &lt;- this one</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>load a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> using one of the <code class="docutils literal notranslate"><span class="pre">load_*</span></code> functions from <code class="docutils literal notranslate"><span class="pre">qcodes.dataset.data_set</span></code> module, for example, <code class="docutils literal notranslate"><span class="pre">load_by_run_spec</span></code>:</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">load_by_run_spec</span><span class="p">(</span>
+    <span class="n">experiment_name</span><span class="o">=</span><span class="s1">&#39;pinchoff&#39;</span><span class="p">,</span>
+    <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;SDH-X-13c&#39;</span><span class="p">,</span>
+    <span class="n">captured_run_id</span><span class="o">=</span><span class="mi">12</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Users should <strong>NOT</strong> instantiate a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object via its constructor, or via the <code class="docutils literal notranslate"><span class="pre">new_data_set</span></code> function.</p>
+</section>
+<section id="Preparation:-a-DataSet-from-a-dummy-Measurement">
+<h2>Preparation: a DataSet from a dummy Measurement<a class="headerlink" href="#Preparation:-a-DataSet-from-a-dummy-Measurement" title="Link to this heading"></a></h2>
+<p>In order to obtain a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object, we are going to run a <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> storing some dummy data (see notebook on <a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html"><span class="doc">Performing measurements using qcodes parameters and dataset</span></a> for more details).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tempfile</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Measurement</span><span class="p">,</span>
+    <span class="n">initialise_or_create_database_at</span><span class="p">,</span>
+    <span class="n">load_or_create_experiment</span><span class="p">,</span>
+    <span class="n">plot_dataset</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+<span class="kn">from</span> <span class="nn">qcodes.station</span> <span class="kn">import</span> <span class="n">Station</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Qcodes Logfile : /home/runner/.qcodes/logs/240328-10319-qcodes.log
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tempfile</span><span class="o">.</span><span class="n">gettempdir</span><span class="p">(),</span>
+                       <span class="s1">&#39;data_access_example.db&#39;</span><span class="p">)</span>
+<span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span>
+    <span class="n">experiment_name</span><span class="o">=</span><span class="s1">&#39;greco&#39;</span><span class="p">,</span>
+    <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;draco&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># This parameter is created in order to</span>
+<span class="c1"># justify creation of a `Station` object,</span>
+<span class="c1"># which, in turn, is needed to remind the</span>
+<span class="c1"># reader about the importance of adding</span>
+<span class="c1"># all instruments to the station.</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;force_side&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Side of the Force&#39;</span><span class="p">,</span>
+               <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;dark&#39;</span><span class="p">,</span>
+               <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">()</span>
+<span class="n">station</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;force_side&#39;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Voltage&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+              <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+              <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Voltage&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+              <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">y2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;y2&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Current&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span>
+               <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">experiment</span><span class="p">,</span>
+                   <span class="n">name</span><span class="o">=</span><span class="s1">&#39;first_run&#39;</span><span class="p">,</span>
+                   <span class="n">station</span><span class="o">=</span><span class="n">station</span><span class="p">)</span>
+
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span>
+
+<span class="n">x_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">t_vals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xv</span> <span class="ow">in</span> <span class="n">x_vals</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tv</span> <span class="ow">in</span> <span class="n">t_vals</span><span class="p">:</span>
+            <span class="n">yv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xv</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span>
+            <span class="n">y2v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xv</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">),</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tv</span><span class="p">),</span> <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">yv</span><span class="p">),</span> <span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">y2v</span><span class="p">))</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 1.
+</pre></div></div>
+</div>
+<p>For the sake of demonstrating what kind of data we’ve produced, let’s use <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> to make some default plots of the data.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #1, Experiment greco (draco)&#39;}, xlabel=&#39;Voltage (V)&#39;, ylabel=&#39;Time (ks)&#39;&gt;,
+  &lt;Axes: title={&#39;center&#39;: &#39;Run #1, Experiment greco (draco)&#39;}, xlabel=&#39;Voltage (V)&#39;, ylabel=&#39;Time (ks)&#39;&gt;],
+ [&lt;matplotlib.colorbar.Colorbar at 0x7fcf842dc590&gt;,
+  &lt;matplotlib.colorbar.Colorbar at 0x7fcf84161bd0&gt;])
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_DataSet-class-walkthrough_10_1.png" src="../../_images/examples_DataSet_DataSet-class-walkthrough_10_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_DataSet-class-walkthrough_10_2.png" src="../../_images/examples_DataSet_DataSet-class-walkthrough_10_2.png" />
+</div>
+</div>
+</section>
+<section id="Note-on-immutability-of-DataSet">
+<h2>Note on immutability of DataSet<a class="headerlink" href="#Note-on-immutability-of-DataSet" title="Link to this heading"></a></h2>
+<p>Users are NOT expected to use <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>s methods that modify its content, for example, <code class="docutils literal notranslate"><span class="pre">add_result</span></code>. Only <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> and <code class="docutils literal notranslate"><span class="pre">DataSaver</span></code> objects use those methods. This is due to the philosophy of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> - once created within a <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> context, it should not change so that the user don’t accidentally modify/remove the important measured data. In the future versions of QCoDeS the design of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object will be improved to make the described philosophy clear.</p>
+</section>
+<section id="DataSet-indentity">
+<h2>DataSet indentity<a class="headerlink" href="#DataSet-indentity" title="Link to this heading"></a></h2>
+<p>Before we dive into what’s in the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>, let’s briefly note how a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> is identified.</p>
+<p>TL;DR: &gt; * Both <code class="docutils literal notranslate"><span class="pre">experiment</span> <span class="pre">name</span></code> and <code class="docutils literal notranslate"><span class="pre">sample</span> <span class="pre">name</span></code> are great means for identifying a dataset, especially when coupled with the <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code>. &gt; * <code class="docutils literal notranslate"><span class="pre">guid</span></code> is the only globally unique identifier for datasets.</p>
+<section id="GUID">
+<h3>GUID<a class="headerlink" href="#GUID" title="Link to this heading"></a></h3>
+<p>Globally, “in this universe”, a dataset is identified by a globally unique identifier:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">guid</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;b72c593e-0000-0000-0000-018e838efce4&#39;
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">guid</span></code> is generated when a dataset is created, and is globally unique.</p>
+<p>Due to the nature of the <code class="docutils literal notranslate"><span class="pre">guid</span></code> and its size, it is very user-friendly. For example, it is convenient to use it as a reference in a conversation between users. However, the <code class="docutils literal notranslate"><span class="pre">guid</span></code> is crucial for use in automated/computer systems, for example, when moving a dataset from one database file to a different one.</p>
+</section>
+<section id="Captured-run-ID">
+<h3>Captured run ID<a class="headerlink" href="#Captured-run-ID" title="Link to this heading"></a></h3>
+<p>Within a given single database file (!) a dataset can be identified by its <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code>, an integer index:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">captured_run_id</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code> gets assigned to a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> at its creation time such that the new <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code> is always one larger than the current number of <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>s in the database file:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>captured_run_id_for_new_dataset = 1 + current_total_number_of_datasets_in_the_database
+</pre></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code> is preserved when exporting the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> to another database file but may not be unique if combined with datasets from other database files. For example, it is possible to export 2 datasets with the same <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code> to the same database file.</p>
+<p>We will see below how to disambiguate multiple datasets that share the same <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code>.</p>
+<section id="Note-on-run-ID">
+<h4>Note on run ID<a class="headerlink" href="#Note-on-run-ID" title="Link to this heading"></a></h4>
+<p><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object also has a <code class="docutils literal notranslate"><span class="pre">run_id</span></code>, also an integer index:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">run_id</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">run_id</span></code> also gets assigned to a dataset upon its creation, and due to its implementation is unique only within that database file. Unlike <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code>, <code class="docutils literal notranslate"><span class="pre">run_id</span></code> is <strong>NOT</strong> preserved when exporting a dataset from one database file to another, hence it is <strong>NOT</strong> recommended for any use.</p>
+</section>
+</section>
+<section id="Experiment-and-sample-names">
+<h3>Experiment and sample names<a class="headerlink" href="#Experiment-and-sample-names" title="Link to this heading"></a></h3>
+<p>Every dataset contains the name of the experiment, and the name of the sample - those come from the <code class="docutils literal notranslate"><span class="pre">Experiment</span></code> object that was passed to the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object with which the dataset has been created.</p>
+<p>So here is the experiment name that has been used above:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">exp_name</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;greco&#39;
+</pre></div></div>
+</div>
+<p>And here is the sample name that has been used above:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">sample_name</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;draco&#39;
+</pre></div></div>
+</div>
+<p>Both experiment name and sample name are great means for identifying a dataset, especially when coupled with the <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code>.</p>
+</section>
+<section id="DataSet-name">
+<h3>DataSet name<a class="headerlink" href="#DataSet-name" title="Link to this heading"></a></h3>
+<p>Last but not least, a dataset may have a <code class="docutils literal notranslate"><span class="pre">name</span></code>. This name gets assigned to the dataset upon its creation, and is taken from the <code class="docutils literal notranslate"><span class="pre">name</span></code> attribute of the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object that was used to create the dataset. For example, above the <code class="docutils literal notranslate"><span class="pre">name</span></code> of the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> was set by passing it as an argument to its constructor, hence the produced <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> also has this name:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">name</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;first_run&#39;
+</pre></div></div>
+</div>
+<p>If the <code class="docutils literal notranslate"><span class="pre">name</span></code> of the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> is not explicitly defined, the created dataset gets a default name.</p>
+</section>
+<section id="Note-on-experiments">
+<h3>Note on experiments<a class="headerlink" href="#Note-on-experiments" title="Link to this heading"></a></h3>
+<p>Conceptually experiments are meant to group datasets under the same experiment name and sample name. This is why every dataset also contains the following <code class="docutils literal notranslate"><span class="pre">Experiment</span></code>-related identifications.</p>
+<p>Experiments have integer ids within a database file. A dataset knows about the id of the experiment it belongs to via <code class="docutils literal notranslate"><span class="pre">exp_id</span></code> property:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">exp_id</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>Because an <code class="docutils literal notranslate"><span class="pre">Experiment</span></code> is a group of datasets, every dataset also has a <code class="docutils literal notranslate"><span class="pre">captured_counter</span></code> within an <code class="docutils literal notranslate"><span class="pre">Experiment</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">captured_counter</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>Similar to <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code>, <code class="docutils literal notranslate"><span class="pre">captured_counter</span></code> gets assigned to a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> upon its creation, and is preserved when exporting a dataset to another database file. The formula for <code class="docutils literal notranslate"><span class="pre">captured_counter</span></code> is:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>captured_counter_for_new_dataset = 1 + current_total_number_of_datasets_within_the_given_experiment_in_the_database
+</pre></div>
+</div>
+<section id="Note-on-counter">
+<h4>Note on counter<a class="headerlink" href="#Note-on-counter" title="Link to this heading"></a></h4>
+<p>Upon creation, a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> also gets a <code class="docutils literal notranslate"><span class="pre">counter</span></code> index within an <code class="docutils literal notranslate"><span class="pre">Experiment</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">counter</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>However, similar to <code class="docutils literal notranslate"><span class="pre">run_id</span></code>, <code class="docutils literal notranslate"><span class="pre">counter</span></code> is <strong>NOT</strong> preserved when exporting a dataset to a different database file, hence it is <strong>NOT</strong> recommended for any use.</p>
+</section>
+</section>
+</section>
+<section id="DataSet-info">
+<h2>DataSet info<a class="headerlink" href="#DataSet-info" title="Link to this heading"></a></h2>
+<p>In this section we are going to look at different minor pieces of information about the dataset.</p>
+<section id="Database-file">
+<h3>Database file<a class="headerlink" href="#Database-file" title="Link to this heading"></a></h3>
+<p>Dataset is obviously aware of which database file it is contained in:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">path_to_db</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;/tmp/data_access_example.db&#39;
+</pre></div></div>
+</div>
+</section>
+<section id="Timestamps">
+<h3>Timestamps<a class="headerlink" href="#Timestamps" title="Link to this heading"></a></h3>
+<p>A dataset has two associated timestamps: <code class="docutils literal notranslate"><span class="pre">run_timestamp</span></code> of the moment when it has been started (say, when the measurement was started), and <code class="docutils literal notranslate"><span class="pre">completed_timestamp</span></code> of the moment when it has been completed (say, when the measurement was finished). Both of the timestamps are available as <code class="docutils literal notranslate"><span class="pre">*_raw</span></code> properties of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>, and as convenience methods of <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> which allow formatting of the raw timestamps.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">run_timestamp_raw</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1711604169.9656665
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">run_timestamp</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;2024-03-28 05:36:09&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">completed_timestamp_raw</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1711604171.137752
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">completed_timestamp</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;2024-03-28 05:36:11&#39;
+</pre></div></div>
+</div>
+</section>
+<section id="Snapshot">
+<h3>Snapshot<a class="headerlink" href="#Snapshot" title="Link to this heading"></a></h3>
+<p>The snapshot of the <code class="docutils literal notranslate"><span class="pre">Station</span></code> at the moment the measurement started is stored in the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>, and is available via <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> property that returns the snapshot as a Python dictionary:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">snapshot</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;station&#39;: {&#39;instruments&#39;: {},
+  &#39;parameters&#39;: {&#39;force_side&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+    &#39;full_name&#39;: &#39;force_side&#39;,
+    &#39;value&#39;: &#39;dark&#39;,
+    &#39;raw_value&#39;: &#39;dark&#39;,
+    &#39;ts&#39;: &#39;2024-03-28 05:36:09&#39;,
+    &#39;inter_delay&#39;: 0,
+    &#39;post_delay&#39;: 0,
+    &#39;unit&#39;: &#39;&#39;,
+    &#39;validators&#39;: [],
+    &#39;label&#39;: &#39;Side of the Force&#39;,
+    &#39;name&#39;: &#39;force_side&#39;}},
+  &#39;components&#39;: {},
+  &#39;config&#39;: None}}
+</pre></div></div>
+</div>
+<p>If needed, <code class="docutils literal notranslate"><span class="pre">snapshot_raw</span></code> property of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> can be used to retrieve the snapshot in the way it is persisted - it’s a JSON-formatted string:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">snapshot_raw</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;{&#34;station&#34;: {&#34;instruments&#34;: {}, &#34;parameters&#34;: {&#34;force_side&#34;: {&#34;__class__&#34;: &#34;qcodes.parameters.parameter.Parameter&#34;, &#34;full_name&#34;: &#34;force_side&#34;, &#34;value&#34;: &#34;dark&#34;, &#34;raw_value&#34;: &#34;dark&#34;, &#34;ts&#34;: &#34;2024-03-28 05:36:09&#34;, &#34;inter_delay&#34;: 0, &#34;post_delay&#34;: 0, &#34;unit&#34;: &#34;&#34;, &#34;validators&#34;: [], &#34;label&#34;: &#34;Side of the Force&#34;, &#34;name&#34;: &#34;force_side&#34;}}, &#34;components&#34;: {}, &#34;config&#34;: null}}&#39;
+</pre></div></div>
+</div>
+</section>
+<section id="Parent-dataset-links">
+<h3>Parent dataset links<a class="headerlink" href="#Parent-dataset-links" title="Link to this heading"></a></h3>
+<p>The feature of linking <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>s is described in detail in a separate <a class="reference internal" href="Linking%20to%20parent%20datasets.html"><span class="doc">Linking to parent datasets</span></a> notebook, hence here we will just mention the <code class="docutils literal notranslate"><span class="pre">parent_dataset_links</span></code> property:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">parent_dataset_links</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[]
+</pre></div></div>
+</div>
+</section>
+<section id="Note-on-DataSet-states">
+<h3>Note on DataSet states<a class="headerlink" href="#Note-on-DataSet-states" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object publicly exposes properties which give information about its state. However, users are expected to always get <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> objects in their “final”, last, unmodifiable state. This means that the “state” properties of the dataset will have the following values:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">completed</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">started</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">running</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+False
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">pristine</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+False
+</pre></div></div>
+</div>
+</section>
+<section id="Note-on-metadata">
+<h3>Note on metadata<a class="headerlink" href="#Note-on-metadata" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object also supports storing arbitrary “metadata” inside it, however, this feature is not complete and may be flaky and buggy at the moment. Yet, for completeness of this article we still mention the <code class="docutils literal notranslate"><span class="pre">metadata</span></code> property of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">metadata</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{}
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Parameters-in-DataSet">
+<h2>Parameters in DataSet<a class="headerlink" href="#Parameters-in-DataSet" title="Link to this heading"></a></h2>
+<p>In this section we are getting information about the parameters stored in the given <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>.</p>
+<section id="Interdependencies">
+<h3>Interdependencies<a class="headerlink" href="#Interdependencies" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object has a <code class="docutils literal notranslate"><span class="pre">description</span></code> property that returns a <code class="docutils literal notranslate"><span class="pre">RunDescriber</span></code> object. The <code class="docutils literal notranslate"><span class="pre">RunDescriber</span></code> object in turn contains information about the parameters under its <code class="docutils literal notranslate"><span class="pre">interdeps</span></code> attribute:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interdeps</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">interdeps</span>
+<span class="n">interdeps</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+InterDependencies_(dependencies={ParamSpecBase(&#39;y&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;): (ParamSpecBase(&#39;x&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;), ParamSpecBase(&#39;t&#39;, &#39;numeric&#39;, &#39;Time&#39;, &#39;s&#39;)), ParamSpecBase(&#39;y2&#39;, &#39;numeric&#39;, &#39;Current&#39;, &#39;A&#39;): (ParamSpecBase(&#39;x&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;), ParamSpecBase(&#39;t&#39;, &#39;numeric&#39;, &#39;Time&#39;, &#39;s&#39;))}, inferences={}, standalones=frozenset())
+</pre></div></div>
+</div>
+<p>This is <code class="docutils literal notranslate"><span class="pre">InterDependencies_</span></code> object, it stores information about every parameter in the form of <code class="docutils literal notranslate"><span class="pre">ParamSpecBase</span></code> objects, and the releationship between parameters via <code class="docutils literal notranslate"><span class="pre">dependencies</span></code>, <code class="docutils literal notranslate"><span class="pre">inferences</span></code>, and <code class="docutils literal notranslate"><span class="pre">standalones</span></code> attributes.</p>
+<p>For example, the dataset that we are inspecting contains no inferences, and no standalone parameters, but it contains two dependent parameters <code class="docutils literal notranslate"><span class="pre">y</span></code> and <code class="docutils literal notranslate"><span class="pre">y2</span></code>, which both depend on independent <code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">t</span></code> parameters:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interdeps</span><span class="o">.</span><span class="n">inferences</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interdeps</span><span class="o">.</span><span class="n">standalones</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+frozenset()
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interdeps</span><span class="o">.</span><span class="n">dependencies</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{ParamSpecBase(&#39;y&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;): (ParamSpecBase(&#39;x&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;),
+  ParamSpecBase(&#39;t&#39;, &#39;numeric&#39;, &#39;Time&#39;, &#39;s&#39;)),
+ ParamSpecBase(&#39;y2&#39;, &#39;numeric&#39;, &#39;Current&#39;, &#39;A&#39;): (ParamSpecBase(&#39;x&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;),
+  ParamSpecBase(&#39;t&#39;, &#39;numeric&#39;, &#39;Time&#39;, &#39;s&#39;))}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interdeps</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parameter </span><span class="si">{</span><span class="n">ps</span><span class="si">}</span><span class="s1"> depends on:&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">interdeps</span><span class="o">.</span><span class="n">dependencies</span><span class="p">[</span><span class="n">ps</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;- </span><span class="si">{</span><span class="n">p</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Parameter ParamSpecBase(&#39;y&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;) depends on:
+- ParamSpecBase(&#39;x&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;)
+- ParamSpecBase(&#39;t&#39;, &#39;numeric&#39;, &#39;Time&#39;, &#39;s&#39;)
+</pre></div></div>
+</div>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">ParamSpecBase</span></code> objects contain all the necessary information about a parameter, including its <code class="docutils literal notranslate"><span class="pre">name</span></code> and <code class="docutils literal notranslate"><span class="pre">unit</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ps</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">interdeps</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parameter </span><span class="si">{</span><span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s1"> is in </span><span class="si">{</span><span class="n">ps</span><span class="o">.</span><span class="n">unit</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Parameter &#39;y&#39; is in &#39;V&#39;
+</pre></div></div>
+</div>
+<p>More information on how to work with this object is provided in a separate example notebook, <a class="reference internal" href="Accessing-data-in-DataSet.html"><span class="doc">Accessing data in DataSet</span></a>.</p>
+</section>
+<section id="Shortcuts-to-important-parameters">
+<h3>Shortcuts to important parameters<a class="headerlink" href="#Shortcuts-to-important-parameters" title="Link to this heading"></a></h3>
+<p>For the frequently needed groups of parameters, <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> object itself provides convenient methods.</p>
+<p>For example, use <code class="docutils literal notranslate"><span class="pre">dependent_parameters</span></code> property to get a only dependent parameters of a given <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">dependent_parameters</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(ParamSpecBase(&#39;y&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;),
+ ParamSpecBase(&#39;y2&#39;, &#39;numeric&#39;, &#39;Current&#39;, &#39;A&#39;))
+</pre></div></div>
+</div>
+</section>
+<section id="Note-on-ParamSpec's">
+<h3>Note on ParamSpec’s<a class="headerlink" href="#Note-on-ParamSpec's" title="Link to this heading"></a></h3>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code>s originate from QCoDeS versions prior to <code class="docutils literal notranslate"><span class="pre">0.2.0</span></code> and for now are kept for backwards compatibility. <code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code>s are completely superseded by <code class="docutils literal notranslate"><span class="pre">InterDependencies_</span></code>/<code class="docutils literal notranslate"><span class="pre">ParamSpecBase</span></code> bundle and will likely be deprecated in future versions of QCoDeS together with the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> methods/properties that return <code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code>s objects.</p>
+</div></blockquote>
+<p>In addition to the <code class="docutils literal notranslate"><span class="pre">Interdependencies_</span></code> object, <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> also holds <code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code> objects (not to be confused with <code class="docutils literal notranslate"><span class="pre">ParamSpecBase</span></code> objects from above). Similar to <code class="docutils literal notranslate"><span class="pre">Interdependencies_</span></code> object, the <code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code> objects hold information about parameters and their interdependencies but in a different way: for a given parameter, <code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code> object itself contains information on names of parameters that it depends on, while for the <code class="docutils literal notranslate"><span class="pre">InterDependencies_</span></code>/<code class="docutils literal notranslate"><span class="pre">ParamSpecBase</span></code>s this
+information is stored only in the <code class="docutils literal notranslate"><span class="pre">InterDependencies_</span></code> object.</p>
+<p><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> exposes <code class="docutils literal notranslate"><span class="pre">paramspecs</span></code> property and <code class="docutils literal notranslate"><span class="pre">get_parameters()</span></code> method, both of which return <code class="docutils literal notranslate"><span class="pre">ParamSpec</span></code> objects of all the parameters of the dataset, and are not recommended for use:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">paramspecs</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;x&#39;: ParamSpec(&#39;x&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;, inferred_from=[], depends_on=[]),
+ &#39;t&#39;: ParamSpec(&#39;t&#39;, &#39;numeric&#39;, &#39;Time&#39;, &#39;s&#39;, inferred_from=[], depends_on=[]),
+ &#39;y&#39;: ParamSpec(&#39;y&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;, inferred_from=[], depends_on=[&#39;x&#39;, &#39;t&#39;]),
+ &#39;y2&#39;: ParamSpec(&#39;y2&#39;, &#39;numeric&#39;, &#39;Current&#39;, &#39;A&#39;, inferred_from=[], depends_on=[&#39;x&#39;, &#39;t&#39;])}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[ParamSpec(&#39;x&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;, inferred_from=[], depends_on=[]),
+ ParamSpec(&#39;t&#39;, &#39;numeric&#39;, &#39;Time&#39;, &#39;s&#39;, inferred_from=[], depends_on=[]),
+ ParamSpec(&#39;y&#39;, &#39;numeric&#39;, &#39;Voltage&#39;, &#39;V&#39;, inferred_from=[], depends_on=[&#39;x&#39;, &#39;t&#39;]),
+ ParamSpec(&#39;y2&#39;, &#39;numeric&#39;, &#39;Current&#39;, &#39;A&#39;, inferred_from=[], depends_on=[&#39;x&#39;, &#39;t&#39;])]
+</pre></div></div>
+</div>
+<p>Lastly, <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> has <code class="docutils literal notranslate"><span class="pre">parameters</span></code> that returns a string with comma-separated names of all the dataset parameters (will likely be deprecated soon):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">parameters</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;x,t,y,y2&#39;
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Data-access-in-DataSet">
+<h2>Data access in DataSet<a class="headerlink" href="#Data-access-in-DataSet" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> provides one main method of accessing data - <code class="docutils literal notranslate"><span class="pre">get_parameter_data</span></code>. It returns data for groups of dependent-parameter-and-its-independent-parameters in a form of a nested dictionary of <code class="docutils literal notranslate"><span class="pre">numpy</span></code> arrays:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">get_parameter_data</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;y&#39;: {&#39;y&#39;: array([-0.5       , -0.41666667, -0.33333333, ...,  1.33333333,
+          1.41666667,  1.5       ]),
+  &#39;x&#39;: array([-4., -4., -4., ...,  5.,  5.,  5.]),
+  &#39;t&#39;: array([-500.        , -416.66666667, -333.33333333, ..., 1333.33333333,
+         1416.66666667, 1500.        ])},
+ &#39;y2&#39;: {&#39;y2&#39;: array([ 0.5       ,  0.41666667,  0.33333333, ..., -1.33333333,
+         -1.41666667, -1.5       ]),
+  &#39;x&#39;: array([-4., -4., -4., ...,  5.,  5.,  5.]),
+  &#39;t&#39;: array([-500.        , -416.66666667, -333.33333333, ..., 1333.33333333,
+         1416.66666667, 1500.        ])}}
+</pre></div></div>
+</div>
+<p>Additionally, <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> provides the following convenient methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">DataSet.to_pandas_dataframe</span></code>, <code class="docutils literal notranslate"><span class="pre">DataSet.to_pandas_dataframe</span></code>, <code class="docutils literal notranslate"><span class="pre">DataSet.to_xarray_dataset</span></code>, and <code class="docutils literal notranslate"><span class="pre">DataSet.to_xarray_dataarray_dict</span></code> (<a class="reference internal" href="Working-With-Pandas-and-XArray.html"><span class="doc">more info in Working with pandas and xarray article</span></a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DataSet.export</span></code></p></li>
+</ul>
+<p>More information on how to access data in a dataset is provided in a separate example notebook, <a class="reference internal" href="Accessing-data-in-DataSet.html"><span class="doc">Accessing data in DataSet</span></a> and <a class="reference internal" href="Exporting-data-to-other-file-formats.html"><span class="doc">Exporting QCoDes Datasets</span></a> contains more information about how to export datasets to other file formats.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">get_parameter_data</span></code> reads the data from the database at each call. If you need to re read data from the database either from a separate process while writing the data or after the data acquisition consider using the <a class="reference internal" href="Cache/read_data_from_cache.html"><span class="doc">dataset cache</span></a></p>
+<section id="Not-recommended-data-access-methods">
+<h3>Not recommended data access methods<a class="headerlink" href="#Not-recommended-data-access-methods" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">DataSet</span></code> provides a property <code class="docutils literal notranslate"><span class="pre">number_of_results</span></code> which reflects the size of the data the dataset holds. For our example dataset, this number is equal to the number of <code class="docutils literal notranslate"><span class="pre">x</span></code> values multiplied by the number of <code class="docutils literal notranslate"><span class="pre">t</span></code> values multiplied by the number of dependent parameters (<code class="docutils literal notranslate"><span class="pre">y</span></code> and <code class="docutils literal notranslate"><span class="pre">y2</span></code>) – <code class="docutils literal notranslate"><span class="pre">50</span> <span class="pre">*</span> <span class="pre">25</span> <span class="pre">*</span> <span class="pre">2</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span><span class="o">.</span><span class="n">number_of_results</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2500
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="What-about-the-rest?">
+<h2>What about the rest?<a class="headerlink" href="#What-about-the-rest?" title="Link to this heading"></a></h2>
+<p>An interested user might discover other methods and properties of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> class that are not mentioned here. Those methods and properties are likely to be made private or deprecated in future QCoDeS releases… or be documented and presented for use :)</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Benchmarking.html" class="btn btn-neutral float-left" title="Dataset Benchmarking" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Database.html" class="btn btn-neutral float-right" title="Databases" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

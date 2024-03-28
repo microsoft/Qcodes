@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QCoDeS 0.37.0 (2023-01-26) &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="QCoDeS 0.36.1 (2022-12-20)" href="0.36.1.html" />
+    <link rel="prev" title="QCoDeS 0.38.0 (2023-04-25)" href="0.38.0.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Changelogs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">0.37.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#breaking-changes">Breaking Changes:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#improved">Improved:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#improved-drivers">Improved Drivers:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#under-the-hood">Under the hood:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Changelogs</a></li>
+      <li class="breadcrumb-item active">QCoDeS 0.37.0 (2023-01-26)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/changes/0.37.0.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="qcodes-0-37-0-2023-01-26">
+<h1>QCoDeS 0.37.0 (2023-01-26)<a class="headerlink" href="#qcodes-0-37-0-2023-01-26" title="Link to this heading"></a></h1>
+<section id="breaking-changes">
+<h2>Breaking Changes:<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h2>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">InstrumentBase.ancestors</span></code> now returns a tuple of ancestors
+to the current Instrument, InstrumentChannel or InstrumentModule and not a list.</p>
+<p><code class="docutils literal notranslate"><span class="pre">dond</span> <span class="pre">``,</span> <span class="pre">``do1d</span></code> etc. now returns tuples of Matplotlib axes and colorbars
+when plotting and not lists. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4894">#4894</a>)</p>
+</li>
+<li><p>Datasets are now exported to a folder next to the database by default rather then to the users home folder.
+Note that if you had specifically configured this in a local config file this should be updated too for the
+change to take effect. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4899">#4899</a>)</p></li>
+<li><p>DriverTestCase has been moved from <cite>qcodes.instrument_drivers.test</cite> to <cite>qcodes.tests.driver_test_case</cite>. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4922">#4922</a>)</p></li>
+<li><p><cite>qcodes.instrument_drivers.VoltageDivider</cite> and <cite>qcodes.instrument_drivers.devices.VoltageDivider</cite> has
+been deprecated. Its functionality is better implemented in <cite>qcodes.parameters.DelegateParameter</cite> which
+is also significantly better tested and more general. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4923">#4923</a>)</p></li>
+<li><p>The QDevil QDAC 1 driver has been migrated to qcodes_contrib_drivers and is included from version
+0.18.0. The driver in QCoDeS is deprecated and will be removed in a future release. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4932">#4932</a>)</p></li>
+<li><p>Remove deprecated Mercury iPS driver
+<code class="docutils literal notranslate"><span class="pre">qcodes.instrument_drivers.oxford.mercuryiPS.MercuryiPS</span></code>,
+use <code class="docutils literal notranslate"><span class="pre">qcodes.instrument_drivers.oxford.OxfordMercuryiPS</span></code>
+instead. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4936">#4936</a>)</p></li>
+</ul>
+</section>
+<section id="improved">
+<h2>Improved:<a class="headerlink" href="#improved" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>When a dataset is exported an optional user supplied entry point is called. See
+<a class="reference external" href="../examples/DataSet/Exporting-data-to-other-file-formats.html#Automatically-post-process-exported-datasets.">here</a>
+for more details. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4857">#4857</a>)</p></li>
+<li><p>PyVISA <code class="docutils literal notranslate"><span class="pre">1.13</span></code> is now supported. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4895">#4895</a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">validate</span></code> method of <code class="docutils literal notranslate"><span class="pre">DelegateParameter</span></code> now also validates the given value
+against the validator of the source parameter (if source parameter is present). (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4870">#4870</a>)</p></li>
+<li><p>The dataset logic has been updated to ensure that if you set an already completed
+dataset as completed the completion timestamp will not be updated. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4876">#4876</a>)</p></li>
+<li><p>Update the pyqtgraph plot backend for upstream changes in pyqtgraph. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4886">#4886</a>)</p></li>
+<li><p>QcoDeS is now typechecked with Pyright in addition to mypy. This should give a significantly
+better user experience when working in VS Code. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4938">#4938</a>)</p></li>
+</ul>
+</section>
+<section id="improved-drivers">
+<h2>Improved Drivers:<a class="headerlink" href="#improved-drivers" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>The Minicircuits USB SPDT driver now supports running with the more modern version of the driver DLL <cite>mcl_RF_Switch_Controller_NET45.dll</cite> (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4623">#4623</a>)</p></li>
+<li><dl class="simple">
+<dt>Two parameters are added to the <cite>Keysight.N51x1</cite> class, conditioned on it having the ‘UNW’ option:</dt><dd><ol class="arabic simple">
+<li><p>Having the pulse modulation status on or off.</p></li>
+<li><p>Setting it to ‘internal’ or ‘external’.</p></li>
+</ol>
+</dd>
+<dt>From the Keysight manual:</dt><dd><ol class="arabic simple">
+<li><p>This command enables or disables pulse modulation for the selected path.</p></li>
+<li><p>This command sets the source of the pulse modulation. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4840">#4840</a>)</p></li>
+</ol>
+</dd>
+</dl>
+</li>
+</ul>
+</section>
+<section id="under-the-hood">
+<h2>Under the hood:<a class="headerlink" href="#under-the-hood" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Improve performance of parameter validator. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/4887">#4887</a>)</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="0.38.0.html" class="btn btn-neutral float-left" title="QCoDeS 0.38.0 (2023-04-25)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="0.36.1.html" class="btn btn-neutral float-right" title="QCoDeS 0.36.1 (2022-12-20)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

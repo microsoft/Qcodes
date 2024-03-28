@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.AlazarTech.ATS9373 &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.AlazarTech.ATS9373</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.AlazarTech.ATS9373</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">packaging</span> <span class="kn">import</span> <span class="n">version</span>
+
+<span class="kn">from</span> <span class="nn">qcodes</span> <span class="kn">import</span> <span class="n">validators</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.AlazarTech.ATS</span> <span class="kn">import</span> <span class="n">AlazarTech_ATS</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.AlazarTech.utils</span> <span class="kn">import</span> <span class="n">TraceParameter</span>
+
+
+<div class="viewcode-block" id="AlazarTechATS9373">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.AlazarTechATS9373">[docs]</a>
+<span class="k">class</span> <span class="nc">AlazarTechATS9373</span><span class="p">(</span><span class="n">AlazarTech_ATS</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class is the driver for the ATS9373 board.</span>
+
+<span class="sd">    Note that this board is very similar to ATS9360. Refer to</span>
+<span class="sd">    ATS SDK for details.</span>
+
+<span class="sd">    Note that channels of this board have 12-bit resolution</span>
+<span class="sd">    (see `IDN()[&#39;bits_per_sample&#39;]`) which means that the</span>
+<span class="sd">    raw data that is returned by the card should be converted to</span>
+<span class="sd">    uint16 type with a bit shift by 4 bits. Refer to ATS SDK</span>
+<span class="sd">    for more infromation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">samples_divisor</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">_trigger_holdoff_min_fw_version</span> <span class="o">=</span> <span class="s1">&#39;30.04&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">dll_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;C:</span><span class="se">\\</span><span class="s1">WINDOWS</span><span class="se">\\</span><span class="s1">System32</span><span class="se">\\</span><span class="s1">ATSApi.dll&#39;</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">dll_path</span><span class="o">=</span><span class="n">dll_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># add parameters</span>
+
+        <span class="c1"># ----- Parameters for the configuration of the board -----</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;clock_source&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Clock Source&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;INTERNAL_CLOCK&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;INTERNAL_CLOCK&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s1">&#39;FAST_EXTERNAL_CLOCK&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                        <span class="s1">&#39;EXTERNAL_CLOCK_10MHz_REF&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;external_sample_rate&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;External Sample Rate&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;S/s&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">MultiType</span><span class="p">(</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">300000000</span><span class="p">,</span> <span class="mi">2000000000</span><span class="p">),</span>
+                                                     <span class="n">validators</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s1">&#39;UNDEFINED&#39;</span><span class="p">)),</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;UNDEFINED&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sample_rate&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Internal Sample Rate&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;S/s&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;UNDEFINED&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="mi">1_000</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="mi">2_000</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                        <span class="mi">5_000</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                                       <span class="mi">10_000</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                                       <span class="mi">20_000</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+                                       <span class="mi">50_000</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+                                      <span class="mi">100_000</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+                                      <span class="mi">200_000</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+                                      <span class="mi">500_000</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+                                    <span class="mi">1_000_000</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+                                    <span class="mi">2_000_000</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span>
+                                    <span class="mi">5_000_000</span><span class="p">:</span> <span class="mi">26</span><span class="p">,</span>
+                                   <span class="mi">10_000_000</span><span class="p">:</span> <span class="mi">28</span><span class="p">,</span>
+                                   <span class="mi">20_000_000</span><span class="p">:</span> <span class="mi">30</span><span class="p">,</span>
+                                   <span class="mi">25_000_000</span><span class="p">:</span> <span class="mi">33</span><span class="p">,</span>
+                                   <span class="mi">50_000_000</span><span class="p">:</span> <span class="mi">34</span><span class="p">,</span>
+                                  <span class="mi">100_000_000</span><span class="p">:</span> <span class="mi">36</span><span class="p">,</span>
+                                  <span class="mi">125_000_000</span><span class="p">:</span> <span class="mi">37</span><span class="p">,</span>
+                                  <span class="mi">160_000_000</span><span class="p">:</span> <span class="mi">38</span><span class="p">,</span>
+                                  <span class="mi">180_000_000</span><span class="p">:</span> <span class="mi">39</span><span class="p">,</span>
+                                  <span class="mi">200_000_000</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+                                  <span class="mi">250_000_000</span><span class="p">:</span> <span class="mi">43</span><span class="p">,</span>
+                                  <span class="mi">500_000_000</span><span class="p">:</span> <span class="mi">48</span><span class="p">,</span>
+                                  <span class="mi">800_000_000</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+                                <span class="mi">1_000_000_000</span><span class="p">:</span> <span class="mi">53</span><span class="p">,</span>
+                                <span class="mi">1_200_000_000</span><span class="p">:</span> <span class="mi">55</span><span class="p">,</span>
+                                <span class="mi">1_500_000_000</span><span class="p">:</span> <span class="mi">58</span><span class="p">,</span>
+                                <span class="mi">1_800_000_000</span><span class="p">:</span> <span class="mi">61</span><span class="p">,</span>
+                                <span class="mi">2_000_000_000</span><span class="p">:</span> <span class="mi">63</span><span class="p">,</span>
+                                <span class="mi">2_400_000_000</span><span class="p">:</span> <span class="mi">106</span><span class="p">,</span>
+                                <span class="mi">3_000_000_000</span><span class="p">:</span> <span class="mi">117</span><span class="p">,</span>
+                                <span class="mi">3_600_000_000</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
+                                <span class="mi">4_000_000_000</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span>
+                             <span class="s1">&#39;EXTERNAL_CLOCK&#39;</span><span class="p">:</span> <span class="mi">64</span><span class="p">,</span>
+                                  <span class="s1">&#39;UNDEFINED&#39;</span><span class="p">:</span> <span class="s1">&#39;UNDEFINED&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;clock_edge&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Clock Edge&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;CLOCK_EDGE_RISING&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;CLOCK_EDGE_RISING&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;CLOCK_EDGE_FALLING&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;decimation&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Decimation&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100000</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;coupling</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Coupling channel </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DC&#39;</span><span class="p">,</span>
+                               <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;AC&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;DC&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;channel_range</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Range channel </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+                               <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="mf">0.4</span><span class="p">:</span> <span class="mi">7</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;impedance</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Impedance channel </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Ohm&#39;</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                               <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="mi">50</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;bwlimit</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Bandwidth limit channel </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">,</span>
+                               <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                            <span class="s1">&#39;ENABLED&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;trigger_operation&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Trigger Operation&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;TRIG_ENGINE_OP_J&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;TRIG_ENGINE_OP_J&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_ENGINE_OP_K&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_ENGINE_OP_J_OR_K&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_ENGINE_OP_J_AND_K&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_ENGINE_OP_J_XOR_K&#39;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_ENGINE_OP_J_AND_NOT_K&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_ENGINE_OP_NOT_J_AND_K&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">})</span>
+        <span class="n">n_trigger_engines</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_trigger_engines</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;trigger_engine</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Trigger Engine </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;TRIG_ENGINE_&#39;</span> <span class="o">+</span> <span class="p">(</span><span class="s1">&#39;J&#39;</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;K&#39;</span><span class="p">),</span>
+                               <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;TRIG_ENGINE_J&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                            <span class="s1">&#39;TRIG_ENGINE_K&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;trigger_source</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Trigger Source </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;EXTERNAL&#39;</span><span class="p">,</span>
+                               <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;CHANNEL_A&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                            <span class="s1">&#39;CHANNEL_B&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                            <span class="s1">&#39;EXTERNAL&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                            <span class="s1">&#39;DISABLE&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;trigger_slope</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Trigger Slope </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;TRIG_SLOPE_POSITIVE&#39;</span><span class="p">,</span>
+                               <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;TRIG_SLOPE_POSITIVE&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                            <span class="s1">&#39;TRIG_SLOPE_NEGATIVE&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;trigger_level</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Trigger Level </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                               <span class="n">initial_value</span><span class="o">=</span><span class="mi">140</span><span class="p">,</span>
+                               <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;external_trigger_coupling&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;External Trigger Coupling&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DC&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;AC&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;DC&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;external_trigger_range&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;External Trigger Range&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;ETR_2V5&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;ETR_TTL&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;ETR_2V5&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;trigger_delay&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Trigger Delay&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Sample clock cycles&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Multiples</span><span class="p">(</span><span class="n">divisor</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># See Table 3 - Trigger Delay Alignment</span>
+        <span class="c1"># TODO: this is either 8 or 16 dependent on the  number of channels in use</span>
+
+        <span class="c1"># NOTE: The board will wait for a for this amount of time for a</span>
+        <span class="c1"># trigger event.  If a trigger event does not arrive, then the</span>
+        <span class="c1"># board will automatically trigger. Set the trigger timeout value</span>
+        <span class="c1"># to 0 to force the board to wait forever for a trigger event.</span>
+        <span class="c1">#</span>
+        <span class="c1"># IMPORTANT: The trigger timeout value should be set to zero after</span>
+        <span class="c1"># appropriate trigger parameters have been determined, otherwise</span>
+        <span class="c1"># the board may trigger if the timeout interval expires before a</span>
+        <span class="c1"># hardware trigger event arrives.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;timeout_ticks&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Timeout Ticks&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;10 us&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;aux_io_mode&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;AUX I/O Mode&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;AUX_IN_AUXILIARY&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;AUX_OUT_TRIGGER&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;AUX_IN_TRIGGER_ENABLE&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s1">&#39;AUX_IN_AUXILIARY&#39;</span><span class="p">:</span> <span class="mi">13</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;aux_io_param&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">TraceParameter</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;AUX I/O Param&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;NONE&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;NONE&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_SLOPE_POSITIVE&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s1">&#39;TRIG_SLOPE_NEGATIVE&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+
+        <span class="c1"># ----- Parameters for the acquire function -----</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;mode&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Acquisition mode&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;NPT&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;NPT&#39;</span><span class="p">:</span> <span class="mh">0x200</span><span class="p">,</span> <span class="s1">&#39;TS&#39;</span><span class="p">:</span> <span class="mh">0x400</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;samples_per_record&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Samples per Record&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Multiples</span><span class="p">(</span>
+                                <span class="n">divisor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_divisor</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">256</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;records_per_buffer&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Records per Buffer&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;buffers_per_acquisition&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Buffers per Acquisition&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;channel_selection&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Channel Selection&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;AB&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;A&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;AB&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;transfer_offset&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Transfer Offset&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Samples&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;external_startcapture&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;External Startcapture&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;ENABLED&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">:</span> <span class="mh">0X0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ENABLED&#39;</span><span class="p">:</span> <span class="mh">0x1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;enable_record_headers&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Enable Record Headers&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">:</span> <span class="mh">0x0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ENABLED&#39;</span><span class="p">:</span> <span class="mh">0x8</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;alloc_buffers&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Alloc Buffers&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">:</span> <span class="mh">0x0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ENABLED&#39;</span><span class="p">:</span> <span class="mh">0x20</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;fifo_only_streaming&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Fifo Only Streaming&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">:</span> <span class="mh">0x0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ENABLED&#39;</span><span class="p">:</span> <span class="mh">0x800</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;interleave_samples&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Interleave Samples&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">:</span> <span class="mh">0x0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ENABLED&#39;</span><span class="p">:</span> <span class="mh">0x1000</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;get_processed_data&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Get Processed Data&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;DISABLED&#39;</span><span class="p">:</span> <span class="mh">0x0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ENABLED&#39;</span><span class="p">:</span> <span class="mh">0x2000</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;allocated_buffers&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Allocated Buffers&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;buffer_timeout&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Buffer Timeout&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;ms&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;trigger_holdoff&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Trigger Holdoff&#39;</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;If enabled Alazar will &#39;</span>
+                                     <span class="sa">f</span><span class="s1">&#39;ignore any additional triggers &#39;</span>
+                                     <span class="sa">f</span><span class="s1">&#39;while capturing a record. If disabled &#39;</span>
+                                     <span class="sa">f</span><span class="s1">&#39;this will result in corrupt data. &#39;</span>
+                                     <span class="sa">f</span><span class="s1">&#39;Support for this requires at least &#39;</span>
+                                     <span class="sa">f</span><span class="s1">&#39;firmware version &#39;</span>
+                                     <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_trigger_holdoff_min_fw_version</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">validators</span><span class="o">.</span><span class="n">Bool</span><span class="p">(),</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_trigger_holdoff</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_trigger_holdoff</span><span class="p">)</span>
+
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="o">!=</span> <span class="s2">&quot;ATS9373&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;The Alazar board kind is not &#39;ATS9373&#39;,&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; found &#39;</span><span class="si">{</span><span class="n">model</span><span class="si">!s}</span><span class="s2">&#39; instead.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_trigger_holdoff</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">fwversion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()[</span><span class="s2">&quot;firmware&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fwversion</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">fwversion</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trigger_holdoff_min_fw_version</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="c1"># we want to check if the 26h bit (zero indexed) is high or not</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_read_register</span><span class="p">(</span><span class="mi">58</span><span class="p">))</span>
+        <span class="c1"># the two first two chars in the bit string is the sign and a &#39;b&#39;</span>
+        <span class="c1"># remove those to only get the bit pattern</span>
+        <span class="n">bitmask</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">(</span><span class="n">output</span><span class="p">)[</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="c1"># all prefixed zeros are ignored in the bit conversion so the</span>
+        <span class="c1"># bit mask may be shorter than what we expect. in that case</span>
+        <span class="c1"># the bit we care about is zero so we return False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bitmask</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">27</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">bin</span><span class="p">(</span><span class="n">output</span><span class="p">)[</span><span class="o">-</span><span class="mi">27</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_set_trigger_holdoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fwversion</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()[</span><span class="s2">&quot;firmware&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fwversion</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">fwversion</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_trigger_holdoff_min_fw_version</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Alazar 9373 requires at least firmware &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;version </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_trigger_holdoff_min_fw_version</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; for trigger holdoff support. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;You have version </span><span class="si">{</span><span class="n">fwversion</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">current_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_register</span><span class="p">(</span><span class="mi">58</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="c1"># to enable trigger hold off we want to flip the</span>
+            <span class="c1"># 26th bit to 1. We do that by making a bitwise or</span>
+            <span class="c1"># with a number that has a 1 on the 26th place and zero</span>
+            <span class="c1"># otherwise. We use numpy.unit32 instead of python numbers</span>
+            <span class="c1"># to have unsigned ints of the right size</span>
+            <span class="n">enable_mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">26</span><span class="p">)</span>
+            <span class="n">new_value</span> <span class="o">=</span> <span class="n">current_value</span> <span class="o">|</span> <span class="n">enable_mask</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># to disable trigger hold off we want to flip the</span>
+            <span class="c1"># 26th bit to 0. We do that by making a bitwise and</span>
+            <span class="c1"># with a number that has a 0 on the 26th place and 1</span>
+            <span class="c1"># otherwise</span>
+            <span class="n">disable_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">26</span><span class="p">)</span>
+            <span class="n">new_value</span> <span class="o">=</span> <span class="n">current_value</span> <span class="o">&amp;</span> <span class="n">disable_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_register</span><span class="p">(</span><span class="mi">58</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">new_value</span><span class="p">))</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">AlazarTech_ATS9373</span><span class="p">(</span><span class="n">AlazarTechATS9373</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Alias for backwards compatibility. Will eventually be deprecated and removed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

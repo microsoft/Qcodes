@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DataSet Specification" href="spec.html" />
+    <link rel="prev" title="DataSet" href="index.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DataSet</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basics">Basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#experiment">Experiment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dataset">DataSet</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="spec.html">DataSet Specification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DataSet</a></li>
+      <li class="breadcrumb-item active">Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dataset/introduction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h1>
+<p>This page explains the basics of the QCoDeS dataset. Read here to figure out what the heck is going on.</p>
+<section id="basics">
+<span id="sec-intro-basics"></span><h2>Basics<a class="headerlink" href="#basics" title="Link to this heading"></a></h2>
+<p>The DataSet is directly linked to an SQLite database on the host machine’s hard drive. Here we provide an overview of the layout of that database.
+The specifics of the python objects implementing the API on top of that can be found in the section <a class="reference internal" href="dataset_design.html#datasetdesign"><span class="std std-ref">Dataset Design</span></a>.</p>
+<p>The database holds a number of <code class="docutils literal notranslate"><span class="pre">Experiments</span></code> that each holds a number of <code class="docutils literal notranslate"><span class="pre">DataSets</span></code>. One <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> contains exactly one <code class="docutils literal notranslate"><span class="pre">run</span></code>, and we may use the words <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> and <code class="docutils literal notranslate"><span class="pre">run</span></code> interchangeably.</p>
+</section>
+<section id="experiment">
+<span id="sec-intro-experiment"></span><h2>Experiment<a class="headerlink" href="#experiment" title="Link to this heading"></a></h2>
+<p>The intended use of the <code class="docutils literal notranslate"><span class="pre">Experiment</span></code> is to group <code class="docutils literal notranslate"><span class="pre">DataSets</span></code> that belong together. For example, an experiment may contain all the measurements necessary to characterise a particular sample (Is it superconducting? What is the critical current?). Once the goodness of the sample has been established, a new experiment containing all the “real” measurements can then commence. The grouping runs this way is offered as a convenience and is as such not essential for any functionality in QCoDeS.</p>
+<p>Each <code class="docutils literal notranslate"><span class="pre">Experiment</span></code> has the following attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>An experiment-ID</p></li>
+<li><p>A name</p></li>
+<li><p>A sample-name</p></li>
+<li><p>A start time</p></li>
+<li><p>(potentially) An end time</p></li>
+</ul>
+</div></blockquote>
+<p>The <strong>experiment-ID</strong> is an ever-increasing integer enumerating the number of experiments in the current database. The experiments are kept in the SQLite database in the <code class="docutils literal notranslate"><span class="pre">experiments</span></code> table. The experiment-ID is the primary key of this table.</p>
+<p>The <strong>name</strong> and the <strong>sample name</strong> of an experiment must be provided by the user at creation time.</p>
+<p>The <strong>start time</strong> is automatically added upon creation, and the <strong>end time</strong> is added when (if ever) the user decides to mark the experiment as <em>completed</em> after which point no more runs may be added.</p>
+<p>For an example notebook showing the usage of the database as a container for experiments, see the <a class="reference internal" href="../examples/DataSet/The-Experiment-Container.html"><span class="doc">Experiment Container Notebook</span></a>.</p>
+</section>
+<section id="dataset">
+<span id="sec-intro-dataset"></span><h2>DataSet<a class="headerlink" href="#dataset" title="Link to this heading"></a></h2>
+<p>Each <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> has the following attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>A run-ID</p></li>
+<li><p>An experiment-ID</p></li>
+<li><p>A name</p></li>
+<li><p>A table of results</p></li>
+<li><p>A number of parameters</p></li>
+<li><p>A start time</p></li>
+<li><p>(potentially) An end time</p></li>
+<li><p>A GUID</p></li>
+</ul>
+</div></blockquote>
+<p>The <strong>run-ID</strong> is an ever-increasing integer enumerating the number of runs in the current database. The runs are kept in the SQLite database in the <code class="docutils literal notranslate"><span class="pre">runs</span></code> table. The run-ID is the primary key of this table.</p>
+<p>The <strong>experiment-ID</strong> provides the link to the experiment that this dataset belongs to.</p>
+<p>The <strong>name</strong> must be provided by the user at creation time.</p>
+<p>The <strong>table of results</strong> is where the actual <em>data</em> of the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> resides. The table has a number of associated <strong>parameters</strong> as columns with data points as rows. The parameters may be QCoDeS <code class="docutils literal notranslate"><span class="pre">Parameters</span></code>, but are not limited to that. The preferred procedure for associating parameters with a run and adding data is via the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object as described in the <a class="reference internal" href="../examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html"><span class="doc">Measurement Object Example Notebook</span></a>. The deep thinking behind how different parameters relate to and depend on each other within a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> is explained in <a class="reference internal" href="interdependentparams.html#interdependentparams"><span class="std std-ref">Interdependent Parameters</span></a>.</p>
+<p>The <strong>start time</strong> is automatically added upon creation, and the <strong>end time</strong> is added when (if ever) the user decides to mark the run as <em>completed</em> after which point no more data points may be added.</p>
+<p>The <strong>GUID</strong> is a run identifier that aims to go <cite>beyond</cite> the current database. The motivation for the GUID is that collaboration and data sharing across several machines requires a run to be labelled by something more than its name and number in the local database. The GUID is a standard 36 character string GUID composed from three integer codes and a timestamp. The codes are: location code (1-256), work station code (1-16777216), sample code (1-4294967296). The idea is that the people in a certain collaboration will label their locations, machines, and samples according to a scheme agreed upon <cite>within</cite> the relevant collaboration. That way, each run is uniquely identifiable in a human-readable way. This extra label for runs is offered as a convenience as is as such not essential for any functionality in QCoDeS.</p>
+<p>For an example notebook showing details of <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> class and its usage, see the <a class="reference internal" href="../examples/DataSet/DataSet-class-walkthrough.html"><span class="doc">DataSet class walkthrough notebook</span></a> and <a class="reference internal" href="../examples/DataSet/Accessing-data-in-DataSet.html"><span class="doc">Accessing data in DataSet notebook</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="DataSet" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="spec.html" class="btn btn-neutral float-right" title="DataSet Specification" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

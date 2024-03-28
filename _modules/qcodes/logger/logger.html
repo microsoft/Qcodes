@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.logger.logger &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.logger.logger</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.logger.logger</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines functions to setup the logging of QCoDeS.</span>
+<span class="sd">Calling :func:`start_all_logging` will setup logging according to</span>
+<span class="sd">the default configuration.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># logging.handlers is not imported by logging. This extra import is necessary</span>
+<span class="kn">import</span> <span class="nn">logging.handlers</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">platform</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">TracebackType</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">opencensus.ext.azure.common.protocol</span> <span class="kn">import</span> <span class="p">(</span>  <span class="c1"># type: ignore[import-untyped]</span>
+        <span class="n">Envelope</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">opencensus.ext.azure.log_exporter</span> <span class="kn">import</span> <span class="p">(</span>  <span class="c1"># type: ignore[import-untyped]</span>
+        <span class="n">AzureLogHandler</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">qcodes</span> <span class="k">as</span> <span class="nn">qc</span>
+<span class="kn">from</span> <span class="nn">qcodes.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_all_installed_package_versions</span><span class="p">,</span>
+    <span class="n">get_qcodes_user_path</span><span class="p">,</span>
+    <span class="n">is_qcodes_installed_editably</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">log</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">LevelType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+<span class="n">LOGGING_DIR</span> <span class="o">=</span> <span class="s2">&quot;logs&quot;</span>
+<span class="n">LOGGING_SEPARATOR</span> <span class="o">=</span> <span class="s1">&#39; ¦ &#39;</span>
+<span class="sd">&quot;&quot;&quot;:data:`LOGGING_SEPARATOR` defines the str used to separate parts of the log</span>
+<span class="sd"> message.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">HISTORY_LOG_NAME</span> <span class="o">=</span> <span class="s2">&quot;command_history.log&quot;</span>
+<span class="n">PYTHON_LOG_NAME</span> <span class="o">=</span> <span class="s1">&#39;qcodes.log&#39;</span>
+
+<span class="n">FORMAT_STRING_DICT</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">([</span>
+    <span class="p">(</span><span class="s1">&#39;asctime&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;levelname&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;funcName&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;lineno&#39;</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="s1">&#39;s&#39;</span><span class="p">)])</span>
+<span class="sd">&quot;&quot;&quot;:data:`FORMAT_STRING_DICT` defines the format used in logging messages.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># The handler of the root logger that get set up by `start_logger` are globals</span>
+<span class="c1"># for this modules scope, as it is intended to only use a single file and</span>
+<span class="c1"># console hander.</span>
+<span class="n">console_handler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">file_handler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="n">telemetry_handler</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;AzureLogHandler&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="n">_opencensus_filter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;opencensus&quot;</span><span class="p">)</span>
+<span class="n">_urllib3_connection_filter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Filter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;urllib3.connection&quot;</span><span class="p">)</span>
+<span class="n">_azure_monitor_opentelemetry_exporter_filter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Filter</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;azure.monitor.opentelemetry.exporter&quot;</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">filter_out_telemetry_log_records</span><span class="p">(</span><span class="n">record</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">LogRecord</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    here we filter any message that is likely to be thrown from</span>
+<span class="sd">    opencensus/opentelemetry so it is not shown in the user console</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="n">_opencensus_filter</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="n">_urllib3_connection_filter</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="n">_azure_monitor_opentelemetry_exporter_filter</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_formatter</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns :class:`logging.Formatter` according to</span>
+<span class="sd">    :data:`FORMAT_STRING_DICT`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">format_string_items</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;%(</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">)</span><span class="si">{</span><span class="n">fmt</span><span class="si">}</span><span class="s1">&#39;</span>
+                           <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="n">FORMAT_STRING_DICT</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+    <span class="n">format_string</span> <span class="o">=</span> <span class="n">LOGGING_SEPARATOR</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">format_string_items</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">format_string</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_formatter_for_telemetry</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns :class:`logging.Formatter` with only name, function name and</span>
+<span class="sd">    message keywords from FORMAT_STRING_DICT</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">format_string_items</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;%(</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">)</span><span class="si">{</span><span class="n">fmt</span><span class="si">}</span><span class="s1">&#39;</span>
+                           <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">fmt</span> <span class="ow">in</span> <span class="n">FORMAT_STRING_DICT</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                           <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;funcName&#39;</span><span class="p">]]</span>
+    <span class="n">format_string</span> <span class="o">=</span> <span class="n">LOGGING_SEPARATOR</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">format_string_items</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">format_string</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_console_handler">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.get_console_handler">[docs]</a>
+<span class="k">def</span> <span class="nf">get_console_handler</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get handle that prints messages from the root logger to the console.</span>
+<span class="sd">    Returns ``None`` if :func:`start_logger` has not been called.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">console_handler</span>
+    <span class="k">return</span> <span class="n">console_handler</span></div>
+
+
+
+<div class="viewcode-block" id="get_file_handler">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.get_file_handler">[docs]</a>
+<span class="k">def</span> <span class="nf">get_file_handler</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a handle that streams messages from the root logger to the qcodes log</span>
+<span class="sd">    file. To setup call :func:`start_logger`.</span>
+<span class="sd">    Returns ``None`` if :func:`start_logger` has not been called.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">file_handler</span>
+    <span class="k">return</span> <span class="n">file_handler</span></div>
+
+
+
+<div class="viewcode-block" id="get_level_name">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.get_level_name">[docs]</a>
+<span class="k">def</span> <span class="nf">get_level_name</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a logging level name from either a logging level code or logging level</span>
+<span class="sd">    name. Will return the output of :func:`logging.getLevelName` if called with</span>
+<span class="sd">    an int. If called with a str it will return the str supplied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">level</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLevelName</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;get_level_name: &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;Cannot to convert level </span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s1"> of type &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">level</span><span class="p">)</span><span class="si">}</span><span class="s1"> to logging level name. Need &#39;</span>
+                           <span class="s1">&#39;string or int.&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_level_code">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.get_level_code">[docs]</a>
+<span class="k">def</span> <span class="nf">get_level_code</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a logging level code from either a logging level string or a logging</span>
+<span class="sd">    level code. Will return the output of :func:`logging.getLevelName` if</span>
+<span class="sd">    called with a str. If called with an int it will return the int supplied.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">level</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="c1"># It is possible to get the level code from the</span>
+        <span class="c1"># `getLevelName` call due to backwards compatibillity to an earlier</span>
+        <span class="c1"># bug:</span>
+        <span class="c1"># &gt;&gt;&gt; import logging</span>
+        <span class="c1"># &gt;&gt;&gt; print(logging.getLevelName(&#39;DEBUG&#39;))</span>
+        <span class="k">return</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLevelName</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;get_level_code: &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;Cannot to convert level </span><span class="si">{</span><span class="n">level</span><span class="si">}</span><span class="s1"> of type &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">level</span><span class="p">)</span><span class="si">}</span><span class="s1"> to logging level code. Need &#39;</span>
+                           <span class="s1">&#39;string or int.&#39;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">generate_log_file_name</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates the name of the log file based on process id, date, time and</span>
+<span class="sd">    PYTHON_LOG_NAME</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">pid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span>
+    <span class="n">dt_str</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%y%m</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">python_log_name</span> <span class="o">=</span> <span class="s1">&#39;-&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">dt_str</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">PYTHON_LOG_NAME</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">python_log_name</span>
+
+
+<div class="viewcode-block" id="get_log_file_name">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.get_log_file_name">[docs]</a>
+<span class="k">def</span> <span class="nf">get_log_file_name</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the full path to the log file currently used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">get_qcodes_user_path</span><span class="p">(),</span>
+                        <span class="n">LOGGING_DIR</span><span class="p">,</span>
+                        <span class="n">generate_log_file_name</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="flush_telemetry_traces">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.flush_telemetry_traces">[docs]</a>
+<span class="k">def</span> <span class="nf">flush_telemetry_traces</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flush the traces of the telemetry logger. If telemetry is not enabled, this</span>
+<span class="sd">    function does nothing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">telemetry_handler</span>
+    <span class="k">if</span> <span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">telemetry</span><span class="o">.</span><span class="n">enabled</span> <span class="ow">and</span> <span class="n">telemetry_handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">telemetry_handler</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_create_telemetry_handler</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="s2">&quot;AzureLogHandler&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configure, create, and return the telemetry handler</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">opencensus.ext.azure.log_exporter</span> <span class="kn">import</span> <span class="n">AzureLogHandler</span>
+    <span class="k">global</span> <span class="n">telemetry_handler</span>
+
+    <span class="c1"># The default_custom_dimensions will appear in the &quot;customDimensions&quot;</span>
+    <span class="c1"># field in Azure log analytics for every log message alongside any</span>
+    <span class="c1"># custom dimensions that message may have. All messages additionally come</span>
+    <span class="c1"># with custom dimensions fileName, level, lineNumber, module, and process</span>
+    <span class="n">default_custom_dimensions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;pythonExecutable&quot;</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">}</span>
+
+    <span class="k">class</span> <span class="nc">CustomDimensionsFilter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Filter</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add application-wide properties to the customDimension field of</span>
+<span class="sd">        AzureLogHandler records</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">custom_dimensions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">custom_dimensions</span> <span class="o">=</span> <span class="n">custom_dimensions</span>
+
+        <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">LogRecord</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Add the default custom_dimensions into the current log record</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">cdim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_dimensions</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">cdim</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;custom_dimensions&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+            <span class="n">record</span><span class="o">.</span><span class="n">custom_dimensions</span> <span class="o">=</span> <span class="n">cdim</span>
+
+            <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="c1"># Transport module of opencensus-ext-azure logs info &#39;transmission</span>
+    <span class="c1"># succeeded&#39; which is also exported to azure if AzureLogHandler is</span>
+    <span class="c1"># in root_logger. The following lines stops that.</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;opencensus.ext.azure.common.transport&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
+
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">GUID_components</span><span class="o">.</span><span class="n">location</span>
+    <span class="n">stat</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">GUID_components</span><span class="o">.</span><span class="n">work_station</span>
+
+    <span class="k">def</span> <span class="nf">callback_function</span><span class="p">(</span><span class="n">envelope</span><span class="p">:</span> <span class="s2">&quot;Envelope&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">envelope</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="s2">&quot;ai.user.accountId&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">node</span><span class="p">()</span>
+        <span class="n">envelope</span><span class="o">.</span><span class="n">tags</span><span class="p">[</span><span class="s2">&quot;ai.user.id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">loc</span><span class="si">:</span><span class="s2">02x</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">stat</span><span class="si">:</span><span class="s2">06x</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="n">telemetry_handler</span> <span class="o">=</span> <span class="n">AzureLogHandler</span><span class="p">(</span>
+        <span class="n">connection_string</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;InstrumentationKey=&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">telemetry</span><span class="o">.</span><span class="n">instrumentation_key</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+    <span class="n">telemetry_handler</span><span class="o">.</span><span class="n">add_telemetry_processor</span><span class="p">(</span><span class="n">callback_function</span><span class="p">)</span>
+    <span class="n">telemetry_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="n">telemetry_handler</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">CustomDimensionsFilter</span><span class="p">(</span><span class="n">default_custom_dimensions</span><span class="p">))</span>
+    <span class="n">telemetry_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">get_formatter_for_telemetry</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">telemetry_handler</span>
+
+
+<div class="viewcode-block" id="start_logger">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.start_logger">[docs]</a>
+<span class="k">def</span> <span class="nf">start_logger</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Start logging of messages passed through the python logging module.</span>
+<span class="sd">    This sets up logging to a time based logging.</span>
+<span class="sd">    This means that all logging messages on or above</span>
+<span class="sd">    ``filelogginglevel`` will be written to `pythonlog.log`</span>
+<span class="sd">    All logging messages on or above ``consolelogginglevel``</span>
+<span class="sd">    will be written to stderr.</span>
+<span class="sd">    ``filelogginglevel`` and ``consolelogginglevel`` are defined in the</span>
+<span class="sd">    ``qcodesrc.json`` file.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">console_handler</span>
+    <span class="k">global</span> <span class="n">file_handler</span>
+    <span class="k">global</span> <span class="n">telemetry_handler</span>
+
+    <span class="c1"># set loggers to the supplied levels</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">level</span> <span class="ow">in</span> <span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">logger_levels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+
+    <span class="n">root_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">)</span>
+
+    <span class="c1"># remove previously set handlers</span>
+    <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="p">(</span><span class="n">console_handler</span><span class="p">,</span> <span class="n">file_handler</span><span class="p">,</span> <span class="n">telemetry_handler</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">handler</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">root_logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+    <span class="c1"># add qcodes handlers</span>
+    <span class="c1"># console</span>
+    <span class="n">console_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">console_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">console_level</span><span class="p">)</span>
+    <span class="n">console_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">get_formatter</span><span class="p">())</span>
+    <span class="n">console_handler</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">filter_out_telemetry_log_records</span><span class="p">)</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">console_handler</span><span class="p">)</span>
+
+    <span class="c1"># file</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">get_log_file_name</span><span class="p">()</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">file_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">handlers</span><span class="o">.</span><span class="n">TimedRotatingFileHandler</span><span class="p">(</span>
+        <span class="n">filename</span><span class="p">,</span> <span class="n">when</span><span class="o">=</span><span class="s2">&quot;midnight&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">file_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">file_level</span><span class="p">)</span>
+    <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">get_formatter</span><span class="p">())</span>
+    <span class="n">root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
+
+    <span class="c1"># capture any warnings from the warnings module</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">captureWarnings</span><span class="p">(</span><span class="n">capture</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">telemetry</span><span class="o">.</span><span class="n">enabled</span><span class="p">:</span>
+        <span class="n">root_logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">_create_telemetry_handler</span><span class="p">())</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;QCoDes logger setup completed&quot;</span><span class="p">)</span>
+
+    <span class="n">log_qcodes_versions</span><span class="p">(</span><span class="n">log</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Qcodes Logfile : </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="start_command_history_logger">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.start_command_history_logger">[docs]</a>
+<span class="k">def</span> <span class="nf">start_command_history_logger</span><span class="p">(</span><span class="n">log_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Start logging of the history of the interactive command shell.</span>
+<span class="sd">    Works only with IPython and Jupyter. Call function again to set new path</span>
+<span class="sd">    to log file.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        log_dir: directory where log shall be stored to. If left out, defaults</span>
+<span class="sd">            to ``~/.qcodes/logs/command_history.log``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get_ipython is part of the public api but IPython does</span>
+    <span class="c1"># not use __all__ to mark this</span>
+    <span class="kn">from</span> <span class="nn">IPython</span> <span class="kn">import</span> <span class="n">get_ipython</span>  <span class="c1"># type: ignore[attr-defined]</span>
+    <span class="n">ipython</span> <span class="o">=</span> <span class="n">get_ipython</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">ipython</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Command history can&#39;t be saved&quot;</span>
+                    <span class="s2">&quot; outside of IPython/Jupyter&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">log_dir</span> <span class="o">=</span> <span class="n">log_dir</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">get_qcodes_user_path</span><span class="p">(),</span> <span class="n">LOGGING_DIR</span><span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">HISTORY_LOG_NAME</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">ipython</span><span class="o">.</span><span class="n">magic</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%lo</span><span class="s2">gstop&quot;</span><span class="p">)</span>
+    <span class="n">ipython</span><span class="o">.</span><span class="n">magic</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%lo</span><span class="s2">gstart -t -o </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;append&quot;</span><span class="p">))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Started logging IPython history&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">log_qcodes_versions</span><span class="p">(</span><span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Log the version information relevant to QCoDeS. This function logs</span>
+<span class="sd">    the currently installed qcodes version, whether QCoDeS is installed in</span>
+<span class="sd">    editable mode, the installed versions of QCoDeS&#39; requirements, and the</span>
+<span class="sd">    versions of all installed packages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">qc_version</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">__version__</span>
+    <span class="n">qc_e_inst</span> <span class="o">=</span> <span class="n">is_qcodes_installed_editably</span><span class="p">()</span>
+    <span class="n">ipvs</span> <span class="o">=</span> <span class="n">get_all_installed_package_versions</span><span class="p">()</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;QCoDeS version: </span><span class="si">{</span><span class="n">qc_version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;QCoDeS installed in editable mode: </span><span class="si">{</span><span class="n">qc_e_inst</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All installed package versions: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">ipvs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="start_all_logging">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.start_all_logging">[docs]</a>
+<span class="k">def</span> <span class="nf">start_all_logging</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Starts python log module logging and ipython command history logging.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">start_command_history_logger</span><span class="p">()</span>
+    <span class="n">start_logger</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">conditionally_start_all_logging</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Start logging if qcodesrc.json setup for it and in tool environment.</span>
+
+<span class="sd">    This function will start logging if the session is not being executed by</span>
+<span class="sd">    a tool such as pytest and under the following conditions depending on the</span>
+<span class="sd">    qcodes configuration of ``config.logger.start_logging_on_import``:</span>
+
+<span class="sd">    For ``never``:</span>
+
+<span class="sd">        don&#39;t start logging automatically</span>
+
+<span class="sd">    For ``always``:</span>
+
+<span class="sd">        Always start logging when not in test environment</span>
+
+<span class="sd">    For ``if_telemetry_set_up``:</span>
+
+<span class="sd">        Start logging if the GUID components and the instrumentation key for</span>
+<span class="sd">        telemetry are set up, and not in a test environment.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">start_logging_on_import</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">config</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">start_logging_on_import</span> <span class="o">==</span> <span class="s1">&#39;always&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">start_logging_on_import</span> <span class="o">==</span> <span class="s1">&#39;never&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">start_logging_on_import</span> <span class="o">==</span> <span class="s1">&#39;if_telemetry_set_up&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">GUID_components</span><span class="o">.</span><span class="n">location</span> <span class="o">!=</span> <span class="mi">0</span>
+                <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">GUID_components</span><span class="o">.</span><span class="n">work_station</span> <span class="o">!=</span> <span class="mi">0</span>
+                <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">telemetry</span><span class="o">.</span><span class="n">instrumentation_key</span>
+                <span class="o">!=</span> <span class="s2">&quot;00000000-0000-0000-0000-000000000000&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Error in qcodesrc validation.&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">running_in_test_or_tool</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">sys</span>
+        <span class="n">tools</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;pytest.py&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;pytest&#39;</span><span class="p">,</span>
+            <span class="sa">r</span><span class="s1">&#39;sphinx\__main__.py&#39;</span><span class="p">,</span>    <span class="c1"># Sphinx docs building</span>
+            <span class="s1">&#39;_jb_pytest_runner.py&#39;</span><span class="p">,</span>  <span class="c1"># Jetbrains Pycharm</span>
+            <span class="s1">&#39;testlauncher.py&#39;</span>        <span class="c1"># VSCode</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">tool</span><span class="p">)</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">running_in_test_or_tool</span><span class="p">()</span> <span class="ow">and</span> <span class="n">start_logging_on_import</span><span class="p">():</span>
+        <span class="n">start_all_logging</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="handler_level">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.handler_level">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">handler_level</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="n">LevelType</span><span class="p">,</span>
+                  <span class="n">handler</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">,</span>
+                                 <span class="n">Sequence</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context manager to temporarily change the level of handlers.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; with logger.handler_level(level=logging.DEBUG, handler=[h1, h1]):</span>
+<span class="sd">        &gt;&gt;&gt;     root_logger.debug(&#39;this is now visible&#39;)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        level: Level to set the handlers to.</span>
+<span class="sd">        handler: Handle or sequence of handlers which to change.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">):</span>
+        <span class="n">handler</span> <span class="o">=</span> <span class="p">(</span><span class="n">handler</span><span class="p">,)</span>
+    <span class="n">original_levels</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">level</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">handler</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">handler</span><span class="p">:</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">h</span><span class="p">,</span> <span class="n">original_level</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="n">original_levels</span><span class="p">):</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">original_level</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="console_level">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.console_level">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">console_level</span><span class="p">(</span><span class="n">level</span><span class="p">:</span> <span class="n">LevelType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context manager to temporarily change the level of the qcodes console</span>
+<span class="sd">    handler.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; with logger.console_level(level=logging.DEBUG):</span>
+<span class="sd">        &gt;&gt;&gt;     root_logger.debug(&#39;this is now visible&#39;)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        level: Level to set the console handler to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">console_handler</span>
+    <span class="k">if</span> <span class="n">console_handler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Console handler is None. Cannot set the level&quot;</span>
+                           <span class="s2">&quot; on it&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">handler_level</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">handler</span><span class="o">=</span><span class="n">console_handler</span><span class="p">):</span>
+        <span class="k">yield</span></div>
+
+
+
+<div class="viewcode-block" id="LogCapture">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.LogCapture">[docs]</a>
+<span class="k">class</span> <span class="nc">LogCapture</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context manager to grab all log messages, optionally</span>
+<span class="sd">    from a specific logger.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; with LogCapture() as logs:</span>
+<span class="sd">        &gt;&gt;&gt;     code_that_makes_logs(...)</span>
+<span class="sd">        &gt;&gt;&gt; log_str = logs.value</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(),</span>
+                 <span class="n">level</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LevelType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span> <span class="ow">or</span> <span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stashed_handlers</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">handlers</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stashed_handlers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;LogCapture&#39;</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_capture</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_capture</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">string_handler</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">exception_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="ne">BaseException</span><span class="p">]],</span>
+        <span class="n">exception_value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="ne">BaseException</span><span class="p">],</span>
+        <span class="n">traceback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TracebackType</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">string_handler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_capture</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_capture</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stashed_handlers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">h</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

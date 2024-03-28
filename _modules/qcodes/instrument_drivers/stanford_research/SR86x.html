@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.stanford_research.SR86x &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.stanford_research.SR86x</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.stanford_research.SR86x</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">ClassVar</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">ChannelList</span><span class="p">,</span> <span class="n">InstrumentChannel</span><span class="p">,</span> <span class="n">VisaInstrument</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">ArrayParameter</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">ComplexNumbers</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Ints</span><span class="p">,</span> <span class="n">Numbers</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SR86xBufferReadout</span><span class="p">(</span><span class="n">ArrayParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The parameter array that holds read out data. We need this to be compatible</span>
+<span class="sd">    with qcodes.Measure</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: Name of the parameter.</span>
+<span class="sd">        instrument: The instrument to add this parameter to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument</span><span class="p">:</span> <span class="n">SR86x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot;deg&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">]:</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="s2">&quot;V&quot;</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span>
+                         <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span>  <span class="c1"># dummy initial shape</span>
+                         <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                         <span class="n">setpoint_names</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">,),</span>
+                         <span class="n">setpoint_labels</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;Time&#39;</span><span class="p">,),</span>
+                         <span class="n">setpoint_units</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">,),</span>
+                         <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+                         <span class="n">docstring</span><span class="o">=</span><span class="s1">&#39;Holds an acquired (part of the) data &#39;</span>
+                                   <span class="s1">&#39;buffer of one channel.&#39;</span><span class="p">,</span>
+                         <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_capture_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">prepare_readout</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prepare this parameter for readout.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            capture_data: The data to capture.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_capture_data</span> <span class="o">=</span> <span class="n">capture_data</span>
+
+        <span class="n">data_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">capture_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">data_len</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoint_units</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoint_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;sample_nr&#39;</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoint_labels</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Sample number&#39;</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">data_len</span><span class="p">)),)</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Public method to access the capture data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_capture_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot return data for parameter </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">. &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;Please prepare for readout by calling &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;&#39;get_capture_data&#39; with appropriate &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;configuration settings&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_capture_data</span>
+
+
+<div class="viewcode-block" id="SR86xBuffer">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer">[docs]</a>
+<span class="k">class</span> <span class="nc">SR86xBuffer</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Buffer module for the SR86x drivers.</span>
+
+<span class="sd">    This driver has been verified to work with the SR860 and SR865.</span>
+<span class="sd">    For reference, please consult the SR860</span>
+<span class="sd">    manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="n">SR86x</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;capture_length_in_kb&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;get/set capture length&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURELEN?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURELEN </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_capture_len_parser</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;kB&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bytes_per_sample</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_capture_length_in_kb</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># i.e. minimum buffer size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_capture_length_in_kb</span> <span class="o">=</span> <span class="mi">4096</span>  <span class="c1"># i.e. maximum buffer size</span>
+        <span class="c1"># Maximum amount of kB that can be read per single CAPTUREGET command</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_size_per_reading_in_kb</span> <span class="o">=</span> <span class="mi">64</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>  <span class="c1"># Configure which parameters we want to capture</span>
+            <span class="s2">&quot;capture_config&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;capture configuration&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURECFG?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURECFG </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;X&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;X,Y&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;R,T&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;X,Y,R,T&quot;</span><span class="p">:</span> <span class="s2">&quot;3&quot;</span><span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;capture_rate_max&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;capture rate maximum&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURERATEMAX?&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;capture_rate&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;capture rate raw&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURERATE?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURERATE </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_capture_rate_parser</span>
+        <span class="p">)</span>
+
+        <span class="n">max_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capture_rate_max</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">available_frequencies</span> <span class="o">=</span> <span class="p">[</span><span class="n">max_rate</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">)]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>  <span class="c1"># Are we capturing at the moment?</span>
+            <span class="s2">&quot;capture_status&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;capture status&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTURESTAT?&quot;</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;count_capture_bytes&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;captured bytes&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTUREBYTES?&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;B&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Number of bytes captured so far in the buffer. Can be &quot;</span>
+                      <span class="s2">&quot;used to track live progress.&quot;</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;count_capture_kilobytes&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;captured kilobytes&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;CAPTUREPROG?&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;kB&quot;</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Number of kilobytes captured so far in the buffer, &quot;</span>
+                      <span class="s2">&quot;rounded-up to 2 kilobyte chunks. Capture must be &quot;</span>
+                      <span class="s2">&quot;stopped before requesting the value of this &quot;</span>
+                      <span class="s2">&quot;parameter. If the acquisition wrapped during operating &quot;</span>
+                      <span class="s2">&quot;in Continuous mode, then the returned value is &quot;</span>
+                      <span class="s2">&quot;simply equal to the current capture length.&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">parameter_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;X&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+                <span class="n">parameter_name</span><span class="p">,</span>
+                <span class="n">parameter_class</span><span class="o">=</span><span class="n">SR86xBufferReadout</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="SR86xBuffer.snapshot_base">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.snapshot_base">[docs]</a>
+    <span class="k">def</span> <span class="nf">snapshot_base</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">params_to_skip_update</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">params_to_skip_update</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">params_to_skip_update</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># we omit count_capture_kilobytes from the snapshot because</span>
+        <span class="c1"># it can only be read after a completed capture and will</span>
+        <span class="c1"># timeout otherwise when the snapshot is updated, e.g. at</span>
+        <span class="c1"># station creation time</span>
+        <span class="n">params_to_skip_update</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">params_to_skip_update</span><span class="p">)</span>
+        <span class="n">params_to_skip_update</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;count_capture_kilobytes&#39;</span><span class="p">)</span>
+
+        <span class="n">snapshot</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">snapshot_base</span><span class="p">(</span><span class="n">update</span><span class="p">,</span> <span class="n">params_to_skip_update</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">snapshot</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_set_capture_len_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_length_in_kb</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse the capture length in kB according to the way buffer treats it</span>
+<span class="sd">        (refer to the manual for details). The given value has to fit in the</span>
+<span class="sd">        range and has to be even, otherwise this function raises exceptions.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            capture_length_in_kb: The desired capture length in kB.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            capture_length_in_kb</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">capture_length_in_kb</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The capture length should be an even number&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_capture_length_in_kb</span> \
+                <span class="o">&lt;=</span> <span class="n">capture_length_in_kb</span> \
+                <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_capture_length_in_kb</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The capture length should be between &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_capture_length_in_kb</span><span class="si">}</span><span class="s2"> and &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_capture_length_in_kb</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">capture_length_in_kb</span>
+
+<div class="viewcode-block" id="SR86xBuffer.set_capture_rate_to_maximum">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.set_capture_rate_to_maximum">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_capture_rate_to_maximum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the capture rate to maximum. The maximum capture rate is</span>
+<span class="sd">        retrieved from the device, and depends on the current value of the</span>
+<span class="sd">        time constant.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capture_rate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">capture_rate_max</span><span class="p">())</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_set_capture_rate_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_rate_hz</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        According to the manual, the capture rate query returns a value in</span>
+<span class="sd">        Hz, but then setting this value it is expected to give a value n,</span>
+<span class="sd">        where the capture rate in Hz is given by</span>
+<span class="sd">        capture_rate_hz =  max_rate / 2 ** n. Please see page 136 of the</span>
+<span class="sd">        manual. Here n is an integer in the range [0, 20].</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            capture_rate_hz: The desired capture rate in Hz. If the desired</span>
+<span class="sd">                rate is more than 1 Hz from the nearest valid rate, a warning</span>
+<span class="sd">                is issued and the nearest valid rate it used.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            n_round</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">max_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capture_rate_max</span><span class="p">()</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">max_rate</span> <span class="o">/</span> <span class="n">capture_rate_hz</span><span class="p">)</span>
+        <span class="n">n_round</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">n_round</span> <span class="o">&lt;=</span> <span class="mi">20</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The chosen frequency is invalid. Please &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;consult the SR860 manual at page 136. &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;The maximum capture rate is </span><span class="si">{</span><span class="n">max_rate</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">nearest_valid_rate</span> <span class="o">=</span> <span class="n">max_rate</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="n">n_round</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">capture_rate_hz</span> <span class="o">-</span> <span class="n">nearest_valid_rate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">available_frequencies</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">available_frequencies</span>
+            <span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Warning: Setting capture rate to </span><span class="si">{</span><span class="n">nearest_valid_rate</span><span class="si">:</span><span class="s2">.5</span><span class="si">}</span><span class="s2"> Hz&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The available frequencies are: </span><span class="si">{</span><span class="n">available_frequencies</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">n_round</span>
+
+<div class="viewcode-block" id="SR86xBuffer.start_capture">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.start_capture">[docs]</a>
+    <span class="k">def</span> <span class="nf">start_capture</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acquisition_mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trigger_mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Start an acquisition. Please see page 137 of the manual for a detailed</span>
+<span class="sd">        explanation.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            acquisition_mode: &quot;ONE&quot; | &quot;CONT&quot;</span>
+<span class="sd">            trigger_mode: &quot;IMM&quot; | &quot;TRIG&quot; | &quot;SAMP&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">acquisition_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;ONE&quot;</span><span class="p">,</span> <span class="s2">&quot;CONT&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The acquisition mode needs to be either &#39;ONE&#39; or &#39;CONT&#39;&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">trigger_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;IMM&quot;</span><span class="p">,</span> <span class="s2">&quot;TRIG&quot;</span><span class="p">,</span> <span class="s2">&quot;SAMP&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The trigger mode needs to be either &#39;IMM&#39;, &#39;TRIG&#39; or &#39;SAMP&#39;&quot;</span><span class="p">)</span>
+
+        <span class="n">cmd_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;CAPTURESTART </span><span class="si">{</span><span class="n">acquisition_mode</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">trigger_mode</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SR86xBuffer.stop_capture">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.stop_capture">[docs]</a>
+    <span class="k">def</span> <span class="nf">stop_capture</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop a capture&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;CAPTURESTOP&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_list_of_capture_variable_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the list of names of variables (readouts) that are</span>
+<span class="sd">        set to be captured</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">capture_config</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_number_of_capture_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve the number of variables (readouts) that are</span>
+<span class="sd">        set to be captured</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">capture_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_of_capture_variable_names</span><span class="p">()</span>
+        <span class="n">n_variables</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">capture_variables</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">n_variables</span>
+
+    <span class="k">def</span> <span class="nf">_calc_capture_size_in_kb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given the number of samples to capture, calculate the capture length</span>
+<span class="sd">        that the buffer needs to be set to in order to fit the requested</span>
+<span class="sd">        number of samples. Note that the number of activated readouts is</span>
+<span class="sd">        taken into account.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_number_of_capture_variables</span><span class="p">()</span>
+        <span class="n">total_size_in_kb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">n_variables</span> <span class="o">*</span> <span class="n">sample_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bytes_per_sample</span> <span class="o">/</span> <span class="mi">1024</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># Make sure that the total size in kb is an even number, as expected by</span>
+        <span class="c1"># the instrument</span>
+        <span class="k">if</span> <span class="n">total_size_in_kb</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">total_size_in_kb</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">total_size_in_kb</span>
+
+<div class="viewcode-block" id="SR86xBuffer.set_capture_length_to_fit_samples">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.set_capture_length_to_fit_samples">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_capture_length_to_fit_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the capture length of the buffer to fit the given number of</span>
+<span class="sd">        samples.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_count: Number of samples that the buffer has to fit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_size_in_kb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_capture_size_in_kb</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capture_length_in_kb</span><span class="p">(</span><span class="n">total_size_in_kb</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SR86xBuffer.wait_until_samples_captured">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.wait_until_samples_captured">[docs]</a>
+    <span class="k">def</span> <span class="nf">wait_until_samples_captured</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Wait until the given number of samples is captured. This function</span>
+<span class="sd">        is blocking and has to be used with caution because it does not have</span>
+<span class="sd">        a timeout.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_count: Number of samples that needs to be captured</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_captured_bytes</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_number_of_capture_variables</span><span class="p">()</span>
+        <span class="n">n_bytes_to_capture</span> <span class="o">=</span> <span class="n">sample_count</span> <span class="o">*</span> <span class="n">n_variables</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">bytes_per_sample</span>
+        <span class="k">while</span> <span class="n">n_captured_bytes</span> <span class="o">&lt;</span> <span class="n">n_bytes_to_capture</span><span class="p">:</span>
+            <span class="n">n_captured_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_capture_bytes</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SR86xBuffer.get_capture_data">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.get_capture_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_capture_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read the given number of samples of the capture data from the buffer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_count: number of samples to read from the buffer</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The keys in the dictionary correspond to the captured</span>
+<span class="sd">            variables. For instance, if before the capture, the capture</span>
+<span class="sd">            config was set as &#39;capture_config(&quot;X,Y&quot;)&#39;, then the keys will</span>
+<span class="sd">            be &quot;X&quot; and &quot;Y&quot;. The values in the dictionary are numpy arrays</span>
+<span class="sd">            of numbers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_size_in_kb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_capture_size_in_kb</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span>
+        <span class="n">capture_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_of_capture_variable_names</span><span class="p">()</span>
+        <span class="n">n_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_number_of_capture_variables</span><span class="p">()</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_raw_capture_data</span><span class="p">(</span><span class="n">total_size_in_kb</span><span class="p">)</span>
+
+        <span class="c1"># Remove zeros which mark the end part of the buffer that is not</span>
+        <span class="c1"># filled with captured data</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">values</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_variables</span><span class="p">))</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="p">[:,</span> <span class="p">:</span><span class="n">sample_count</span><span class="p">]</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">capture_variables</span><span class="p">,</span> <span class="n">values</span><span class="p">)}</span>
+
+        <span class="k">for</span> <span class="n">capture_variable</span> <span class="ow">in</span> <span class="n">capture_variables</span><span class="p">:</span>
+            <span class="n">buffer_parameter</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_variable</span><span class="p">)</span>
+            <span class="n">buffer_parameter</span><span class="o">.</span><span class="n">prepare_readout</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">capture_variable</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">data</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_raw_capture_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size_in_kb</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read data from the buffer from its beginning avoiding the instrument</span>
+<span class="sd">        limit of 64 kilobytes per reading.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            size_in_kb :Size of the data that needs to be read; if it exceeds</span>
+<span class="sd">                the capture length, an exception is raised.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A one-dimensional numpy array of the requested data. Note that the</span>
+<span class="sd">            returned array contains data for all the variables that are</span>
+<span class="sd">            mentioned in the capture config.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">current_capture_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capture_length_in_kb</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">size_in_kb</span> <span class="o">&gt;</span> <span class="n">current_capture_length</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The size of the requested data (</span><span class="si">{</span><span class="n">size_in_kb</span><span class="si">}</span><span class="s2">kB) &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;is larger than current capture length of the &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;buffer (</span><span class="si">{</span><span class="n">current_capture_length</span><span class="si">}</span><span class="s2">kB).&quot;</span><span class="p">)</span>
+
+        <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="n">data_size_to_read_in_kb</span> <span class="o">=</span> <span class="n">size_in_kb</span>
+        <span class="n">n_readings</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">while</span> <span class="n">data_size_to_read_in_kb</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="n">n_readings</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size_per_reading_in_kb</span>
+
+            <span class="k">if</span> <span class="n">data_size_to_read_in_kb</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size_per_reading_in_kb</span><span class="p">:</span>
+                <span class="n">size_of_this_reading</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size_per_reading_in_kb</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">size_of_this_reading</span> <span class="o">=</span> <span class="n">data_size_to_read_in_kb</span>
+
+            <span class="n">data_from_this_reading</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_raw_capture_data_block</span><span class="p">(</span>
+                <span class="n">size_of_this_reading</span><span class="p">,</span>
+                <span class="n">offset_in_kb</span><span class="o">=</span><span class="n">offset</span><span class="p">)</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">data_from_this_reading</span><span class="p">)</span>
+
+            <span class="n">data_size_to_read_in_kb</span> <span class="o">-=</span> <span class="n">size_of_this_reading</span>
+            <span class="n">n_readings</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">values</span>
+
+    <span class="k">def</span> <span class="nf">_get_raw_capture_data_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                    <span class="n">size_in_kb</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                                    <span class="n">offset_in_kb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+                                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Read data from the buffer. The maximum amount of data that can be</span>
+<span class="sd">        read with this function (size_in_kb) is 64kB (this limitation comes</span>
+<span class="sd">        from the instrument). The offset argument can be used to navigate</span>
+<span class="sd">        along the buffer.</span>
+
+<span class="sd">        An exception will be raised if either size_in_kb or offset_in_kb are</span>
+<span class="sd">        longer that the *current* capture length (number of kB of data that is</span>
+<span class="sd">        captured so far rounded up to 2kB chunks). If (offset_in_kb +</span>
+<span class="sd">        size_in_kb) is longer than the *current* capture length,</span>
+<span class="sd">        the instrument returns the wrapped data.</span>
+
+<span class="sd">        For more information, refer to the description of the &quot;CAPTUREGET&quot;</span>
+<span class="sd">        command in the manual.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            size_in_kb: Amount of data in kB that is to be read from the buffer</span>
+<span class="sd">            offset_in_kb: Offset within the buffer of where to read the data;</span>
+<span class="sd">                for example, when 0 is specified, the data is read from the</span>
+<span class="sd">                start of the buffer.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A one-dimensional numpy array of the requested data. Note that the</span>
+<span class="sd">            returned array contains data for all the variables that are</span>
+<span class="sd">            mentioned in the capture config.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">size_in_kb</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size_per_reading_in_kb</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The size of the requested data (</span><span class="si">{</span><span class="n">size_in_kb</span><span class="si">}</span><span class="s2">kB) &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;is larger than maximum size that can be read &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;at once (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_size_per_reading_in_kb</span><span class="si">}</span><span class="s2">kB).&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Calculate the size of the data captured so far, in kB, rounded up</span>
+        <span class="c1"># to 2kB chunks</span>
+        <span class="n">size_of_currently_captured_data</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">count_capture_bytes</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1024</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">size_in_kb</span> <span class="o">&gt;</span> <span class="n">size_of_currently_captured_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The size of the requested data (</span><span class="si">{</span><span class="n">size_in_kb</span><span class="si">}</span><span class="s2">kB) &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;cannot be larger than the size of currently &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;captured data rounded up to 2kB chunks &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">size_of_currently_captured_data</span><span class="si">}</span><span class="s2">kB)&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">offset_in_kb</span> <span class="o">&gt;</span> <span class="n">size_of_currently_captured_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The offset for reading the requested data &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">offset_in_kb</span><span class="si">}</span><span class="s2">kB) cannot be larger than the &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;size of currently captured data rounded up to &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;2kB chunks &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">size_of_currently_captured_data</span><span class="si">}</span><span class="s2">kB)&quot;</span><span class="p">)</span>
+
+        <span class="n">values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">visa_handle</span><span class="o">.</span><span class="n">query_binary_values</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;CAPTUREGET? </span><span class="si">{</span><span class="n">offset_in_kb</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">size_in_kb</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">datatype</span><span class="o">=</span><span class="s1">&#39;f&#39;</span><span class="p">,</span>
+            <span class="n">is_big_endian</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">expect_termination</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># the sr86x does not include an extra termination char on binary</span>
+        <span class="c1"># messages so we set expect_termination to False</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SR86xBuffer.capture_one_sample_per_trigger">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.capture_one_sample_per_trigger">[docs]</a>
+    <span class="k">def</span> <span class="nf">capture_one_sample_per_trigger</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">trigger_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">start_triggers_pulsetrain</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Capture one sample per each trigger, and return when the specified</span>
+<span class="sd">        number of triggers has been received.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            trigger_count: Number of triggers to capture samples for</span>
+<span class="sd">            start_triggers_pulsetrain: By calling this *non-blocking*</span>
+<span class="sd">                function, the train of trigger pulses should start</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The keys in the dictionary correspond to the captured</span>
+<span class="sd">            variables. For instance, if before the capture, the capture</span>
+<span class="sd">            config was set as &#39;capture_config(&quot;X,Y&quot;)&#39;, then the keys will</span>
+<span class="sd">            be &quot;X&quot; and &quot;Y&quot;. The values in the dictionary are numpy arrays</span>
+<span class="sd">            of numbers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_capture_length_to_fit_samples</span><span class="p">(</span><span class="n">trigger_count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_capture</span><span class="p">(</span><span class="s2">&quot;ONE&quot;</span><span class="p">,</span> <span class="s2">&quot;SAMP&quot;</span><span class="p">)</span>
+        <span class="n">start_triggers_pulsetrain</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_until_samples_captured</span><span class="p">(</span><span class="n">trigger_count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_capture</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_capture_data</span><span class="p">(</span><span class="n">trigger_count</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SR86xBuffer.capture_samples_after_trigger">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.capture_samples_after_trigger">[docs]</a>
+    <span class="k">def</span> <span class="nf">capture_samples_after_trigger</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">send_trigger</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Capture a number of samples after a trigger has been received.</span>
+<span class="sd">        Please refer to page 135 of the manual for details.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_count: Number of samples to capture</span>
+<span class="sd">            send_trigger: By calling this *non-blocking* function, one trigger</span>
+<span class="sd">                should be sent that will initiate the capture</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The keys in the dictionary correspond to the captured</span>
+<span class="sd">            variables. For instance, if before the capture, the capture</span>
+<span class="sd">            config was set as &#39;capture_config(&quot;X,Y&quot;)&#39;, then the keys will</span>
+<span class="sd">            be &quot;X&quot; and &quot;Y&quot;. The values in the dictionary are numpy arrays</span>
+<span class="sd">            of numbers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_capture_length_to_fit_samples</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_capture</span><span class="p">(</span><span class="s2">&quot;ONE&quot;</span><span class="p">,</span> <span class="s2">&quot;TRIG&quot;</span><span class="p">)</span>
+        <span class="n">send_trigger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_until_samples_captured</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_capture</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_capture_data</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SR86xBuffer.capture_samples">
+<a class="viewcode-back" href="../../../../drivers_api/SRS.html#qcodes.instrument_drivers.stanford_research.SR86xBuffer.capture_samples">[docs]</a>
+    <span class="k">def</span> <span class="nf">capture_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Capture a number of samples at a capture rate, starting immediately.</span>
+<span class="sd">        Unlike the &quot;continuous&quot; capture mode, here the buffer does not get</span>
+<span class="sd">        overwritten with the new data once the buffer is full.</span>
+
+<span class="sd">        The function blocks until the required number of samples is acquired,</span>
+<span class="sd">        and returns them.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample_count: Number of samples to capture</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The keys in the dictionary correspond to the captured</span>
+<span class="sd">            variables. For instance, if before the capture, the capture</span>
+<span class="sd">            config was set as &#39;capture_config(&quot;X,Y&quot;)&#39;, then the keys will</span>
+<span class="sd">            be &quot;X&quot; and &quot;Y&quot;. The values in the dictionary are numpy arrays</span>
+<span class="sd">            of numbers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_capture_length_to_fit_samples</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_capture</span><span class="p">(</span><span class="s2">&quot;ONE&quot;</span><span class="p">,</span> <span class="s2">&quot;IMM&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wait_until_samples_captured</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_capture</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_capture_data</span><span class="p">(</span><span class="n">sample_count</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">SR86xDataChannel</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements a data channel of SR86x lock-in amplifier. Parameters that are</span>
+<span class="sd">    assigned to these channels get plotted on the display of the instrument.</span>
+<span class="sd">    Moreover, there are commands that allow to conveniently retrieve the values</span>
+<span class="sd">    of the parameters that are currently assigned to the data channels.</span>
+
+<span class="sd">    This class relies on the available parameter names that should be</span>
+<span class="sd">    mentioned in the lock-in amplifier class in `PARAMETER_NAMES` attribute.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parent: an instance of SR86x driver</span>
+<span class="sd">        name: data channel name that is to be used to reference it from the</span>
+<span class="sd">            parent</span>
+<span class="sd">        cmd_id: this ID is used in VISA commands to refer to this data channel,</span>
+<span class="sd">            usually is an integer number</span>
+<span class="sd">        cmd_id_name: this name can also be used in VISA commands along with</span>
+<span class="sd">            channel_id; it is not used in this implementation, but is added</span>
+<span class="sd">            for reference</span>
+<span class="sd">        color: every data channel is also referred to by the color with which it</span>
+<span class="sd">            is being plotted on the instrument&#39;s screen; added here only for</span>
+<span class="sd">            reference</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">SR86x</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cmd_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cmd_id_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_id</span> <span class="o">=</span> <span class="n">cmd_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_id_name</span> <span class="o">=</span> <span class="n">cmd_id_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_color</span> <span class="o">=</span> <span class="n">color</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;assigned_parameter&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Data channel </span><span class="si">{</span><span class="n">cmd_id</span><span class="si">}</span><span class="s2"> parameter&quot;</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Allows to set and get the &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;parameter that is assigned to data &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;channel </span><span class="si">{</span><span class="n">cmd_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CDSP </span><span class="si">{</span><span class="n">cmd_id</span><span class="si">}</span><span class="s2">, </span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CDSP? </span><span class="si">{</span><span class="n">cmd_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cmd_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cmd_id_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cmd_id_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">color</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_color</span>
+
+
+<span class="k">class</span> <span class="nc">SR86x</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the code for Stanford_SR865 Lock-in Amplifier</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_VOLT_TO_N</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="mf">500e-3</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="mf">200e-3</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="mf">100e-3</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="mf">50e-3</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="mf">20e-3</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="mf">10e-3</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="mf">5e-3</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+        <span class="mf">2e-3</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="mf">1e-3</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="mf">500e-6</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="mf">200e-6</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+        <span class="mf">100e-6</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+        <span class="mf">50e-6</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+        <span class="mf">20e-6</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+        <span class="mf">10e-6</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+        <span class="mf">5e-6</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+        <span class="mf">2e-6</span><span class="p">:</span> <span class="mi">17</span><span class="p">,</span>
+        <span class="mf">1e-6</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+        <span class="mf">500e-9</span><span class="p">:</span> <span class="mi">19</span><span class="p">,</span>
+        <span class="mf">200e-9</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="mf">100e-9</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span>
+        <span class="mf">50e-9</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
+        <span class="mf">20e-9</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span>
+        <span class="mf">10e-9</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span>
+        <span class="mf">5e-9</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+        <span class="mf">2e-9</span><span class="p">:</span> <span class="mi">26</span><span class="p">,</span>
+        <span class="mf">1e-9</span><span class="p">:</span> <span class="mi">27</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">_N_TO_VOLT</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_VOLT_TO_N</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="n">_CURR_TO_N</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="mf">1e-6</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="mf">500e-9</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="mf">200e-9</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="mf">100e-9</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="mf">50e-9</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="mf">20e-9</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="mf">10e-9</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="mf">5e-9</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+        <span class="mf">2e-9</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="mf">1e-9</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="mf">500e-12</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="mf">200e-12</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+        <span class="mf">100e-12</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+        <span class="mf">50e-12</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+        <span class="mf">20e-12</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span>
+        <span class="mf">10e-12</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+        <span class="mf">5e-12</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+        <span class="mf">2e-12</span><span class="p">:</span> <span class="mi">17</span><span class="p">,</span>
+        <span class="mf">1e-12</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span>
+        <span class="mf">500e-15</span><span class="p">:</span> <span class="mi">19</span><span class="p">,</span>
+        <span class="mf">200e-15</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+        <span class="mf">100e-15</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span>
+        <span class="mf">50e-15</span><span class="p">:</span> <span class="mi">22</span><span class="p">,</span>
+        <span class="mf">20e-15</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span>
+        <span class="mf">10e-15</span><span class="p">:</span> <span class="mi">24</span><span class="p">,</span>
+        <span class="mf">5e-15</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>
+        <span class="mf">2e-15</span><span class="p">:</span> <span class="mi">26</span><span class="p">,</span>
+        <span class="mf">1e-15</span><span class="p">:</span> <span class="mi">27</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">_N_TO_CURR</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_CURR_TO_N</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="n">_VOLT_ENUM</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">_VOLT_TO_N</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">_CURR_ENUM</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">_CURR_TO_N</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="n">_INPUT_SIGNAL_TO_N</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;voltage&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s1">&#39;current&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">_N_TO_INPUT_SIGNAL</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">_INPUT_SIGNAL_TO_N</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="n">PARAMETER_NAMES</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;X&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>   <span class="c1"># X output, &#39;X&#39;</span>
+                <span class="s1">&#39;Y&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>   <span class="c1"># Y output, &#39;Y&#39;</span>
+                <span class="s1">&#39;R&#39;</span><span class="p">:</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span>   <span class="c1"># R output, &#39;R&#39;</span>
+                <span class="s1">&#39;P&#39;</span><span class="p">:</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span>   <span class="c1"># theta output, &#39;THeta&#39;</span>
+          <span class="s1">&#39;aux_in1&#39;</span><span class="p">:</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span>   <span class="c1"># Aux In 1, &#39;IN1&#39;</span>
+          <span class="s1">&#39;aux_in2&#39;</span><span class="p">:</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span>   <span class="c1"># Aux In 2, &#39;IN2&#39;</span>
+          <span class="s1">&#39;aux_in3&#39;</span><span class="p">:</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span>   <span class="c1"># Aux In 3, &#39;IN3&#39;</span>
+          <span class="s1">&#39;aux_in4&#39;</span><span class="p">:</span> <span class="s1">&#39;7&#39;</span><span class="p">,</span>   <span class="c1"># Aux In 4, &#39;IN4&#39;</span>
+           <span class="s1">&#39;Xnoise&#39;</span><span class="p">:</span> <span class="s1">&#39;8&#39;</span><span class="p">,</span>   <span class="c1"># X noise, &#39;XNOise&#39;</span>
+           <span class="s1">&#39;Ynoise&#39;</span><span class="p">:</span> <span class="s1">&#39;9&#39;</span><span class="p">,</span>   <span class="c1"># Y noise, &#39;YNOise&#39;</span>
+         <span class="s1">&#39;aux_out1&#39;</span><span class="p">:</span> <span class="s1">&#39;10&#39;</span><span class="p">,</span>  <span class="c1"># Aux Out 1, &#39;OUT1&#39;</span>
+         <span class="s1">&#39;aux_out2&#39;</span><span class="p">:</span> <span class="s1">&#39;11&#39;</span><span class="p">,</span>  <span class="c1"># Aux Out 2, &#39;OUT2&#39;</span>
+            <span class="s1">&#39;phase&#39;</span><span class="p">:</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span>  <span class="c1"># Reference Phase, &#39;PHAse&#39;</span>
+        <span class="s1">&#39;amplitude&#39;</span><span class="p">:</span> <span class="s1">&#39;13&#39;</span><span class="p">,</span>  <span class="c1"># Sine Out Amplitude, &#39;SAMp&#39;</span>
+       <span class="s1">&#39;sine_outdc&#39;</span><span class="p">:</span> <span class="s1">&#39;14&#39;</span><span class="p">,</span>  <span class="c1"># DC Level, &#39;LEVel&#39;</span>
+        <span class="s1">&#39;frequency&#39;</span><span class="p">:</span> <span class="s1">&#39;15&#39;</span><span class="p">,</span>  <span class="c1"># Int. Ref. Frequency, &#39;FInt&#39;</span>
+    <span class="s1">&#39;frequency_ext&#39;</span><span class="p">:</span> <span class="s1">&#39;16&#39;</span><span class="p">,</span>  <span class="c1"># Ext. Ref. Frequency, &#39;FExt&#39;</span>
+    <span class="p">}</span>
+
+    <span class="n">_N_DATA_CHANNELS</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">max_frequency</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">terminator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_frequency</span> <span class="o">=</span> <span class="n">max_frequency</span>
+        <span class="c1"># Reference commands</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;frequency&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Frequency&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Hz&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;FREQ?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;FREQ </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span>
+                               <span class="n">min_value</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+                               <span class="n">max_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_max_frequency</span><span class="p">)</span>
+                           <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sine_outdc&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Sine out dc level&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;SOFF?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;SOFF </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="n">min_value</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;amplitude&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Amplitude&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;SLVL?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;SLVL </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;harmonic&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Harmonic&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;HARM?&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;HARM </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Ints</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">99</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;phase&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Phase&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;PHAS?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;PHAS </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="n">min_value</span><span class="o">=-</span><span class="mf">3.6e5</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">3.6e5</span><span class="p">))</span>
+        <span class="c1"># Signal commands</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sensitivity&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Sensitivity&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;SCAL?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;SCAL </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sensitivity</span><span class="p">,</span>
+                           <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sensitivity</span>
+                           <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;filter_slope&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Filter slope&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;dB/oct&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;OFSL?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;OFSL </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="mi">6</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="mi">12</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="mi">18</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                        <span class="mi">24</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sync_filter&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Sync filter&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;SYNC?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;SYNC </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;OFF&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ON&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;noise_bandwidth&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Noise bandwidth&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Hz&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;ENBW?&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;signal_strength&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Signal strength indicator&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;ILVL?&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;signal_input&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Signal input&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;IVMD?&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_input_config</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;IVMD </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_input_config</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_INPUT_SIGNAL_TO_N</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;input_range&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Input range&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;IRNG?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;IRNG </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="mf">300e-3</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="mf">100e-3</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                                        <span class="mf">30e-3</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                                        <span class="mf">10e-3</span><span class="p">:</span> <span class="mi">4</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;input_config&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Input configuration&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;ISRC?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;ISRC </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;a-b&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;input_shield&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Input shield&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;IGND?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;IGND </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;float&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ground&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;input_gain&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Input gain&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;ohm&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;ICUR?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;ICUR </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="mf">1e6</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="mf">100e6</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;adv_filter&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Advanced filter&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;ADVFILT?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;ADVFILT </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;OFF&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;ON&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;input_coupling&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Input coupling&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;ICPL?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;ICPL </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;ac&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;dc&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;time_constant&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Time constant&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;OFLT?&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;OFLT </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="mf">1e-6</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">3e-6</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="mf">10e-6</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">30e-6</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                                        <span class="mf">100e-6</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="mf">300e-6</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                                        <span class="mf">1e-3</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="mf">3e-3</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+                                        <span class="mf">10e-3</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="mf">30e-3</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+                                        <span class="mf">100e-3</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="mf">300e-3</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+                                        <span class="mi">1</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">3</span><span class="p">:</span> <span class="mi">13</span><span class="p">,</span>
+                                        <span class="mi">10</span><span class="p">:</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">30</span><span class="p">:</span> <span class="mi">15</span><span class="p">,</span>
+                                        <span class="mi">100</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">300</span><span class="p">:</span> <span class="mi">17</span><span class="p">,</span>
+                                        <span class="mf">1e3</span><span class="p">:</span> <span class="mi">18</span><span class="p">,</span> <span class="mf">3e3</span><span class="p">:</span> <span class="mi">19</span><span class="p">,</span>
+                                        <span class="mf">10e3</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span> <span class="mf">30e3</span><span class="p">:</span> <span class="mi">21</span><span class="p">})</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;external_reference_trigger&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;External reference trigger mode&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;RTRG?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;RTRG </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;SIN&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;POS&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;POSTTL&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;NEG&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;NEGTTL&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;The triggering mode for synchronization of the &quot;</span>
+                      <span class="s2">&quot;internal reference signal with the externally provided &quot;</span>
+                      <span class="s2">&quot;one&quot;</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;reference_source&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Reference source&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;RSRC?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;RSRC </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;INT&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;EXT&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;DUAL&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;CHOP&quot;</span><span class="p">:</span> <span class="mi">3</span>
+            <span class="p">},</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;The source of the reference signal&quot;</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;external_reference_trigger_input_resistance&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;External reference trigger input resistance&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;REFZ?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;REFZ </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;50&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;50OHMS&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="mi">0</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;1M&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;1MEG&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Input resistance of the input for the external &quot;</span>
+                      <span class="s2">&quot;reference signal&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Auto functions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s1">&#39;auto_range&#39;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s1">&#39;ARNG&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s1">&#39;auto_scale&#39;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s1">&#39;ASCL&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s1">&#39;auto_phase&#39;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s1">&#39;APHS&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Data transfer</span>
+        <span class="c1"># first 4 parameters from a list of 16 below.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;In-phase Magnitude&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;OUTP? 0&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Out-phase Magnitude&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;OUTP? 1&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;R&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Magnitude&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;OUTP? 2&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;P&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Phase&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;OUTP? 3&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;deg&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;complex_voltage&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Voltage&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_complex_voltage</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">ComplexNumbers</span><span class="p">())</span>
+
+        <span class="c1"># CH1/CH2 Output Commands</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;X_offset&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;X offset &#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;%&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;COFP? 0&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;COFP 0, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="n">min_value</span><span class="o">=-</span><span class="mf">999.99</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">999.99</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;Y_offset&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Y offset&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;%&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;COFP? 1&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;COFP 1, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="n">min_value</span><span class="o">=-</span><span class="mf">999.99</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">999.99</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;R_offset&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R offset&#39;</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;%&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;COFP? 2&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;COFP 2, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="n">min_value</span><span class="o">=-</span><span class="mf">999.99</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mf">999.99</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;X_expand&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;X expand multiplier&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;CEXP? 0&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;CEXP 0, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;OFF&#39;</span><span class="p">:</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+                                        <span class="s1">&#39;X10&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+                                        <span class="s1">&#39;X100&#39;</span><span class="p">:</span> <span class="s1">&#39;2&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;Y_expand&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Y expand multiplier&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;CEXP? 1&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;CEXP 1, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;OFF&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;X10&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s1">&#39;X100&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s1">&#39;R_expand&#39;</span><span class="p">,</span>
+                           <span class="n">label</span><span class="o">=</span><span class="s1">&#39;R expand multiplier&#39;</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="s1">&#39;CEXP? 2&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;CEXP 2, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="p">,</span>
+                           <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;OFF&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                                        <span class="s1">&#39;X10&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                                        <span class="s1">&#39;X100&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+
+        <span class="c1"># Aux input/output</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;aux_in</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Aux input </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;OAUX? </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;aux_out</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Aux output </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;AUXV? </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+                               <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;AUXV </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">, </span><span class="se">{{}}</span><span class="s1">&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Data channels:</span>
+        <span class="c1"># &#39;DAT1&#39; (green), &#39;DAT2&#39; (blue), &#39;DAT3&#39; (yellow), &#39;DAT4&#39; (orange)</span>
+        <span class="n">data_channels</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;data_channels&quot;</span><span class="p">,</span> <span class="n">SR86xDataChannel</span><span class="p">,</span>
+                                    <span class="n">snapshotable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">num</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_N_DATA_CHANNELS</span><span class="p">),</span>
+                              <span class="p">(</span><span class="s1">&#39;green&#39;</span><span class="p">,</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="s1">&#39;yellow&#39;</span><span class="p">,</span> <span class="s1">&#39;orange&#39;</span><span class="p">)):</span>
+            <span class="n">cmd_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">num</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">cmd_id_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;DAT</span><span class="si">{</span><span class="n">num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">ch_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;data_channel_</span><span class="si">{</span><span class="n">num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="n">data_channel</span> <span class="o">=</span> <span class="n">SR86xDataChannel</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">ch_name</span><span class="p">,</span> <span class="n">cmd_id</span><span class="p">,</span> <span class="n">cmd_id_name</span><span class="p">,</span> <span class="n">color</span><span class="p">)</span>
+
+            <span class="n">data_channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data_channel</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="n">ch_name</span><span class="p">,</span> <span class="n">data_channel</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;data_channels&quot;</span><span class="p">,</span> <span class="n">data_channels</span><span class="o">.</span><span class="n">to_channel_tuple</span><span class="p">())</span>
+
+        <span class="c1"># Interface</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s1">&#39;reset&#39;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s1">&#39;*RST&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s1">&#39;disable_front_panel&#39;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s1">&#39;OVRM 0&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s1">&#39;enable_front_panel&#39;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s1">&#39;OVRM 1&#39;</span><span class="p">)</span>
+
+        <span class="n">buffer</span> <span class="o">=</span> <span class="n">SR86xBuffer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_buffer&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;buffer&quot;</span><span class="p">,</span> <span class="n">buffer</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_config</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">R</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity</span><span class="p">]:</span>
+            <span class="n">param</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span>
+
+    <span class="k">def</span> <span class="nf">_get_complex_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">complex</span><span class="p">:</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_values</span><span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mf">1.0</span><span class="n">j</span><span class="o">*</span><span class="n">y</span>
+
+    <span class="k">def</span> <span class="nf">_get_input_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_N_TO_INPUT_SIGNAL</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;voltage&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_VOLT_ENUM</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_units</span><span class="p">(</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CURR_ENUM</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_units</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mode</span>
+
+    <span class="k">def</span> <span class="nf">_set_input_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">==</span> <span class="s1">&#39;voltage&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_VOLT_ENUM</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_units</span><span class="p">(</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sensitivity</span><span class="o">.</span><span class="n">vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CURR_ENUM</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_units</span><span class="p">(</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_INPUT_SIGNAL_TO_N</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_sensitivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_input</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;voltage&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_N_TO_VOLT</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_N_TO_CURR</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+
+    <span class="k">def</span> <span class="nf">_set_sensitivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_input</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;voltage&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_VOLT_TO_N</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_CURR_TO_N</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">parameter_names</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get values of 2 or 3 parameters that are measured by the lock-in</span>
+<span class="sd">        amplifier. These values are guaranteed to come from the same</span>
+<span class="sd">        measurement cycle as opposed to getting values of parameters one by</span>
+<span class="sd">        one (for example, by calling `sr.X()`, and then `sr.Y()`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *parameter_names: 2 or 3 names of parameters for which the values</span>
+<span class="sd">                are requested; valid names can be found in `PARAMETER_NAMES`</span>
+<span class="sd">                attribute of the driver class</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a tuple of 2 or 3 floating point values</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">2</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameter_names</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="s1">&#39;It is only possible to request values of 2 or 3 parameters &#39;</span>
+                <span class="s1">&#39;at a time.&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">parameter_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> is not a valid parameter name. Refer &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;to `PARAMETER_NAMES` for a list of valid &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;parameter names&#39;</span><span class="p">)</span>
+
+        <span class="n">p_ids</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">PARAMETER_NAMES</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">parameter_names</span><span class="p">]</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;SNAP? </span><span class="si">{</span><span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p_ids</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get_data_channels_values</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queries the current values of the data channels</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple of 4 values of the data channels</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s1">&#39;SNAPD?&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">get_data_channels_parameters</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">query_instrument</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convenience method to query a list of parameters which the data</span>
+<span class="sd">        channels are currently assigned to.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            query_instrument: If set to False, the internally cashed names of</span>
+<span class="sd">                the parameters will be returned; if True, then the names will</span>
+<span class="sd">                be queried through the instrument</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a tuple of 4 strings of parameter names</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">query_instrument</span><span class="p">:</span>
+            <span class="n">method_name</span> <span class="o">=</span> <span class="s1">&#39;get&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">method_name</span> <span class="o">=</span> <span class="s1">&#39;get_latest&#39;</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_channels</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s1">&#39;assigned_parameter&#39;</span><span class="p">),</span>
+                    <span class="n">method_name</span><span class="p">)()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_N_DATA_CHANNELS</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_data_channels_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">requery_names</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a dictionary where the keys are parameter names currently</span>
+<span class="sd">        assigned to the data channels, and values are the values of those</span>
+<span class="sd">        parameters.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            requery_names: if False, the currently assigned parameter names</span>
+<span class="sd">                will not be queries from the instrument in order to save time</span>
+<span class="sd">                on communication, in this case the cached assigned parameter</span>
+<span class="sd">                names will be used for the keys of the dicitonary; if True,</span>
+<span class="sd">                the assigned parameter names will be queried from the</span>
+<span class="sd">                instrument</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a dictionary where keys are names of parameters assigned to the</span>
+<span class="sd">            data channels, and values are the values of those parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parameter_names</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_channels_parameters</span><span class="p">(</span><span class="n">requery_names</span><span class="p">)</span>
+        <span class="n">parameter_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data_channels_values</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">parameter_names</span><span class="p">,</span> <span class="n">parameter_values</span><span class="p">))</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

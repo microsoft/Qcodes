@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QCoDeS Example with Tektronix Keithley 2450 Source Meter &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="QCoDeS+Broadbean Example with Tektronix AWG5208" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html" />
+    <link rel="prev" title="QCoDeS Example with Yokogawa GS200/GS210" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#drivers">Drivers</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Single-point-measurements">Single point measurements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Sweeping-measurements">Sweeping measurements</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#To-perform-measurements-with-user-defined-reading-buffer">To perform measurements with user-defined reading buffer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">QCoDeS Example with Tektronix Keithley 2450 Source Meter</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/driver_examples/Qcodes example with keithley 2450.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/Qcodes example with keithley 2450.ipynb">docs/examples/driver_examples/Qcodes example with keithley 2450.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/Qcodes example with keithley 2450.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-Example-with-Tektronix-Keithley-2450-Source-Meter">
+<h1>QCoDeS Example with Tektronix Keithley 2450 Source Meter<a class="headerlink" href="#QCoDeS-Example-with-Tektronix-Keithley-2450-Source-Meter" title="Link to this heading"></a></h1>
+<p>In this example we will setup a number of <a class="reference external" href="https://en.wikipedia.org/wiki/Four-terminal_sensing">four-wire measurements</a> with the 2540 source meter. We attach a variable resistor to the front terminals and determine if we can measure the correct resistance.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyvisa</span> <span class="kn">import</span> <span class="n">VisaIOError</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Measurement</span><span class="p">,</span>
+    <span class="n">initialise_database</span><span class="p">,</span>
+    <span class="n">new_experiment</span><span class="p">,</span>
+    <span class="n">plot_dataset</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.Keithley</span> <span class="kn">import</span> <span class="n">Keithley2450</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keithley</span> <span class="o">=</span> <span class="n">Keithley2450</span><span class="p">(</span><span class="s2">&quot;keithley&quot;</span><span class="p">,</span> <span class="s2">&quot;GPIB0::18::INSTR&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to: KEITHLEY INSTRUMENTS 2450 (serial:04451117, firmware:1.6.7c) in 0.08s
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keithley</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<section id="Single-point-measurements">
+<h2>Single point measurements<a class="headerlink" href="#Single-point-measurements" title="Link to this heading"></a></h2>
+<p>Attach a variable resistor to the front and source a current</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keithley</span><span class="o">.</span><span class="n">terminals</span><span class="p">(</span><span class="s2">&quot;front&quot;</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="s2">&quot;current&quot;</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">current</span><span class="p">(</span><span class="mf">1E-6</span><span class="p">)</span>  <span class="c1"># Put 1uA through the resistor</span>
+<span class="n">current_setpoint</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+
+<span class="n">voltage</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="s2">&quot;voltage&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">keithley</span><span class="o">.</span><span class="n">output_enabled</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">voltage</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">voltage</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Approx. resistance: &quot;</span><span class="p">,</span>  <span class="n">voltage</span><span class="o">/</span><span class="n">current_setpoint</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Approx. resistance:  1022.3210000000001
+</pre></div></div>
+</div>
+<p>We can also directly measure the resistance</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">voltage</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="s2">&quot;resistance&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">keithley</span><span class="o">.</span><span class="n">output_enabled</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">resistance</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">resistance</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Measured resistance: &quot;</span><span class="p">,</span>  <span class="n">resistance</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Measured resistance:  996.9845
+</pre></div></div>
+</div>
+<p>In ‘current’ mode, we cannot set/get a voltage and vice versa</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">voltage</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+    <span class="n">function</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;In the &#39;</span><span class="si">{</span><span class="n">function</span><span class="si">}</span><span class="s2">&#39; source mode the source module does not have a &#39;voltage&#39; attribute&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+In the &#39;current&#39; source mode the source module does not have a &#39;voltage&#39; attribute
+</pre></div></div>
+</div>
+<p>This goes for both the source and sense subsystems</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+    <span class="n">function</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">function</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;In the &#39;</span><span class="si">{</span><span class="n">function</span><span class="si">}</span><span class="s2">&#39; sense mode the sense module does not have a &#39;current&#39; attribute&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+In the &#39;resistance&#39; sense mode the sense module does not have a &#39;current&#39; attribute
+</pre></div></div>
+</div>
+<p>We also need to make sure the output is enabled for use the measure (or ‘sense’) a current or voltage</p>
+</section>
+<section id="Sweeping-measurements">
+<h2>Sweeping measurements<a class="headerlink" href="#Sweeping-measurements" title="Link to this heading"></a></h2>
+<p>The instrument has a build-in sweep system. For the first measurement, we drive a current through the resistor and measure the voltage accross it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_database</span><span class="p">()</span>
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">new_experiment</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Keithley_2450_example&#39;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s2">&quot;no sample&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Sweep the current from 0 to 1uA in 10 steps and measure voltage</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="s2">&quot;voltage&quot;</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">auto_range</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="s2">&quot;current&quot;</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">auto_range</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">sweep_setup</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1E-6</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+
+<span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">four_wire_measurement</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">experiment</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">sweep_axis</span><span class="p">,</span> <span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">sweep_axis</span><span class="p">()),</span>
+                         <span class="p">(</span><span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="p">,</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="p">()))</span>
+
+    <span class="n">dataid</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">run_id</span>
+
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 188.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;matplotlib.axes._subplots.AxesSubplot at 0x1ce9f5622c8&gt;], [None])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_Qcodes_example_with_keithley_2450_19_2.png" src="../../_images/examples_driver_examples_Qcodes_example_with_keithley_2450_19_2.png" />
+</div>
+</div>
+<p>Sweep the voltage from 10mV in 10 steps and measure current</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="s2">&quot;current&quot;</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mf">1E-5</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">four_wire_measurement</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="s2">&quot;voltage&quot;</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+<span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">sweep_setup</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">experiment</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">sweep_axis</span><span class="p">,</span> <span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">sweep_axis</span><span class="p">()),</span>
+                         <span class="p">(</span><span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="p">,</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="p">()))</span>
+
+    <span class="n">dataid</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">run_id</span>
+
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 189.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;matplotlib.axes._subplots.AxesSubplot at 0x1cea1677a88&gt;], [None])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_Qcodes_example_with_keithley_2450_22_2.png" src="../../_images/examples_driver_examples_Qcodes_example_with_keithley_2450_22_2.png" />
+</div>
+</div>
+</section>
+<section id="To-perform-measurements-with-user-defined-reading-buffer">
+<h2>To perform measurements with user-defined reading buffer<a class="headerlink" href="#To-perform-measurements-with-user-defined-reading-buffer" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keithley</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>By default, when performing measurement, the value is stored in the default buffer “defbuffer1”.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">keithley</span><span class="o">.</span><span class="n">sense_function</span><span class="p">(</span><span class="s1">&#39;current&#39;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">keithley</span><span class="o">.</span><span class="n">output_enabled</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">data_point01</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+    <span class="n">data_point02</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+    <span class="n">data_point03</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">current</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The current measurements are </span><span class="si">{</span><span class="n">data_point01</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">data_point02</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">data_point03</span><span class="si">}</span><span class="s2"> A.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The current measurements are -1.608374e-08, -1.818495e-08, -1.950789e-08 A.
+</pre></div></div>
+</div>
+<p>We can use a user-defined reading buffer for measurement. The following example is to do a sweep measurement, and read extra data elements in addition to the measurement value with the new method “elements”.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">buffer_name</span> <span class="o">=</span> <span class="s1">&#39;userbuff1&#39;</span>
+<span class="n">buffer_size</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="k">with</span> <span class="n">keithley</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">buffer_name</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">)</span> <span class="k">as</span> <span class="n">buff1</span><span class="p">:</span>
+    <span class="n">buff1</span><span class="o">.</span><span class="n">elements</span><span class="p">([</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;measurement&#39;</span><span class="p">,</span> <span class="s1">&#39;source_value_formatted&#39;</span><span class="p">])</span>
+    <span class="n">keithley</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">sweep_setup</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1E-6</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">buffer_name</span><span class="o">=</span><span class="n">buff1</span><span class="o">.</span><span class="n">buffer_name</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="p">()</span>
+    <span class="n">all_data</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">sense</span><span class="o">.</span><span class="n">sweep</span><span class="o">.</span><span class="n">get_selected</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>“data” includes the numerical value of the measurement:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([-1.772451e-08, -2.088747e-08, -2.159876e-08, -2.161518e-08,
+       -2.155486e-08, -2.154403e-08, -2.157010e-08, -2.107971e-08,
+       -2.079369e-08, -2.079450e-08])
+</pre></div></div>
+</div>
+<p>“all_data” includes extra information specified by the “elements()” method:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">all_data</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;14:14:29&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-1.772451E-08&#39;,
+ &#39;+00.00507 mV&#39;,
+ &#39;14:14:29&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.088747E-08&#39;,
+ &#39;+00.00200 mV&#39;,
+ &#39;14:14:29&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.159876E-08&#39;,
+ &#39;+00.00116 mV&#39;,
+ &#39;14:14:30&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.161518E-08&#39;,
+ &#39;+00.00187 mV&#39;,
+ &#39;14:14:30&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.155486E-08&#39;,
+ &#39;+00.00098 mV&#39;,
+ &#39;14:14:30&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.154403E-08&#39;,
+ &#39;+00.00116 mV&#39;,
+ &#39;14:14:31&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.157010E-08&#39;,
+ &#39;+00.00190 mV&#39;,
+ &#39;14:14:31&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.107971E-08&#39;,
+ &#39;+00.00209 mV&#39;,
+ &#39;14:14:31&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.079369E-08&#39;,
+ &#39;+00.00269 mV&#39;,
+ &#39;14:14:32&#39;,
+ &#39;06/10/2020&#39;,
+ &#39;-2.079450E-08&#39;,
+ &#39;+00.00273 mV&#39;]
+</pre></div></div>
+</div>
+<p>By using “with … as …:” to perform the measurement, there user-defined buffer is automatically removed after the measurement. <strong>This is the recommanded way to use the user-defined buffer.</strong></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">buff1</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">VisaIOError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#39;VI_ERROR_TMO (-1073807339): Timeout expired before operation completed.&#39;, &#39;asking &#34;:TRACe:POINts? \&#39;userbuff1\&#39;&#34; to &lt;Keithley2450: keithley&gt;&#39;, &#39;getting keithley_userbuff1_size&#39;)
+</pre></div></div>
+</div>
+<p>And we can still access the data in the default buffer:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">buffer_name</span> <span class="o">=</span> <span class="s1">&#39;defbuffer1&#39;</span>
+<span class="n">buffer</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">buffer</span><span class="p">(</span><span class="n">buffer_name</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;There are </span><span class="si">{</span><span class="n">buffer</span><span class="o">.</span><span class="n">number_of_readings</span><span class="p">()</span><span class="si">}</span><span class="s2"> data points in &#39;</span><span class="si">{</span><span class="n">buffer_name</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+There are 3 data points in &#39;defbuffer1&#39;.
+</pre></div></div>
+</div>
+<p>The last reading is:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">buffer</span><span class="o">.</span><span class="n">get_last_reading</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;-1.950789E-08&#39;
+</pre></div></div>
+</div>
+<p>We can get all 3 previously measured data as following:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">buffer</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[-1.608374e-08, -1.818495e-08, -1.950789e-08]
+</pre></div></div>
+</div>
+<p>And the original infomration are still there:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">buffer</span><span class="o">.</span><span class="n">elements</span><span class="p">([</span><span class="s2">&quot;time&quot;</span><span class="p">,</span> <span class="s2">&quot;measurement_formatted&quot;</span><span class="p">])</span>
+<span class="n">buffer</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;14:14:28&#39;,
+ &#39;-016.084 nA&#39;,
+ &#39;14:14:28&#39;,
+ &#39;-018.185 nA&#39;,
+ &#39;14:14:28&#39;,
+ &#39;-019.508 nA&#39;]
+</pre></div></div>
+</div>
+<p>This is all the available elements, if none is requested, “measurement” will be used:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">buffer</span><span class="o">.</span><span class="n">available_elements</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;date&#39;,
+ &#39;fractional_seconds&#39;,
+ &#39;measurement&#39;,
+ &#39;measurement_formatted&#39;,
+ &#39;measurement_status&#39;,
+ &#39;measurement_unit&#39;,
+ &#39;relative_time&#39;,
+ &#39;seconds&#39;,
+ &#39;source_value&#39;,
+ &#39;source_value_formatted&#39;,
+ &#39;source_value_status&#39;,
+ &#39;source_value_unit&#39;,
+ &#39;time&#39;,
+ &#39;timestamp&#39;}
+</pre></div></div>
+</div>
+<p>If the user gives a incorrect element name, error message will show which ones are correct:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">buffer</span><span class="o">.</span><span class="n">elements</span><span class="p">([</span><span class="s1">&#39;dates&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#34;&#39;dates&#39; is not in {&#39;measurement&#39;, &#39;measurement_status&#39;, &#39;source_value_formatted&#39;, &#39;seconds&#39;, &#39;source_value_unit&#39;, &#39;timestamp&#39;, &#39;source_value_status&#39;, &#39;measurement_formatted&#39;, &#39;relative_time&#39;, &#39;source_value&#39;, &#39;time&#39;, &#39;fractional_seconds&#39;, &#39;date&#39;, &#39;measurement_unit&#39;}; &#34;, &#34;setting keithley_defbuffer1_elements to [&#39;dates&#39;]&#34;)
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html" class="btn btn-neutral float-left" title="QCoDeS Example with Yokogawa GS200/GS210" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html" class="btn btn-neutral float-right" title="QCoDeS+Broadbean Example with Tektronix AWG5208" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

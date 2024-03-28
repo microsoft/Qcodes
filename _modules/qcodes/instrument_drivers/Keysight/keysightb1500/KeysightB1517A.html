@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A &mdash; QCoDeS 0.45.0.dev450 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../../_static/documentation_options.js?v=80eaa6fa"></script>
+        <script src="../../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+    <link href="../../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.45.0.dev450+main.ga78dbd0aa
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1517A</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">overload</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">NotRequired</span><span class="p">,</span> <span class="n">TypedDict</span>
+
+<span class="kn">import</span> <span class="nn">qcodes.validators</span> <span class="k">as</span> <span class="nn">vals</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">InstrumentChannel</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Group</span><span class="p">,</span> <span class="n">GroupParameter</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">ParamRawDataType</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">constants</span>
+<span class="kn">from</span> <span class="nn">.constants</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AAD</span><span class="p">,</span>
+    <span class="n">MM</span><span class="p">,</span>
+    <span class="n">ChNr</span><span class="p">,</span>
+    <span class="n">IMeasRange</span><span class="p">,</span>
+    <span class="n">IOutputRange</span><span class="p">,</span>
+    <span class="n">MeasurementStatus</span><span class="p">,</span>
+    <span class="n">ModuleKind</span><span class="p">,</span>
+    <span class="n">VMeasRange</span><span class="p">,</span>
+    <span class="n">VOutputRange</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.KeysightB1500_module</span> <span class="kn">import</span> <span class="n">B1500Module</span><span class="p">,</span> <span class="n">parse_spot_measurement_response</span>
+<span class="kn">from</span> <span class="nn">.KeysightB1500_sampling_measurement</span> <span class="kn">import</span> <span class="n">SamplingMeasurement</span>
+<span class="kn">from</span> <span class="nn">.message_builder</span> <span class="kn">import</span> <span class="n">MessageBuilder</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="n">KeysightB1500</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SweepSteps</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A dictionary holding all the parameters that specifies the staircase</span>
+<span class="sd">    sweep (WV).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">chan</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">]]</span>
+    <span class="n">sweep_mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">sweep_range</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">sweep_start</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">sweep_end</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">sweep_steps</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">current_compliance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">power_compliance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="KeysightB1500IVSweeper">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1500IVSweeper">[docs]</a>
+<span class="k">class</span> <span class="nc">KeysightB1500IVSweeper</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;KeysightB1517A&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">:</span> <span class="n">SweepSteps</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s2">&quot;sweep_mode&quot;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="o">.</span><span class="n">LINEAR</span><span class="p">,</span>
+             <span class="s2">&quot;sweep_range&quot;</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="o">.</span><span class="n">AUTO</span><span class="p">,</span>
+             <span class="s2">&quot;sweep_start&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+             <span class="s2">&quot;sweep_end&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+             <span class="s2">&quot;sweep_steps&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+             <span class="s2">&quot;current_compliance&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="s2">&quot;power_compliance&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sweep_auto_abort&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_auto_abort</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_auto_abort</span><span class="p">,</span>
+                           <span class="n">set_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">Abort</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">Abort</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">Abort</span><span class="p">)),</span>
+                           <span class="n">initial_cache_value</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">Abort</span><span class="o">.</span><span class="n">ENABLED</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        The WM command enables or disables the automatic abort function for</span>
+<span class="s2">        the staircase sweep sources and the pulsed sweep source. The</span>
+<span class="s2">        automatic abort function stops the measurement when one of the</span>
+<span class="s2">        following conditions occurs:</span>
+<span class="s2">         - Compliance on the measurement channel</span>
+<span class="s2">         - Compliance on the non-measurement channel</span>
+<span class="s2">         - Overflow on the AD converter</span>
+<span class="s2">         - Oscillation on any channel</span>
+<span class="s2">        This command also sets the post measurement condition for the sweep</span>
+<span class="s2">        sources. After the measurement is normally completed, the staircase</span>
+<span class="s2">        sweep sources force the value specified by the post parameter,</span>
+<span class="s2">        and the pulsed sweep source forces the pulse base value.</span>
+
+<span class="s2">        If the measurement is stopped by the automatic abort function,</span>
+<span class="s2">        the staircase sweep sources force the start value, and the pulsed</span>
+<span class="s2">        sweep source forces the pulse base value after sweep.</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;post_sweep_voltage_condition&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_post_sweep_voltage_condition</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_post_sweep_voltage_condition</span><span class="p">,</span>
+                           <span class="n">set_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">WM</span><span class="o">.</span><span class="n">Post</span><span class="p">,</span>
+                           <span class="n">get_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">WM</span><span class="o">.</span><span class="n">Post</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">WM</span><span class="o">.</span><span class="n">Post</span><span class="p">)),</span>
+                           <span class="n">initial_cache_value</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">WM</span><span class="o">.</span><span class="n">Post</span><span class="o">.</span><span class="n">START</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Source output value after the measurement is normally completed. If</span>
+<span class="s2">        this parameter is not set, the sweep sources force the start value.</span>
+<span class="s2">                                 &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;hold_time&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">655.35</span><span class="p">),</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                           Hold time (in seconds) that is the</span>
+<span class="s2">                           wait time after starting measurement</span>
+<span class="s2">                           and before starting delay time for</span>
+<span class="s2">                           the first step 0 to 655.35 s, with 10</span>
+<span class="s2">                           ms resolution. Numeric expression.</span>
+<span class="s2">                          &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;delay&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">65.535</span><span class="p">),</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                           Delay time (in seconds) that is the wait time after</span>
+<span class="s2">                           starting to force a step output and before</span>
+<span class="s2">                            starting a step measurement. 0 to 65.535 s,</span>
+<span class="s2">                            with 0.1 ms resolution. Numeric expression.</span>
+<span class="s2">                            &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;step_delay&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            Step delay time (in seconds) that is the wait time</span>
+<span class="s2">                            after starting a step measurement and before</span>
+<span class="s2">                            starting to force the next step output. 0 to 1 s,</span>
+<span class="s2">                            with 0.1 ms resolution. Numeric expression. If</span>
+<span class="s2">                            this parameter is not set, step delay will be 0. If</span>
+<span class="s2">                            step delay is shorter than the measurement time,</span>
+<span class="s2">                            the B1500 waits until the measurement completes,</span>
+<span class="s2">                            then forces the next step output.</span>
+<span class="s2">                            &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;trigger_delay&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                            Step source trigger delay time (in seconds) that</span>
+<span class="s2">                            is the wait time after completing a step output</span>
+<span class="s2">                            setup and before sending a step output setup</span>
+<span class="s2">                            completion trigger. 0 to the value of ``delay`` s,</span>
+<span class="s2">                            with 0.1 ms resolution.</span>
+<span class="s2">                            If this parameter is not set,</span>
+<span class="s2">                            trigger delay will be 0.</span>
+<span class="s2">                            &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;measure_delay&#39;</span><span class="p">,</span>
+                           <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">65.535</span><span class="p">),</span>
+                           <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                           Step measurement trigger delay time (in seconds)</span>
+<span class="s2">                           that is the wait time after receiving a start step</span>
+<span class="s2">                           measurement trigger and before starting a step</span>
+<span class="s2">                           measurement. 0 to 65.535 s, with 0.1 ms resolution.</span>
+<span class="s2">                           Numeric expression. If this parameter is not set,</span>
+<span class="s2">                           measure delay will be 0.</span>
+<span class="s2">                           &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_delays_group</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">hold_time</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">step_delay</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">trigger_delay</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">measure_delay</span><span class="p">],</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s1">&#39;WT &#39;</span>
+                    <span class="s1">&#39;</span><span class="si">{hold_time}</span><span class="s1">,&#39;</span>
+                    <span class="s1">&#39;</span><span class="si">{delay}</span><span class="s1">,&#39;</span>
+                    <span class="s1">&#39;</span><span class="si">{step_delay}</span><span class="s1">,&#39;</span>
+                    <span class="s1">&#39;</span><span class="si">{trigger_delay}</span><span class="s1">,&#39;</span>
+                    <span class="s1">&#39;</span><span class="si">{measure_delay}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_delays</span><span class="p">(),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_delays_parser</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sweep_mode&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_mode</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_mode</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">)),</span>
+                           <span class="n">set_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">,</span>
+                           <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                 Sweep mode. Note that Only linear sweep (mode=1 or 3) is</span>
+<span class="s2">                 available for the staircase sweep with pulsed bias.</span>
+<span class="s2">                     1: Linear sweep (single stair, start to stop.)</span>
+<span class="s2">                     2: Log sweep (single stair, start to stop.)</span>
+<span class="s2">                     3: Linear sweep (double stair, start to stop to start.)</span>
+<span class="s2">                     4: Log sweep (double stair, start to stop to start.)</span>
+<span class="s2">                                &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sweep_range&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_range</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_range</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">)),</span>
+                           <span class="n">set_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">,</span>
+                           <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Ranging type for staircase sweep voltage output. Integer expression.</span>
+<span class="s2">        See Table 4-4 on page 20. The B1500 usually uses the minimum range</span>
+<span class="s2">        that covers both start and stop values to force the staircase sweep</span>
+<span class="s2">        voltage. However, if you set `power_compliance` and if the following</span>
+<span class="s2">        formulas are true, the B1500 uses the minimum range that covers the</span>
+<span class="s2">        output value, and changes the output range dynamically (20 V range or</span>
+<span class="s2">        above). Range changing may cause 0 V output in a moment. For the</span>
+<span class="s2">        limited auto ranging, the instrument never uses the range less than</span>
+<span class="s2">        the specified range.</span>
+<span class="s2">         - Icomp &gt; maximum current for the output range</span>
+<span class="s2">         - Pcomp/output voltage &gt; maximum current for the output range</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sweep_start&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_start</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_start</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+                           <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Start value of the stair case sweep (in V). For the log sweep,</span>
+<span class="s2">        start and stop must have the same polarity.</span>
+<span class="s2">                                &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sweep_end&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_end</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_end</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+                           <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Stop value of the DC bias sweep (in V). For the log sweep,start and</span>
+<span class="s2">        stop must have the same polarity.</span>
+<span class="s2">                                &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;sweep_steps&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_steps</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1001</span><span class="p">),</span>
+                           <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Number of steps for staircase sweep. Possible  values from 1 to</span>
+<span class="s2">        1001&quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;current_compliance&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_current_compliance</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_compliance</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">),</span>
+                           <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Current compliance (in A). Refer to Manual 2016. See Table 4-7 on</span>
+<span class="s2">        page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15</span>
+<span class="s2">        on page 28 for each measurement resource type. If you do not set</span>
+<span class="s2">        current_compliance, the previous value is used.</span>
+<span class="s2">        Compliance polarity is automatically set to the same polarity as the</span>
+<span class="s2">        output value, regardless of the specified Icomp.</span>
+<span class="s2">        If the output value is 0, the compliance polarity is positive. If</span>
+<span class="s2">        you set Pcomp, the maximum Icomp value for the measurement resource</span>
+<span class="s2">        is allowed, regardless of the output range setting.</span>
+<span class="s2">                           &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;power_compliance&#39;</span><span class="p">,</span>
+                           <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_power_compliance</span><span class="p">,</span>
+                           <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_power_compliance</span><span class="p">,</span>
+                           <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;W&#39;</span><span class="p">,</span>
+                           <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span>
+                           <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        Power compliance (in W). Resolution: 0.001 W. If it is not entered,</span>
+<span class="s2">        the power compliance is not set. This parameter is not available for</span>
+<span class="s2">        HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to</span>
+<span class="s2">        40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU,</span>
+<span class="s2">        0.001 to 100 for UHVU</span>
+<span class="s2">                           &quot;&quot;&quot;</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_set_sweep_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;sweep_mode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_from_sweep_step_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">:</span>
+        <span class="n">mode_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parameters</span><span class="p">(</span><span class="s1">&#39;sweep_mode&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">(</span><span class="n">mode_val</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_sweep_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;sweep_range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_from_sweep_step_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_range</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">:</span>
+        <span class="n">range_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parameters</span><span class="p">(</span><span class="s1">&#39;sweep_range&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">(</span><span class="n">range_val</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_sweep_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;sweep_start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_from_sweep_step_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">sweep_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parameters</span><span class="p">(</span><span class="s1">&#39;sweep_start&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sweep_start</span>
+
+    <span class="k">def</span> <span class="nf">_set_sweep_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;sweep_end&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_from_sweep_step_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">sweep_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parameters</span><span class="p">(</span><span class="s1">&#39;sweep_end&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sweep_end</span>
+
+    <span class="k">def</span> <span class="nf">_set_sweep_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;sweep_steps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_from_sweep_step_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">sweep_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parameters</span><span class="p">(</span><span class="s1">&#39;sweep_steps&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sweep_steps</span>
+
+    <span class="k">def</span> <span class="nf">_set_current_compliance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;current_compliance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_from_sweep_step_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_current_compliance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+        <span class="n">current_compliance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="s1">&#39;current_compliance&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">current_compliance</span>
+
+    <span class="k">def</span> <span class="nf">_set_power_compliance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s1">&#39;current_compliance&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Current compliance must be set before setting &#39;</span>
+                             <span class="s1">&#39;power compliance&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;power_compliance&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_from_sweep_step_parameters</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_power_compliance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+        <span class="n">power_compliance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parameters</span><span class="p">(</span><span class="s1">&#39;power_compliance&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">power_compliance</span>
+
+    <span class="k">def</span> <span class="nf">_set_from_sweep_step_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">wv</span><span class="p">(</span>
+            <span class="n">chnum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s1">&#39;sweep_mode&#39;</span><span class="p">],</span>
+            <span class="n">v_range</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s1">&#39;sweep_range&#39;</span><span class="p">],</span>
+            <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s1">&#39;sweep_start&#39;</span><span class="p">],</span>
+            <span class="n">stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s1">&#39;sweep_end&#39;</span><span class="p">],</span>
+            <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s1">&#39;sweep_steps&#39;</span><span class="p">],</span>
+            <span class="n">i_comp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s1">&#39;current_compliance&#39;</span><span class="p">],</span>
+            <span class="n">p_comp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sweep_step_parameters</span><span class="p">[</span><span class="s2">&quot;power_compliance&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_delays</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">lrn_query</span><span class="p">(</span>
+            <span class="n">type_id</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LRN</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">STAIRCASE_SWEEP_MEASUREMENT_SETTINGS</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">return</span> <span class="n">cmd</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_delays_parser</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s1">&#39;WT(?P&lt;hold_time&gt;.+?),(?P&lt;delay&gt;.+?),&#39;</span>
+                          <span class="s1">&#39;(?P&lt;step_delay&gt;.+?),(?P&lt;trigger_delay&gt;.+?),&#39;</span>
+                          <span class="s1">&#39;(?P&lt;measure_delay&gt;.+?)(;|$)&#39;</span><span class="p">,</span>
+                          <span class="n">response</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Sweep delays (WT) not found.&#39;</span><span class="p">)</span>
+
+        <span class="n">resp_dict</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+        <span class="n">out_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">resp_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">out_dict</span>
+
+    <span class="k">def</span> <span class="nf">_set_sweep_auto_abort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">Abort</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">wm</span><span class="p">(</span><span class="n">abort</span><span class="o">=</span><span class="n">val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_post_sweep_voltage_condition</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">WM</span><span class="o">.</span><span class="n">Post</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">wm</span><span class="p">(</span><span class="n">abort</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sweep_auto_abort</span><span class="p">(),</span> <span class="n">post</span><span class="o">=</span><span class="n">val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_auto_abort_setting</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">lrn_query</span><span class="p">(</span>
+            <span class="n">type_id</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LRN</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">STAIRCASE_SWEEP_MEASUREMENT_SETTINGS</span>
+        <span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;WM(?P&lt;abort_function&gt;.+?),&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(?P&lt;output_after_sweep&gt;.+?)&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(;|$)&#39;</span><span class="p">,</span>
+                          <span class="n">response</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Did not find expected response for sweep &quot;</span>
+                               <span class="s2">&quot;auto abort settings&quot;</span><span class="p">)</span>
+        <span class="n">resp_dict</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">resp_dict</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_auto_abort</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">resp_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_auto_abort_setting</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s1">&#39;abort_function&#39;</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="nf">_get_post_sweep_voltage_condition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">resp_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_auto_abort_setting</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s1">&#39;output_after_sweep&#39;</span><span class="p">])</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;chan&#39;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;sweep_mode&#39;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;sweep_range&#39;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;sweep_start&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;sweep_end&#39;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;sweep_steps&#39;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;current_compliance&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;power_compliance&#39;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span> <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parameters</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;chan&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;sweep_mode&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;sweep_range&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;sweep_start&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;sweep_end&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;sweep_steps&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;current_compliance&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;power_compliance&#39;</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">,</span>
+               <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">lrn_query</span><span class="p">(</span>
+            <span class="n">type_id</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LRN</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">STAIRCASE_SWEEP_MEASUREMENT_SETTINGS</span>
+        <span class="p">)</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">message</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">out_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_sweep_steps_parser</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">out_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chan&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Sweep parameters (WV) such as &quot;</span>
+                <span class="s2">&quot;sweep_mode, sweep_range, sweep_start, &quot;</span>
+                <span class="s2">&quot;sweep_end, sweep_steps etc are not set for &quot;</span>
+                <span class="s2">&quot;this SMU.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">out_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_sweep_steps_parser</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SweepSteps</span><span class="p">:</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;WV(?P&lt;chan&gt;.+?),&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(?P&lt;sweep_mode&gt;.+?),&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(?P&lt;sweep_range&gt;.+?),&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(?P&lt;sweep_start&gt;.+?),&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(?P&lt;sweep_end&gt;.+?),&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(?P&lt;sweep_steps&gt;.+?)&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(,(?P&lt;current_compliance&gt;.+?)|;|$)&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(,(?P&lt;power_compliance&gt;.+?)|;|$)&#39;</span>
+                          <span class="sa">r</span><span class="s1">&#39;(;|$)&#39;</span><span class="p">,</span>
+                          <span class="n">response</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Sweep steps (WV) not found.&#39;</span><span class="p">)</span>
+
+        <span class="n">resp_dict</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;current_compliance&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">current_output</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;current_compliance&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">current_output</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;power_compliance&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">power_compliance</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;power_compliance&quot;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">power_compliance</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="n">out_dict</span><span class="p">:</span> <span class="n">SweepSteps</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;chan&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;chan&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;sweep_mode&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;sweep_mode&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;sweep_range&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;sweep_range&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;sweep_start&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;sweep_start&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;sweep_end&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;sweep_end&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;sweep_steps&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">resp_dict</span><span class="p">[</span><span class="s2">&quot;sweep_steps&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;current_compliance&quot;</span><span class="p">:</span> <span class="n">current_output</span><span class="p">,</span>
+            <span class="s2">&quot;power_compliance&quot;</span><span class="p">:</span> <span class="n">power_compliance</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">out_dict</span></div>
+
+
+
+<span class="n">IVSweeper</span> <span class="o">=</span> <span class="n">KeysightB1500IVSweeper</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Alias for backwards compatibility</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">_ParameterWithStatus</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measurement_status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeasurementStatus</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">measurement_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeasurementStatus</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_measurement_status</span>
+
+    <span class="k">def</span> <span class="nf">snapshot_base</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">update</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">params_to_skip_update</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">snapshot</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">snapshot_base</span><span class="p">(</span>
+            <span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">,</span> <span class="n">params_to_skip_update</span><span class="o">=</span><span class="n">params_to_skip_update</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_value</span><span class="p">:</span>
+            <span class="n">snapshot</span><span class="p">[</span><span class="s2">&quot;measurement_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">measurement_status</span>
+
+        <span class="k">return</span> <span class="n">snapshot</span>
+
+
+<span class="k">class</span> <span class="nc">_SpotMeasurementVoltageParameter</span><span class="p">(</span><span class="n">_ParameterWithStatus</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamRawDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">smu</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;KeysightB1517A&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="o">.</span><span class="n">AUTO</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">],</span>
+                          <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Asking to force voltage, but source_config contains a &quot;</span>
+                <span class="s2">&quot;current output range&quot;</span>
+            <span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">dv</span><span class="p">(</span>
+            <span class="n">chnum</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">v_range</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">],</span>
+            <span class="n">voltage</span><span class="o">=</span><span class="n">value</span><span class="p">,</span>
+            <span class="n">i_comp</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;compliance&quot;</span><span class="p">],</span>
+            <span class="n">comp_polarity</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;compl_polarity&quot;</span><span class="p">],</span>
+            <span class="n">i_range</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;min_compliance_range&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">smu</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span>\
+            <span class="n">_reset_measurement_statuses_of_smu_spot_measurement_parameters</span><span class="p">(</span>
+            <span class="s1">&#39;voltage&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+        <span class="n">smu</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;KeysightB1517A&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">)</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">tv</span><span class="p">(</span>
+            <span class="n">chnum</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">v_range</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_measure_config</span><span class="p">[</span><span class="s2">&quot;v_measure_range&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">smu</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">parse_spot_measurement_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measurement_status</span> <span class="o">=</span> <span class="n">parsed</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">parsed</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">_SpotMeasurementCurrentParameter</span><span class="p">(</span><span class="n">_ParameterWithStatus</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">set_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamRawDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">smu</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;KeysightB1517A&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">IOutputRange</span><span class="o">.</span><span class="n">AUTO</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">],</span>
+                          <span class="n">constants</span><span class="o">.</span><span class="n">IOutputRange</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Asking to force current, but source_config contains a &quot;</span>
+                <span class="s2">&quot;voltage output range&quot;</span>
+            <span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">di</span><span class="p">(</span>
+            <span class="n">chnum</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">i_range</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;output_range&quot;</span><span class="p">],</span>
+            <span class="n">current</span><span class="o">=</span><span class="n">value</span><span class="p">,</span>
+            <span class="n">v_comp</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;compliance&quot;</span><span class="p">],</span>
+            <span class="n">comp_polarity</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;compl_polarity&quot;</span><span class="p">],</span>
+            <span class="n">v_range</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_source_config</span><span class="p">[</span><span class="s2">&quot;min_compliance_range&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">smu</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">smu</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span>\
+            <span class="n">_reset_measurement_statuses_of_smu_spot_measurement_parameters</span><span class="p">(</span>
+            <span class="s1">&#39;current&#39;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+        <span class="n">smu</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="s2">&quot;KeysightB1517A&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">)</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">ti</span><span class="p">(</span>
+            <span class="n">chnum</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">i_range</span><span class="o">=</span><span class="n">smu</span><span class="o">.</span><span class="n">_measure_config</span><span class="p">[</span><span class="s2">&quot;i_measure_range&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">smu</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">parse_spot_measurement_response</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measurement_status</span> <span class="o">=</span> <span class="n">parsed</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">parsed</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="KeysightB1517A">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A">[docs]</a>
+<span class="k">class</span> <span class="nc">KeysightB1517A</span><span class="p">(</span><span class="n">B1500Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Driver for Keysight B1517A Source/Monitor Unit module for B1500</span>
+<span class="sd">    Semiconductor Parameter Analyzer.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parent: mainframe B1500 instance that this module belongs to</span>
+<span class="sd">        name: Name of the instrument instance to create. If `None`</span>
+<span class="sd">            (Default), then the name is autogenerated from the instrument</span>
+<span class="sd">            class.</span>
+<span class="sd">        slot_nr: Slot number of this module (not channel number)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MODULE_KIND</span> <span class="o">=</span> <span class="n">ModuleKind</span><span class="o">.</span><span class="n">SMU</span>
+    <span class="n">_interval_validator</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mf">0.0001</span><span class="p">,</span> <span class="mf">65.535</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;KeysightB1500&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">slot_nr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">slot_nr</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span> <span class="o">=</span> <span class="p">(</span><span class="n">ChNr</span><span class="p">(</span><span class="n">slot_nr</span><span class="p">),)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measure_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;v_measure_range&quot;</span><span class="p">,</span> <span class="s2">&quot;i_measure_range&quot;</span><span class="p">,)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;output_range&quot;</span><span class="p">,</span> <span class="s2">&quot;compliance&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;compl_polarity&quot;</span><span class="p">,</span> <span class="s2">&quot;min_compliance_range&quot;</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;h_bias&quot;</span><span class="p">,</span> <span class="s2">&quot;interval&quot;</span><span class="p">,</span> <span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;h_base&quot;</span><span class="p">)}</span>
+
+        <span class="c1"># We want to snapshot these configuration dictionaries</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_attrs</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;_measure_config&#39;</span><span class="p">,</span> <span class="s1">&#39;_source_config&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;_timing_parameters&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;iv_sweep&quot;</span><span class="p">,</span> <span class="n">KeysightB1500IVSweeper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;iv_sweep&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_fnc_already_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power_line_frequency</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_average_coefficient</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_valid_v_measure_ranges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">VMeasRange</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">AUTO</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">MIN_0V5</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">MIN_2V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">MIN_5V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">MIN_20V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">MIN_40V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">MIN_100V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">FIX_0V5</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">FIX_2V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">FIX_5V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">FIX_20V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">FIX_40V</span><span class="p">,</span>
+            <span class="n">VMeasRange</span><span class="o">.</span><span class="n">FIX_100V</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_valid_i_measure_ranges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">IMeasRange</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">AUTO</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_1pA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_10pA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_100pA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_1nA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_10nA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_100nA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_1uA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_10uA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_100uA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_1mA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_10mA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">MIN_100mA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_1pA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_10pA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_100pA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_1nA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_10nA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_100nA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_1uA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_10uA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_100uA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_1mA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_10mA</span><span class="p">,</span>
+            <span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_100mA</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_valid_v_output_ranges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">VOutputRange</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">VOutputRange</span><span class="o">.</span><span class="n">AUTO</span><span class="p">,</span> <span class="n">VOutputRange</span><span class="o">.</span><span class="n">MIN_0V5</span><span class="p">,</span> <span class="n">VOutputRange</span><span class="o">.</span><span class="n">MIN_2V</span><span class="p">,</span>
+            <span class="n">VOutputRange</span><span class="o">.</span><span class="n">MIN_5V</span><span class="p">,</span> <span class="n">VOutputRange</span><span class="o">.</span><span class="n">MIN_20V</span><span class="p">,</span> <span class="n">VOutputRange</span><span class="o">.</span><span class="n">MIN_40V</span><span class="p">,</span>
+            <span class="n">VOutputRange</span><span class="o">.</span><span class="n">MIN_100V</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_valid_i_output_ranges</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">IOutputRange</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">IOutputRange</span><span class="o">.</span><span class="n">AUTO</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_1pA</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_10pA</span><span class="p">,</span>
+            <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_100pA</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_1nA</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_10nA</span><span class="p">,</span>
+            <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_100nA</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_1uA</span><span class="p">,</span>
+            <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_10uA</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_100uA</span><span class="p">,</span>
+            <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_1mA</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_10mA</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="o">.</span><span class="n">MIN_100mA</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;measurement_mode&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_measurement_mode</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="p">)),</span>
+            <span class="n">initial_cache_value</span><span class="o">=</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">SPOT</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                Set measurement mode for this module.</span>
+
+<span class="s2">                It is recommended for this parameter to use values from</span>
+<span class="s2">                :class:`.constants.MM.Mode` enumeration.</span>
+
+<span class="s2">                Refer to the documentation of ``MM`` command in the</span>
+<span class="s2">                programming guide for more information.&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="c1"># Instrument is initialized with this setting having value of</span>
+        <span class="c1"># `1`, spot measurement mode, hence let&#39;s set the parameter&#39;s cache to</span>
+        <span class="c1"># this value since it is not possible to request this value from the</span>
+        <span class="c1"># instrument.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;measurement_operation_mode&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_measurement_operation_mode</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_measurement_operation_mode</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">CMM</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">CMM</span><span class="o">.</span><span class="n">Mode</span><span class="p">)),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            The methods sets the SMU measurement operation mode. This</span>
+<span class="s2">            is not available for the high speed spot measurement.</span>
+<span class="s2">            mode : SMU measurement operation mode. `constants.CMM.Mode`</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">)</span>
+
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;voltage&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">_SpotMeasurementVoltageParameter</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+            <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;current&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">_SpotMeasurementCurrentParameter</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+            <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;time_axis&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_time_axis</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Arrays</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_number_of_samples</span><span class="p">,)),</span>
+            <span class="n">snapshot_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sampling_measurement_trace&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">SamplingMeasurement</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Arrays</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_number_of_samples</span><span class="p">,)),</span>
+            <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_axis</span><span class="p">,)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;current_measurement_range&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_current_measurement_range</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_measurement_range</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="p">)),</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            This method specifies the current measurement range or ranging</span>
+<span class="s2">            type.In the initial setting, the auto ranging is set. The range</span>
+<span class="s2">            changing occurs immediately after the trigger (that is, during</span>
+<span class="s2">            the measurements). Current measurement channel can be decided by</span>
+<span class="s2">             the `measurement_operation_mode` method setting and the channel</span>
+<span class="s2">            output mode (voltage or current).</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;enable_filter&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_enable_filter</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">snapshot_get</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Bool</span><span class="p">(),</span>
+            <span class="n">initial_cache_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            This methods sets the connection mode of a SMU filter for each</span>
+<span class="s2">            channel. A filter is mounted on the SMU. It assures clean source</span>
+<span class="s2">            output with no spikes or overshooting.</span>
+<span class="s2">            ``False``, meaning &quot;disconnect&quot; is the initial setting. Set to</span>
+<span class="s2">            ``True`` to connect.</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">)</span>
+
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_number_of_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sample_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">sample_number</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;set timing parameters first&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_time_axis</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="n">sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span>
+        <span class="n">total_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_total_measurement_time</span><span class="p">()</span>
+        <span class="n">time_xaxis</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_time</span><span class="p">,</span> <span class="n">sample_rate</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">time_xaxis</span>
+
+    <span class="k">def</span> <span class="nf">_total_measurement_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;set timing parameters first&#39;</span><span class="p">)</span>
+
+        <span class="n">sample_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]</span>
+        <span class="n">sample_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span>
+        <span class="n">total_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="n">sample_number</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">total_time</span>
+
+    <span class="k">def</span> <span class="nf">_set_current_measurement_range</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">i_range</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">ri</span><span class="p">(</span><span class="n">chnum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                  <span class="n">i_range</span><span class="o">=</span><span class="n">i_range</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_current_measurement_range</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="p">]]:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span>
+            <span class="n">MessageBuilder</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">lrn_query</span><span class="p">(</span><span class="n">type_id</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LRN</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">MEASUREMENT_RANGING_STATUS</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">message</span>
+        <span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;RI (.+?),(.+?)($|;)&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+        <span class="n">response_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span> <span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">j</span><span class="p">)))</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">match</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">response_list</span>
+
+    <span class="k">def</span> <span class="nf">_set_measurement_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">MM</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span>
+                   <span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                       <span class="n">channels</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+                   <span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_measurement_operation_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                        <span class="n">mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">CMM</span><span class="o">.</span><span class="n">Mode</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+                                        <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span>
+                   <span class="o">.</span><span class="n">cmm</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+                        <span class="n">chnum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                   <span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_measurement_operation_mode</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">CMM</span><span class="o">.</span><span class="n">Mode</span><span class="p">]]:</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span>
+            <span class="n">MessageBuilder</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">lrn_query</span><span class="p">(</span><span class="n">type_id</span><span class="o">=</span><span class="n">constants</span><span class="o">.</span><span class="n">LRN</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">SMU_MEASUREMENT_OPERATION</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">message</span>
+        <span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;CMM (.+?),(.+?)($|;)&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+        <span class="n">response_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">ChNr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span> <span class="n">constants</span><span class="o">.</span><span class="n">CMM</span><span class="o">.</span><span class="n">Mode</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">j</span><span class="p">)))</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">match</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">response_list</span>
+
+    <span class="k">def</span> <span class="nf">_set_enable_filter</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">enable_filter</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This methods sets the connection mode of a SMU filter for each channel.</span>
+<span class="sd">        A filter is mounted on the SMU. It assures clean source output with</span>
+<span class="sd">        no spikes or overshooting.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            enable_filter : Status of the filter.</span>
+<span class="sd">                False: Disconnect (initial setting).</span>
+<span class="sd">                True: Connect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">enable_smu_filters</span><span class="p">(</span>
+            <span class="n">enable_filter</span><span class="o">=</span><span class="n">enable_filter</span><span class="p">,</span>
+            <span class="n">channels</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="KeysightB1517A.source_config">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.source_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">source_config</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">output_range</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">OutputRange</span><span class="p">,</span>
+            <span class="n">compliance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">compl_polarity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">CompliancePolarityMode</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">min_compliance_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">MeasureRange</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure sourcing voltage/current</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_range: voltage/current output range</span>
+<span class="sd">            compliance: voltage/current compliance value</span>
+<span class="sd">            compl_polarity: compliance polarity mode</span>
+<span class="sd">            min_compliance_range: minimum voltage/current compliance output</span>
+<span class="sd">                range</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">min_compliance_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">min_compliance_range</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">output_range</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;When forcing voltage, min_compliance_range must be an &quot;</span>
+                    <span class="s2">&quot;current output range (and vice versa).&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_range</span><span class="p">,</span> <span class="n">VOutputRange</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">output_range</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_v_output_ranges</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid Source Voltage Output Range&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_range</span><span class="p">,</span> <span class="n">IOutputRange</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">output_range</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_i_output_ranges</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid Source Current Output Range&quot;</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;output_range&quot;</span><span class="p">:</span> <span class="n">output_range</span><span class="p">,</span>
+            <span class="s2">&quot;compliance&quot;</span><span class="p">:</span> <span class="n">compliance</span><span class="p">,</span>
+            <span class="s2">&quot;compl_polarity&quot;</span><span class="p">:</span> <span class="n">compl_polarity</span><span class="p">,</span>
+            <span class="s2">&quot;min_compliance_range&quot;</span><span class="p">:</span> <span class="n">min_compliance_range</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1517A.v_measure_range_config">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.v_measure_range_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">v_measure_range_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                               <span class="n">v_measure_range</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">VMeasRange</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure measuring voltage</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            v_measure_range: voltage measurement range</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v_measure_range</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">VMeasRange</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected valid voltage measurement range, &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">v_measure_range</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">v_measure_range</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_v_measure_ranges</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">v_measure_range</span><span class="si">}</span><span class="s2"> voltage measurement &quot;</span>
+                               <span class="sa">f</span><span class="s2">&quot;range is invalid for the device. Valid &quot;</span>
+                               <span class="sa">f</span><span class="s2">&quot;ranges are </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_valid_v_measure_ranges</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measure_config</span><span class="p">[</span><span class="s2">&quot;v_measure_range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_measure_range</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1517A.i_measure_range_config">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.i_measure_range_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">i_measure_range_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                               <span class="n">i_measure_range</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure measuring current</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            i_measure_range: current measurement range</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i_measure_range</span><span class="p">,</span> <span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected valid current measurement range, &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">i_measure_range</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i_measure_range</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_i_measure_ranges</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i_measure_range</span><span class="si">}</span><span class="s2"> current measurement &quot;</span>
+                               <span class="sa">f</span><span class="s2">&quot;range is invalid for the device. Valid &quot;</span>
+                               <span class="sa">f</span><span class="s2">&quot;ranges are </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_valid_i_measure_ranges</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measure_config</span><span class="p">[</span><span class="s2">&quot;i_measure_range&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">i_measure_range</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1517A.timing_parameters">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.timing_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">timing_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                          <span class="n">h_bias</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                          <span class="n">interval</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                          <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                          <span class="n">h_base</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                          <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This command sets the timing parameters of the sampling measurement</span>
+<span class="sd">        mode (:attr:`.MM.Mode.SAMPLING`, ``10``).</span>
+
+<span class="sd">        Refer to the programming guide for more information about the ``MT``</span>
+<span class="sd">        command, especially for notes on sampling operation and about setting</span>
+<span class="sd">        interval &lt; 0.002 s.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            h_bias: Time since the bias value output until the first</span>
+<span class="sd">                sampling point. Numeric expression. in seconds.</span>
+<span class="sd">                0 (initial setting) to 655.35 s, resolution 0.01 s.</span>
+<span class="sd">                The following values are also available for interval &lt; 0.002 s.</span>
+<span class="sd">                ``|h_bias|`` will be the time since the sampling start until</span>
+<span class="sd">                the bias value output. -0.09 to -0.0001 s, resolution 0.0001 s.</span>
+<span class="sd">            interval: Interval of the sampling. Numeric expression,</span>
+<span class="sd">                0.0001 to 65.535, in seconds. Initial value is 0.002.</span>
+<span class="sd">                Resolution is 0.001 at interval &lt; 0.002. Linear sampling of</span>
+<span class="sd">                interval &lt; 0.002 in 0.00001 resolution is available</span>
+<span class="sd">                only when the following formula is satisfied.</span>
+<span class="sd">                ``interval &gt;= 0.0001 + 0.00002 * (number of measurement</span>
+<span class="sd">                channels-1)``</span>
+<span class="sd">            number: Number of samples. Integer expression. 1 to the</span>
+<span class="sd">                following value. Initial value is 1000. For the linear</span>
+<span class="sd">                sampling: ``100001 / (number of measurement channels)``.</span>
+<span class="sd">                For the log sampling: ``1 + (number of data for 11 decades)``</span>
+<span class="sd">            h_base: Hold time of the base value output until the bias value</span>
+<span class="sd">                output. Numeric expression. in seconds. 0 (initial setting)</span>
+<span class="sd">                to 655.35 s, resolution 0.01 s.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># The duplication of kwargs in the calls below is due to the</span>
+        <span class="c1"># difference in type annotations between ``MessageBuilder.mt()``</span>
+        <span class="c1"># method and ``_timing_parameters`` attribute.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interval_validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">interval</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timing_parameters</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">h_bias</span><span class="o">=</span><span class="n">h_bias</span><span class="p">,</span>
+                                       <span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span>
+                                       <span class="n">number</span><span class="o">=</span><span class="n">number</span><span class="p">,</span>
+                                       <span class="n">h_base</span><span class="o">=</span><span class="n">h_base</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span>
+                   <span class="o">.</span><span class="n">mt</span><span class="p">(</span><span class="n">h_bias</span><span class="o">=</span><span class="n">h_bias</span><span class="p">,</span>
+                       <span class="n">interval</span><span class="o">=</span><span class="n">interval</span><span class="p">,</span>
+                       <span class="n">number</span><span class="o">=</span><span class="n">number</span><span class="p">,</span>
+                       <span class="n">h_base</span><span class="o">=</span><span class="n">h_base</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1517A.use_high_speed_adc">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.use_high_speed_adc">[docs]</a>
+    <span class="k">def</span> <span class="nf">use_high_speed_adc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use high-speed ADC type for this module/channel&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span>
+                   <span class="o">.</span><span class="n">aad</span><span class="p">(</span><span class="n">chnum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">adc_type</span><span class="o">=</span><span class="n">AAD</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">HIGH_SPEED</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1517A.use_high_resolution_adc">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.use_high_resolution_adc">[docs]</a>
+    <span class="k">def</span> <span class="nf">use_high_resolution_adc</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use high-resolution ADC type for this module/channel&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span>
+                   <span class="o">.</span><span class="n">aad</span><span class="p">(</span><span class="n">chnum</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                        <span class="n">adc_type</span><span class="o">=</span><span class="n">AAD</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">HIGH_RESOLUTION</span><span class="p">)</span>
+                   <span class="o">.</span><span class="n">message</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1517A.set_average_samples_for_high_speed_adc">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.set_average_samples_for_high_speed_adc">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_average_samples_for_high_speed_adc</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="n">mode</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">AV</span><span class="o">.</span><span class="n">Mode</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">AV</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">AUTO</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This command sets the number of averaging samples of the high-speed</span>
+<span class="sd">        ADC (A/D converter). This command is not effective for the</span>
+<span class="sd">        high-resolution ADC. Also, this command is not effective for the</span>
+<span class="sd">        measurements using pulse.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            number: 1 to 1023, or -1 to -100. Initial setting is 1.</span>
+<span class="sd">                For positive number input, this value specifies the number</span>
+<span class="sd">                of samples depended on the mode value.</span>
+<span class="sd">                For negative number input, this parameter specifies the</span>
+<span class="sd">                number of power line cycles (PLC) for one point measurement.</span>
+<span class="sd">                The Keysight B1500 gets 128 samples in 1 PLC. If number is</span>
+<span class="sd">                negative it ignores the mode argument.</span>
+<span class="sd">            mode : Averaging mode. Integer expression. This parameter is</span>
+<span class="sd">                meaningless for negative number.</span>
+<span class="sd">                `constants.AV.Mode.AUTO`: Auto mode (default setting).</span>
+<span class="sd">                Number of samples = number x initial number.</span>
+<span class="sd">                `constants.AV.Mode.MANUAL`: Manual mode.</span>
+<span class="sd">                Number of samples = number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">MessageBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">av</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="n">number</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_average_coefficient</span> <span class="o">=</span> <span class="n">number</span></div>
+
+
+<div class="viewcode-block" id="KeysightB1517A.setup_staircase_sweep">
+<a class="viewcode-back" href="../../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightB1517A.setup_staircase_sweep">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_staircase_sweep</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">v_start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">v_end</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+            <span class="n">post_sweep_voltage_val</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">WMDCV</span><span class="o">.</span><span class="n">Post</span><span class="p">,</span>
+                                          <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">WMDCV</span><span class="o">.</span><span class="n">Post</span><span class="o">.</span><span class="n">STOP</span><span class="p">,</span>
+            <span class="n">av_coef</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">enable_filter</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="n">v_src_range</span><span class="p">:</span> <span class="n">constants</span><span class="o">.</span><span class="n">OutputRange</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">VOutputRange</span><span class="o">.</span><span class="n">AUTO</span><span class="p">,</span>
+            <span class="n">i_comp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10e-6</span><span class="p">,</span>
+            <span class="n">i_meas_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+                <span class="n">constants</span><span class="o">.</span><span class="n">MeasureRange</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">IMeasRange</span><span class="o">.</span><span class="n">FIX_10uA</span><span class="p">,</span>
+            <span class="n">hold_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">step_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">measure_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">abort_enabled</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">Abort</span><span class="p">,</span>
+                                 <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">Abort</span><span class="o">.</span><span class="n">ENABLED</span><span class="p">,</span>
+            <span class="n">sweep_mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="p">,</span>
+                              <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">constants</span><span class="o">.</span><span class="n">SweepMode</span><span class="o">.</span><span class="n">LINEAR</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setup the staircase sweep measurement using the same set of commands</span>
+<span class="sd">        (in the same order) as given in the programming manual - see pages</span>
+<span class="sd">        3-19 and 3-20.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            v_start: starting voltage of staircase sweep</span>
+<span class="sd">            v_end: ending voltage of staircase sweep</span>
+<span class="sd">            n_steps: number of measurement points (uniformly distributed</span>
+<span class="sd">                between v_start and v_end)</span>
+<span class="sd">            post_sweep_voltage_val: voltage to hold at end of sweep (i.e.</span>
+<span class="sd">                start or end val). Sweep chan will also output this voltage</span>
+<span class="sd">                if an abort condition is encountered during the sweep</span>
+<span class="sd">            av_coef: coefficient to use for av command to set ADC</span>
+<span class="sd">                averaging.  Negative value implies NPLC mode with absolute</span>
+<span class="sd">                value of av_coeff the NPLC setting to use. Positive value</span>
+<span class="sd">                implies auto mode and must be set to &gt;= 4</span>
+<span class="sd">            enable_filter: turn SMU filter on or off</span>
+<span class="sd">            v_src_range: range setting to use for voltage source</span>
+<span class="sd">            i_comp: current compliance level</span>
+<span class="sd">            i_meas_range: current measurement range</span>
+<span class="sd">            hold_time: time (in s) to wait before starting very first</span>
+<span class="sd">                measurement in sweep</span>
+<span class="sd">            delay: time (in s) after starting to force a step output and</span>
+<span class="sd">                before starting a step measurement</span>
+<span class="sd">            step_delay: time (in s) after starting a step measurement before</span>
+<span class="sd">                next step in staircase. If step_delay is &lt; measurement time,</span>
+<span class="sd">                B1500 waits until measurement complete and then forces the</span>
+<span class="sd">                next step value.</span>
+<span class="sd">            measure_delay: time (in s)  after receiving a start step</span>
+<span class="sd">                measurement trigger and before starting a step measurement</span>
+<span class="sd">            abort_enabled: Enbale abort</span>
+<span class="sd">            sweep_mode: Linear, log, linear-2-way or log-2-way</span>
+<span class="sd">          &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_average_samples_for_high_speed_adc</span><span class="p">(</span><span class="n">av_coef</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enable_filter</span><span class="p">(</span><span class="n">enable_filter</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_config</span><span class="p">(</span><span class="n">output_range</span><span class="o">=</span><span class="n">v_src_range</span><span class="p">,</span>
+                           <span class="n">compliance</span><span class="o">=</span><span class="n">i_comp</span><span class="p">,</span>
+                           <span class="n">min_compliance_range</span><span class="o">=</span><span class="n">i_meas_range</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voltage</span><span class="p">(</span><span class="n">v_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">measurement_operation_mode</span><span class="p">(</span><span class="n">constants</span><span class="o">.</span><span class="n">CMM</span><span class="o">.</span><span class="n">Mode</span><span class="o">.</span><span class="n">COMPLIANCE_SIDE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_measurement_range</span><span class="p">(</span><span class="n">i_meas_range</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">hold_time</span><span class="p">(</span><span class="n">hold_time</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">step_delay</span><span class="p">(</span><span class="n">step_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">measure_delay</span><span class="p">(</span><span class="n">measure_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">sweep_auto_abort</span><span class="p">(</span><span class="n">abort_enabled</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">post_sweep_voltage_condition</span><span class="p">(</span><span class="n">post_sweep_voltage_val</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">sweep_mode</span><span class="p">(</span><span class="n">sweep_mode</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">sweep_range</span><span class="p">(</span><span class="n">v_src_range</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">sweep_start</span><span class="p">(</span><span class="n">v_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">sweep_end</span><span class="p">(</span><span class="n">v_end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">sweep_steps</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iv_sweep</span><span class="o">.</span><span class="n">current_compliance</span><span class="p">(</span><span class="n">i_comp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">clear_timer_count</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_fnc_already_run</span> <span class="o">=</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<span class="n">B1517A</span> <span class="o">=</span> <span class="n">KeysightB1517A</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Alias for backwards compatibility</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
