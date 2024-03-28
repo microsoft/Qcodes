@@ -124,7 +124,7 @@ incremental==22.10.0
     # via towncrier
 iniconfig==2.0.0
     # via pytest
-ipykernel==6.29.3
+ipykernel==6.29.4
     # via qcodes
 ipython==8.18.1; python_version == "3.9"
 ipython==8.22.2; python_version >= "3.10"
