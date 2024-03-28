@@ -282,7 +282,7 @@ portalocker==2.8.2
     # via msal-extensions
 prompt-toolkit==3.0.43
     # via ipython
-protobuf==4.25.3
+protobuf==5.26.1
     # via
     #   google-api-core
     #   googleapis-common-protos
