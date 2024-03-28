@@ -41,6 +41,8 @@ from qcodes.parameters import (
 from qcodes.utils import (
     DelegateAttributes,
     checked_getattr,
+    checked_getattr_indexed,
+    getattr_indexed,
     get_qcodes_path,
     get_qcodes_user_path,
 )
@@ -583,7 +585,7 @@ class Station(Metadatable, DelegateAttributes):
             level = levels[0]
             try:
                 for level in levels:
-                    instrument = checked_getattr(
+                    instrument = checked_getattr_indexed(
                         instrument, level, (InstrumentBase, ChannelTuple)
                     )
             except TypeError:
@@ -603,7 +605,7 @@ class Station(Metadatable, DelegateAttributes):
                     instrument,
                     '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], ParameterBase)
+                return checked_getattr_indexed(instrument, parts[-1], ParameterBase)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '
