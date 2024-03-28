@@ -8,6 +8,7 @@ from __future__ import annotations
 import collections
 import io
 import logging
+import sys
 import traceback as tb_module
 import warnings
 from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
@@ -55,8 +56,19 @@ from qcodes.parameters import (
 from qcodes.station import Station
 from qcodes.utils import DelayedKeyboardInterrupt
 
+if sys.version_info >= (3, 10):
+    # new entrypoints api was added in 3.10
+    from importlib.metadata import entry_points
+else:
+    # 3.9 and earlier
+    from importlib_metadata import entry_points
+
 if TYPE_CHECKING:
     from qcodes.dataset.sqlite.connection import ConnectionPlus
+
+_MEASURMENT_START_CALLBACKS = set(
+    entry_points(group="qcodes.dataset.on_measuremnt_start")
+)
 
 log = logging.getLogger(__name__)
 TRACER = trace.get_tracer(__name__)
@@ -610,6 +622,16 @@ class Runner:
         self._span = TRACER.start_span(
             "qcodes.dataset.Measurement.run", context=context
         )
+        for callback in _MEASURMENT_START_CALLBACKS:
+            try:
+                callback_function = callback.load()
+                log.info("Executing on_measurement_start callback %s", callback.name)
+                callback_function()
+            except Exception:
+                log.exception(
+                    "Exception during on_measurement_start callback %s", callback.name
+                )
+
         with ExitStack() as stack:
             stack.enter_context(trace.use_span(self._span, end_on_exit=True))
 
