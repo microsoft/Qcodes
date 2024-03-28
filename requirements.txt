@@ -293,7 +293,7 @@ psutil==5.9.8
 pure-eval==0.2.2
     # via stack-data
 pyarrow==15.0.2
-pyasn1==0.5.1
+pyasn1==0.6.0
     # via
     #   pyasn1-modules
     #   rsa
