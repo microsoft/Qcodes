@@ -499,7 +499,7 @@ wrapt==1.16.0
     # via
     #   deprecated
     #   qcodes
-xarray==2024.2.0
+xarray==2024.3.0
     # via
     #   cf-xarray
     #   qcodes
