@@ -1,10 +1,12 @@
 import types
 import warnings
-from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, cast
 
 import wrapt  # type: ignore[import-untyped]
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class QCoDeSDeprecationWarning(RuntimeWarning):
@@ -105,7 +107,7 @@ def deprecate(
 
 
 @contextmanager
-def _catch_deprecation_warnings() -> Iterator[list[warnings.WarningMessage]]:
+def _catch_deprecation_warnings() -> "Iterator[list[warnings.WarningMessage]]":
     with warnings.catch_warnings(record=True) as ws:
         warnings.simplefilter("ignore")
         warnings.filterwarnings("always", category=QCoDeSDeprecationWarning)
@@ -113,14 +115,14 @@ def _catch_deprecation_warnings() -> Iterator[list[warnings.WarningMessage]]:
 
 
 @contextmanager
-def assert_not_deprecated() -> Iterator[None]:
+def assert_not_deprecated() -> "Iterator[None]":
     with _catch_deprecation_warnings() as ws:
         yield
     assert len(ws) == 0
 
 
 @contextmanager
-def assert_deprecated(message: str) -> Iterator[None]:
+def assert_deprecated(message: str) -> "Iterator[None]":
     with _catch_deprecation_warnings() as ws:
         yield
     assert len(ws) == 1

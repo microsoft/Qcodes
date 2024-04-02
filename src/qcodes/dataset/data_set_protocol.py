@@ -18,7 +18,6 @@ from typing import (
 )
 
 import numpy as np
-from typing_extensions import TypeAlias
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
@@ -45,6 +44,7 @@ else:
 if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
+    from typing_extensions import TypeAlias
 
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes

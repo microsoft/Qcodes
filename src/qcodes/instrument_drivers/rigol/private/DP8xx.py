@@ -1,8 +1,10 @@
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class RigolDP8xxChannel(InstrumentChannel):
@@ -137,9 +139,13 @@ class _RigolDP8xx(VisaInstrument):
         self,
         name: str,
         address: str,
-        channels_ranges: Sequence[tuple[float, float]],
-        ovp_ranges: tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]],
-        ocp_ranges: tuple[Sequence[tuple[float, float]], Sequence[tuple[float, float]]],
+        channels_ranges: "Sequence[tuple[float, float]]",
+        ovp_ranges: tuple[
+            "Sequence[tuple[float, float]]", "Sequence[tuple[float, float]]"
+        ],
+        ocp_ranges: tuple[
+            "Sequence[tuple[float, float]]", "Sequence[tuple[float, float]]"
+        ],
         **kwargs: Any,
     ):
         super().__init__(name, address, **kwargs)

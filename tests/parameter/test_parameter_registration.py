@@ -1,12 +1,15 @@
-from collections.abc import Generator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.mock_instruments import DummyAttrInstrument
 from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from qcodes.instrument import InstrumentBase
 
 
 class BrokenParameter(Parameter):
@@ -16,7 +19,7 @@ class BrokenParameter(Parameter):
     """
 
     def __init__(
-        self, name: str, instrument: InstrumentBase, *args: Any, **kwargs: Any
+        self, name: str, instrument: "InstrumentBase", *args: Any, **kwargs: Any
     ):
         super().__init__(name, *args, **kwargs)
         self._instrument = instrument
@@ -26,13 +29,13 @@ class BrokenParameter2(Parameter):
     """A parameter that does not pass kwargs to the ParameterBase class"""
 
     def __init__(
-        self, name: str, instrument: InstrumentBase, set_cmd: Any, get_cmd: Any
+        self, name: str, instrument: "InstrumentBase", set_cmd: Any, get_cmd: Any
     ):
         super().__init__(name=name, instrument=instrument)
 
 
 @pytest.fixture(name="dummy_attr_instr")
-def _make_dummy_attr_instr() -> Generator[DummyAttrInstrument, None, None]:
+def _make_dummy_attr_instr() -> "Generator[DummyAttrInstrument, None, None]":
     dummy_attr_instr = DummyAttrInstrument("dummy_attr_instr")
     yield dummy_attr_instr
     dummy_attr_instr.close()

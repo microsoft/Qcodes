@@ -1,13 +1,16 @@
-from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import ManualParameter, ScaledParameter
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(name="instrument")
-def _make_instrument() -> Generator[DummyInstrument, None, None]:
+def _make_instrument() -> "Generator[DummyInstrument, None, None]":
     instrument = DummyInstrument('dummy')
     try:
         target_name = 'target_parameter'
