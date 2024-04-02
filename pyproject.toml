@@ -315,6 +315,9 @@ banned-module-level-imports = ["xarray", "pandas", "opencensus"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+[tool.ruff.lint.flake8-type-checking]
+quote-annotations = true
+
 [tool.setuptools.cmdclass]
 sdist = "versioningit.cmdclass.sdist"
 build_py = "versioningit.cmdclass.build_py"
