@@ -394,7 +394,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
         Clear asssinged assets on this channel
         """
 
-        self.root_instrument.write(f'SOURce{self.channel}:CASSet:CLEAR')
+        self.root_instrument.write(f"SOURce{self.channel}:CASSet:CLEAR")
 
 
 AWGChannel = Tektronix70000AWGChannel
@@ -489,12 +489,13 @@ class AWG70000A(VisaInstrument):
                                         'Waiting for trigger': '1',
                                         'Running': '2'})
 
-        self.add_parameter('all_output_off',
-                           label='All Output Off',
-                           get_cmd='OUTPut:OFF?',
-                           set_cmd='OUTPut:OFF {}',
-                           val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
-                           )
+        self.add_parameter(
+            "all_output_off",
+            label="All Output Off",
+            get_cmd="OUTPut:OFF?",
+            set_cmd="OUTPut:OFF {}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+        )
 
         add_channel_list = self.num_channels > 2
         # We deem 2 channels too few for a channel list
