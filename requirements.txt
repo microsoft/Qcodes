@@ -453,7 +453,7 @@ traitlets==5.14.2
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.21.0.20240311
+types-jsonschema==4.21.0.20240331
 types-pytz==2024.1.0.20240203
     # via pandas-stubs
 types-pywin32==306.0.0.20240319
