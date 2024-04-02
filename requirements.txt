@@ -270,7 +270,7 @@ parso==0.8.3
     # via jedi
 partd==1.4.1
     # via dask
-pillow==10.2.0
+pillow==10.3.0
     # via
     #   matplotlib
     #   qcodes
