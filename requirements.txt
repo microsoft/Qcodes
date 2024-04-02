@@ -109,7 +109,7 @@ h5py==3.10.0
     #   hickle
     #   qcodes
     #   qcodes-loop
-hickle==5.0.2
+hickle==5.0.3
     # via qcodes-loop
 hypothesis==6.100.0
 idna==3.6
