@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from qcodes.dataset.data_set_protocol import DataSetProtocol
+from typing import TYPE_CHECKING
+
 from qcodes.dataset.linked_datasets.links import links_to_str
-from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import (
     _rewrite_timestamps,
     create_run,
     mark_run_complete,
 )
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.sqlite.connection import ConnectionPlus
 
 
 def _add_run_to_runs_table(

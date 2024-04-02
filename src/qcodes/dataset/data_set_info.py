@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import TypedDict
 
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.linked_datasets.links import Link, str_to_links
-from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import (
     ExperimentAttributeDict,
     get_raw_run_attributes,
@@ -15,6 +13,10 @@ from qcodes.dataset.sqlite.queries import (
 )
 
 from .descriptions.versioning import serialization
+
+if TYPE_CHECKING:
+    from qcodes.dataset.descriptions.rundescriber import RunDescriber
+    from qcodes.dataset.sqlite.connection import ConnectionPlus
 
 
 class RunAttributesDict(TypedDict):

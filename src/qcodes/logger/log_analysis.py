@@ -8,11 +8,12 @@ from __future__ import annotations
 
 import io
 import logging
-from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
     import numpy as np
     import numpy.typing as npt
     import pandas as pd

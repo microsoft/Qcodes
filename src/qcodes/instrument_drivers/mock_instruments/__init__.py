@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import logging
 import time
-from collections.abc import Generator, Sequence
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -18,6 +17,9 @@ from qcodes.parameters import (
 )
 from qcodes.validators import Arrays, ComplexNumbers, Numbers, OnOff, Strings
 from qcodes.validators import Sequence as ValidatorSequence
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Sequence
 
 log = logging.getLogger(__name__)
 

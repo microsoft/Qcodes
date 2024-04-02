@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, assume, example, given, settings
@@ -6,7 +8,6 @@ from matplotlib.collections import QuadMesh
 from pytest import FixtureRequest
 
 import qcodes as qc
-from qcodes.dataset.data_export import DSPlotData
 from qcodes.dataset.descriptions.detect_shapes import detect_shape_of_measurement
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import (
@@ -18,6 +19,9 @@ from qcodes.dataset.plotting import (
 )
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_export import DSPlotData
 
 
 class TerminateLoopException(Exception):

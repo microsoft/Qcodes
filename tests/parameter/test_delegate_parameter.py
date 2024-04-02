@@ -3,8 +3,7 @@ Test suite for DelegateParameter
 """
 from __future__ import annotations
 
-from collections.abc import Generator
-from typing import Any, Callable, Literal, cast
+from typing import TYPE_CHECKING, Any, Callable, Literal, cast
 
 import hypothesis.strategies as hst
 import pytest
@@ -14,6 +13,9 @@ import qcodes.validators as vals
 from qcodes.parameters import DelegateParameter, Parameter, ParamRawDataType
 
 from .conftest import BetterGettableParam
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @pytest.fixture(name="numeric_val")

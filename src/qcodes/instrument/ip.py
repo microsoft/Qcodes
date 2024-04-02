@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import logging
 import socket
-from collections.abc import Sequence
-from types import TracebackType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .base import Instrument
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import TracebackType
 
 log = logging.getLogger(__name__)
 

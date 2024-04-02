@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 from tqdm import tqdm
 
@@ -17,6 +17,9 @@ from qcodes.dataset.sqlite.connection import (
     transaction,
 )
 from qcodes.dataset.sqlite.query_helpers import get_description_map, one
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 log = logging.getLogger(__name__)
 

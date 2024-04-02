@@ -22,8 +22,6 @@ from typing_extensions import TypeAlias
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.export_config import (
     DataExportType,
     get_data_export_name_elements,
@@ -31,10 +29,8 @@ from qcodes.dataset.export_config import (
     get_data_export_prefix,
     get_data_export_type,
 )
-from qcodes.dataset.linked_datasets.links import Link
 
 from .descriptions.versioning.converters import new_to_old
-from .exporters.export_info import ExportInfo
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
 from .sqlite.queries import raw_time_to_str_time
@@ -50,9 +46,13 @@ if TYPE_CHECKING:
     import pandas as pd
     import xarray as xr
 
+    from qcodes.dataset.descriptions.rundescriber import RunDescriber
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+    from qcodes.dataset.linked_datasets.links import Link
     from qcodes.parameters import ParameterBase
 
     from .data_set_cache import DataSetCache
+    from .exporters.export_info import ExportInfo
 
 # for unknown reason entrypoints registered in pyproct.toml shows up
 # twice here convert to set to ensure no duplication.

@@ -9,14 +9,15 @@ import concurrent.futures
 import itertools
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from functools import partial
-from types import TracebackType
 from typing import TYPE_CHECKING, Callable, Protocol, TypeVar, Union
 
 from qcodes.utils import RespondingThread
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import TracebackType
+
     from qcodes.dataset.data_set_protocol import values_type
     from qcodes.parameters import ParamDataType, ParameterBase
 

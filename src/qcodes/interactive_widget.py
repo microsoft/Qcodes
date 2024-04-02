@@ -6,7 +6,6 @@ from __future__ import annotations
 import io
 import operator
 import traceback
-from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from functools import partial, reduce
 from typing import TYPE_CHECKING, Any, Literal
@@ -28,9 +27,11 @@ from ipywidgets import (  # type: ignore[import-untyped]
 from ruamel.yaml import YAML
 
 from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
-from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
+
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
     from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 
 _META_DATA_KEY = "widget_notes"

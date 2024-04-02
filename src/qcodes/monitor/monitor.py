@@ -28,17 +28,19 @@ import time
 import webbrowser
 from asyncio import CancelledError
 from collections import defaultdict
-from collections.abc import Awaitable, Sequence
 from contextlib import suppress
 from importlib.resources import as_file, files
 from threading import Event, Thread
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import websockets
 import websockets.exceptions
 import websockets.server
 
 from qcodes.parameters import Parameter
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Sequence
 
 WEBSOCKET_PORT = 5678
 SERVER_PORT = 3000

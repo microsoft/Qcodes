@@ -9,7 +9,6 @@ from qcodes import config
 from qcodes.parameters import ParameterBase
 
 from ..descriptions.detect_shapes import detect_shape_of_measurement
-from ..experiment_container import Experiment
 from ..measurements import Measurement
 from ..threading import process_params_meas
 from .do_nd_utils import _handle_plotting, _register_parameters, _set_write_period
@@ -19,6 +18,7 @@ TRACER = trace.get_tracer(__name__)
 
 if TYPE_CHECKING:
     from ..descriptions.versioning.rundescribertypes import Shapes
+    from ..experiment_container import Experiment
     from .do_nd_utils import AxesTupleListWithDataSet, ParamMeasT
 
 @TRACER.start_as_current_span("qcodes.dataset.do0d")

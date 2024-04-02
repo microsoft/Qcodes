@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, cast
 
@@ -13,6 +12,8 @@ from .permissive_range import permissive_range
 from .sequence_helpers import is_sequence
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
     from qcodes.parameters import ParameterBase
 
 

@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 from typing_extensions import TypedDict
 
-from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 
 log = logging.getLogger(__name__)
 
