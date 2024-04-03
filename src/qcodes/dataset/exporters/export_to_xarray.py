@@ -5,8 +5,6 @@ import warnings
 from math import prod
 from typing import TYPE_CHECKING, Literal, cast
 
-from tqdm.dask import TqdmCallback
-
 from qcodes.dataset.linked_datasets.links import links_to_str
 
 from ..descriptions.versioning import serialization as serial
@@ -283,6 +281,10 @@ def xarray_to_h5netcdf_with_complex_numbers(
         )
         # https://github.com/microsoft/pyright/issues/6069
         if not compute and maybe_write_job is not None:
+            # Dask and therefor tqdm.dask is slow to
+            # import and only used here so defer the import
+            # to when required.
+            from tqdm.dask import TqdmCallback
             with TqdmCallback(desc="Combining files"):
                 _LOG.info(
                     "Writing netcdf file using Dask delayed writer.",
