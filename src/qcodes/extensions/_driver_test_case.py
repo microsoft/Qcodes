@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import unittest
+from typing import TYPE_CHECKING
 
-from qcodes.instrument import Instrument
+if TYPE_CHECKING:
+    from qcodes.instrument import Instrument
 
 """
 This module defines:

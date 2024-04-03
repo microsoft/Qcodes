@@ -2,14 +2,16 @@ from __future__ import annotations
 
 import ast
 import gc
-from collections.abc import Iterable
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from qcodes.dataset.data_set import get_guids_by_run_spec
 from qcodes.dataset.guids import validate_guid_format
 from qcodes.dataset.sqlite.database import connect
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def guids_from_dbs(

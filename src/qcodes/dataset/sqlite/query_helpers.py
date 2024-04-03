@@ -5,9 +5,8 @@ are useful for building more database-specific queries out of them.
 from __future__ import annotations
 
 import itertools
-import sqlite3
 from collections.abc import Mapping, Sequence
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
 from numpy import ndarray
@@ -20,6 +19,9 @@ from qcodes.dataset.sqlite.connection import (
     transaction,
 )
 from qcodes.dataset.sqlite.settings import SQLiteSettings
+
+if TYPE_CHECKING:
+    import sqlite3
 
 # represent the type of  data we can/want map to sqlite column
 VALUE = Union[str, complex, list, ndarray, bool, None]

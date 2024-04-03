@@ -6,8 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
-from collections.abc import Sequence
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from tqdm import tqdm
 
@@ -15,7 +14,6 @@ import qcodes.dataset.descriptions.versioning.serialization as serial
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
-from qcodes.dataset.descriptions.versioning.rundescribertypes import RunDescriberV1Dict
 from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
 from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.queries import (
@@ -25,6 +23,13 @@ from qcodes.dataset.sqlite.queries import (
     update_run_description,
 )
 from qcodes.dataset.sqlite.query_helpers import one, select_one_where
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import (
+        RunDescriberV1Dict,
+    )
 
 log = logging.getLogger(__name__)
 

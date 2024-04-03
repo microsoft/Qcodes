@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import time
 from datetime import datetime, timedelta
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 
 import qcodes.validators as vals
-from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 from qcodes.parameters import Parameter, ParameterBase
 
 from .conftest import NOT_PASSED, BetterGettableParam, SettableParam
+
+if TYPE_CHECKING:
+    from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 
 
 def test_get_from_cache_does_not_trigger_real_get_if_get_if_invalid_false() -> None:

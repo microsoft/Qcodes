@@ -9,8 +9,9 @@ if TYPE_CHECKING:
     import matplotlib.axes
     import matplotlib.colorbar
 
+    from qcodes.dataset.measurements import Measurement
+
 from qcodes.dataset.data_set_protocol import DataSetProtocol
-from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.plotting import plot_and_save_image
 from qcodes.parameters import MultiParameter, ParameterBase
 

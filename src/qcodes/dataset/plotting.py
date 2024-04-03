@@ -7,7 +7,6 @@ from __future__ import annotations
 import inspect
 import logging
 import os
-from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import partial
 from textwrap import wrap
@@ -17,14 +16,17 @@ import numpy as np
 from matplotlib.figure import Figure
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import matplotlib
     import matplotlib.ticker
     from matplotlib.axes import Axes
     from matplotlib.colorbar import Colorbar
 
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
+
 import qcodes as qc
 from qcodes.dataset.data_set import load_by_run_spec
-from qcodes.dataset.data_set_protocol import DataSetProtocol
 from qcodes.plotting import auto_color_scale_from_config, find_scale_and_prefix
 
 from .data_export import (

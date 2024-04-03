@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import logging
 import warnings
-from collections.abc import Hashable, Mapping
 from math import prod
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal, cast
 
-import numpy as np
 from tqdm.dask import TqdmCallback
 
 from qcodes.dataset.linked_datasets.links import links_to_str
@@ -20,6 +17,10 @@ from .export_to_pandas import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable, Mapping
+    from pathlib import Path
+
+    import numpy as np
     import pandas as pd
     import xarray as xr
 

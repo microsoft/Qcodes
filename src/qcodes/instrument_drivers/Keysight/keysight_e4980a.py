@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Any, Union, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 
 from packaging import version
 from pyvisa.errors import VisaIOError
@@ -15,6 +14,9 @@ from qcodes.parameters import (
 )
 from qcodes.utils import convert_legacy_version_to_supported_version
 from qcodes.validators import Bool, Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class KeysightE4980AMeasurementPair(MultiParameter):
@@ -41,7 +43,7 @@ class KeysightE4980AMeasurementPair(MultiParameter):
     value: tuple[float, float] = (0.0, 0.0)
 
     def __init__(
-        self, name: str, names: Sequence[str], units: Sequence[str], **kwargs: Any
+        self, name: str, names: "Sequence[str]", units: "Sequence[str]", **kwargs: Any
     ):
         super().__init__(
             name=name,

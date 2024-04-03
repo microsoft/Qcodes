@@ -6,7 +6,6 @@ import logging
 import tempfile
 import time
 import uuid
-from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from queue import Queue
@@ -27,10 +26,8 @@ from qcodes.dataset.data_set_protocol import (
     values_type,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.experiment_settings import get_default_experiment_id
 from qcodes.dataset.export_config import (
@@ -100,9 +97,13 @@ from .exporters.export_to_xarray import (
 from .subscriber import _Subscriber
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+
     import pandas as pd
     import xarray as xr
 
+    from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.parameters import ParameterBase
 
 

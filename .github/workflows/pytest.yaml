@@ -83,7 +83,7 @@ jobs:
       if: ${{ !matrix.min-version }}
     - uses: jakebailey/pyright-action@b8ffdb7aa4a15fab942303261611eaa541f3f8b0 # v2.2.1
       with:
-        version: 1.1.351
+        version: 1.1.356
       if: ${{ !matrix.min-version }}
     - name: Run Mypy
       run: mypy -p qcodes
@@ -96,7 +96,7 @@ jobs:
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci tests
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@54bcd8715eee62d40e33596ef5e8f0f48dbbccab # v4.1.0
+      uses: codecov/codecov-action@c16abc29c95fcf9174b58eb7e1abf4c866893bc8 # v4.1.1
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON

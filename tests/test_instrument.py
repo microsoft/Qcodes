@@ -8,7 +8,7 @@ import gc
 import io
 import re
 import weakref
-from collections.abc import Iterator
+from typing import TYPE_CHECKING
 from weakref import WeakValueDictionary
 
 import pytest
@@ -29,6 +29,9 @@ from qcodes.instrument_drivers.mock_instruments import (
 )
 from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 @pytest.fixture(name="testdummy", scope="function")

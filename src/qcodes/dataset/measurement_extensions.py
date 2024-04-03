@@ -4,17 +4,19 @@ import time
 from collections.abc import Generator, Sequence
 from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opentelemetry import trace
 
 from qcodes.dataset.dond.do_nd import _Sweeper
 from qcodes.dataset.dond.do_nd_utils import ParamMeasT, catch_interrupts
 from qcodes.dataset.dond.sweeps import AbstractSweep, LinSweep, TogetherSweep
-from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import DataSaver, Measurement
 from qcodes.dataset.threading import process_params_meas
 from qcodes.parameters.parameter_base import ParameterBase
+
+if TYPE_CHECKING:
+    from qcodes.dataset.experiment_container import Experiment
 
 TRACER = trace.get_tracer(__name__)
 

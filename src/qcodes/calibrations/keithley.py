@@ -3,11 +3,10 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
-from qcodes.instrument import Instrument
-from qcodes.parameters import Parameter
-
 if TYPE_CHECKING:
+    from qcodes.instrument import Instrument
     from qcodes.instrument_drivers.Keithley import Keithley26xx
+    from qcodes.parameters import Parameter
 
 src_FS_map = {
     "200e-3": 180e-3, "2": 1.8, "20": 18, "200": 180,
