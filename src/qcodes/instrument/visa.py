@@ -28,16 +28,20 @@ log = logging.getLogger(__name__)
 def _close_visa_handle(
     handle: pyvisa.resources.MessageBasedResource, name: str
 ) -> None:
-    if (
-        handle.session is not None
-    ):  # pyvisa sets the session of a handle to None when it is closed
-        log.info(
-            "Closing VISA handle to %s as there are no non weak "
-            "references to the instrument.",
-            name,
-        )
+    try:
+        if (
+            handle.session is not None
+        ):  # pyvisa sets the session of a handle to None when it is closed
+            log.info(
+                "Closing VISA handle to %s as there are no non weak "
+                "references to the instrument.",
+                name,
+            )
 
-        handle.close()
+            handle.close()
+    except InvalidSession:
+        # the resource is already closed
+        pass
 
 class VisaInstrument(Instrument):
 
