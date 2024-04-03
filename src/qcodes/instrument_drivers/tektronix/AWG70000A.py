@@ -15,6 +15,7 @@ from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.parameters import create_on_off_val_mapping
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -390,6 +391,13 @@ class Tektronix70000AWGChannel(InstrumentChannel):
                                    f'CASSet:SEQuence "{seqname}"'
                                    f', {tracknr}')
 
+    def clear_asset(self) -> None:
+        """
+        Clear asssinged assets on this channel
+        """
+
+        self.root_instrument.write(f"SOURce{self.channel}:CASSet:CLEAR")
+
 
 AWGChannel = Tektronix70000AWGChannel
 """
@@ -482,6 +490,14 @@ class AWG70000A(VisaInstrument):
                            val_mapping={'Stopped': '0',
                                         'Waiting for trigger': '1',
                                         'Running': '2'})
+
+        self.add_parameter(
+            "all_output_off",
+            label="All Output Off",
+            get_cmd="OUTPut:OFF?",
+            set_cmd="OUTPut:OFF {}",
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
+        )
 
         add_channel_list = self.num_channels > 2
         # We deem 2 channels too few for a channel list
