@@ -8,7 +8,13 @@ from opentelemetry import trace
 from qcodes import config
 from qcodes.dataset.experiment_container import Experiment
 
-from qcodes.dataset import DataSetDefinition, LinSweeper, datasaver_builder, dond_into, LinSweep
+from qcodes.dataset import (
+    DataSetDefinition,
+    LinSweeper,
+    datasaver_builder,
+    dond_into,
+    LinSweep,
+)
 from qcodes.parameters import ParameterBase
 
 LOG = logging.getLogger(__name__)
@@ -19,6 +25,7 @@ if TYPE_CHECKING:
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.dond.do_nd_utils import ActionsT
     from qcodes.dataset.data_set_protocol import DataSetProtocol
+
 
 @TRACER.start_as_current_span("qcodes.dataset.do2d")
 def do2d_retrace(
@@ -80,25 +87,25 @@ def do2d_retrace(
     Returns:
         The QCoDeS dataset.
     """
-    
+
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
-    
+
     dataset_definition = [
         DataSetDefinition(
             name=measurement_name,
             independent=[param_set1, param_set2],
             dependent=param_meas,
-            experiment=exp
+            experiment=exp,
         ),
         DataSetDefinition(
             name=f"retrace {measurement_name}",
             independent=[param_set1, param_set2],
             dependent=param_meas,
-            experiment=exp
-        )
+            experiment=exp,
+        ),
     ]
-    
+
     with datasaver_builder(dataset_definition) as datasavers:
         for action in enter_actions:
             action()
@@ -109,7 +116,7 @@ def do2d_retrace(
                 stop2,
                 num_points2,
                 delay2,
-                post_actions=after_inner_actions
+                post_actions=after_inner_actions,
             )
             sweep_down = LinSweep(
                 param_set2,
@@ -117,7 +124,7 @@ def do2d_retrace(
                 start2,
                 num_points2,
                 delay2,
-                post_actions=after_inner_actions
+                post_actions=after_inner_actions,
             )
             for action in before_inner_actions:
                 action()
@@ -125,7 +132,7 @@ def do2d_retrace(
                 datasavers[0],
                 sweep_up,
                 *param_meas,
-                additional_setpoints=additional_setpoints
+                additional_setpoints=additional_setpoints,
             )
             for action in before_inner_actions:
                 action()
