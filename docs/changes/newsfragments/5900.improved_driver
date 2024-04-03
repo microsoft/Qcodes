@@ -1,0 +1,2 @@
+The drivers for ``TektronixAWG5208``, ``TektronixAWG70001A``, ``TektronixAWG70001B``, ``TektronixAWG70002A`` and ``TektronixAWG70002B``
+have gained the parameter ``all_output_off`` to disable / enable all outputs as well as the method ``channel.clear_asset`` to clear all asserts on a channel.
