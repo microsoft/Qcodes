@@ -55,7 +55,7 @@ comm==0.2.2
     #   ipywidgets
 contextlib2==21.6.0
     # via schema
-contourpy==1.2.0
+contourpy==1.2.1
     # via matplotlib
 coverage==7.4.4
     # via pytest-cov
