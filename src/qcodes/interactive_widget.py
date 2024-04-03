@@ -10,7 +10,6 @@ from datetime import datetime
 from functools import partial, reduce
 from typing import TYPE_CHECKING, Any, Literal
 
-from IPython.display import clear_output, display
 from ipywidgets import (  # type: ignore[import-untyped]
     HTML,
     Box,
@@ -230,6 +229,7 @@ def _do_in_tab(
         ds: A qcodes.DataSet instance.
         which: Either "plot" or "snapshot".
     """
+    from IPython.display import clear_output, display
     assert which in ("plot", "snapshot")
 
     def delete_tab(output: Output, tab: Tab) -> Callable[[Button], None]:
@@ -282,6 +282,7 @@ def _do_in_tab(
 
 def create_tab(do_display: bool = True) -> Tab:
     """Creates a `ipywidgets.Tab` which can display outputs in its tabs."""
+    from IPython.display import display
     output = Output()
     tab = Tab(children=(output,))
 
