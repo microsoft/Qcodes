@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -8,9 +8,12 @@ from qcodes.parameters import Parameter, create_on_off_val_mapping
 
 from .conftest import ParameterMemory
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(name="dummyinst")
-def _make_dummy_inst() -> Generator[DummyInstrument, None, None]:
+def _make_dummy_inst() -> "Generator[DummyInstrument, None, None]":
     inst = DummyInstrument('dummy_holder')
     try:
         yield inst

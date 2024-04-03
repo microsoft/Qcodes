@@ -1,9 +1,11 @@
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
-import numpy as np
 import pytest
 
 from qcodes.validators import Ints, Lists
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 def test_type() -> None:

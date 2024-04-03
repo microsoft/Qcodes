@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
-from typing import Any, Callable, ClassVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 import numpy as np
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import ArrayParameter
 from qcodes.validators import ComplexNumbers, Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 log = logging.getLogger(__name__)
 

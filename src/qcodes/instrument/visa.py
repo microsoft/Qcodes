@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import logging
 import warnings
-from collections.abc import Sequence
 from importlib.resources import as_file, files
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from weakref import finalize
 
 import pyvisa
@@ -19,6 +18,9 @@ from qcodes.utils import DelayedKeyboardInterrupt
 
 from .instrument import Instrument
 from .instrument_base import InstrumentBase
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 

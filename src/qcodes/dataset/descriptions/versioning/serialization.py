@@ -33,8 +33,7 @@ from __future__ import annotations
 
 import io
 import json
-from collections.abc import Callable
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from .. import rundescriber as current
 from .converters import (
@@ -58,6 +57,9 @@ from .rundescribertypes import (
     RunDescriberV2Dict,
     RunDescriberV3Dict,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 STORAGE_VERSION = 3
 # the version of :class:`RunDescriber` object that is used by the data storage

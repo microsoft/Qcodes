@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Generic, Literal, TypeVar
 
 import numpy as np
 
-from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.exporters.export_info import ExportInfo
-from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.queries import completed, load_new_data_for_rundescriber
 
 from .exporters.export_to_pandas import (
@@ -22,8 +19,13 @@ from .exporters.export_to_xarray import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     import pandas as pd
     import xarray as xr
+
+    from qcodes.dataset.descriptions.rundescriber import RunDescriber
+    from qcodes.dataset.sqlite.connection import ConnectionPlus
 
     # used in forward refs that cannot be detected
     from .data_set import DataSet  # noqa F401

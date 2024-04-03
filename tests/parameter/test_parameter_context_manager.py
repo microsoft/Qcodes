@@ -1,11 +1,13 @@
-from collections.abc import Generator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.parameters import Parameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class DummyTrackingInstrument(DummyInstrument):
@@ -67,7 +69,7 @@ class DummyTrackingInstrument(DummyInstrument):
 
 
 @pytest.fixture(name="instrument")
-def _make_instrument() -> Generator[DummyTrackingInstrument, None, None]:
+def _make_instrument() -> "Generator[DummyTrackingInstrument, None, None]":
     instrument = DummyTrackingInstrument('dummy_holder')
     try:
         yield instrument

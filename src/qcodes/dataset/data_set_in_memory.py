@@ -6,7 +6,6 @@ import logging
 import os
 import time
 import warnings
-from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Literal
 
@@ -19,10 +18,8 @@ from qcodes.dataset.data_set_protocol import (
     ParameterData,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
-from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning.converters import new_to_old
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
@@ -52,8 +49,13 @@ from .exporters.export_info import ExportInfo
 from .linked_datasets.links import str_to_links
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     import pandas as pd
     import xarray as xr
+
+    from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
 
     from ..parameters import ParameterBase
 

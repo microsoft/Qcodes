@@ -9,9 +9,8 @@ import sqlite3
 import time
 import unicodedata
 import warnings
-from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import zip_longest
-from typing import Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -48,6 +47,9 @@ from qcodes.dataset.sqlite.query_helpers import (
     update_where,
 )
 from qcodes.utils import list_of_data_to_maybe_ragged_nd_array
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
 log = logging.getLogger(__name__)
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Hashable, Mapping, Sequence
 from functools import reduce
 from operator import mul
 from typing import TYPE_CHECKING
@@ -9,6 +8,8 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable, Mapping, Sequence
+
     import pandas as pd
 
 

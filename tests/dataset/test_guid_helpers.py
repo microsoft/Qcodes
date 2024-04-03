@@ -1,6 +1,5 @@
 from collections import defaultdict
-from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pytest
@@ -11,14 +10,18 @@ from qcodes.dataset.experiment_container import (
 )
 from qcodes.dataset.guid_helpers import guids_from_dir, guids_from_list_str
 from qcodes.dataset.measurements import Measurement
-from qcodes.dataset.sqlite.connection import ConnectionPlus
 from qcodes.dataset.sqlite.database import initialised_database_at
 from qcodes.dataset.sqlite.queries import get_guids_from_multiple_run_ids
 from qcodes.parameters import Parameter
 
+if TYPE_CHECKING:
+    from pathlib import Path
 
-def test_guids_from_dir(tmp_path: Path) -> None:
-    def generate_local_run(dbpath: Path) -> str:
+    from qcodes.dataset.sqlite.connection import ConnectionPlus
+
+
+def test_guids_from_dir(tmp_path: "Path") -> None:
+    def generate_local_run(dbpath: "Path") -> str:
         with initialised_database_at(str(dbpath)):
             new_experiment(sample_name="fivehundredtest_sample",
                            name="fivehundredtest_name")
@@ -83,8 +86,8 @@ def test_many_guids_from_list_str() -> None:
     assert guids_from_list_str(str(guids)) == tuple(guids)
 
 
-def test_get_guids_from_multiple_run_ids(tmp_path: Path) -> None:
-    def generate_local_exp(dbpath: Path) -> tuple[list[str], ConnectionPlus]:
+def test_get_guids_from_multiple_run_ids(tmp_path: "Path") -> None:
+    def generate_local_exp(dbpath: "Path") -> tuple[list[str], "ConnectionPlus"]:
         with initialised_database_at(str(dbpath)):
             guids = []
             exp = load_or_create_experiment(experiment_name="test_guid")

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any
 
 from qcodes.metadatable import MetadatableWithName
@@ -9,6 +8,8 @@ from qcodes.validators import Validator, validate_all
 from .command import Command
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from qcodes.instrument import InstrumentBase
 
 

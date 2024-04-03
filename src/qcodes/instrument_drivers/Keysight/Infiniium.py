@@ -1,6 +1,5 @@
 import re
-from collections.abc import Sequence
-from typing import Any, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -20,6 +19,9 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class DSOTimeAxisParam(Parameter):
@@ -113,7 +115,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         self._unit = 0
 
     @property
-    def setpoints(self) -> Sequence[ParameterBase]:
+    def setpoints(self) -> "Sequence[ParameterBase]":
         """
         Overwrite setpoint parameter to update setpoints if auto_digitize is true
         """
@@ -163,7 +165,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         return
 
-    def update_setpoints(self, preamble: Optional[Sequence[str]] = None) -> None:
+    def update_setpoints(self, preamble: Optional["Sequence[str]"] = None) -> None:
         """
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False

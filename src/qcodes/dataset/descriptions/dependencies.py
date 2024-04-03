@@ -5,14 +5,17 @@ which parameters depend on each other is handled here.
 """
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
 from copy import deepcopy
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from .param_spec import ParamSpec, ParamSpecBase
-from .versioning.rundescribertypes import InterDependencies_Dict
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from .versioning.rundescribertypes import InterDependencies_Dict
 
 ParamSpecTree = dict[ParamSpecBase, tuple[ParamSpecBase, ...]]
 ParamNameTree = dict[str, tuple[str, ...]]

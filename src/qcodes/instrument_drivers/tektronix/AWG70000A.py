@@ -7,15 +7,17 @@ import struct
 import time
 import xml.etree.ElementTree as ET
 import zipfile as zf
-from collections.abc import Mapping, Sequence
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 log = logging.getLogger(__name__)
 

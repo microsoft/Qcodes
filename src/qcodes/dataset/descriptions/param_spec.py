@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from typing_extensions import TypedDict
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class ParamSpecBaseDict(TypedDict):

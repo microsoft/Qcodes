@@ -8,10 +8,9 @@ import numbers
 import time
 import warnings
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar, cast
 
 import numpy as np
 from typing_extensions import deprecated
@@ -21,6 +20,9 @@ from qcodes.math_utils import FieldVector
 from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
 
 log = logging.getLogger(__name__)
 

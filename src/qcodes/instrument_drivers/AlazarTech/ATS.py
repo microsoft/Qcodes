@@ -5,9 +5,8 @@ import logging
 import sys
 import time
 import warnings
-from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, Generic, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union, cast
 
 import numpy as np
 
@@ -17,6 +16,9 @@ from .ats_api import AlazarATSAPI
 from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
 from .helpers import CapabilityHelper
 from .utils import TraceParameter
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,4 @@
-from collections.abc import Sequence
-from types import TracebackType
-from typing import Any, ClassVar, Optional, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypedDict, Union, cast
 
 import numpy as np
 
@@ -15,6 +13,10 @@ from qcodes.parameters import (
 )
 from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from types import TracebackType
+
 
 class DataArray7510(MultiParameter):
     """
@@ -25,9 +27,9 @@ class DataArray7510(MultiParameter):
 
     def __init__(
         self,
-        names: Sequence[str],
-        shapes: Sequence[Sequence[int]],
-        setpoints: Optional[Sequence[Sequence[Any]]],
+        names: "Sequence[str]",
+        shapes: "Sequence[Sequence[int]]",
+        setpoints: Optional["Sequence[Sequence[Any]]"],
         **kwargs: Any,
     ):
         super().__init__(
@@ -259,7 +261,7 @@ class Keithley7510Buffer(InstrumentChannel):
         self,
         exception_type: Optional[type[BaseException]],
         value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        traceback: Optional["TracebackType"],
     ) -> None:
         self.delete()
 
