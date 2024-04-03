@@ -389,7 +389,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
                                    f'CASSet:SEQuence "{seqname}"'
                                    f', {tracknr}')
 
-    def clearAsset(self) -> None:
+    def clear_asset(self) -> None:
         """
         Clear asssinged assets on this channel
         """
