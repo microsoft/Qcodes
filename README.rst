@@ -1,4 +1,4 @@
-QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
+1 QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
 =================================================
 |Build Status Github| |Build Status Github Docs| |Ruff| |OpenSSF|
 
