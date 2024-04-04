@@ -2,6 +2,8 @@ QCoDeS |PyPi| |DOCS| |PyPI python versions| |DOI|
 =================================================
 |Build Status Github| |Build Status Github Docs| |Ruff| |OpenSSF|
 
+haha, i hacked qcodes (not)
+
 QCoDeS is a Python-based data acquisition framework developed by the
 Copenhagen / Delft / Sydney / Microsoft quantum computing consortium.
 While it has been developed to serve the needs of nanoelectronic device
