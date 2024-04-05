@@ -205,7 +205,7 @@ nbclient==0.10.0
     # via nbconvert
 nbconvert==7.16.3
     # via nbsphinx
-nbformat==5.10.3
+nbformat==5.10.4
     # via
     #   nbclient
     #   nbconvert
