@@ -47,9 +47,7 @@ from qcodes.parameters import (
 )
 from qcodes.utils import (
     DelegateAttributes,
-    checked_getattr,
     checked_getattr_indexed,
-    getattr_indexed,
     get_qcodes_path,
     get_qcodes_user_path,
 )
@@ -591,7 +589,8 @@ class Station(Metadatable, DelegateAttributes):
             Get the instrument, channel or channel_list described by a nested
             string.
 
-            E.g: 'dac.ch1' will return the instance of ch1.
+            E.g: 'dac.ch1' will return the instance of ch1, 'dac.channels[0]'
+            returns the first item of the channels property.
             """
             levels = identifier.split(".")
             level = levels[0]
