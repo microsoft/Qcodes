@@ -1,2 +1,3 @@
-The driver for ``Rohde&Schwarz SG100A`` has been extendend with parameters
-controlling the optional pulse modulation and trigger modules.
+Improved Stahl BS Voltage Source driver:
+- accepts more floating-point formats in response from instrument
+- allows connection to serial instrument over TCP/IP connection
