@@ -5,7 +5,6 @@ provides useful/convenient specializations of such generic parameters.
 """
 from __future__ import annotations
 
-from collections.abc import Callable
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -14,6 +13,8 @@ from qcodes.validators import Strings, Validator
 from .parameter import Parameter
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from qcodes.instrument import InstrumentBase
 
 

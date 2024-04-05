@@ -2,9 +2,8 @@
 
 import logging
 import time
-from collections.abc import Sequence
 from functools import partial
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pyvisa
 import pyvisa.constants
@@ -13,6 +12,9 @@ from pyvisa.resources.serial import SerialInstrument
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
 from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 log = logging.getLogger(__name__)
 
@@ -102,9 +104,9 @@ class QDevQDacChannel(InstrumentChannel):
                            )
 
     def snapshot_base(
-            self,
-            update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None
+        self,
+        update: Optional[bool] = False,
+        params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
@@ -129,11 +131,12 @@ class QDevQDacMultiChannelParameter(MultiChannelInstrumentParameter):
     for fast multi-readout of voltages.
     """
     def __init__(
-            self,
-            channels: Sequence[InstrumentChannel],
-            param_name: str,
-            *args: Any,
-            **kwargs: Any):
+        self,
+        channels: "Sequence[InstrumentChannel]",
+        param_name: str,
+        *args: Any,
+        **kwargs: Any,
+    ):
         super().__init__(channels, param_name, *args, **kwargs)
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
@@ -275,9 +278,9 @@ class QDevQDac(VisaInstrument):
         log.info('[+] Done')
 
     def snapshot_base(
-            self,
-            update: Optional[bool] = False,
-            params_to_skip_update: Optional[Sequence[str]] = None
+        self,
+        update: Optional[bool] = False,
+        params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:

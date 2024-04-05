@@ -1,6 +1,5 @@
 import re
 import textwrap
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
 import numpy as np
@@ -27,6 +26,8 @@ from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
         KeysightB1500,
     )
@@ -530,7 +531,7 @@ class _ParameterWithStatus(Parameter):
     def snapshot_base(
         self,
         update: Optional[bool] = True,
-        params_to_skip_update: Optional[Sequence[str]] = None,
+        params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update

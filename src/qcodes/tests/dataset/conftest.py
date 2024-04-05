@@ -4,8 +4,8 @@ import gc
 import os
 import shutil
 import tempfile
-from collections.abc import Generator, Iterator
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -27,6 +27,9 @@ from qcodes.instrument_drivers.mock_instruments import (
 )
 from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
 from qcodes.validators import Arrays, ComplexNumbers, Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterator
 
 
 @pytest.fixture(scope="function", name="non_created_db")

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Iterator, Mapping
 from typing import TYPE_CHECKING
 
 import numpy as np
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Mapping
+
     import pandas as pd
 
     from qcodes.dataset.data_set_protocol import ParameterData

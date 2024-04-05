@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sized
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from warnings import warn
 
 from qcodes.dataset.data_set import DataSet, load_by_id, new_data_set
-from qcodes.dataset.data_set_protocol import SPECS, DataSetProtocol
 from qcodes.dataset.experiment_settings import _set_default_experiment_id
 from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
 from qcodes.dataset.sqlite.database import (
@@ -28,6 +27,9 @@ from qcodes.dataset.sqlite.queries import (
 )
 from qcodes.dataset.sqlite.queries import new_experiment as ne
 from qcodes.dataset.sqlite.query_helpers import VALUES, select_one_where
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set_protocol import SPECS, DataSetProtocol
 
 log = logging.getLogger(__name__)
 

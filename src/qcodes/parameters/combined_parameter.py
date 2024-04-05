@@ -3,16 +3,18 @@ from __future__ import annotations
 import collections
 import collections.abc
 import logging
-from collections.abc import Callable, Iterator, Sequence
 from copy import copy
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from qcodes.metadatable import Metadatable
 from qcodes.utils import full_class
 
-from .parameter import Parameter
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator, Sequence
+
+    from .parameter import Parameter
 
 _LOG = logging.getLogger(__name__)
 

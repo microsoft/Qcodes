@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 import time
 import weakref
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar, overload
 
 from qcodes.utils import strip_attrs
@@ -14,6 +13,8 @@ from .instrument_base import InstrumentBase
 from .instrument_meta import InstrumentMeta
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 

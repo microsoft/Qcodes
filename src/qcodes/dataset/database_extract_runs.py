@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
+from typing import TYPE_CHECKING
 from warnings import warn
 
 import numpy as np
@@ -21,6 +21,9 @@ from qcodes.dataset.sqlite.queries import (
     get_runid_from_guid,
     is_run_id_in_database,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def extract_runs_into_db(

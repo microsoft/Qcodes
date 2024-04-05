@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
-from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import DataSaver, Measurement
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from qcodes_loop.data.data_array import DataArray
     from qcodes_loop.data.data_set import DataSet as OldDataSet
+
+    from qcodes.dataset.experiment_container import Experiment
 
 
 def setup_measurement(

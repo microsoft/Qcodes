@@ -1,11 +1,13 @@
 import logging
 import re
-from typing import Callable, Optional, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from qcodes import validators
-from qcodes.instrument import InstrumentChannel, VisaInstrument
 
 from .keysight_34980a_submodules import KeysightSwitchMatrixSubModule
+
+if TYPE_CHECKING:
+    from qcodes.instrument import InstrumentChannel, VisaInstrument
 
 
 class Keysight34934A(KeysightSwitchMatrixSubModule):
@@ -18,10 +20,7 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         slot: the slot the module is installed
     """
     def __init__(
-            self,
-            parent: Union[VisaInstrument, InstrumentChannel],
-            name: str,
-            slot: int
+        self, parent: Union["VisaInstrument", "InstrumentChannel"], name: str, slot: int
     ) -> None:
 
         super().__init__(parent, name, slot)

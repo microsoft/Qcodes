@@ -6,8 +6,12 @@ class in some way.
 """
 
 
-from .ats_api import AlazarATSAPI
+from typing import TYPE_CHECKING
+
 from .constants import Capability
+
+if TYPE_CHECKING:
+    from .ats_api import AlazarATSAPI
 
 
 class CapabilityHelper:
@@ -28,7 +32,7 @@ class CapabilityHelper:
 
     CAPABILITIES = Capability
 
-    def __init__(self, api: AlazarATSAPI, handle: int):
+    def __init__(self, api: "AlazarATSAPI", handle: int):
         self._api = api
         self._handle = handle
 

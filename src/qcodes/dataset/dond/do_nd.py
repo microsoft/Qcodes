@@ -23,7 +23,6 @@ from qcodes.dataset.dond.do_nd_utils import (
     _set_write_period,
     catch_interrupts,
 )
-from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.threading import (
     SequentialParamsCaller,
@@ -45,6 +44,7 @@ if TYPE_CHECKING:
         MultiAxesTupleListWithDataSet,
         ParamMeasT,
     )
+    from qcodes.dataset.experiment_container import Experiment
 
 SweepVarType = Any
 

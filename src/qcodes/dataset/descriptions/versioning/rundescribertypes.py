@@ -15,11 +15,12 @@ interdependencies_, which is an instance of InterDependencies_
 """
 from __future__ import annotations
 
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 from typing_extensions import TypedDict
 
-from ..param_spec import ParamSpecBaseDict, ParamSpecDict
+if TYPE_CHECKING:
+    from ..param_spec import ParamSpecBaseDict, ParamSpecDict
 
 
 class InterDependenciesDict(TypedDict):

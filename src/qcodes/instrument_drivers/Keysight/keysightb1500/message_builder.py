@@ -1,12 +1,14 @@
-from collections.abc import Iterable
 from functools import wraps
 from operator import xor
-from typing import Any, Callable, Optional, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 
 from . import constants
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
-def as_csv(comps: Iterable[Any], sep: str = ",") -> str:
+
+def as_csv(comps: "Iterable[Any]", sep: str = ",") -> str:
     """Returns items in iterable ls as comma-separated string"""
     return sep.join(format(x) for x in comps)
 

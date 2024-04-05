@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from collections.abc import Generator
-from typing import Any, Callable, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar
 
 import pytest
 
 import qcodes.validators as vals
-from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 from qcodes.parameters import ParamDataType, Parameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from qcodes.instrument import InstrumentBase
 
 T = TypeVar("T")
 

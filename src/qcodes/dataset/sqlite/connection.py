@@ -6,14 +6,16 @@ performing nested atomic transactions on an SQLite database.
 from __future__ import annotations
 
 import logging
-import sqlite3
-from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import wrapt  # type: ignore[import-untyped]
 
 from qcodes.utils import DelayedKeyboardInterrupt
+
+if TYPE_CHECKING:
+    import sqlite3
+    from collections.abc import Iterator
 
 log = logging.getLogger(__name__)
 

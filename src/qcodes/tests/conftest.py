@@ -4,8 +4,6 @@ import copy
 import gc
 import os
 import sys
-from collections.abc import Generator
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
@@ -14,7 +12,6 @@ from hypothesis import settings
 import qcodes as qc
 from qcodes.configuration import Config
 from qcodes.dataset import initialise_database, new_data_set
-from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.experiment_container import Experiment, new_experiment
@@ -26,7 +23,11 @@ settings.register_profile("ci", deadline=1000)
 n_experiments = 0
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
+
     from qcodes.configuration import DotDict
+    from qcodes.dataset.data_set import DataSet
 
 def pytest_configure(config: pytest.Config) -> None:
     config.addinivalue_line("markers", "win32: tests that only run under windows")

@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import logging
 import warnings
-from collections.abc import Sequence
 from importlib.resources import as_file, files
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from weakref import finalize
 
 import pyvisa
@@ -20,6 +19,9 @@ from qcodes.utils import DelayedKeyboardInterrupt
 from .instrument import Instrument
 from .instrument_base import InstrumentBase
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
 log = logging.getLogger(__name__)
@@ -28,12 +30,20 @@ log = logging.getLogger(__name__)
 def _close_visa_handle(
     handle: pyvisa.resources.MessageBasedResource, name: str
 ) -> None:
-    log.info(
-        "Closing VISA handle to %s as there are no non weak "
-        "references to the instrument.",
-        name,
-    )
-    handle.close()
+    try:
+        if (
+            handle.session is not None
+        ):  # pyvisa sets the session of a handle to None when it is closed
+            log.info(
+                "Closing VISA handle to %s as there are no non weak "
+                "references to the instrument.",
+                name,
+            )
+
+            handle.close()
+    except InvalidSession:
+        # the resource is already closed
+        pass
 
 class VisaInstrument(Instrument):
 

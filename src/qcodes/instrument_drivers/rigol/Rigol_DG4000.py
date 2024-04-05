@@ -1,11 +1,13 @@
-from collections.abc import Sequence
 from functools import partial
-from typing import Any, Union
-
-import numpy as np
+from typing import TYPE_CHECKING, Any, Union
 
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Anything, Enum, Ints, MultiType, Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    import numpy as np
 
 
 def is_number(s: str) -> bool:
@@ -710,7 +712,7 @@ class RigolDG4000(VisaInstrument):
 
         self.connect_message()
 
-    def _upload_data(self, data: Union[Sequence[float], np.ndarray]) -> None:
+    def _upload_data(self, data: Union["Sequence[float]", "np.ndarray"]) -> None:
         """
         Upload data to the AWG memory.
 
