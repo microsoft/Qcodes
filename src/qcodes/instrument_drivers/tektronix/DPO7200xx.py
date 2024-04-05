@@ -115,14 +115,11 @@ class TektronixDPO7000xx(VisaInstrument):
 
         self.add_submodule("channel", channel_list)
 
-        self.add_submodule(
-            "trigger",
-            TekronixDPOTrigger(self, "trigger")
-        )
+        self.add_submodule("trigger", TektronixDPOTrigger(self, "trigger"))
 
         self.add_submodule(
             "delayed_trigger",
-            TekronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True)
+            TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True),
         )
 
         self.connect_message()
@@ -173,7 +170,7 @@ class TektronixDPOData(InstrumentChannel):
             "source",
             get_cmd="DATa:SOU?",
             set_cmd="DATa:SOU {}",
-            vals=Enum(*TekronixDPOWaveform.valid_identifiers)
+            vals=Enum(*TektronixDPOWaveform.valid_identifiers),
         )
 
         self.add_parameter(
@@ -201,7 +198,7 @@ class TektronixDPOData(InstrumentChannel):
         )
 
 
-class TekronixDPOWaveform(InstrumentChannel):
+class TektronixDPOWaveform(InstrumentChannel):
     """
     This submodule retrieves data from waveform sources, e.g.
     channels.
@@ -431,10 +428,7 @@ class TektronixDPOChannel(InstrumentChannel):
         self._identifier = f"CH{channel_number}"
 
         self.add_submodule(
-            "waveform",
-            TekronixDPOWaveform(
-                self, "waveform", self._identifier
-            )
+            "waveform", TektronixDPOWaveform(self, "waveform", self._identifier)
         )
 
         self.add_parameter(
@@ -618,7 +612,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
         self.write(f"HORizontal:MODE:SCAle {value}")
 
 
-class TekronixDPOTrigger(InstrumentChannel):
+class TektronixDPOTrigger(InstrumentChannel):
     """
     Submodule for trigger setup.
 
@@ -861,9 +855,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce"
                         f"{src}?",
                 set_cmd=partial(self._set_source, src),
-                vals=Enum(
-                    *(TekronixDPOWaveform.valid_identifiers + ["HISTogram"])
-                )
+                vals=Enum(*(TektronixDPOWaveform.valid_identifiers + ["HISTogram"])),
             )
 
     @property
