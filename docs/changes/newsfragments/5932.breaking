@@ -1,0 +1,16 @@
+Fix spelling of the 2 incorrectly spelled classes
+```qcodes.instrument_drivers.tektronix.TekronixDPOTrigger``` and
+ ```qcodes.instrument_drivers.tektronix.TekronixDPOWaveform``` to
+ ```qcodes.instrument_drivers.tektronix.TektronixDPOTrigger```
+and ```qcodes.instrument_drivers.tektronix.TektronixDPOWaveform``` .
+
+If you need to import these classes and support multiple qcodes versions we suggest wrapping an import with:
+
+.. code-block:: python
+
+   try:
+         from qcodes.instrument_drivers.tektronix import TektronixDPOTrigger
+         from qcodes.instrument_drivers.tektronix import TektronixDPOWaveform
+    except ImportError:
+         from qcodes.instrument_drivers.tektronix import TekronixDPOTrigger
+         from qcodes.instrument_drivers.tektronix import TekronixDPOWaveform
