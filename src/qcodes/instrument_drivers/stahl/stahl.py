@@ -137,25 +137,24 @@ class Stahl(VisaInstrument):
     Stahl driver.
 
     Args:
-        name
+        name: instrument name
         address: A serial port or TCP/IP VISA address
         **kwargs: forwarded to base class
-
     The TCP/IP scenario can be used when the Stahl is connected to
-    a different computer for example a Raspberry Pi running Linux and exposed
-    using something like the following script:
+    a different computer, for example a Raspberry Pi running Linux,
+    and exposed using something like the following script:
 
-    ```
-    #!/bin/sh
-    DEVICE=/dev/ttyUSB0
-    PORT=8088
-    echo Listening...
-    while socat $DEVICE,echo=0,b115200,raw tcp-listen:$PORT,reuseaddr,nodelay; do
-        echo Restarting...
-    done
-    ```
+    ::
 
-    In this case the address would be: `TCPIP0::hostname::8088::SOCKET`
+        #!/bin/sh
+        DEVICE=/dev/ttyUSB0
+        PORT=8088
+        echo Listening...
+        while socat $DEVICE,echo=0,b115200,raw tcp-listen:$PORT,reuseaddr,nodelay; do
+            echo Restarting...
+        done
+
+    In this case the VISA address would be: ``"TCPIP0::hostname::8088::SOCKET"``
     """
 
     def __init__(self, name: str, address: str, **kwargs: Any):
