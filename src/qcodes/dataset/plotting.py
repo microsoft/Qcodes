@@ -13,7 +13,6 @@ from textwrap import wrap
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 import numpy as np
-from matplotlib.figure import Figure
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -341,6 +340,8 @@ def plot_and_save_image(
         save_pdf: Save figure in pdf format.
         save_png: Save figure in png format.
     """
+    from matplotlib.figure import Figure
+
     from qcodes import config
 
     dataid = data.captured_run_id

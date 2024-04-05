@@ -1,0 +1,2 @@
+The driver for ``Rohde&Schwarz SG100A`` has been extendend with parameters
+controlling the optional pulse modulation and trigger modules.
