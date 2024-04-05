@@ -8,15 +8,14 @@
 
 # config
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import qcodes._version
+
+from typing_extensions import deprecated
+
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils import QCoDeSDeprecationWarning
-
-__version__ = qcodes._version.__version__
-
 
 config: qcconfig.Config = qcconfig.Config()
 
@@ -81,3 +80,23 @@ if config.core.import_legacy_api:
         "Please avoid setting this in your `qcodesrc.json` config file.",
         QCoDeSDeprecationWarning,
     )
+
+__version__: str
+
+if not TYPE_CHECKING:
+
+    def __getattr__(name: str) -> Any:
+        """
+        Getting __version__ is slow in an editable install since we have shell out to run git describe.
+        Here we only do it lazily if required.
+
+        TODO this means that the type of __version__ is Any, which is not ideal.
+        __version__ is also not listed by dir(qcodes) that could be fixed by overwrting __dir__.
+        see https://peps.python.org/pep-0562/
+        """
+        if name == "__version__":
+            import qcodes._version  # noqa: PLC0415  # lazy import since getting version is slow in editable install.
+
+            __version__ = qcodes._version.__version__
+            return __version__
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
