@@ -9,6 +9,7 @@ from functools import partial
 from typing import Any, Callable, ClassVar, Union, cast
 
 import numpy as np
+from typing_extensions import deprecated
 
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
 from qcodes.parameters import (
@@ -16,6 +17,7 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Arrays, Enum
 
 
@@ -351,6 +353,16 @@ class TektronixDPOWaveform(InstrumentChannel):
         sample_count = self.length()
         x_increment = self.x_increment()
         return np.linspace(0, x_increment * sample_count, sample_count)
+
+
+@deprecated(
+    "TekronixDPOWaveform is deprecated use TektronixDPOWaveform",
+    category=QCoDeSDeprecationWarning,
+)
+class TekronixDPOWaveform(TektronixDPOWaveform):
+    """
+    Deprecated alias for backwards compatibility
+    """
 
 
 class TektronixDPOWaveformFormat(InstrumentChannel):
@@ -697,6 +709,16 @@ class TektronixDPOTrigger(InstrumentChannel):
                 "We currently only support the 'edge' trigger type"
             )
         self.write(f"TRIGger:{self._identifier}:TYPE {value}")
+
+
+@deprecated(
+    "TekronixDPOTrigger is deprecated use TektronixDPOTrigger",
+    category=QCoDeSDeprecationWarning,
+)
+class TekronixDPOTrigger(TektronixDPOTrigger):
+    """
+    Deprecated alias for backwards compatibility
+    """
 
 
 class TektronixDPOMeasurementParameter(Parameter):
