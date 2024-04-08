@@ -171,7 +171,7 @@ jupyterlab-widgets==3.0.10
     # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
-lazy-loader==0.3
+lazy-loader==0.4
     # via qcodes-loop
 locket==1.0.0
     # via partd
