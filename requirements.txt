@@ -461,7 +461,7 @@ types-requests==2.31.0.20240403
 types-setuptools==69.2.0.20240317
 types-tabulate==0.9.0.20240106
 types-tqdm==4.66.0.20240106
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   azure-core
     #   mypy
