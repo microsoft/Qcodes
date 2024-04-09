@@ -83,7 +83,7 @@ docutils==0.20.1
     #   sphinx
     #   sphinx-jsonschema
     #   sphinx-rtd-theme
-execnet==2.0.2
+execnet==2.1.1
     # via pytest-xdist
 executing==2.0.1
     # via stack-data
