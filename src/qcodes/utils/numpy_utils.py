@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 try:
     from numpy.exceptions import VisibleDeprecationWarning

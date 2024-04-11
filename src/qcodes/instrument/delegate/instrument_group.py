@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import importlib
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from ..instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from qcodes.station import Station
 
 

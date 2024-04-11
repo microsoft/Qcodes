@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from qcodes.metadatable import Metadatable
-from qcodes.metadatable.metadatable_base import Snapshot
 from qcodes.utils import diff_param_values
+
+if TYPE_CHECKING:
+    from qcodes.metadatable.metadatable_base import Snapshot
 
 
 class HasSnapshotBase(Metadatable):

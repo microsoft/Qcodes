@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from qcodes.utils import ParameterDiff, diff_param_values
 
 from .data_set import load_by_id
-from .data_set_protocol import DataSetProtocol
+
+if TYPE_CHECKING:
+    from .data_set_protocol import DataSetProtocol
 
 
 def diff_param_snapshots(

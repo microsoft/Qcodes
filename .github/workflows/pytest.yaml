@@ -60,7 +60,7 @@ jobs:
         # we need full history with tags for the version number
         fetch-depth: '0'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -83,7 +83,7 @@ jobs:
       if: ${{ !matrix.min-version }}
     - uses: jakebailey/pyright-action@b8ffdb7aa4a15fab942303261611eaa541f3f8b0 # v2.2.1
       with:
-        version: 1.1.351
+        version: 1.1.356
       if: ${{ !matrix.min-version }}
     - name: Run Mypy
       run: mypy -p qcodes
@@ -96,7 +96,7 @@ jobs:
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci tests
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@54bcd8715eee62d40e33596ef5e8f0f48dbbccab # v4.1.0
+      uses: codecov/codecov-action@7afa10ed9b269c561c2336fd862446844e0cbf71 # v4.2.0
       with:
         file: ./coverage.xml
         env_vars: OS,PYTHON

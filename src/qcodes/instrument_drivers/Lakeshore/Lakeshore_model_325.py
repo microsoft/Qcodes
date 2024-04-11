@@ -1,11 +1,13 @@
-from collections.abc import Iterable
 from enum import IntFlag
 from itertools import takewhile
-from typing import Any, Optional, TextIO, cast
+from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter
 from qcodes.validators import Enum, Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
@@ -23,7 +25,7 @@ def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
     def split_data_line(line: str, parser: type = str) -> list[Any]:
         return [parser(i) for i in line.split("  ") if i != ""]
 
-    def strip(strings: Iterable[str]) -> tuple[str, ...]:
+    def strip(strings: "Iterable[str]") -> tuple[str, ...]:
         return tuple(s.strip() for s in strings)
 
     lines = iter(curve_file.readlines())

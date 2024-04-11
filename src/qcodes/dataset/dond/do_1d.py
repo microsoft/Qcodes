@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import sys
 import time
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, cast
 
 import numpy as np
@@ -20,7 +19,6 @@ from qcodes.dataset.dond.do_nd_utils import (
     _set_write_period,
     catch_interrupts,
 )
-from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.threading import (
     SequentialParamsCaller,
@@ -33,6 +31,8 @@ LOG = logging.getLogger(__name__)
 TRACER = trace.get_tracer(__name__)
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.dond.do_nd_utils import (
         ActionsT,
@@ -40,6 +40,7 @@ if TYPE_CHECKING:
         BreakConditionT,
         ParamMeasT,
     )
+    from qcodes.dataset.experiment_container import Experiment
 
 
 @TRACER.start_as_current_span("qcodes.dataset.do1d")

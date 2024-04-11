@@ -6,14 +6,16 @@ should be of type :class:`GroupParameter`
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from .parameter import Parameter
-from .parameter_base import ParamDataType, ParamRawDataType
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+
     from qcodes.instrument.base import InstrumentBase
+
+    from .parameter_base import ParamDataType, ParamRawDataType
 
 
 class GroupParameter(Parameter):

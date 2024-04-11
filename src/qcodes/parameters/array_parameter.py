@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections.abc
 import os
-from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -18,6 +17,8 @@ from .parameter_base import ParameterBase
 from .sequence_helpers import is_sequence_of
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     from qcodes.instrument import InstrumentBase
 
 

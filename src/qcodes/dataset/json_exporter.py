@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
 
 json_template_linear = {"type": 'linear',
                       'x': {'data': [], 'name': "", 'full_name': '', 'is_setpoint':True,  'unit':''},

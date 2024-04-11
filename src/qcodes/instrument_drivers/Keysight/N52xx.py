@@ -1,7 +1,6 @@
 import re
 import time
-from collections.abc import Sequence
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
 from pyvisa import constants, errors
@@ -14,6 +13,9 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
 )
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class PNAAxisParameter(Parameter):
@@ -79,7 +81,7 @@ class FormattedSweep(ParameterWithSetpoints):
         self.memory = memory
 
     @property
-    def setpoints(self) -> Sequence[ParameterBase]:
+    def setpoints(self) -> "Sequence[ParameterBase]":
         """
         Overwrite setpoint parameter to ask the PNA what type of sweep
         """
@@ -636,7 +638,7 @@ class PNABase(VisaInstrument):
         # Return the list of traces on the instrument
         return self._traces
 
-    def get_options(self) -> Sequence[str]:
+    def get_options(self) -> "Sequence[str]":
         # Query the instrument for what options are installed
         return self.ask('*OPT?').strip('"').split(',')
 

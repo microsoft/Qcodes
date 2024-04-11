@@ -1,5 +1,4 @@
-from types import TracebackType
-from typing import Any, ClassVar, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union, cast
 
 import numpy as np
 from typing_extensions import TypedDict
@@ -11,6 +10,9 @@ from qcodes.parameters import (
     invert_val_mapping,
 )
 from qcodes.validators import Arrays, Bool, Enum, Ints, Lists, Numbers
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 class _SweepDict(TypedDict):
@@ -132,7 +134,7 @@ class Keithley2450Buffer(InstrumentChannel):
         self,
         exception_type: Optional[type[BaseException]],
         value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        traceback: Optional["TracebackType"],
     ) -> None:
         self.delete()
 
