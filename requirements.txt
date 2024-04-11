@@ -16,7 +16,7 @@ azure-core==1.30.1
     # via
     #   azure-identity
     #   opencensus-ext-azure
-azure-identity==1.15.0
+azure-identity==1.16.0
     # via opencensus-ext-azure
 babel==2.14.0
     # via sphinx
@@ -72,7 +72,7 @@ debugpy==1.8.1
     # via ipykernel
 decorator==5.1.1
     # via ipython
-deepdiff==6.7.1
+deepdiff==7.0.1
 defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
@@ -83,7 +83,7 @@ docutils==0.20.1
     #   sphinx
     #   sphinx-jsonschema
     #   sphinx-rtd-theme
-execnet==2.0.2
+execnet==2.1.1
     # via pytest-xdist
 executing==2.0.1
     # via stack-data
@@ -103,7 +103,7 @@ googleapis-common-protos==1.63.0
     # via google-api-core
 h5netcdf==1.3.0
     # via qcodes
-h5py==3.10.0
+h5py==3.11.0
     # via
     #   h5netcdf
     #   hickle
@@ -111,7 +111,7 @@ h5py==3.10.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.100.0
+hypothesis==6.100.1
 idna==3.6
     # via requests
 imagesize==1.4.1
@@ -171,7 +171,7 @@ jupyterlab-widgets==3.0.10
     # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
-lazy-loader==0.3
+lazy-loader==0.4
     # via qcodes-loop
 locket==1.0.0
     # via partd
@@ -266,7 +266,7 @@ pandas==2.2.1
 pandas-stubs==2.2.1.240316
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.3
+parso==0.8.4
     # via jedi
 partd==1.4.1
     # via dask
@@ -461,7 +461,7 @@ types-requests==2.31.0.20240403
 types-setuptools==69.2.0.20240317
 types-tabulate==0.9.0.20240106
 types-tqdm==4.66.0.20240106
-typing-extensions==4.10.0
+typing-extensions==4.11.0
     # via
     #   azure-core
     #   mypy
