@@ -266,7 +266,7 @@ pandas==2.2.1
 pandas-stubs==2.2.1.240316
 pandocfilters==1.5.1
     # via nbconvert
-parso==0.8.3
+parso==0.8.4
     # via jedi
 partd==1.4.1
     # via dask
