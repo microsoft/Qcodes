@@ -9,11 +9,9 @@ import io
 import math
 import sqlite3
 import sys
-from collections.abc import Iterator
 from contextlib import contextmanager
 from os.path import expanduser, normpath
-from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
@@ -27,6 +25,10 @@ from qcodes.dataset.sqlite.db_upgrades import (
 from qcodes.dataset.sqlite.db_upgrades.version import get_user_version
 from qcodes.dataset.sqlite.initial_schema import init_db
 from qcodes.utils.types import complex_types, numpy_floats, numpy_ints
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from pathlib import Path
 
 JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 

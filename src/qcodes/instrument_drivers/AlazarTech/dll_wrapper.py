@@ -11,16 +11,18 @@ import concurrent
 import concurrent.futures
 import ctypes
 import logging
-from collections.abc import Callable, Sequence
 from functools import partial
 from threading import Lock
-from typing import Any, ClassVar, NamedTuple, NewType, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, NewType, TypeVar
 from weakref import WeakValueDictionary
 
 from qcodes.parameters import ParameterBase
 
 from .constants import API_DMA_IN_PROGRESS, API_SUCCESS, ERROR_CODES, ReturnCode
 from .utils import TraceParameter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 logger = logging.getLogger(__name__)
 

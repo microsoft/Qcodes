@@ -1,13 +1,15 @@
 import time
 from bisect import bisect
-from collections.abc import Sequence
-from typing import Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 import numpy as np
 
 from qcodes import validators as vals
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class BaseOutput(InstrumentChannel):
@@ -408,7 +410,7 @@ class BaseSensorChannel(InstrumentChannel):
         return ", ".join(self.SENSOR_STATUSES[k] for k in codes)
 
     @staticmethod
-    def _get_sum_terms(available_terms: Sequence[int], number: int) -> list[int]:
+    def _get_sum_terms(available_terms: "Sequence[int]", number: int) -> list[int]:
         """
         Returns a list of terms which make the given number when summed up
 

@@ -1,6 +1,8 @@
-from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
-from typing import Any, ClassVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Union
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
 
 
 class DelegateAttributes:
@@ -85,7 +87,7 @@ class DelegateAttributes:
         return sorted(set(names))
 
 
-def strip_attrs(obj: object, whitelist: Sequence[str] = ()) -> None:
+def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
     """
     Irreversibly remove all direct instance attributes of object, to help with
     disposal, breaking circular references.
@@ -120,7 +122,7 @@ def checked_getattr(
 @contextmanager
 def attribute_set_to(
     object_: object, attribute_name: str, new_value: Any
-) -> Iterator[None]:
+) -> "Iterator[None]":
     """
     This context manager allows to change a given attribute of a given object
     to a new value, and the original value is reverted upon exit of the context

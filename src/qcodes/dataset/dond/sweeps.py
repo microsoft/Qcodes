@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence
-from typing import Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 import numpy as np
 import numpy.typing as npt
 
-from qcodes.dataset.dond.do_nd_utils import ActionsT
-from qcodes.parameters import ParameterBase
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from qcodes.dataset.dond.do_nd_utils import ActionsT
+    from qcodes.parameters import ParameterBase
 
 T = TypeVar("T", bound=np.generic)
 

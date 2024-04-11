@@ -1,7 +1,9 @@
 import logging
 import threading
-from collections.abc import Sequence
-from typing import Any, Callable, Generic, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Generic, Optional, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 _LOG = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ class RespondingThread(threading.Thread, Generic[T]):
     def __init__(
         self,
         target: Callable[..., T],
-        args: Sequence[Any] = (),
+        args: "Sequence[Any]" = (),
         kwargs: Optional[dict[str, Any]] = None,
         *args2: Any,
         **kwargs2: Any,
@@ -63,9 +65,9 @@ class RespondingThread(threading.Thread, Generic[T]):
 
 
 def thread_map(
-    callables: Sequence[Callable[..., T]],
-    args: Optional[Sequence[Sequence[Any]]] = None,
-    kwargs: Optional[Sequence[dict[str, Any]]] = None,
+    callables: "Sequence[Callable[..., T]]",
+    args: Optional["Sequence[Sequence[Any]]"] = None,
+    kwargs: Optional["Sequence[dict[str, Any]]"] = None,
 ) -> list[Optional[T]]:
     """
     Evaluate a sequence of callables in separate threads, returning

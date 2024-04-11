@@ -1,9 +1,8 @@
 import textwrap
 from bisect import bisect_left
-from collections.abc import Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 from packaging import version
@@ -15,6 +14,9 @@ from qcodes.instrument_drivers.Keysight.private.error_handling import (
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
 from qcodes.utils import convert_legacy_version_to_supported_version
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class Trigger(InstrumentChannel):
@@ -799,7 +801,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         """
         self.write('ABORt')
 
-    def _licenses(self) -> Sequence[str]:
+    def _licenses(self) -> "Sequence[str]":
         """
         Return extra licenses purchased with the DMM. The 34410A and 34411A
         models do not have optional modules, hence always returns an empty

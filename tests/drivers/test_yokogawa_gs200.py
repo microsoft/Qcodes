@@ -1,12 +1,15 @@
-from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.instrument_drivers.yokogawa import YokogawaGS200
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 
 @pytest.fixture(scope="function", name="gs200")
-def _make_gs200() -> Iterator[YokogawaGS200]:
+def _make_gs200() -> "Iterator[YokogawaGS200]":
     gs200 = YokogawaGS200(
         "GS200", address="GPIB0::1::INSTR", pyvisa_sim_file="Yokogawa_GS200.yaml"
     )

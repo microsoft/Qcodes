@@ -1,12 +1,15 @@
-from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
 
 @pytest.fixture(name="channel_instr")
-def _make_channel_instr() -> Iterator[DummyChannelInstrument]:
+def _make_channel_instr() -> "Iterator[DummyChannelInstrument]":
     instr = DummyChannelInstrument("dummy")
     try:
         yield instr

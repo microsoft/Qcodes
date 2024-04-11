@@ -4,7 +4,6 @@ import logging
 import struct
 import sys
 import warnings
-from collections.abc import Sequence
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -21,6 +20,8 @@ from qcodes.parameters import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from qcodes_loop.data.data_set import DataSet
 
 

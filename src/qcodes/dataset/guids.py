@@ -4,11 +4,14 @@ import random
 import re
 import time
 import warnings
-from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 import qcodes as qc
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 _guid_pattern = re.compile(r'^[\da-f]{8}-([\da-f]{4}-){3}[\da-f]{12}$')
 

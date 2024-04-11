@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -25,7 +26,6 @@ from qcodes.dataset import (
     load_from_netcdf,
     new_data_set,
 )
-from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning import serialization as serial
@@ -33,6 +33,9 @@ from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_to_pandas import _generate_pandas_index
 from qcodes.dataset.exporters.export_to_xarray import _calculate_index_shape
 from qcodes.dataset.linked_datasets.links import links_to_str
+
+if TYPE_CHECKING:
+    from qcodes.dataset.data_set import DataSet
 
 
 @pytest.fixture(name="mock_empty_dataset")

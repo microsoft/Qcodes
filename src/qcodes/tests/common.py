@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import cProfile
 import os
-from collections.abc import Mapping, Sequence
 from functools import wraps
-from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
@@ -14,6 +12,9 @@ from typing_extensions import ParamSpec
 from qcodes.metadatable import MetadatableWithName
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+    from pathlib import Path
+
     from pytest import ExceptionInfo
 
 

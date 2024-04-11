@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from .multi_parameter import MultiParameter
-from .parameter_base import ParamRawDataType
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from qcodes.instrument.channel import InstrumentModule
+
+    from .parameter_base import ParamRawDataType
 
 InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
 

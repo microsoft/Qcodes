@@ -6,12 +6,10 @@ from __future__ import annotations
 import io
 import operator
 import traceback
-from collections.abc import Callable, Iterable, Sequence
 from datetime import datetime
 from functools import partial, reduce
 from typing import TYPE_CHECKING, Any, Literal
 
-from IPython.display import clear_output, display
 from ipywidgets import (  # type: ignore[import-untyped]
     HTML,
     Box,
@@ -28,9 +26,11 @@ from ipywidgets import (  # type: ignore[import-untyped]
 from ruamel.yaml import YAML
 
 from qcodes.dataset import experiments, initialise_or_create_database_at, plot_dataset
-from qcodes.dataset.data_set_protocol import DataSetProtocol
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
+
+    from qcodes.dataset.data_set_protocol import DataSetProtocol
     from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 
 _META_DATA_KEY = "widget_notes"
@@ -229,6 +229,7 @@ def _do_in_tab(
         ds: A qcodes.DataSet instance.
         which: Either "plot" or "snapshot".
     """
+    from IPython.display import clear_output, display
     assert which in ("plot", "snapshot")
 
     def delete_tab(output: Output, tab: Tab) -> Callable[[Button], None]:
@@ -281,6 +282,7 @@ def _do_in_tab(
 
 def create_tab(do_display: bool = True) -> Tab:
     """Creates a `ipywidgets.Tab` which can display outputs in its tabs."""
+    from IPython.display import display
     output = Output()
     tab = Tab(children=(output,))
 
