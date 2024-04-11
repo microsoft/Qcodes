@@ -1,30 +1,30 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
+
 from opentelemetry import trace
 
 from qcodes import config
-from qcodes.dataset.experiment_container import Experiment
-
 from qcodes.dataset import (
     DataSetDefinition,
+    LinSweep,
     LinSweeper,
     datasaver_builder,
     dond_into,
-    LinSweep,
 )
-from qcodes.parameters import ParameterBase
 
 LOG = logging.getLogger(__name__)
 TRACER = trace.get_tracer(__name__)
 
 
 if TYPE_CHECKING:
-    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-    from qcodes.dataset.dond.do_nd_utils import ActionsT
+    from collections.abc import Sequence
+
     from qcodes.dataset.data_set_protocol import DataSetProtocol
+    from qcodes.dataset.dond.do_nd_utils import ActionsT
+    from qcodes.dataset.experiment_container import Experiment
+    from qcodes.parameters import ParameterBase
 
 
 @TRACER.start_as_current_span("qcodes.dataset.do2d")
