@@ -119,6 +119,48 @@ def checked_getattr(
     return attr
 
 
+def getattr_indexed(instance: Any, attribute: str) -> Any:
+    """
+    Similar to ``getattr`` but allows indexing the returned attribute.
+    Returning a default value is _not_ supported.
+
+    The indices are decimal digits surrounded by square brackets.
+    Chained indexing is supported, but the string should not contain
+    any whitespace between consecutive indices.
+
+    Example: `getattr_indexed(some_object, "list_of_lists_field[1][2]")`
+    """
+    if not attribute.endswith("]"):
+        return getattr(instance, attribute)
+
+    end: int = len(attribute) - 1
+
+    start: int = attribute.find("[", 0, end)
+    attr: Any = getattr(instance, attribute[0:start])
+    start += 1
+
+    while (pos := attribute.find("][", start, end)) != -1:
+        index = int(attribute[start:pos])
+        attr = attr[index]
+        start = pos + 2
+
+    index = int(attribute[start:end])
+    attr = attr[index]
+    return attr
+
+
+def checked_getattr_indexed(
+    instance: Any, attribute: str, expected_type: Union[type, tuple[type, ...]]
+) -> Any:
+    """
+    Like ``getattr_indexed`` but raises type error if not of expected type.
+    """
+    attr: Any = getattr_indexed(instance, attribute)
+    if not isinstance(attr, expected_type):
+        raise TypeError()
+    return attr
+
+
 @contextmanager
 def attribute_set_to(
     object_: object, attribute_name: str, new_value: Any

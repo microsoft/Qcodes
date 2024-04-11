@@ -59,7 +59,7 @@
                                     "properties": {
                                         "source": {
                                             "type": "string",
-                                            "pattern": "^(\\w+)(\\.\\w+)*$"
+                                            "pattern": "^(\\w+(\\[\\d+\\])*)(\\.\\w+(\\[\\d+\\])*)*$"
                                         },
                                         "label": {
                                             "type": "string"
@@ -112,7 +112,7 @@
                         "parameters": {
                             "type": "object",
                             "patternProperties": {
-                                "^(\\w+)(\\.\\w+)*$": {
+                                "^(\\w+(\\[\\d+\\])*)(\\.\\w+(\\[\\d+\\])*)*$": {
                                     "type": "object",
                                     "properties": {
                                         "alias": {
