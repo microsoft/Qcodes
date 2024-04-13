@@ -1,0 +1,3 @@
+# this file is only used for constraining pyright version in CI
+# It is done like this to allow dependabot to automatically bump the version
+pyright==1.1.356
