@@ -3,8 +3,8 @@ from .AWG5208 import TektronixAWG5208
 from .AWG70000A import Tektronix70000AWGChannel
 from .AWG70002A import TektronixAWG70002A
 from .DPO7200xx import (
-    TekronixDPOTrigger,
-    TekronixDPOWaveform,
+    TekronixDPOTrigger,  # pyright: ignore[reportDeprecated]
+    TekronixDPOWaveform,  # pyright: ignore[reportDeprecated]
     TektronixDPOChannel,
     TektronixDPOData,
     TektronixDPOHorizontal,
@@ -12,6 +12,8 @@ from .DPO7200xx import (
     TektronixDPOMeasurementParameter,
     TektronixDPOMeasurementStatistics,
     TektronixDPOModeError,
+    TektronixDPOTrigger,
+    TektronixDPOWaveform,
     TektronixDPOWaveformFormat,
 )
 from .Tektronix_70001A import TektronixAWG70001A
@@ -26,8 +28,10 @@ from .Tektronix_MSO70000 import TektronixMSO70000
 from .TPS2012 import TektronixTPS2012, TektronixTPS2012Channel
 
 __all__ = [
-    "TekronixDPOTrigger",
     "TekronixDPOWaveform",
+    "TekronixDPOTrigger",
+    "TektronixDPOTrigger",
+    "TektronixDPOWaveform",
     "Tektronix70000AWGChannel",
     "TektronixAWG5014",
     "TektronixAWG5208",

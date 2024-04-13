@@ -9,6 +9,7 @@ from functools import partial
 from typing import Any, Callable, ClassVar, Union, cast
 
 import numpy as np
+from typing_extensions import deprecated
 
 from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
 from qcodes.parameters import (
@@ -16,6 +17,7 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Arrays, Enum
 
 
@@ -115,14 +117,11 @@ class TektronixDPO7000xx(VisaInstrument):
 
         self.add_submodule("channel", channel_list)
 
-        self.add_submodule(
-            "trigger",
-            TekronixDPOTrigger(self, "trigger")
-        )
+        self.add_submodule("trigger", TektronixDPOTrigger(self, "trigger"))
 
         self.add_submodule(
             "delayed_trigger",
-            TekronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True)
+            TektronixDPOTrigger(self, "delayed_trigger", delayed_trigger=True),
         )
 
         self.connect_message()
@@ -173,7 +172,7 @@ class TektronixDPOData(InstrumentChannel):
             "source",
             get_cmd="DATa:SOU?",
             set_cmd="DATa:SOU {}",
-            vals=Enum(*TekronixDPOWaveform.valid_identifiers)
+            vals=Enum(*TektronixDPOWaveform.valid_identifiers),
         )
 
         self.add_parameter(
@@ -201,7 +200,7 @@ class TektronixDPOData(InstrumentChannel):
         )
 
 
-class TekronixDPOWaveform(InstrumentChannel):
+class TektronixDPOWaveform(InstrumentChannel):
     """
     This submodule retrieves data from waveform sources, e.g.
     channels.
@@ -356,6 +355,16 @@ class TekronixDPOWaveform(InstrumentChannel):
         return np.linspace(0, x_increment * sample_count, sample_count)
 
 
+@deprecated(
+    "TekronixDPOWaveform is deprecated use TektronixDPOWaveform",
+    category=QCoDeSDeprecationWarning,
+)
+class TekronixDPOWaveform(TektronixDPOWaveform):
+    """
+    Deprecated alias for backwards compatibility
+    """
+
+
 class TektronixDPOWaveformFormat(InstrumentChannel):
     """
     With this sub module we can query waveform
@@ -431,10 +440,7 @@ class TektronixDPOChannel(InstrumentChannel):
         self._identifier = f"CH{channel_number}"
 
         self.add_submodule(
-            "waveform",
-            TekronixDPOWaveform(
-                self, "waveform", self._identifier
-            )
+            "waveform", TektronixDPOWaveform(self, "waveform", self._identifier)
         )
 
         self.add_parameter(
@@ -618,7 +624,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
         self.write(f"HORizontal:MODE:SCAle {value}")
 
 
-class TekronixDPOTrigger(InstrumentChannel):
+class TektronixDPOTrigger(InstrumentChannel):
     """
     Submodule for trigger setup.
 
@@ -703,6 +709,16 @@ class TekronixDPOTrigger(InstrumentChannel):
                 "We currently only support the 'edge' trigger type"
             )
         self.write(f"TRIGger:{self._identifier}:TYPE {value}")
+
+
+@deprecated(
+    "TekronixDPOTrigger is deprecated use TektronixDPOTrigger",
+    category=QCoDeSDeprecationWarning,
+)
+class TekronixDPOTrigger(TektronixDPOTrigger):
+    """
+    Deprecated alias for backwards compatibility
+    """
 
 
 class TektronixDPOMeasurementParameter(Parameter):
@@ -861,9 +877,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce"
                         f"{src}?",
                 set_cmd=partial(self._set_source, src),
-                vals=Enum(
-                    *(TekronixDPOWaveform.valid_identifiers + ["HISTogram"])
-                )
+                vals=Enum(*(TektronixDPOWaveform.valid_identifiers + ["HISTogram"])),
             )
 
     @property
