@@ -1,350 +1,282 @@
-from __future__ import annotations
-
-import logging
-import time
-from enum import Enum
-from string import ascii_letters
-from typing import Callable, ClassVar, list, TypeVar
-
-from pyvisa import VisaIOError
 from dataclasses import dataclass
+import re 
 
-from qcodes.instrument import VisaInstrument
-from qcodes.validators import Numbers
+from qcodes import VisaInstrument
+from qcodes import validators as vals
+from qcodes.utils.validators import Enum, Numbers
+import time
 
-log = logging.getLogger(__name__)
-T = TypeVar("T")
+
+
+    
 
 @dataclass
-class StatusByte:
-    sweep_mode_active: bool = False
-    standby_mode_active: bool = False
+class CryomagneticsOperatingState:
+    ramping: bool = False
+    holding: bool = False
+    standby: bool = False
     quench_condition_present: bool = False
     power_module_failure: bool = False
-    message_available: bool = False
-    extended_status_byte: bool = False
-    master_summary_status: bool = False
-    menu_mode: bool = False
+    
+    def _can_start_ramping(self) -> bool:
+        # Checking the specific fields
+        required_checks = [
+            'ramping',
+            'quench_condition_present',
+            'power_module_failure'
+        ]
+        return all(not getattr(self, field) for field in required_checks)
+    
 
-class SweepMode(Enum):
-    UP = "sweep up"
-    DOWN = "sweep down"
-    PAUSED = "sweep paused"
-    ZEROING = "zeroing"
-
-@dataclass
-class SweepState:
-    mode: SweepMode = SweepMode.PAUSED
-    fast: bool = False
-
-class Cryo4GException(Exception):
+class Cryomagnetics4GException(Exception):
     pass
 
-class Cryo4GWarning(UserWarning):
+class Cryomagnetics4GWarning(UserWarning):
     pass
-
-#class RangeRatePair(BaseModel):
-#    range_limit: float
-#    rate: float
-#
-#
-#class RangesModel(BaseModel):
-#    ranges: conlist(RangeRatePair, min_items=1)
 
 
 class CryomagneticsModel4G(VisaInstrument):
-    _SHORT_UNITS: ClassVar[dict[str, str]] = {
-        "seconds": "s",
-        "minutes": "min",
-        "tesla": "T",
-        "gauss": "G",
-        "amps": "A",
-    }
+    def __init__(self, name: str, address: str, max_current_limits: dict[int, tuple[float, float]], coil_constant=float, **kwargs):
+        super().__init__(name, address, terminator='\n', **kwargs)
 
-    def __init__(
-        self,
-        name: str,
-        address: str,
-        reset: bool = False,
-        terminator: str = "\r\n",
-        current_ramp_limit: float | None = None,
-        current_ramp_limits_per_range: list[float] | None = None,
-        **kwargs,
-    ):
-        super().__init__(name, address, terminator=terminator, **kwargs)
-        self._parent_instrument = None
+        self.coil_constant = coil_constant
+        self.max_current_limits = max_current_limits
 
-        self.add_function("reset", call_cmd="*RST")
-        if reset:
-            self.reset()
+
+        # Initialize rate manager based on hypothetical hardware specific limits
+        self._initialize_max_current_limits()
+
+        # Adding parameters
+        self.add_parameter(name='units',
+                           set_cmd='UNITS {}',
+                           get_cmd='UNITS?',
+                           get_parser=str,
+                           vals=Enum('A', 'kG','T'),
+                           docstring="Field Units"
+                           )
+
 
         self.add_parameter(
-            name="units",
-            set_cmd="UNITS {}",
-            get_cmd="UNITS?",
-            get_parser=str,
-            vals=Enum("A", "G", "T"),
-            docstring="Field Units",
+            "ramping_state_check_interval",
+            initial_value=0.05,
+            unit="s",
+            vals=Numbers(0, 10),
+            set_cmd=None,
         )
 
-        self.add_parameter(
-            name="llim",
-            unit="T",
-            set_cmd=self._set_llim,
-            get_cmd=self._get_llim,
-            get_parser=float,
-            vals=Numbers(-90.001, 0),
-            docstring="Lower Ramp Limit",
-        )
 
-        self.add_parameter(
-            name="ulim",
-            unit="T",
-            set_cmd=self._set_ulim,
-            get_cmd=self._get_ulim,
-            get_parser=float,
-            vals=Numbers(0, 90.001),
-            docstring="Upper Ramp Limit",
-        )
+        self.add_parameter(name='field',
+                           unit="T",
+                           set_cmd=self.set_field,
+                           get_cmd=self._get_field,
+                           get_parser=float,
+                           vals=Numbers(-9.001, 9.001),
+                           docstring="Magnetic Field in Tesla"
+                           )
 
-        self.add_parameter(
-            name="field",
-            unit="T",
-            set_cmd=self._set_field,
-            get_cmd=self._get_field,
-            get_parser=float,
-            vals=Numbers(-90.001, 90.001),
-            docstring="Field",
-        )
+        self.add_parameter(name='rate',
+                           unit="T/min",
+                           get_cmd=self._get_rate,
+                           set_cmd=self._set_rate,
+                           get_parser=float,
+                           docstring="Rate for magnetic field T/min"
+                           )
 
-        self.add_parameter(
-            name="Vmag",
-            unit="V",
-            get_cmd=self._get_vmag,
-            get_parser=float,
-            vals=Numbers(-10, 10),
-            docstring="Magnet sense voltage",
-        )
 
-        self.add_parameter(
-            name="Vout",
-            unit="V",
-            get_cmd=self._get_vout,
-            get_parser=float,
-            vals=Numbers(-12.8, 12.8),
-            docstring="Magnet output voltage",
-        )
+        self.add_parameter(name='Vmag',
+                           unit="V",
+                           get_cmd='VMAG?',
+                           get_parser=float,
+                           vals=Numbers(-10, 10),
+                           docstring="Magnet sense voltage"
+                           )
+ 
+        self.add_parameter(name='Vout',
+                           unit="V",
+                           get_cmd='VOUT?',
+                           get_parser=float,
+                           vals=Numbers(-12.8, 12.8),
+                           docstring="Magnet output voltage"
+                           )
 
-        self.add_parameter(
-            name="Iout",
-            unit="kG",
-            get_cmd=self._get_Iout,
-            get_parser=float,
-            vals=Numbers(-90.001, 90.001),
-            docstring="Magnet output field/current",
-        )
+        self.add_parameter(name='Iout',
+                           unit="A",
+                           get_cmd='IOUT?',
+                           get_parser=float,
+                           docstring="Magnet output field/current"
+                           )
+ 
 
-        self.add_parameter(
-            name="ranges",
-            unit="A",
-            get_cmd=self._get_ranges,
-            set_cmd=self._set_ranges,
-            get_parser=list,
-            vals=Numbers(-90.001, 90.001),
-            docstring="Ramp rate ranges",
-        )
-
-        self.add_parameter(
-            name="rate",
-            unit="T/s",
-            get_cmd=self._get_rate,
-            set_cmd=self._set_rate,
-            get_parser=list,
-            vals=Numbers(-90.001, 90.001),
-            docstring="Ramp rate ranges",
-        )
-
-        self.status = self._get_status_byte()
-
-        self.add_function("get_error", call_cmd="SYST:ERR?")
+        # Add function to reset quench
         self.add_function('QReset', call_cmd='QRESET')
+        # Add function to set to remote mode
         self.add_function('remote', call_cmd='REMOTE')
-
+        #Non blocking ramping field to 0 function 
+        self.add_function('off', call_cmd='SWEEP ZERO')
+        # Set to remote mode
         self.remote()
+        # Set units to tesla by default
         self.units('T')
+        self.connect_message()
 
-    def _get_status_byte(self, status_byte: int) -> StatusByte:
-        return StatusByte(
-            sweep_mode_active=bool(status_byte & 1),
-            standby_mode_active=bool(status_byte & 2),
+    def magnet_operating_state(self) -> CryomagneticsOperatingState:
+        status_byte = int(self.ask("*STB?"))
+
+        operating_state =  CryomagneticsOperatingState(
+            holding=not bool(status_byte & 0),
+            ramping=bool(status_byte & 1),
+            standby=bool(status_byte & 2),
             quench_condition_present=bool(status_byte & 4),
             power_module_failure=bool(status_byte & 8),
-            message_available=bool(status_byte & 16),
-            extended_status_byte=bool(status_byte & 32),
-            master_summary_status=bool(status_byte & 64),
-            menu_mode=bool(status_byte & 128),
         )
+    
+        if operating_state.quench_condition_present:
+            raise Cryomagnetics4GException("Cannot ramp due to quench condition.")
 
-    def _can_start_ramping(self) -> bool:
-        if self.status.quench_condition_present:
-            logging.error(f"{__name__}: Could not ramp because of quench")
-            return False
-        if self.status.standby_mode_active:
-            logging.error(f"{__name__}: Standby mode active, cannot ramp")
-            return False
-        if self.status.power_module_failure:
-            logging.error(f"{__name__}: Could not ramp power module failure detected")
-            return False
+        if operating_state.power_module_failure:
+            raise Cryomagnetics4GException("Cannot ramp due to power module failure.")
 
-        state = self.ramping_state()
-        if state == "ramping":
-            if not self.switch_heater.enabled():
-                return True
-            elif self.switch_heater.state():
-                return True
-        elif state in ["holding", "paused", "at zero current"]:
-            return True
+        if operating_state.ramping:
+            raise Cryomagnetics4GException("Cannot ramp as the power supply is already ramping.")
+        
+        return operating_state
 
-        logging.error(f"{__name__}: Could not ramp, state: {state}")
-        return False
+    def set_field(self, field_setpoint: float, block: bool = True, threshold: float = 1e-5) -> None:
+        """
+        Sets the magnetic field strength in Tesla using ULIM, LLIM, and SWEEP commands. 
 
-    def _set_llim(self, value: float) -> None:
-        self._set_limit("LLIM", value)
+        Args:
+            field_setpoint: The desired magnetic field strength in Tesla.
+            block: If True, the method will block until the field reaches the setpoint.
 
-    def _get_llim(self) -> float:
-        return self._get_limit("LLIM?")
+        Raises:
+            Cryo4GException: If the power supply is not in a state where it can start ramping.
+        """
+        #if self.units() != "T":
+        #    raise ValueError("Units must be set to Tesla (T) for this method.")
 
-    def _set_ulim(self, value: float) -> None:
-        self._set_limit("ULIM", value)
+        # Convert field setpoint to kG for the instrument
+        field_setpoint_kg = field_setpoint * 10
+        # Determine sweep direction based on setpoint and current field
+        current_field = self._get_field()
+        if abs(field_setpoint_kg - current_field) < threshold:
+            # Already at the setpoint, no need to sweep
+            self.log.info(f"Magnetic field is already set to {field_setpoint}T")
+            return
+        # Check if we can start ramping
+        state = self.magnet_operating_state()
+        if state._can_start_ramping():
+    
 
-    def _get_ulim(self) -> float:
-        return self._get_limit("ULIM?")
+            if field_setpoint_kg < current_field:
+                sweep_direction = "DOWN"
+                self.write(f"LLIM {field_setpoint_kg}")
+            else:
+                sweep_direction = "UP"
+                self.write(f"ULIM {field_setpoint_kg}")
 
-    def _set_field(self, value: float, block: bool = True) -> None:
-        if self.units() == "A":
-            raise ValueError("Current units are set to Amperes (A). Cannot retrieve magnetic field in these units.")
+            self.write(f"SWEEP {sweep_direction}")
 
-        value_in_kG = value * 10
+            # Check if we want to block
+            if not block:
+                self.log.warning("Magnetic field is ramping but not currently blocked!")
+                return
 
-        if value_in_kG == 0:
-            self._sweep('ZERO')
-        elif value_in_kG < 0:
-            self._set_llim(value_in_kG)
-            self._sweep('DOWN')
-        elif value_in_kG > 0:
-            self._set_ulim(value_in_kG)
-            self._sweep('UP')
+            # Otherwise, wait until no longer ramping
+            self.log.debug(f"Starting blocking ramp of {self.name} to {field_setpoint} T")
+            exit_state = self.wait_while_ramping(field_setpoint)
+            self.log.debug("Finished blocking ramp")
+            # If we are now holding, it was successful
 
-        if block:
-            self._wait_for_field_setpoint(value_in_kG)
+            if not exit_state.holding:
+                msg = "_set_field({}) failed with state: {}"
+                raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
+
+
+
+    def wait_while_ramping(self, value: float, threshold: float = 1e-5) -> CryomagneticsOperatingState:
+        while abs(value-self.field()) >= threshold:
+            self._sleep(self.ramping_state_check_interval())
+        self.write("SWEEP PAUSE")
+        self._sleep(1.0)
+        return self.magnet_operating_state()
+
+
+    def _sleep(self, t: float) -> None:
+        """
+        Sleep for a number of seconds t. If we are or using
+        the PyVISA 'sim' backend, omit this
+        """
+
+        simmode = getattr(self, "visabackend", False) == "sim"
+
+        if simmode:
+            return
+        else:
+            time.sleep(t)
+
 
     def _get_field(self) -> float:
-        if self.units() == "A":
-            raise ValueError("Current units are set to Amperes (A). Cannot retrieve magnetic field in these units.")
 
-        raw_output = self.ask_raw("IMAG?")
-        filtered_output = ''.join(filter(lambda x: x.isdigit() or x == '.', raw_output))
+        current_value = self.ask("IMAG?")
+        # Define a regular expression to match the floating point number and the unit
+        match = re.match(r"^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z]+)$", current_value.strip())
+
+        if not match:
+            raise ValueError(f"Invalid format for measurement: '{current_value}'")
+
+        raw_value, unit = match.groups()
+
+        # Convert the numeric part to float
         try:
-            field_value_in_kG = float(filtered_output)
+            numeric_value = float(raw_value)
         except ValueError:
-            raise ValueError("Failed to convert the instrument response to a float.")
+            raise ValueError(f"Unable to convert '{raw_value}' to float")
 
-        return field_value_in_kG / 10
-
-    def _sweep(self, direction: str) -> None:
-        if direction.upper() in ["UP", "DOWN", "ZERO"]:
-            self.write_raw(f"SWEEP {direction.upper()}")
-        else:
+        # Validate the unit part
+        if unit != "kG":
+            raise ValueError(f"Unexpected unit '{unit}'. Expected 'kG'")
+        if self.units() == "A":
             raise ValueError(
-                "Invalid sweep direction. Expected 'UP', 'DOWN', or 'ZERO'."
+                "Current units are set to Amperes (A). Cannot retrieve magnetic field in these units."
             )
 
-    def _wait_for_field_setpoint(self, setpoint: float, tolerance: float = 0.002) -> None:
-        current_field = self._get_field()
-        while abs(setpoint - current_field) > tolerance:
-            time.sleep(5)
-            current_field = self._get_field()
+        #return value in Tesla
+        return numeric_value / 10
 
-    def _get_ranges(self) -> list[RangeRatePair]:
-        ranges = []
-        for range_index in range(5):
-            range_limit = float(self.ask_raw(f"RANGE? {range_index}"))
-            rate = float(self.ask_raw(f"RATE? {range_index}"))
-            ranges.append(RangeRatePair(range_limit=range_limit, rate=rate))
-        return ranges
-
-    def _set_ranges(self, ranges_input: list[dict]) -> None:
-        try:
-            ranges_model = RangesModel(ranges=[RangeRatePair(**range_rate) for range_rate in ranges_input])
-        except ValueError as e:
-            raise ValueError(f"Invalid input for ranges: {e}")
-
-        for range_index, range_rate_pair in enumerate(ranges_model.ranges):
-            self.write_raw(f"RANGE {range_index}, {range_rate_pair.range_limit}")
-            self.write_raw(f"RATE {range_index}, {range_rate_pair.rate}")
-
-    def _set_limit(self, command: str, value: float) -> None:
-        if self.units() == "T":
-            value_in_kG = value * 10
-        else:
-            value_in_kG = value
-
-        self.write_raw(f"{command} {value_in_kG}")
-
-    def _get_limit(self, command: str) -> float:
-        output = self.ask_raw(command)
-        letters = str.maketrans('', '', ascii_letters)
-        output = output.translate(letters)
-        try:
-            numeric_output = float(output)
-        except ValueError:
-            raise ValueError(f"Failed to convert the instrument response to a float: '{output}'")
-
-        if self.units() == "T":
-            return numeric_output / 10
-        else:
-            return numeric_output
-
-    _RETRY_COUNT = 3
-    _RETRY_TIME = 1
-
-    def _retry_communication(
-        self, communication_method: Callable, cmd: str
-    ) -> int | str | None:
-        for attempt in range(self._RETRY_COUNT):
-            try:
-                return communication_method(cmd)
-            except VisaIOError as err:
-                if attempt < self._RETRY_COUNT - 1:
-                    self.log.warning(f"Attempt {attempt + 1} failed for command {cmd}. "
-                                     f"Retrying in {self._RETRY_TIME} seconds...")
-                    time.sleep(self._RETRY_TIME)
-                    self.device_clear()
-                else:
-                    self.log.exception(f"All {self._RETRY_COUNT} attempts failed for command {cmd}.")
-                    raise err
-
-    def write_raw(self, cmd: str) -> None:
+    def _get_rate(self) -> float:
         """
-        Write a raw command to the instrument.
-
-        Args:
-            cmd (str): The raw command to send to the instrument.
+        Get the current ramp rate in Tesla per minute.
         """
-        self._retry_communication(super().write_raw, cmd)
+        # Get the rate from the instrument in Amps per second
+        rate_amps_per_sec = float(self.ask("RATE?"))
+        # Convert to Tesla per minute
+        rate_tesla_per_min = rate_amps_per_sec * 60 / self.coil_constant
+        return rate_tesla_per_min
 
-    def ask_raw(self, cmd: str) -> str | int | None:
+    def _set_rate(self, rate_tesla_per_min: float) -> None:
         """
-        Send a raw query to the instrument and return the response.
-
-        Args:
-            cmd (str): The raw query to send to the instrument.
-
-        Returns:
-            str | int | None: The response from the instrument.
+        Set the ramp rate in Tesla per minute.
         """
-        return self._retry_communication(super().ask_raw, cmd)
+        # Convert from Tesla per minute to Amps per second
+        rate_amps_per_sec = rate_tesla_per_min * self.coil_constant / 60
+        # Find the appropriate range and set the rate
+        current_field = self._get_field()  # Get current field in Tesla
+        current_in_amps = current_field * self.coil_constant  # Convert to Amps
 
-class Cryo4G(CryomagneticsModel4G):
-    pass
+        for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
+            if current_in_amps <= upper_limit:
+                actual_rate = min(rate_amps_per_sec, max_rate)  # Ensure rate doesn't exceed maximum
+                self.write(f"RATE {range_index} {actual_rate}")
+                return
 
+        raise ValueError("Current field is outside of defined rate ranges")
+
+
+    def _initialize_max_current_limits(self) -> None:
+        """
+        Initialize the instrument with the provided current limits and rates.
+        """
+        for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
+            self.write(f"RANGE {range_index} {upper_limit}")
+            self.write(f"RATE {range_index} {max_rate}")
