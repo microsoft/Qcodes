@@ -1,8 +1,12 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4G_visa import Cryomagnetics4GException, CryomagneticsModel4G
 from pyvisa import VisaIOError
+
+from qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4G_visa import (
+    Cryomagnetics4GException,
+    CryomagneticsModel4G,
+)
 
 
 @pytest.fixture
