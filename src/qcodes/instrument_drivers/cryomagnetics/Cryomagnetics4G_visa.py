@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 import re
 import time
+from dataclasses import dataclass
 
-from  qcodes import VisaInstrument
-from qcodes import validators as vals
+from qcodes import VisaInstrument
 from qcodes.utils.validators import Enum, Numbers
 
 
@@ -28,7 +27,7 @@ class Cryomagnetics4GException(Exception):
     pass
 
 
-class Cryomagnetics4G Warning(UserWarning):
+class Cryomagnetics4GWarning(Warning):
     pass
 
 
@@ -61,14 +60,15 @@ class CryomagneticsModel4G(VisaInstrument):
             set_cmd=None,
         )
 
-        self.add_parameter(name='field',
-                           unit="T",
-                           set_cmd=self.set_field,
-                           get_cmd=self._get_field,
-                           get _parser=float,
-                           vals=Numbers(-9.001, 9.001),
-                           docstring="Magnetic Field in Tesla"
-                           )
+        self.add_parameter(
+            name="field",
+            unit="T",
+            set_cmd=self.set_field,
+            get_cmd=self._get_field,
+            get_parser=float,
+            vals=Numbers(-9.001, 9.001),
+            docstring="Magnetic Field in Tesla",
+        )
 
         self.add_parameter(name='rate',
                            unit="T/min",
@@ -78,13 +78,14 @@ class CryomagneticsModel4G(VisaInstrument):
                            docstring="Rate for magnetic field T/min"
                            )
 
-        self.add_parameter(name='Vmag',
-                           unit="V",
-                           get_ cmd='VMAG?',
-                           get_parser=float,
-                           vals=Numbers(-10, 10),
-                           docstring="Magnet sense voltage"
-                           )
+        self.add_parameter(
+            name="Vmag",
+            unit="V",
+            get_cmd="VMAG?",
+            get_parser=float,
+            vals=Numbers(-10, 10),
+            docstring="Magnet sense voltage",
+        )
 
         self.add_parameter(name='Vout',
                            unit="V",
@@ -94,13 +95,13 @@ class CryomagneticsModel4G(VisaInstrument):
                            docstring="Magnet output voltage"
                            )
 
-        self.add_parameter(name='Iout',
-                           unit="A",
-                           get_ cmd='IOUT?',
-                           get_parser=float,
-                           docstring="Magnet output field/current"
-                           )
-
+        self.add_parameter(
+            name="Iout",
+            unit="A",
+            get_cmd="IOUT?",
+            get_parser=float,
+            docstring="Magnet output field/current",
+        )
 
         # Add function to reset quench
         self.add_function('QReset', call_cmd='QRESET')
@@ -128,7 +129,7 @@ class CryomagneticsModel4G(VisaInstrument):
         if operating_state.quench_condition_present:
             raise Cryomagnetics4GException("Cannot ramp due to quench condition.")
 
-        if operating_state. power_module_failure:
+        if operating_state.power_module_failure:
             raise Cryomagnetics4GException("Cannot ramp due to power module failure.")
 
         if operating_state.ramping:
@@ -136,13 +137,14 @@ class CryomagneticsModel4G(VisaInstrument):
 
         return operating_state
 
-    def set_field(self, field_setpoint: float, block: bool = True, threshold: float = 1e-5) -> None:
+    def set_field(self, field_setpoint: float, block: bool = True) -> None:
         """
         Sets the magnetic field strength in Tesla using ULIM, LLIM, and SWEEP commands.
 
         Args:
             field_setpoint: The desired magnetic field strength in Tesla.
             block: If True, the method will block until the field reaches the setpoint.
+
 
         Raises:
             Cryo4GException: If the power supply is not in a state where it can start ramping.
@@ -151,7 +153,7 @@ class CryomagneticsModel4G(VisaInstrument):
         field_setpoint_kg = field_setpoint * 10
         # Determine sweep direction based on setpoint and current field
         current_field = self._get_field()
-        if abs(field_setpoint _kg - current_field) < threshold:
+        if abs(field_setpoint_kg - current_field) < 1e-4:
             # Already at the setpoint, no need to sweep
             self.log.info(f"Magnetic field is already set to {field_setpoint}T")
             return
@@ -164,7 +166,6 @@ class CryomagneticsModel4G(VisaInstrument):
             return
 
         if state._can_start_ramping():
-
 
             if field_setpoint_kg < current_field:
                 sweep_direction = "DOWN"
@@ -198,7 +199,7 @@ class CryomagneticsModel4G(VisaInstrument):
                 break
             self._sleep(self.ramping_state_check_interval())
         self.write("SWEEP PAUSE")
-        self._ sleep(1.0)
+        self._sleep(1.0)
         return self.magnet_operating_state()
 
 
@@ -257,12 +258,12 @@ class CryomagneticsModel4G(VisaInstrument):
         rate_tesla_per_min = rate_amps_per_sec * 60 / self.coil_constant
         return rate_tesla_per_min
 
-    def _set_rate(self , rate_tesla_per_min: float) -> None:
+    def _set_rate(self, rate_tesla_per_min: float) -> None:
         """
         Set the ramp rate in Tesla per minute.
         """
         # Convert from Tesla per minute to Amps per second
-        rate_amps_per_sec = rate_tesla_per_min * self.coil _constant / 60
+        rate_amps_per_sec = rate_tesla_per_min * self.coil_constant / 60
         # Find the appropriate range and set the rate
         current_field = self._get_field()  # Get current field in Tesla
         current_in_amps = current_field * self.coil_constant  # Convert to Amps
@@ -282,5 +283,5 @@ class CryomagneticsModel4G(VisaInstrument):
         Initialize the instrument with the provided current limits and rates.
         """
         for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
-            self.write(f"RANGE {range_index} {upper _limit}")
+            self.write(f"RANGE {range_index} {upper_limit}")
             self.write(f"RATE {range_index} {max_rate}")
