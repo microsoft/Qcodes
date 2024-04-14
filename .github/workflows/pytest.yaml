@@ -81,7 +81,7 @@ jobs:
       run: |
         pip install .[test] -c requirements.txt
       if: ${{ !matrix.min-version }}
-    - uses: jakebailey/pyright-action@b8ffdb7aa4a15fab942303261611eaa541f3f8b0 # v2.2.1
+    - uses: jakebailey/pyright-action@3bdde3b31d26f0f1f5de051b1fbd7a536a9a4e7f # v2.3.1
       with:
         version: 1.1.356
       if: ${{ !matrix.min-version }}
