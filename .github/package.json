@@ -1,5 +1,5 @@
 {
-"dependencies": {
+"devDependencies": {
 	"pyright": "1.1.356"
 }
 }
