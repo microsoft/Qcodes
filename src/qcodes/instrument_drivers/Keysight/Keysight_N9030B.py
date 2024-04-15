@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -39,7 +39,9 @@ class FrequencyAxis(Parameter):
 
 
 class Trace(ParameterWithSetpoints):
-    def __init__(self, number: int, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, number: int, *args: Any, get_data: Callable, **kwargs: Any
+    ) -> None:
         super().__init__(*args, **kwargs)
         # the parameter classes should ideally be generic in instrument
         # and root instrument classes so we can specialize here.
@@ -52,9 +54,10 @@ class Trace(ParameterWithSetpoints):
         )
 
         self.number = number
+        self.get_data = get_data
 
     def get_raw(self) -> ParamRawDataType:
-        return self.instrument._get_data(trace_num=self.number)
+        return self.get_data(trace_num=self.number)
 
 
 class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
@@ -194,6 +197,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             number=1,
             vals=Arrays(shape=(self.npts.get_latest,)),
             setpoints=(self.freq_axis,),
+            get_data=self._get_data,
             parameter_class=Trace,
             docstring="Gets trace data.",
         )
@@ -371,8 +375,9 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             number=3,
             vals=Arrays(shape=(self.npts.get_latest,)),
             setpoints=(self.freq_axis,),
+            get_data=self._get_data,
             parameter_class=Trace,
-            docstring="Gets trace data.",
+            docstring="Gets trace data",
         )
 
     def _set_start_offset(self, val: float) -> None:
