@@ -62,9 +62,17 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
     Spectrum Analyzer Mode for Keysight N9030B instrument.
     """
 
-    def __init__(self, parent: KeysightN9030B, name: str, *arg: Any, **kwargs: Any):
+    def __init__(
+        self,
+        parent: KeysightN9030B,
+        name: str,
+        *arg: Any,
+        additional_wait: int = 1,
+        **kwargs: Any,
+    ):
         super().__init__(parent, name, *arg, **kwargs)
 
+        self._additional_wait = additional_wait
         self._min_freq = -8e7
         self._valid_max_freq: dict[str, float] = {
             "503": 3.7e9,
@@ -194,14 +202,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         """
         Sets start frequency
         """
-        stop = self.stop()
-        if val >= stop:
-            raise ValueError(
-                f"Start frequency must be smaller than stop "
-                f"frequency. Provided start freq is: {val} Hz and "
-                f"set stop freq is: {stop} Hz"
-            )
-
         self.write(f":SENSe:FREQuency:STARt {val}")
         self.update_trace()
 
@@ -213,14 +213,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         """
         Sets stop frequency
         """
-        start = self.start()
-        if val <= start:
-            raise ValueError(
-                f"Stop frequency must be larger than start "
-                f"frequency. Provided stop freq is: {val} Hz and "
-                f"set start freq is: {start} Hz"
-            )
-
         self.write(f":SENSe:FREQuency:STOP {val}")
         self.update_trace()
 
@@ -249,7 +241,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         Gets data from the measurement.
         """
         try:
-            timeout = self.sweep_time() + self.root_instrument._additional_wait
+            timeout = self.sweep_time() + self._additional_wait
             with self.root_instrument.timeout.set_to(timeout):
                 data_str = self.ask(
                     f":READ:{self.root_instrument.measurement()}{trace_num}?"
@@ -275,7 +267,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         Sets up the Swept SA measurement sweep for Spectrum Analyzer Mode.
         """
         self.root_instrument.mode("SA")
-        if "SAN" in self.root_instrument._available_meas():
+        if "SAN" in self.root_instrument.available_meas():
             self.root_instrument.measurement("SAN")
         else:
             raise RuntimeError(
@@ -457,7 +449,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
         Sets up the Log Plot measurement sweep for Phase Noise Mode.
         """
         self.root_instrument.mode("PNOISE")
-        if "LPL" in self.root_instrument._available_meas():
+        if "LPL" in self.root_instrument.available_meas():
             self.root_instrument.measurement("LPL")
         else:
             raise RuntimeError(
@@ -541,7 +533,9 @@ class KeysightN9030B(VisaInstrument):
         )
 
         if "SA" in self._available_modes():
-            sa_mode = KeysightN9030BSpectrumAnalyzerMode(self, name="sa")
+            sa_mode = KeysightN9030BSpectrumAnalyzerMode(
+                self, name="sa", additional_wait=self._additional_wait
+            )
             self.add_submodule("sa", sa_mode)
         else:
             self.log.info("Spectrum Analyzer mode is not available on this instrument.")
@@ -553,7 +547,7 @@ class KeysightN9030B(VisaInstrument):
             self.log.info("Phase Noise mode is not available on this instrument.")
         self.connect_message()
 
-    def _available_modes(self) -> tuple[str, ...]:
+    def available_modes(self) -> tuple[str, ...]:
         """
         Returns present and licensed modes for the instrument.
         """
@@ -567,7 +561,7 @@ class KeysightN9030B(VisaInstrument):
                 modes = modes + (mode.split(" ")[1],)
         return modes
 
-    def _available_meas(self) -> tuple[str, ...]:
+    def available_meas(self) -> tuple[str, ...]:
         """
         Gives available measurement with a given mode for the instrument
         """
@@ -581,7 +575,7 @@ class KeysightN9030B(VisaInstrument):
                 measurements = measurements + (meas[1:],)
         return measurements
 
-    def _options(self) -> tuple[str, ...]:
+    def options(self) -> tuple[str, ...]:
         """
         Returns installed options numbers.
         """
