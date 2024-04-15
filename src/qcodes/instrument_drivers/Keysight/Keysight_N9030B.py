@@ -91,6 +91,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
 
+        # Frequency Parameters
         self.add_parameter(
             name="start",
             unit="Hz",
@@ -100,7 +101,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(self._min_freq, self._max_freq - 10),
             docstring="Start Frequency",
         )
-
         self.add_parameter(
             name="stop",
             unit="Hz",
@@ -110,7 +110,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(self._min_freq + 10, self._max_freq),
             docstring="Stop Frequency",
         )
-
         self.add_parameter(
             name="center",
             unit="Hz",
@@ -120,7 +119,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(self._min_freq + 5, self._max_freq - 5),
             docstring="Sets and gets center frequency",
         )
-
         self.add_parameter(
             name="span",
             unit="Hz",
@@ -130,7 +128,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(10, self._max_freq - self._min_freq),
             docstring="Changes span of frequency",
         )
-
         self.add_parameter(
             name="npts",
             get_cmd=":SENSe:SWEep:POINts?",
@@ -140,6 +137,113 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             docstring="Number of points for the sweep",
         )
 
+        # Amplitude/Input Parameters
+        self.add_parameter(
+            name="mech_attenuation",
+            unit="dB",
+            get_cmd=":SENS:POW:ATT?",
+            set_cmd=":SENS:POW:ATT {}",
+            get_parser=int,
+            vals=Ints(0, 70),
+            docstring="Internal mechanical attenuation",
+        )
+        self.add_parameter(
+            name="preamp",
+            get_cmd=":SENS:POW:GAIN:BAND?",
+            set_cmd=":SENS:POW:GAIN:BAND {}",
+            vals=Enum("LOW", "FULL"),
+            docstring="Preamplifier selection",
+        )
+        self.add_parameter(
+            name="preamp_enabled",
+            get_cmd=":SENS:POW:GAIN:STAT?",
+            set_cmd=":SENS:POW:GAIN:STAT {}",
+            val_mapping=create_on_off_val_mapping("ON", "OFF"),
+            docstring="Preamplifier state",
+        )
+
+        # Resolution parameters
+        self.add_parameter(
+            name="res_bw",
+            unit="Hz",
+            get_cmd=":SENS:BAND:RES?",
+            set_cmd=":SENS:BAND:RES {}",
+            get_parser=float,
+            vals=Numbers(1, 8e6),
+            docstring="Resolution Bandwidth",
+        )
+        self.add_parameter(
+            name="video_bw",
+            unit="Hz",
+            get_cmd=":SENS:BAND:VID?",
+            set_cmd=":SENS:BAND:VID {}",
+            get_parser=float,
+            vals=Numbers(1, 50e6),
+            docstring="Video Filter Bandwidth",
+        )
+        self.add_parameter(
+            name="res_bw_type",
+            get_cmd=":SENS:BAND:TYPE?",
+            set_cmd=":SENS:BAND:TYPE {}",
+            vals=Enum("DB3", "DB6", "IMP", "NOISE"),
+            docstring=(
+                "The instrument provides four ways of specifying the "
+                "bandwidth of a Gaussian filter:\n"
+                " 1. The -3 dB bandwidth of the filter (DB3)\n"
+                " 2. The -6 dB bandwidth of the filter (DB6)\n"
+                " 3. The equivalent Noise bandwidth of the filter, "
+                "which is defined as the bandwidth of a rectangular "
+                "filter with the same peak gain which would pass the "
+                "same power for noise signals\n"
+                " 4. The equivalent Impulse bandwidth of the filter, "
+                "which is defined as the bandwidth of a rectangular "
+                "filter with the same peak gain which would pass the "
+                "same power for impulsive (narrow pulsed) signals."
+            ),
+        )
+
+        # Input parameters
+        self.add_parameter(
+            name="detector",
+            get_cmd=":SENS:DET:TRAC?",
+            set_cmd=":SENS:DET:TRAC {}",
+            vals=Enum("NORM", "AVER", "POS", "SAMP", "NEG"),
+            docstring="Detector type",
+        )
+        self.add_parameter(
+            name="average_type",
+            get_cmd=":SENS:AVER:TYPE?",
+            set_cmd=":SENS:AVER:TYPE {}",
+            vals=Enum("LOG", "RMS", "SCAL"),
+            docstring=(
+                "Lets you control the way averaging is done. The averaging processes "
+                "affected are:\n"
+                " 1. Trace averaging\n"
+                " 2. Average detector averages signals within the resolution BW\n"
+                " 3. Noise marker is corrected for average type\n"
+                " 4. VBW filtering (not affected if Average detector is used).\n"
+                "The averaging types are:"
+                " 1. LOG: Selects the logarithmic (decibel) scale for all filtering and "
+                "averaging processes. This scale is sometimes called 'Video' because it "
+                "is the most common display and analysis scale for the video signal "
+                "within a spectrum instrument. This scale is excellent for finding CW "
+                "signals near noise, but its response to noise-like signals is 2.506 dB "
+                "lower than the average power of those noise signals. This is compensated "
+                "for in the Marker Noise function.\n"
+                " 2. RMS: All filtering and averaging processes work on the power (the square "
+                "of the magnitude) of the signal, instead of its log or envelope voltage. This "
+                "scale is best for measuring the true time average power of complex signals. "
+                "This scale is sometimes called RMS because the resulting voltage is proportional "
+                "to the square root of the mean of the square of the voltage.\n"
+                " 3. SCAL: (Voltage) All filtering and averaging processes work on the voltage "
+                "of the envelope of the signal. This scale is good for observing rise and fall "
+                "behavior of AM or pulse-modulated signals such as radar and TDMA transmitters, "
+                "but its response to noise-like signals is 1.049 dB lower than the average power "
+                "of those noise signals. This is compensated for in the Marker Noise function."
+            ),
+        )
+
+        # Sweep Parameters
         self.add_parameter(
             name="sweep_time",
             label="Sweep time",
@@ -149,7 +253,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             unit="s",
             docstring="gets sweep time",
         )
-
         self.add_parameter(
             name="auto_sweep_time_enabled",
             get_cmd=":SENSe:SWEep:TIME:AUTO?",
@@ -157,7 +260,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
             docstring="enables auto sweep time",
         )
-
         self.add_parameter(
             name="auto_sweep_type_enabled",
             get_cmd=":SENSe:SWEep:TYPE:AUTO?",
@@ -165,7 +267,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
             docstring="enables auto sweep type",
         )
-
         self.add_parameter(
             name="sweep_type",
             get_cmd=":SENSe:SWEep:TYPE?",
@@ -177,6 +278,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             docstring="Sets up sweep type. Possible options are 'fft' and 'sweep'.",
         )
 
+        # Array (Data) Parameters
         self.add_parameter(
             name="freq_axis",
             label="Frequency",
@@ -189,7 +291,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             docstring="Creates frequency axis for the sweep from start, "
             "stop and npts values.",
         )
-
         self.add_parameter(
             name="trace",
             label="Trace",
