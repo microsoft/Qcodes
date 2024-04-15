@@ -107,3 +107,6 @@ benchmarking/results/
 qcodes/tests/dataset/fixtures/db_files/*
 qcodes/tests/output
 qcodes/tests/*.db
+
+# Do not ignore pyright npm version file
+!.github/package.json

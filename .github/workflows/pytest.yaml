@@ -81,9 +81,17 @@ jobs:
       run: |
         pip install .[test] -c requirements.txt
       if: ${{ !matrix.min-version }}
+    - name: Get Pyright Version
+      id: pyright-version
+      run: |
+        PYRIGHT_VERSION=$(jq -r '.devDependencies.pyright' < package.json)
+        echo $PYRIGHT_VERSION
+        echo "version=$PYRIGHT_VERSION" >> $GITHUB_OUTPUT
+      working-directory: .github
+      shell: bash
     - uses: jakebailey/pyright-action@3bdde3b31d26f0f1f5de051b1fbd7a536a9a4e7f # v2.3.1
       with:
-        version: 1.1.356
+        version: ${{ steps.pyright-version.outputs.version }}
       if: ${{ !matrix.min-version }}
     - name: Run Mypy
       run: mypy -p qcodes
