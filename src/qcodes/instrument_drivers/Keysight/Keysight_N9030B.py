@@ -74,7 +74,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             "544": 44.5e9,
         }
         opt: str | None = None
-        for hw_opt_for_max_freq in self._valid_max_freq.keys():
+        for hw_opt_for_max_freq in self._valid_max_freq:
             if hw_opt_for_max_freq in self.root_instrument._options():
                 opt = hw_opt_for_max_freq
         assert opt is not None
@@ -87,7 +87,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             set_cmd=self._set_start,
             get_parser=float,
             vals=Numbers(self._min_freq, self._max_freq - 10),
-            docstring="start frequency for the sweep",
+            docstring="Start Frequency",
         )
 
         self.add_parameter(
@@ -97,7 +97,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             set_cmd=self._set_stop,
             get_parser=float,
             vals=Numbers(self._min_freq + 10, self._max_freq),
-            docstring="stop frequency for the sweep",
+            docstring="Stop Frequency",
         )
 
         self.add_parameter(
@@ -123,7 +123,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self.add_parameter(
             name="npts",
             get_cmd=":SENSe:SWEep:POINts?",
-            set_cmd=self._set_npts,
+            set_cmd=":SENSe:SWEep:POINts {}",
             get_parser=int,
             vals=Ints(1, 20001),
             docstring="Number of points for the sweep",
@@ -142,7 +142,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self.add_parameter(
             name="auto_sweep_time_enabled",
             get_cmd=":SENSe:SWEep:TIME:AUTO?",
-            set_cmd=self._enable_auto_sweep_time,
+            set_cmd=":SENSe:SWEep:TIME:AUTO {}",
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
             docstring="enables auto sweep time",
         )
@@ -150,7 +150,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self.add_parameter(
             name="auto_sweep_type_enabled",
             get_cmd=":SENSe:SWEep:TYPE:AUTO?",
-            set_cmd=self._enable_auto_sweep_type,
+            set_cmd=":SENSe:SWEep:TYPE:AUTO {}",
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
             docstring="enables auto sweep type",
         )
@@ -158,7 +158,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self.add_parameter(
             name="sweep_type",
             get_cmd=":SENSe:SWEep:TYPE?",
-            set_cmd=self._set_sweep_type,
+            set_cmd=":SENSe:SWEep:TYPE {}",
             val_mapping={
                 "fft": "FFT",
                 "sweep": "SWE",
@@ -203,10 +203,11 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             )
 
         self.write(f":SENSe:FREQuency:STARt {val}")
+        self.update_trace()
 
-        start = self.start()
+        start = self.start.cache.get()
         if abs(val - start) >= 1:
-            self.log.warning(f"Could not set start to {val} setting it to {start}")
+            self.log.warning(f"Start frequency rounded to {start}")
 
     def _set_stop(self, val: float) -> None:
         """
@@ -221,10 +222,11 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             )
 
         self.write(f":SENSe:FREQuency:STOP {val}")
+        self.update_trace()
 
-        stop = self.stop()
+        stop = self.stop.cache.get()
         if abs(val - stop) >= 1:
-            self.log.warning(f"Could not set stop to {val} setting it to {stop}")
+            self.log.warning(f"Stop frequency rounded to {stop}")
 
     def _set_center(self, val: float) -> None:
         """
@@ -241,30 +243,6 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         """
         self.write(f":SENSe:FREQuency:SPAN {val}")
         self.update_trace()
-
-    def _set_npts(self, val: int) -> None:
-        """
-        Sets number of points for sweep
-        """
-        self.write(f":SENSe:SWEep:POINts {val}")
-
-    def _enable_auto_sweep_time(self, val: str) -> None:
-        """
-        Enables auto sweep time
-        """
-        self.write(f":SENSe:SWEep:TIME:AUTO {val}")
-
-    def _enable_auto_sweep_type(self, val: str) -> None:
-        """
-        Enables auto sweep type
-        """
-        self.write(f":SENSe:SWEep:TYPE:AUTO {val}")
-
-    def _set_sweep_type(self, val: str) -> None:
-        """
-        Sets sweep type
-        """
-        self.write(f":SENSe:SWEep:TYPE {val}")
 
     def _get_data(self, trace_num: int) -> ParamRawDataType:
         """
@@ -285,11 +263,12 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
 
     def update_trace(self) -> None:
         """
-        Updates start and stop frequencies whenever span of/or center frequency
-        is updated.
+        Updates all frequency parameters together when one is changed
         """
         self.start()
         self.stop()
+        self.span()
+        self.center()
 
     def setup_swept_sa_sweep(self, start: float, stop: float, npts: int) -> None:
         """
@@ -334,7 +313,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             "544": 44499999995,
         }
         opt: str | None = None
-        for hw_opt_for_max_freq in self._valid_max_freq.keys():
+        for hw_opt_for_max_freq in self._valid_max_freq:
             if hw_opt_for_max_freq in self.root_instrument._options():
                 opt = hw_opt_for_max_freq
         assert opt is not None
@@ -543,7 +522,7 @@ class KeysightN9030B(VisaInstrument):
             name="cont_meas",
             initial_value=False,
             get_cmd=":INITiate:CONTinuous?",
-            set_cmd=self._enable_cont_meas,
+            set_cmd=":INITiate:CONTinuous {}",
             val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
             docstring="Enables or disables continuous measurement.",
         )
@@ -601,12 +580,6 @@ class KeysightN9030B(VisaInstrument):
             else:
                 measurements = measurements + (meas[1:],)
         return measurements
-
-    def _enable_cont_meas(self, val: str) -> None:
-        """
-        Sets continuous measurement to ON or OFF.
-        """
-        self.write(f":INITiate:CONTinuous {val}")
 
     def _options(self) -> tuple[str, ...]:
         """
