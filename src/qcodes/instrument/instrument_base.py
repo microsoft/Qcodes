@@ -4,7 +4,6 @@ from __future__ import annotations
 import collections.abc
 import logging
 import warnings
-from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
@@ -15,6 +14,8 @@ from qcodes.parameters import Function, Parameter, ParameterBase
 from qcodes.utils import DelegateAttributes, full_class
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping, Sequence
+
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 

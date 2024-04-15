@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from collections.abc import Generator
 from typing import TYPE_CHECKING
 
 import hypothesis.strategies as hst
@@ -13,6 +12,8 @@ from qcodes.parameters import ManualParameter, combine
 from qcodes.utils import full_class
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from pytest_mock import MockerFixture
 
 @pytest.fixture()

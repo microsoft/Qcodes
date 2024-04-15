@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable, Iterable, Iterator, MutableSequence, Sequence
-from typing import Any, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast, overload
 
 from qcodes.metadatable import MetadatableWithName
 from qcodes.parameters import (
@@ -16,8 +16,10 @@ from qcodes.parameters.multi_channel_instrument_parameter import InstrumentModul
 from qcodes.utils import full_class
 from qcodes.validators import Validator
 
-from .instrument import Instrument
 from .instrument_base import InstrumentBase
+
+if TYPE_CHECKING:
+    from .instrument import Instrument
 
 
 class InstrumentModule(InstrumentBase):

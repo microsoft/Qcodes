@@ -16,7 +16,6 @@ from copy import deepcopy
 from inspect import signature
 from numbers import Number
 from time import perf_counter
-from types import TracebackType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast
 
 import numpy as np
@@ -39,10 +38,7 @@ from qcodes.dataset.descriptions.dependencies import (
     InterDependencies_,
 )
 from qcodes.dataset.descriptions.param_spec import ParamSpec, ParamSpecBase
-from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
-from qcodes.dataset.experiment_container import Experiment
 from qcodes.dataset.export_config import get_data_export_automatic
-from qcodes.dataset.sqlite.query_helpers import VALUE
 from qcodes.parameters import (
     ArrayParameter,
     GroupedParameter,
@@ -56,7 +52,12 @@ from qcodes.station import Station
 from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
+    from types import TracebackType
+
+    from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
+    from qcodes.dataset.experiment_container import Experiment
     from qcodes.dataset.sqlite.connection import ConnectionPlus
+    from qcodes.dataset.sqlite.query_helpers import VALUE
 
 log = logging.getLogger(__name__)
 TRACER = trace.get_tracer(__name__)

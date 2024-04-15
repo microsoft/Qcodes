@@ -1,8 +1,7 @@
 import re
 import textwrap
 from collections import defaultdict
-from collections.abc import Sequence
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from qcodes.instrument import VisaInstrument
 from qcodes.parameters import MultiParameter, create_on_off_val_mapping
@@ -22,6 +21,9 @@ from .KeysightB1517A import KeysightB1517A, _ParameterWithStatus
 from .KeysightB1520A import KeysightB1520A
 from .KeysightB1530A import KeysightB1530A
 from .message_builder import MessageBuilder
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class KeysightB1500(VisaInstrument):
@@ -476,11 +478,12 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         self.source_voltage = _FMTResponse(None, None, None, None)
         self._fudge: float = 1.5
 
-    def set_names_labels_and_units(self,
-                                   names: Optional[Sequence[str]] = None,
-                                   labels: Optional[Sequence[str]] = None,
-                                   units: Optional[Sequence[str]] = None
-                                   ) -> None:
+    def set_names_labels_and_units(
+        self,
+        names: Optional["Sequence[str]"] = None,
+        labels: Optional["Sequence[str]"] = None,
+        units: Optional["Sequence[str]"] = None,
+    ) -> None:
         """
         Set names, labels, and units of the measured parts of the MultiParameter.
 

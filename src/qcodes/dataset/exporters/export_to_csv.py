@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Mapping
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+    from pathlib import Path
+
     import pandas as pd
 
 

@@ -13,14 +13,21 @@ import os
 import pkgutil
 import warnings
 from collections import deque
-from collections.abc import Iterable, Sequence
 from contextlib import suppress
 from copy import copy, deepcopy
 from functools import partial
 from io import StringIO
-from pathlib import Path
-from types import ModuleType
-from typing import IO, Any, AnyStr, ClassVar, NoReturn, Union, cast, overload
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    AnyStr,
+    ClassVar,
+    NoReturn,
+    Union,
+    cast,
+    overload,
+)
 
 import jsonschema
 import jsonschema.exceptions
@@ -40,10 +47,15 @@ from qcodes.parameters import (
 )
 from qcodes.utils import (
     DelegateAttributes,
-    checked_getattr,
+    checked_getattr_indexed,
     get_qcodes_path,
     get_qcodes_user_path,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+    from pathlib import Path
+    from types import ModuleType
 
 log = logging.getLogger(__name__)
 
@@ -577,13 +589,14 @@ class Station(Metadatable, DelegateAttributes):
             Get the instrument, channel or channel_list described by a nested
             string.
 
-            E.g: 'dac.ch1' will return the instance of ch1.
+            E.g: 'dac.ch1' will return the instance of ch1, 'dac.channels[0]'
+            returns the first item of the channels property.
             """
             levels = identifier.split(".")
             level = levels[0]
             try:
                 for level in levels:
-                    instrument = checked_getattr(
+                    instrument = checked_getattr_indexed(
                         instrument, level, (InstrumentBase, ChannelTuple)
                     )
             except TypeError:
@@ -603,7 +616,7 @@ class Station(Metadatable, DelegateAttributes):
                     instrument,
                     '.'.join(parts[:-1]))
             try:
-                return checked_getattr(instrument, parts[-1], ParameterBase)
+                return checked_getattr_indexed(instrument, parts[-1], ParameterBase)
             except TypeError:
                 raise RuntimeError(
                     f'Cannot resolve parameter identifier `{identifier}` to '

@@ -14,11 +14,12 @@ from qcodes.parameters import (
     Parameter,
 )
 
-from ..channel import InstrumentChannel
 from ..instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
     from qcodes.station import Station
+
+    from ..channel import InstrumentChannel
 
 
 _log = logging.getLogger(__name__)

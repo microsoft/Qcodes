@@ -15,14 +15,15 @@ import os
 import platform
 import sys
 from collections import OrderedDict
-from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
-from types import TracebackType
 from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+    from types import TracebackType
+
     from opencensus.ext.azure.common.protocol import (  # type: ignore[import-untyped]
         Envelope,
     )
@@ -425,9 +426,9 @@ def conditionally_start_all_logging() -> None:
 
 
 @contextmanager
-def handler_level(level: LevelType,
-                  handler: Union[logging.Handler,
-                                 Sequence[logging.Handler]]) -> Iterator[None]:
+def handler_level(
+    level: LevelType, handler: Union[logging.Handler, "Sequence[logging.Handler]"]
+) -> "Iterator[None]":
     """
     Context manager to temporarily change the level of handlers.
 
@@ -452,7 +453,7 @@ def handler_level(level: LevelType,
 
 
 @contextmanager
-def console_level(level: LevelType) -> Iterator[None]:
+def console_level(level: LevelType) -> "Iterator[None]":
     """
     Context manager to temporarily change the level of the qcodes console
     handler.
@@ -505,7 +506,7 @@ class LogCapture:
         self,
         exception_type: Optional[type[BaseException]],
         exception_value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        traceback: Optional["TracebackType"],
     ) -> None:
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()

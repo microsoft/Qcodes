@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
 from qcodes.utils import is_function
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class NoCommandError(Exception):

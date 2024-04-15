@@ -4,6 +4,8 @@ from .attribute_helpers import (
     DelegateAttributes,
     attribute_set_to,
     checked_getattr,
+    checked_getattr_indexed,
+    getattr_indexed,
     strip_attrs,
 )
 from .deep_update_utils import deep_update
@@ -32,6 +34,8 @@ __all__ = [
     "RespondingThread",
     "attribute_set_to",
     "checked_getattr",
+    "getattr_indexed",
+    "checked_getattr_indexed",
     "convert_legacy_version_to_supported_version",
     "deep_update",
     "deprecate",

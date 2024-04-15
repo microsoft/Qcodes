@@ -1,10 +1,12 @@
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
 
 from qcodes.instrument_drivers.rohde_schwarz.SGS100A import RohdeSchwarz_SGS100A
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 @pytest.fixture(scope='function', name="sg")
@@ -18,7 +20,8 @@ def _make_sg():
     yield driver
     driver.close()
 
-def verify_property(sg, param_name, vals : Sequence[Any]):
+
+def verify_property(sg, param_name, vals: "Sequence[Any]"):
     param = getattr(sg, param_name)
     for val in vals:
         param(val)

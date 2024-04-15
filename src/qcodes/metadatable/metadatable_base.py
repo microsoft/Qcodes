@@ -1,8 +1,10 @@
 from abc import abstractmethod
-from collections.abc import Mapping, Sequence
-from typing import Any, Optional, final
+from typing import TYPE_CHECKING, Any, Optional, final
 
 from qcodes.utils import deep_update
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 # NB: At the moment, the Snapshot type is a bit weak, as the Any
 #     for the value type doesn't tell us anything about the schema
@@ -17,11 +19,11 @@ Snapshot = dict[str, Any]
 
 
 class Metadatable:
-    def __init__(self, metadata: Optional[Mapping[str, Any]] = None):
+    def __init__(self, metadata: Optional["Mapping[str, Any]"] = None):
         self.metadata: dict[str, Any] = {}
         self.load_metadata(metadata or {})
 
-    def load_metadata(self, metadata: Mapping[str, Any]) -> None:
+    def load_metadata(self, metadata: "Mapping[str, Any]") -> None:
         """
         Load metadata into this classes metadata dictionary.
 
@@ -54,7 +56,7 @@ class Metadatable:
     def snapshot_base(
         self,
         update: Optional[bool] = False,
-        params_to_skip_update: Optional[Sequence[str]] = None,
+        params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> Snapshot:
         """
         Override this with the primary information for a subclass.

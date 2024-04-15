@@ -1,0 +1,6 @@
+Fix spelling of the 2 incorrectly spelled classes
+```qcodes.instrument_drivers.tektronix.TekronixDPOTrigger``` and
+```qcodes.instrument_drivers.tektronix.TekronixDPOWaveform``` to
+```qcodes.instrument_drivers.tektronix.TektronixDPOTrigger```
+and ```qcodes.instrument_drivers.tektronix.TektronixDPOWaveform``` .
+The old names have been deprecated and will be removed in a future release.

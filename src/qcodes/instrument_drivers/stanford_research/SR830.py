@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Iterable
 from functools import partial
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 
@@ -15,6 +14,9 @@ from qcodes.parameters import (
     ParamRawDataType,
 )
 from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strings
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class ChannelTrace(ParameterWithSetpoints):

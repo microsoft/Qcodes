@@ -4,11 +4,9 @@ import collections.abc
 import logging
 import time
 import warnings
-from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from types import TracebackType
 from typing import TYPE_CHECKING, Any, ClassVar, overload
 
 from qcodes.metadatable import Metadatable, MetadatableWithName
@@ -24,6 +22,9 @@ ParamDataType = Any
 ParamRawDataType = Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
+    from types import TracebackType
+
     from qcodes.instrument.base import InstrumentBase
 
 LOG = logging.getLogger(__name__)

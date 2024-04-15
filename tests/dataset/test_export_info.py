@@ -1,13 +1,16 @@
-from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.exporters.export_info import ExportInfo
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
 
 @pytest.fixture(name="basic_export_info")
-def _make_basic_export_info() -> Generator[ExportInfo, None, None]:
+def _make_basic_export_info() -> "Generator[ExportInfo, None, None]":
     nc_path = "D:\\data\\33.nc"
     csv_path = "D:\\data\\33.csv"
 

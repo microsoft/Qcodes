@@ -64,7 +64,7 @@ jobs:
         sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: Wandalen/wretry.action@f062299947903c6e425ff67d6a93f52066e4ee1c # v2.1.0
+      uses: Wandalen/wretry.action@dfc978b430e81caf1a6cc5780ff47e895c0f618e # v3.3.0
       with:
         action: crazy-max/ghaction-chocolatey@v1.6.0
         with: |
@@ -73,7 +73,7 @@ jobs:
         attempt_delay: 1000
       if: runner.os == 'Windows'
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
+      uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
