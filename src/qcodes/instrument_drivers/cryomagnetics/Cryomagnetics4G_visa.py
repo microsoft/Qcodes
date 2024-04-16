@@ -16,9 +16,9 @@ class CryomagneticsOperatingState:
 
     def _can_start_ramping(self) -> bool:
         required_checks = [
-            'ramping',
-            'quench_condition_present',
-            'power_module _failure'
+            "ramping",
+            "quench_condition_present",
+            "power_module_failure",
         ]
         return all(not getattr(self, field) for field in required_checks)
 
@@ -219,7 +219,7 @@ class CryomagneticsModel4G(VisaInstrument):
 
     def _get_field(self) -> float:
 
-        current_value = self. ask("IMAG?")
+        current_value = self.ask("IMAG?")
         # Define a regular expression to match the floating point number and the unit
         match = re.match(r"^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z]+)$", current_value.strip())
 
