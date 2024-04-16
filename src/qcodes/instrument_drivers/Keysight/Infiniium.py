@@ -254,7 +254,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 
         ###################################
         # Voltage Parameters
-        self.amplitude = Parameter(
+        self.amplitude: Parameter = Parameter(
             name="amplitude",
             instrument=self,
             label="Voltage amplitude",
@@ -263,7 +263,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V",
             snapshot_value=False,
         )
-        self.average = Parameter(
+        self.average: Parameter = Parameter(
             name="average",
             instrument=self,
             label="Voltage average",
@@ -272,7 +272,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V",
             snapshot_value=False,
         )
-        self.base = Parameter(
+        self.base: Parameter = Parameter(
             name="base",
             instrument=self,
             label="Statistical base",
@@ -283,7 +283,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
         )
         # Threshold Voltage Measurements - this measurement ignores overshoot
         # in the data
-        self.vlow = Parameter(
+        self.vlow: Parameter = Parameter(
             name="vlow",
             instrument=self,
             label="Lower threshold voltage",
@@ -292,7 +292,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V",
             snapshot_value=False,
         )
-        self.vmid = Parameter(
+        self.vmid: Parameter = Parameter(
             name="vmid",
             instrument=self,
             label="Middle threshold voltage",
@@ -301,7 +301,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V",
             snapshot_value=False,
         )
-        self.vup = Parameter(
+        self.vup: Parameter = Parameter(
             name="vup",
             instrument=self,
             label="Upper threshold voltage",
@@ -311,7 +311,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             snapshot_value=False,
         )
         # Limit values - the minimum/maximum shown on screen
-        self.vmin = Parameter(
+        self.vmin: Parameter = Parameter(
             name="vmin",
             instrument=self,
             label="Voltage minimum",
@@ -320,7 +320,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V",
             snapshot_value=False,
         )
-        self.vmax = Parameter(
+        self.vmax: Parameter = Parameter(
             name="vmax",
             instrument=self,
             label="Voltage maximum",
@@ -330,7 +330,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             snapshot_value=False,
         )
         # Waveform Parameters
-        self.overshoot = Parameter(
+        self.overshoot: Parameter = Parameter(
             name="overshoot",
             instrument=self,
             label="Voltage overshoot",
@@ -348,7 +348,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V",
             snapshot_value=False,
         )
-        self.vrms = Parameter(
+        self.vrms: Parameter = Parameter(
             name="vrms",
             instrument=self,
             label="Voltage RMS",
@@ -357,7 +357,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="V_rms",
             snapshot_value=False,
         )
-        self.vrms_dc = Parameter(
+        self.vrms_dc: Parameter = Parameter(
             name="vrms_dc",
             instrument=self,
             label="Voltage RMS with DC Component",
@@ -369,7 +369,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 
         ###################################
         # Time Parameters
-        self.rise_time = Parameter(
+        self.rise_time: Parameter = Parameter(
             name="rise_time",
             instrument=self,
             label="Rise time",
@@ -378,7 +378,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="s",
             snapshot_value=False,
         )
-        self.fall_time = Parameter(
+        self.fall_time: Parameter = Parameter(
             name="fall_time",
             instrument=self,
             label="Fall time",
@@ -387,7 +387,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="s",
             snapshot_value=False,
         )
-        self.duty_cycle = Parameter(
+        self.duty_cycle: Parameter = Parameter(
             name="duty_cycle",
             instrument=self,
             label="Duty Cycle",
@@ -396,7 +396,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="%",
             snapshot_value=False,
         )
-        self.period = Parameter(
+        self.period: Parameter = Parameter(
             name="period",
             instrument=self,
             label="Period",
@@ -405,7 +405,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
             unit="s",
             snapshot_value=False,
         )
-        self.frequency = Parameter(
+        self.frequency: Parameter = Parameter(
             name="frequency",
             instrument=self,
             label="Signal frequency",
@@ -419,7 +419,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
                                      """,
             snapshot_value=False,
         )
-        self.slew_rate = Parameter(
+        self.slew_rate: Parameter = Parameter(
             name="slew_rate",
             instrument=self,
             label="Slew rate",
@@ -572,14 +572,14 @@ class KeysightInfiniiumFunction(InstrumentChannel):
         )
 
         # Retrieve basic settings of the function
-        self.function = Parameter(
+        self.function: Parameter = Parameter(
             name="function",
             instrument=self,
             label=f"Function {channel} function",
             get_cmd=self._get_func,
             vals=vals.Strings(),
         )
-        self.source = Parameter(
+        self.source: Parameter = Parameter(
             name="source",
             instrument=self,
             label=f"Function {channel} source",
@@ -587,7 +587,7 @@ class KeysightInfiniiumFunction(InstrumentChannel):
         )
 
         # Trace settings
-        self.points = Parameter(
+        self.points: Parameter = Parameter(
             name="points",
             instrument=self,
             label=f"Function {channel} points",
@@ -680,7 +680,7 @@ class KeysightInfiniiumChannel(InstrumentChannel):
 
         super().__init__(parent, name, **kwargs)
         # display
-        self.display = Parameter(
+        self.display: Parameter = Parameter(
             name="display",
             instrument=self,
             label=f"Channel {channel} display on/off",
@@ -690,7 +690,7 @@ class KeysightInfiniiumChannel(InstrumentChannel):
         )
 
         # scaling
-        self.offset = Parameter(
+        self.offset: Parameter = Parameter(
             name="offset",
             instrument=self,
             label=f"Channel {channel} offset",
@@ -699,7 +699,7 @@ class KeysightInfiniiumChannel(InstrumentChannel):
             get_cmd=f"CHAN{channel}:OFFS?",
             get_parser=float,
         )
-        self.range = Parameter(
+        self.range: Parameter = Parameter(
             name="range",
             instrument=self,
             label=f"Channel {channel} range",
@@ -711,7 +711,7 @@ class KeysightInfiniiumChannel(InstrumentChannel):
         )
 
         # Trigger level
-        self.trigger_level = Parameter(
+        self.trigger_level: Parameter = Parameter(
             name="trigger_level",
             instrument=self,
             label=f"Channel {channel} trigger level",
@@ -829,7 +829,7 @@ class KeysightInfiniium(VisaInstrument):
         self.no_channels = channels
 
         # Run state
-        self.run_mode = Parameter(
+        self.run_mode: Parameter = Parameter(
             name="run_mode",
             instrument=self,
             label="run mode",
@@ -838,7 +838,7 @@ class KeysightInfiniium(VisaInstrument):
         )
 
         # Timing Parameters
-        self.timebase_range = Parameter(
+        self.timebase_range: Parameter = Parameter(
             name="timebase_range",
             instrument=self,
             label="Range of the time axis",
@@ -848,7 +848,7 @@ class KeysightInfiniium(VisaInstrument):
             vals=vals.Numbers(5e-12, 20),
             get_parser=float,
         )
-        self.timebase_position = Parameter(
+        self.timebase_position: Parameter = Parameter(
             name="timebase_position",
             instrument=self,
             label="Offset of the time axis",
@@ -858,7 +858,7 @@ class KeysightInfiniium(VisaInstrument):
             vals=vals.Numbers(),
             get_parser=float,
         )
-        self.timebase_roll_enabled = Parameter(
+        self.timebase_roll_enabled: Parameter = Parameter(
             name="timebase_roll_enabled",
             instrument=self,
             label="Is rolling mode enabled",
@@ -868,13 +868,13 @@ class KeysightInfiniium(VisaInstrument):
         )
 
         # Trigger
-        self.trigger_mode = Parameter(
+        self.trigger_mode: Parameter = Parameter(
             name="trigger_mode",
             instrument=self,
             label="Trigger mode",
             get_cmd=":TRIG:MODE?",
         )
-        self.trigger_sweep = Parameter(
+        self.trigger_sweep: Parameter = Parameter(
             name="trigger_sweep",
             instrument=self,
             label="Trigger sweep mode",
@@ -882,7 +882,7 @@ class KeysightInfiniium(VisaInstrument):
             set_cmd=":TRIG:SWE {}",
             vals=vals.Enum("AUTO", "TRIG"),
         )
-        self.trigger_state = Parameter(
+        self.trigger_state: Parameter = Parameter(
             name="trigger_state",
             instrument=self,
             label="Trigger state",
@@ -895,7 +895,7 @@ class KeysightInfiniium(VisaInstrument):
         # Note that for now we only support parameterized edge triggers - this may
         # be something worth expanding.
         # To set trigger level, use the "trigger_level" parameter in each channel
-        self.trigger_edge_source = Parameter(
+        self.trigger_edge_source: Parameter = Parameter(
             name="trigger_edge_source",
             instrument=self,
             label="Source channel for the edge trigger",
@@ -909,7 +909,7 @@ class KeysightInfiniium(VisaInstrument):
                 )
             ),
         )
-        self.trigger_edge_slope = Parameter(
+        self.trigger_edge_slope: Parameter = Parameter(
             name="trigger_edge_slope",
             instrument=self,
             label="slope of the edge trigger",
@@ -917,7 +917,7 @@ class KeysightInfiniium(VisaInstrument):
             set_cmd=":TRIGger:EDGE:SLOPe {}",
             vals=vals.Enum("POS", "POSITIVE", "NEG", "NEGATIVE", "EITH"),
         )
-        self.trigger_level_aux = Parameter(
+        self.trigger_level_aux: Parameter = Parameter(
             name="trigger_level_aux",
             instrument=self,
             label="Trigger level AUX",
@@ -931,7 +931,7 @@ class KeysightInfiniium(VisaInstrument):
         # Aquisition
         # If sample points, rate and timebase_scale are set in an
         # incomensurate way, the scope only displays part of the waveform
-        self.acquire_points = Parameter(
+        self.acquire_points: Parameter = Parameter(
             name="acquire_points",
             instrument=self,
             label="sample points",
@@ -940,7 +940,7 @@ class KeysightInfiniium(VisaInstrument):
             get_parser=int,
             vals=vals.Numbers(min_value=self.min_pts, max_value=self.max_pts),
         )
-        self.sample_rate = Parameter(
+        self.sample_rate: Parameter = Parameter(
             name="sample_rate",
             instrument=self,
             label="sample rate",
@@ -951,7 +951,7 @@ class KeysightInfiniium(VisaInstrument):
             vals=vals.Numbers(min_value=self.min_srat, max_value=self.max_srat),
         )
         # Note: newer scopes allow a per-channel bandwidth. This is not implemented yet.
-        self.bandwidth = Parameter(
+        self.bandwidth: Parameter = Parameter(
             name="bandwidth",
             instrument=self,
             label="bandwidth",
@@ -961,14 +961,14 @@ class KeysightInfiniium(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(min_value=self.min_bw, max_value=self.max_bw),
         )
-        self.acquire_interpolate = Parameter(
+        self.acquire_interpolate: Parameter = Parameter(
             name="acquire_interpolate",
             instrument=self,
             get_cmd=":ACQ:INTerpolate?",
             set_cmd=":ACQuire:INTerpolate {}",
             vals=vals.Enum(0, 1, "INT1", "INT2", "INT4", "INT8", "INT16", "INT32"),
         )
-        self.acquire_mode = Parameter(
+        self.acquire_mode: Parameter = Parameter(
             name="acquire_mode",
             instrument=self,
             label="Acquisition mode",
@@ -984,7 +984,7 @@ class KeysightInfiniium(VisaInstrument):
                 "SEGHres",
             ),
         )
-        self.average = Parameter(
+        self.average: Parameter = Parameter(
             name="average",
             instrument=self,
             label="Averages",
