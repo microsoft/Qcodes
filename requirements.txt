@@ -345,7 +345,7 @@ pyyaml==6.0.1
     #   dask
     #   pyvisa-sim
     #   sphinx-jsonschema
-pyzmq==25.1.2
+pyzmq==26.0.0
     # via
     #   ipykernel
     #   jupyter-client
