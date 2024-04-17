@@ -58,8 +58,8 @@ matplotlib.use('Agg')
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#
-# needs_sphinx = '1.0'
+# Needed for show_warning_types support
+needs_sphinx = "7.3.5"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -457,6 +457,7 @@ autodoc_typehints_format = "short"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+show_warning_types = True
 # we are using non local images for badges. These will change so we dont
 # want to store them locally.
 suppress_warnings = ['image.nonlocal_uri']
