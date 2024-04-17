@@ -14,7 +14,7 @@ class CryomagneticsOperatingState:
     quench_condition_present: bool = False
     power_module_failure:  bool = False
 
-    def _can_start_ramping(self) -> bool:
+    def can_start_ramping(self) -> bool:
         required_checks = [
             "ramping",
             "quench_condition_present",
@@ -165,7 +165,7 @@ class CryomagneticsModel4G(VisaInstrument):
             self.log.error(f"Cannot set field: {e}")  # Log the specific error
             return
 
-        if state._can_start_ramping():
+        if state.can_start_ramping():
 
             if field_setpoint_kg < current_field:
                 sweep_direction = "DOWN"
