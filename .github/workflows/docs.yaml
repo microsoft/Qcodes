@@ -64,7 +64,7 @@ jobs:
         sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: Wandalen/wretry.action@dfc978b430e81caf1a6cc5780ff47e895c0f618e # v3.3.0
+      uses: Wandalen/wretry.action@0dd1d5d77d019a6f85beb53d29e2ea2c7294d4f2 # v3.4.0
       with:
         action: crazy-max/ghaction-chocolatey@v1.6.0
         with: |
