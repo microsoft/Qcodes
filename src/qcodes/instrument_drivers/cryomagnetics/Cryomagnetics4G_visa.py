@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 
 from qcodes import VisaInstrument
-from qcodes.utils.validators import Enum, Numbers
+from qcodes.validators import Enum, Numbers
 
 
 @dataclass
