@@ -148,11 +148,13 @@ class CombinedParameter(Metadatable):
             if len(dim) != 1:
                 raise ValueError("Arrays have different number of setpoints")
             nparray = np.array(array).transpose()
-        else:
+        elif len(array) == 1:
             # cast to array in case users
             # decide to not read docstring
             # and pass a 2d list
             nparray = np.array(array[0])
+        else:
+            raise ValueError("Need at least one array to sweep over.")
         new = copy(self)
         _error_msg = """ Dimensionality of array does not match\
                         the number of parameter combined. Expected a \
