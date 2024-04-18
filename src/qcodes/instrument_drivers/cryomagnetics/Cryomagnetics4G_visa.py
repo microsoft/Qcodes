@@ -34,8 +34,15 @@ class Cryomagnetics4GWarning(Warning):
 class CryomagneticsModel4G(VisaInstrument):
     KG_TO_TESLA = 0.1  # Constant for unit conversion
 
-    def __init__(self, name: str, address: str, max_current_limits: dict[ int, tuple[float, float]], coil_constant=float, **kwargs):
-        super().__init__(name, address, terminator='\n', **kwargs)
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        max_current_limits: dict[int, tuple[float, float]],
+        coil_constant: float,
+        **kwargs,
+    ):
+        super().__init__(name, address, terminator="\n", **kwargs)
 
         self.coil_constant = coil_constant
         self.max_current_limits = max_current_limits
@@ -116,26 +123,58 @@ class CryomagneticsModel4G(VisaInstrument):
         self.connect_message()
 
     def magnet_operating_state(self) -> CryomagneticsOperatingState:
+        """
+        Retrieves the current operating state of the magnet.
+
+        Returns:
+            CryomagneticsOperatingState: An object representing the current operating state of the magnet.
+
+        Raises:
+            Cryomagnetics4GException: If the magnet is in a state that prevents ramping, such as quench condition,
+                                       power module failure, or already ramping.
+
+        The operating state is determined by querying the status byte (*STB?) of the instrument. The status byte is
+        interpreted as follows:
+        - Bit 0: Holding (not ramping)
+        - Bit 1: Ramping
+        - Bit 2: Standby
+        - Bit 4: Quench condition present
+        - Bit 8: Power module failure
+
+        If the magnet is in a state that prevents ramping (quench condition, power module failure, or already ramping),
+        an exception is raised with an appropriate error message. The error message is also logged using the instrument's
+        logger.
+
+        If the magnet is in a valid state for ramping, a CryomagneticsOperatingState object is returned, representing
+        the current operating state of the magnet.
+        """
         status_byte = int(self.ask("*STB?"))
 
-        operating_state =   CryomagneticsOperatingState(
+        operating_state = CryomagneticsOperatingState(
             holding=not bool(status_byte & 0),
             ramping=bool(status_byte & 1),
             standby=bool(status_byte & 2),
-            quench_condition_present=bool(status_byte &  4),
+            quench_condition_present=bool(status_byte & 4),
             power_module_failure=bool(status_byte & 8),
         )
 
         if operating_state.quench_condition_present:
-            raise Cryomagnetics4GException("Cannot ramp due to quench condition.")
+            error_message = "Cannot ramp due to quench condition."
+            self.log.error(error_message)  # Log the error message
+            raise Cryomagnetics4GException(error_message)
 
         if operating_state.power_module_failure:
-            raise Cryomagnetics4GException("Cannot ramp due to power module failure.")
+            error_message = "Cannot ramp due to power module failure."
+            self.log.error(error_message)  # Log the error message
+            raise Cryomagnetics4GException(error_message)
 
         if operating_state.ramping:
-            raise Cryomagnetics4GException("Cannot ramp as the power supply is already ramping.")
+            error_message = "Cannot ramp as the power supply is already ramping."
+            self.log.error(error_message)  # Log the error message
+            raise Cryomagnetics4GException(error_message)
 
         return operating_state
+
 
     def set_field(self, field_setpoint: float, block: bool = True) -> None:
         """
