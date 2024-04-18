@@ -10,6 +10,7 @@ from qcodes.validators import Enum, Numbers
 
 log = logging.getLogger(__name__)
 
+
 @dataclass
 class CryomagneticsOperatingState:
     ramping: bool = False
@@ -309,7 +310,6 @@ class CryomagneticsModel4G(VisaInstrument):
             time.sleep(t)
 
     def _get_field(self) -> float:
-
         current_value = self.ask("IMAG?")
         # Define a regular expression to match the floating point number and the unit
         match = re.match(
