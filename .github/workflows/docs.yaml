@@ -39,11 +39,12 @@ jobs:
             python-version: 3.11
     env:
       OS: ${{ matrix.os }}
-      # we expect no warnings from Sphinx in 3.10
-      # The std-lib docstring of IntEnum in 3.11.0 is not valid
+      # The std-lib docstring of Int is not valid
       # causing errors like in the docstring of from_bytes (from Int)
       # WARNING: Inline interpreted text or phrase reference start-string without end-string.
-      SPHINX_WARNINGS_AS_ERROR: ${{ matrix.python-version == '3.10' }}
+      # when documenting subclasses of IntFlag such as in the lakeshore driver.
+      # see https://github.com/python/cpython/pull/117847
+      SPHINX_WARNINGS_AS_ERROR: false
       SPHINX_OPTS: "-v -j 2"
     steps:
     - name: Harden Runner
@@ -64,7 +65,7 @@ jobs:
         sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: Wandalen/wretry.action@dfc978b430e81caf1a6cc5780ff47e895c0f618e # v3.3.0
+      uses: Wandalen/wretry.action@0dd1d5d77d019a6f85beb53d29e2ea2c7294d4f2 # v3.4.0
       with:
         action: crazy-max/ghaction-chocolatey@v1.6.0
         with: |
@@ -127,7 +128,7 @@ jobs:
         path: build_docs
 
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@65b5dfd4f5bcd3a7403bbc2959c144256167464e # v4.5.0
+      uses: JamesIves/github-pages-deploy-action@ec9c88baef04b842ca6f0a132fd61c762aa6c1b0 # v4.6.0
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/build_docs/
