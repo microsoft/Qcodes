@@ -391,7 +391,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sphinx==7.3.5
+sphinx==7.3.6
     # via
     #   autodocsumm
     #   nbsphinx
