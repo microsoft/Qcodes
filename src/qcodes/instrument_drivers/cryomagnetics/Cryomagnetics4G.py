@@ -2,7 +2,7 @@ import re
 import time
 from dataclasses import dataclass
 
-from qcodes import VisaInstrument
+from qcodes.instrument import VisaInstrument
 from qcodes.validators import Enum, Numbers
 
 
@@ -72,7 +72,8 @@ class CryomagneticsModel4G(VisaInstrument):
         remote: Sets the instrument to remote mode.
         off: Ramps the magnetic field to zero (non-blocking).
     """
-    KG_TO_TESLA = 0.1  # Constant for unit conversion
+
+    KG_TO_TESLA: float = 0.1  # Constant for unit conversion
 
     def __init__(
         self,
