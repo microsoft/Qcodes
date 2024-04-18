@@ -32,6 +32,46 @@ class Cryomagnetics4GWarning(Warning):
 
 
 class CryomagneticsModel4G(VisaInstrument):
+    """
+    Driver for the Cryomagnetics Model 4G superconducting magnet power supply.
+
+    This driver provides an interface to control and communicate with the Cryomagnetics Model 4G
+    superconducting magnet power supply using the VISA protocol. It allows setting and reading
+    the magnetic field, ramp rate, and various other parameters of the instrument.
+
+    Args:
+        name (str): The name of the instrument instance.
+        address (str): The VISA resource name of the instrument.
+        max_current_limits (dict[int, tuple[float, float]]): A dictionary specifying the maximum
+            current limits and rates for each range. The keys are the range indices, and the values
+            are tuples containing the upper current limit and maximum rate for that range.
+        coil_constant (float): The coil constant of the magnet in Tesla per Amp.
+        **kwargs: Additional keyword arguments to pass to the superclass constructor.
+
+    Attributes:
+        coil_constant (float): The coil constant of the magnet in Tesla per Amp.
+        max_current_limits (dict[int, tuple[float, float]]): A dictionary specifying the maximum
+            current limits and rates for each range.
+
+    Methods:
+        magnet_operating_state(): Retrieves the current operating state of the magnet.
+        set_field(field_setpoint, block=True): Sets the magnetic field strength in Tesla.
+        wait_while_ramping(value, threshold=1e-5): Waits while the magnet is ramping.
+
+    Parameters:
+        units (Enum): The units for the magnetic field (A, kG, T).
+        ramping_state_check_interval (Numbers): The interval in seconds to check the ramping state.
+        field (Numbers): The magnetic field strength in Tesla.
+        rate (Numbers): The ramp rate for the magnetic field in Tesla per minute.
+        Vmag (Numbers): The magnet sense voltage in Volts.
+        Vout (Numbers): The magnet output voltage in Volts.
+        Iout (Numbers): The magnet output field/current in Amps.
+
+    Functions:
+        QReset: Resets the quench condition.
+        remote: Sets the instrument to remote mode.
+        off: Ramps the magnetic field to zero (non-blocking).
+    """
     KG_TO_TESLA = 0.1  # Constant for unit conversion
 
     def __init__(

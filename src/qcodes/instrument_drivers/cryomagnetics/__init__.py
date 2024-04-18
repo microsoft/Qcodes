@@ -1,4 +1,4 @@
-from .Cryomagnetics4G_visa import (
+from .Cryomagnetics4G import (
     Cryomagnetics4GException,
     Cryomagnetics4GWarning,
     CryomagneticsModel4G,
