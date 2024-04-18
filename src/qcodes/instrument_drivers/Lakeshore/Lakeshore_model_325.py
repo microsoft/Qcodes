@@ -8,6 +8,7 @@ from typing import (
     SupportsBytes,
     SupportsIndex,
     TextIO,
+    Union,
     cast,
 )
 
@@ -97,7 +98,7 @@ class LakeshoreModel325Status(IntFlag):
     @classmethod
     def from_bytes(
         cls: "type[Self]",
-        bytes: "Iterable[SupportsIndex] | SupportsBytes | Buffer",
+        bytes: "Union[Iterable[SupportsIndex], SupportsBytes, Buffer]",
         byteorder: Literal["big", "little"] = "big",
         *,
         signed: bool = False,
@@ -122,7 +123,7 @@ class LakeshoreModel325Status(IntFlag):
     def to_bytes(
         self,
         length: SupportsIndex = 1,
-        byteorder: Literal["little"] | Literal["big"] = "big",
+        byteorder: Literal["little", "big"] = "big",
         *,
         signed: bool = False,
     ) -> bytes:
