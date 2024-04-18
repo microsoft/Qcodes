@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import logging
 import re
 import time
 from dataclasses import dataclass
@@ -5,6 +8,7 @@ from dataclasses import dataclass
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Enum, Numbers
 
+log = logging.getLogger(__name__)
 
 @dataclass
 class CryomagneticsOperatingState:
@@ -40,37 +44,12 @@ class CryomagneticsModel4G(VisaInstrument):
     the magnetic field, ramp rate, and various other parameters of the instrument.
 
     Args:
-        name (str): The name of the instrument instance.
-        address (str): The VISA resource name of the instrument.
-        max_current_limits (dict[int, tuple[float, float]]): A dictionary specifying the maximum
+        name: The name of the instrument instance.
+        address: The VISA resource name of the instrument.
+        max_current_limits: A dictionary specifying the maximum
             current limits and rates for each range. The keys are the range indices, and the values
             are tuples containing the upper current limit and maximum rate for that range.
-        coil_constant (float): The coil constant of the magnet in Tesla per Amp.
-        **kwargs: Additional keyword arguments to pass to the superclass constructor.
-
-    Attributes:
-        coil_constant (float): The coil constant of the magnet in Tesla per Amp.
-        max_current_limits (dict[int, tuple[float, float]]): A dictionary specifying the maximum
-            current limits and rates for each range.
-
-    Methods:
-        magnet_operating_state(): Retrieves the current operating state of the magnet.
-        set_field(field_setpoint, block=True): Sets the magnetic field strength in Tesla.
-        wait_while_ramping(value, threshold=1e-5): Waits while the magnet is ramping.
-
-    Parameters:
-        units (Enum): The units for the magnetic field (A, kG, T).
-        ramping_state_check_interval (Numbers): The interval in seconds to check the ramping state.
-        field (Numbers): The magnetic field strength in Tesla.
-        rate (Numbers): The ramp rate for the magnetic field in Tesla per minute.
-        Vmag (Numbers): The magnet sense voltage in Volts.
-        Vout (Numbers): The magnet output voltage in Volts.
-        Iout (Numbers): The magnet output field/current in Amps.
-
-    Functions:
-        QReset: Resets the quench condition.
-        remote: Sets the instrument to remote mode.
-        off: Ramps the magnetic field to zero (non-blocking).
+        coil_constant: The coil constant of the magnet in Tesla per Amp.
     """
 
     KG_TO_TESLA: float = 0.1  # Constant for unit conversion
@@ -154,17 +133,41 @@ class CryomagneticsModel4G(VisaInstrument):
             docstring="Magnet output field/current",
         )
 
-        # Add function to reset quench
-        self.add_function("QReset", call_cmd="QRESET")
-        # Add function to set to remote  mode
-        self.add_function("remote", call_cmd="REMOTE")
-        # Non-blocking ramping field to 0 function
-        self.add_function("off", call_cmd="SWEEP ZERO")
         # Set to remote mode
-        self.remote()
+        self.operating_mode()
         #  Set units to tesla by default
         self.units("T")
         self.connect_message()
+
+    def quenched_state_reset(self) -> None:
+        """
+        Resets the device's quenched state.
+        """
+        self.write("QRESET")
+
+    def operating_mode(self, remote: bool = True) -> None:
+        """
+        Sets the device's operating mode to either remote or local.
+
+        Args:
+            remote: If True, sets to remote mode, otherwise sets to local mode.
+        """
+        if remote:
+            self.write("REMOTE")
+        else:
+            self.write("LOCAL")
+
+    def zero_current(self) -> None:
+        """
+        Sets the device current to zero.
+        """
+        self.write("SWEEP ZERO")
+
+    def reset(self) -> None:
+        """
+        Resets the device to its default settings.
+        """
+        self.write("*RST")
 
     def magnet_operating_state(self) -> CryomagneticsOperatingState:
         """
@@ -172,6 +175,7 @@ class CryomagneticsModel4G(VisaInstrument):
 
         Returns:
             CryomagneticsOperatingState: An object representing the current operating state of the magnet.
+            An object representing the current operating state of the magnet.
 
         Raises:
             Cryomagnetics4GException: If the magnet is in a state that prevents ramping, such as quench condition,
