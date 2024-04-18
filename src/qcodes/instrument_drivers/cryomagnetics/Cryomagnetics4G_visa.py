@@ -151,7 +151,7 @@ class CryomagneticsModel4G(VisaInstrument):
         status_byte = int(self.ask("*STB?"))
 
         operating_state = CryomagneticsOperatingState(
-            holding=not bool(status_byte & 0),
+            holding=not bool(status_byte & 1) and not bool(status_byte & 2),
             ramping=bool(status_byte & 1),
             standby=bool(status_byte & 2),
             quench_condition_present=bool(status_byte & 4),
@@ -184,7 +184,6 @@ class CryomagneticsModel4G(VisaInstrument):
             field_setpoint: The desired magnetic field strength in Tesla.
             block: If True, the method will block until the field reaches the setpoint.
 
-
         Raises:
             Cryo4GException: If the power supply is not in a state where it can start ramping.
         """
@@ -192,6 +191,9 @@ class CryomagneticsModel4G(VisaInstrument):
         field_setpoint_kg = field_setpoint * 10
         # Determine sweep direction based on setpoint and current field
         current_field = self._get_field()
+
+        self.log.debug(f"Current field: {current_field}, Setpoint: {field_setpoint_kg}")
+
         if abs(field_setpoint_kg - current_field) < 1e-4:
             # Already at the setpoint, no need to sweep
             self.log.info(f"Magnetic field is already set to {field_setpoint}T")
@@ -205,13 +207,14 @@ class CryomagneticsModel4G(VisaInstrument):
             return
 
         if state.can_start_ramping():
-
             if field_setpoint_kg < current_field:
                 sweep_direction = "DOWN"
                 self.write(f"LLIM {field_setpoint_kg}")
             else:
                 sweep_direction = "UP"
-                self.write(f"ULIM  {field_setpoint_kg}")
+                self.write(f"ULIM {field_setpoint_kg}")
+
+            self.log.debug(f"Sweeping {sweep_direction} to {field_setpoint_kg}")
 
             self.write(f"SWEEP {sweep_direction}")
 
@@ -220,7 +223,7 @@ class CryomagneticsModel4G(VisaInstrument):
                 self.log.warning("Magnetic field is ramping but not currently blocked!")
                 return
 
-            # Otherwise, wait  until no longer ramping
+            # Otherwise, wait until no longer ramping
             self.log.debug(f"Starting blocking ramp of {self.name} to {field_setpoint} T")
             exit_state = self.wait_while_ramping(field_setpoint)
             self.log.debug("Finished blocking ramp")
@@ -229,6 +232,7 @@ class CryomagneticsModel4G(VisaInstrument):
             if not exit_state.holding:
                 msg = "_set_field({}) failed with state: {}"
                 raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
+
 
     def  wait_while_ramping(self, value: float, threshold: float = 1e-5) -> CryomagneticsOperatingState:
         """Waits while the magnet is ramping, checking the status byte instead of field value."""
