@@ -8,8 +8,6 @@ the default configuration.
 import io
 import json
 import logging
-
-# logging.handlers is not imported by logging. This extra import is necessary
 import logging.handlers
 import os
 import platform
@@ -18,25 +16,23 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
+
+from typing_extensions import deprecated
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from types import TracebackType
 
-    from opencensus.ext.azure.common.protocol import (  # type: ignore[import-untyped]
-        Envelope,
-    )
-    from opencensus.ext.azure.log_exporter import (  # type: ignore[import-untyped]
-        AzureLogHandler,
-    )
-
 import qcodes as qc
 from qcodes.utils import (
+    QCoDeSDeprecationWarning,
     get_all_installed_package_versions,
     get_qcodes_user_path,
     is_qcodes_installed_editably,
 )
+
+AzureLogHandler = Any
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -201,10 +197,18 @@ def flush_telemetry_traces() -> None:
         telemetry_handler.flush()
 
 
+@deprecated(
+    "OpenCensus integration is deprecated. Please use your own telemetry integration as needed",
+    category=QCoDeSDeprecationWarning,
+)
 def _create_telemetry_handler() -> "AzureLogHandler":
     """
     Configure, create, and return the telemetry handler
     """
+    if TYPE_CHECKING:
+        from opencensus.ext.azure.common.protocol import (  # type: ignore[import-untyped]
+            Envelope,
+        )
     from opencensus.ext.azure.log_exporter import AzureLogHandler
     global telemetry_handler
 
@@ -251,6 +255,7 @@ def _create_telemetry_handler() -> "AzureLogHandler":
         connection_string=f"InstrumentationKey="
         f"{qc.config.telemetry.instrumentation_key}"
     )
+    assert telemetry_handler is not None
     telemetry_handler.add_telemetry_processor(callback_function)
     telemetry_handler.setLevel(logging.INFO)
     telemetry_handler.addFilter(CustomDimensionsFilter(default_custom_dimensions))
@@ -312,7 +317,9 @@ def start_logger() -> None:
     logging.captureWarnings(capture=True)
 
     if qc.config.telemetry.enabled:
-        root_logger.addHandler(_create_telemetry_handler())
+        root_logger.addHandler(
+            _create_telemetry_handler()  # pyright: ignore[reportDeprecated]
+        )
 
     log.info("QCoDes logger setup completed")
 
