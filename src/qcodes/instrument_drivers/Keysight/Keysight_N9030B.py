@@ -11,7 +11,7 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
-from qcodes.validators import Arrays, Enum, Ints, Numbers
+from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 
 class FrequencyAxis(Parameter):
@@ -345,18 +345,29 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        try:
+        root_instr = self.instrument.root_instrument
+        # Check if we should run a new sweep
+        auto_sweep = root_instr.auto_sweep()
+
+        if auto_sweep:
+            # If we need to run a sweep, we need to set the timeout to take into account
+            # the sweep time
             timeout = self.sweep_time() + self._additional_wait
             with self.root_instrument.timeout.set_to(timeout):
-                data_str = self.ask(
-                    f":READ:{self.root_instrument.measurement()}{trace_num}?"
+                data = root_instr.visa_handle.query_binary_values(
+                    f":READ:{self.root_instrument.measurement()}{trace_num}?",
+                    datatype="d",
+                    is_big_endian=False,
                 )
-                data = np.array(data_str.rstrip().split(",")).astype("float64")
-        except TimeoutError as e:
-            raise TimeoutError("Couldn't receive any data. Command timed out.") from e
+        else:
+            data = root_instr.visa_handle.query_binary_values(
+                f":FETC:{self.root_instrument.measurement()}{trace_num}?",
+                datatype="d",
+                is_big_endian=False,
+            )
 
-        trace_data = data[1::2]
-        return trace_data
+        data = np.array(data).reshape((-1, 2))
+        return data[:0]
 
     def update_trace(self) -> None:
         """
@@ -625,18 +636,30 @@ class KeysightN9030B(VisaInstrument):
             docstring="Enables or disables continuous measurement.",
         )
 
+        # Set auto_sweep parameter
+        # If we want to return multiple traces per setpoint without sweeping
+        # multiple times, or return data on screen, then we can set this value false
+        self.add_parameter(
+            "auto_sweep",
+            label="Auto Sweep",
+            set_cmd=None,
+            get_cmd=None,
+            vals=Bool(),
+            initial_value=True,
+        )
+
+        # Set binary format and don't allow change. There isn't much point to
+        # allow this value to be varied. Retained for backwards compatibility.
         self.add_parameter(
             name="format",
-            get_cmd=":FORMat:TRACe:DATA?",
-            set_cmd=":FORMat:TRACe:DATA {}",
-            val_mapping={
-                "ascii": "ASCii",
-                "int32": "INTeger,32",
-                "real32": "REAL,32",
-                "real64": "REAL,64",
-            },
+            get_cmd=None,
+            set_cmd=False,
+            default_value="real64",
             docstring="Sets up format of data received",
         )
+        # Set default format on initialisation
+        self.write("FORM REAL,64")
+        self.write("FORM:BORD SWAP")
 
         if "SA" in self._available_modes():
             sa_mode = KeysightN9030BSpectrumAnalyzerMode(
