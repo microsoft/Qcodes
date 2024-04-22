@@ -57,7 +57,7 @@ class Trace(ParameterWithSetpoints):
         self.get_data = get_data
 
     def get_raw(self) -> ParamRawDataType:
-        return self.get_data(trace_num=self.number)
+        return self.get_data(self.number)
 
 
 class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
