@@ -539,8 +539,14 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        raw_data = self.ask(f":READ:{self.root_instrument.measurement()}{1}?")
-        trace_res_details = np.array(raw_data.rstrip().split(",")).astype("float64")
+        root_instr = self.instrument.root_instrument
+        measurement = root_instr.measurement()
+        raw_data = root_instr.visa_handle.query_binary_values(
+            f":READ:{measurement}1?",
+            datatype="d",
+            is_big_endian=False,
+        )
+        trace_res_details = np.array(raw_data)
 
         if len(trace_res_details) != 7 or (
             len(trace_res_details) >= 1 and trace_res_details[0] < -50
@@ -549,15 +555,16 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             return -1 * np.ones(self.npts())
 
         try:
-            data_str = self.ask(
-                f":READ:{self.root_instrument.measurement()}{trace_num}?"
+            data = root_instr.visa_handle.query_binary_values(
+                f":READ:{measurement}{trace_num}?",
+                datatype="d",
+                is_big_endian=False,
             )
-            data = np.array(data_str.rstrip().split(",")).astype("float64")
+            data = np.array(data).reshape((-1, 2))
         except TimeoutError as e:
             raise TimeoutError("Couldn't receive any data. Command timed out.") from e
 
-        trace_data = data[1::2]
-        return trace_data
+        return data[:, 1]
 
     def setup_log_plot_sweep(
         self, start_offset: float, stop_offset: float, npts: int
