@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, ClassVar
 
-from qcodes.instrument import Instrument, InstrumentBase, InstrumentChannel
+from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
 from qcodes.instrument.parameter import DelegateParameter, Parameter
 
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ class InferAttrs:
         cls._known_attrs = set()
 
 
-def get_root_param(
+def get_root_parameter(
     param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
 ) -> Parameter:
@@ -47,7 +47,7 @@ def get_root_param(
     if isinstance(param, DelegateParameter):
         if param.source is None:
             raise InferError(f"Parameter {param} is not attached to a source")
-        return get_root_param(param.source)
+        return get_root_parameter(param.source)
 
     for alt_source_attr in alt_source_attrs_set:
         alt_source = getattr(param, alt_source_attr, DOES_NOT_EXIST)
@@ -56,7 +56,7 @@ def get_root_param(
                 f"Parameter {param} is not attached to a source on attribute {alt_source_attr}"
             )
         elif isinstance(alt_source, Parameter):
-            return get_root_param(alt_source, alt_source_attrs=alt_source_attrs)
+            return get_root_parameter(alt_source, alt_source_attrs=alt_source_attrs)
     return param
 
 
@@ -65,9 +65,9 @@ def infer_instrument(
     alt_source_attrs: Sequence[str] | None = None,
 ) -> InstrumentBase:
     """Find the instrument that owns a parameter or delegate parameter."""
-    root_param = get_root_param(param, alt_source_attrs=alt_source_attrs)
+    root_param = get_root_parameter(param, alt_source_attrs=alt_source_attrs)
     instrument = get_instrument_from_param(root_param)
-    if isinstance(instrument, InstrumentChannel):
+    if isinstance(instrument, InstrumentModule):
         return instrument.root_instrument
     elif isinstance(instrument, Instrument):
         return instrument
@@ -78,11 +78,11 @@ def infer_instrument(
 def infer_channel(
     param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
-) -> InstrumentChannel:
+) -> InstrumentModule:
     """Find the instrument module that owns a parameter or delegate parameter"""
-    root_param = get_root_param(param, alt_source_attrs=alt_source_attrs)
+    root_param = get_root_parameter(param, alt_source_attrs=alt_source_attrs)
     channel = get_instrument_from_param(root_param)
-    if isinstance(channel, InstrumentChannel):
+    if isinstance(channel, InstrumentModule):
         return channel
     raise InferError(
         f"Could not determine a root instrument channel for parameter {param}"
@@ -99,7 +99,7 @@ def get_instrument_from_param(
 
 def get_parameter_chain(
     param_chain: Parameter | Sequence[Parameter],
-    alt_source_attrs: Sequence[str] | None = None,
+    alt_source_attrs: str | Sequence[str] | None = None,
 ) -> tuple[Parameter, ...]:
     """Return the chain of DelegateParameters or other linking Parameters"""
     alt_source_attrs_set = _merge_user_and_class_attrs(alt_source_attrs)
@@ -132,9 +132,11 @@ def get_parameter_chain(
 
 
 def _merge_user_and_class_attrs(
-    alt_source_attrs: Sequence[str] | None = None,
+    alt_source_attrs: str | Sequence[str] | None = None,
 ) -> Iterable[str]:
     if alt_source_attrs is None:
         return InferAttrs.known_attrs()
+    elif isinstance(alt_source_attrs, str):
+        return set.union(set((alt_source_attrs,)), set(InferAttrs.known_attrs()))
     else:
         return set.union(set(alt_source_attrs), set(InferAttrs.known_attrs()))
