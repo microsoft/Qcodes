@@ -33,6 +33,7 @@ from qcodes.utils import (
 )
 
 AzureLogHandler = Any
+Envelope = Any
 
 log: logging.Logger = logging.getLogger(__name__)
 
@@ -205,11 +206,9 @@ def _create_telemetry_handler() -> "AzureLogHandler":
     """
     Configure, create, and return the telemetry handler
     """
-    if TYPE_CHECKING:
-        from opencensus.ext.azure.common.protocol import (  # type: ignore[import-untyped]
-            Envelope,
-        )
-    from opencensus.ext.azure.log_exporter import AzureLogHandler
+    from opencensus.ext.azure.log_exporter import (  # type: ignore[import-not-found]
+        AzureLogHandler,
+    )
     global telemetry_handler
 
     # The default_custom_dimensions will appear in the "customDimensions"
