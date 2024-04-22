@@ -513,7 +513,7 @@ zhinst-timing-models==24.1.54288
     # via zhinst-utils
 zhinst-toolkit==0.6.3
     # via zhinst-qcodes
-zhinst-utils==0.4.0
+zhinst-utils==0.4.1
     # via zhinst-toolkit
 zipp==3.18.1
     # via importlib-metadata
