@@ -357,15 +357,15 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             # If we need to run a sweep, we need to set the timeout to take into account
             # the sweep time
             timeout = self.sweep_time() + self._additional_wait
-            with self.root_instrument.timeout.set_to(timeout):
+            with root_instr.timeout.set_to(timeout):
                 data = root_instr.visa_handle.query_binary_values(
-                    f":READ:{self.root_instrument.measurement()}{trace_num}?",
+                    f":READ:{root_instr.measurement()}{trace_num}?",
                     datatype="d",
                     is_big_endian=False,
                 )
         else:
             data = root_instr.visa_handle.query_binary_values(
-                f":FETC:{self.root_instrument.measurement()}{trace_num}?",
+                f":FETC:{root_instr.measurement()}{trace_num}?",
                 datatype="d",
                 is_big_endian=False,
             )
@@ -624,7 +624,7 @@ class KeysightN9030B(VisaInstrument):
             name="mode",
             get_cmd=":INSTrument:SELect?",
             set_cmd=":INSTrument:SELect {}",
-            vals=Enum(*self._available_modes()),
+            vals=Enum(*self.available_modes()),
             docstring="Allows setting of different modes present and licensed "
             "for the instrument.",
         )
@@ -672,7 +672,7 @@ class KeysightN9030B(VisaInstrument):
         self.write("FORM REAL,64")
         self.write("FORM:BORD SWAP")
 
-        if "SA" in self._available_modes():
+        if "SA" in self.available_modes():
             sa_mode = KeysightN9030BSpectrumAnalyzerMode(
                 self, name="sa", additional_wait=self._additional_wait
             )
@@ -680,7 +680,7 @@ class KeysightN9030B(VisaInstrument):
         else:
             self.log.info("Spectrum Analyzer mode is not available on this instrument.")
 
-        if "PNOISE" in self._available_modes():
+        if "PNOISE" in self.available_modes():
             pnoise_mode = KeysightN9030BPhaseNoiseMode(self, name="pn")
             self.add_submodule("pn", pnoise_mode)
         else:
