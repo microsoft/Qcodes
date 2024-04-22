@@ -199,7 +199,7 @@ def flush_telemetry_traces() -> None:
 
 
 @deprecated(
-    "OpenCensus integration is deprecated. Please use your own telemetry integration as needed",
+    "OpenCensus integration is deprecated. Please use your own telemetry integration as needed, we recommend OpenTelemetry",
     category=QCoDeSDeprecationWarning,
 )
 def _create_telemetry_handler() -> "AzureLogHandler":
