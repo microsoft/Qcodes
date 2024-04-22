@@ -90,7 +90,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         }
         opt: str | None = None
         for hw_opt_for_max_freq in self._valid_max_freq:
-            if hw_opt_for_max_freq in self.root_instrument._options():
+            if hw_opt_for_max_freq in self.root_instrument.options():
                 opt = hw_opt_for_max_freq
         assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
@@ -349,7 +349,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        root_instr = self.instrument.root_instrument
+        root_instr = self.root_instrument
         # Check if we should run a new sweep
         auto_sweep = root_instr.auto_sweep()
 
@@ -426,7 +426,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
         }
         opt: str | None = None
         for hw_opt_for_max_freq in self._valid_max_freq:
-            if hw_opt_for_max_freq in self.root_instrument._options():
+            if hw_opt_for_max_freq in self.root_instrument.options():
                 opt = hw_opt_for_max_freq
         assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
@@ -543,7 +543,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
         """
         Gets data from the measurement.
         """
-        root_instr = self.instrument.root_instrument
+        root_instr = self.root_instrument
         measurement = root_instr.measurement()
         raw_data = root_instr.visa_handle.query_binary_values(
             f":READ:{measurement}1?",
@@ -663,9 +663,8 @@ class KeysightN9030B(VisaInstrument):
         # allow this value to be varied. Retained for backwards compatibility.
         self.add_parameter(
             name="format",
-            get_cmd=None,
+            get_cmd=lambda: "real64",
             set_cmd=False,
-            initial_value="real64",
             docstring="Sets up format of data received",
         )
         # Set default format on initialisation
