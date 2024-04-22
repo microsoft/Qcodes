@@ -665,7 +665,7 @@ class KeysightN9030B(VisaInstrument):
             name="format",
             get_cmd=None,
             set_cmd=False,
-            default_value="real64",
+            initial_value="real64",
             docstring="Sets up format of data received",
         )
         # Set default format on initialisation
