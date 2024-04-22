@@ -276,7 +276,7 @@ pillow==10.3.0
     #   qcodes
 platformdirs==4.2.0
     # via jupyter-core
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 portalocker==2.8.2
     # via msal-extensions
