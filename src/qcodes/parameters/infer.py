@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, ClassVar
 
 from qcodes.instrument import Instrument, InstrumentBase, InstrumentChannel
 from qcodes.instrument.parameter import DelegateParameter, Parameter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable
+
+DOES_NOT_EXIST = "Does not exist"
 
 
 class InferError(AttributeError): ...
@@ -35,40 +38,25 @@ class InferAttrs:
 
 
 def get_root_param(
-    param: Parameter | DelegateParameter | None,
-    parent_param: Parameter | None = None,
+    param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
 ) -> Parameter:
-    """Return the root parameter in a chain of DelegateParameters or other linking Parameters
+    """Return the root parameter in a chain of DelegateParameters or other linking Parameters"""
+    alt_source_attrs_set = _merge_user_and_class_attrs(alt_source_attrs)
 
-    This method recursively searches on the initial parameter.
-    - If the parameter is a DelegateParameter, it returns the .source.
-    - If the parameter is not a DelegateParameter, but has an attribute in
-    either alt_source_attrs or the InferAttrs class which is a parameter,
-    then it returns that parameter
-    - If the parameter is None, because the previous DelegateParameter did not have a source
-    it raises an InferError
-
-
-    """
-    parent_param = param if parent_param is None else parent_param
-    if alt_source_attrs is None:
-        alt_source_attrs_set: Iterable[str] = InferAttrs.known_attrs()
-    else:
-        alt_source_attrs_set = set.union(
-            set(alt_source_attrs), set(InferAttrs.known_attrs())
-        )
-
-    if param is None:
-        raise InferError(f"Parameter {parent_param} is not attached to a source")
     if isinstance(param, DelegateParameter):
-        return get_root_param(param.source, parent_param)
+        if param.source is None:
+            raise InferError(f"Parameter {param} is not attached to a source")
+        return get_root_param(param.source)
+
     for alt_source_attr in alt_source_attrs_set:
-        alt_source = getattr(param, alt_source_attr, None)
-        if alt_source is not None and isinstance(alt_source, Parameter):
-            return get_root_param(
-                alt_source, parent_param=parent_param, alt_source_attrs=alt_source_attrs
+        alt_source = getattr(param, alt_source_attr, DOES_NOT_EXIST)
+        if alt_source is None:
+            raise InferError(
+                f"Parameter {param} is not attached to a source on attribute {alt_source_attr}"
             )
+        elif isinstance(alt_source, Parameter):
+            return get_root_param(alt_source, alt_source_attrs=alt_source_attrs)
     return param
 
 
@@ -91,7 +79,7 @@ def infer_channel(
     param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
 ) -> InstrumentChannel:
-    """Find the instrument module that owns a parameter."""
+    """Find the instrument module that owns a parameter or delegate parameter"""
     root_param = get_root_param(param, alt_source_attrs=alt_source_attrs)
     channel = get_instrument_from_param(root_param)
     if isinstance(channel, InstrumentChannel):
@@ -107,3 +95,46 @@ def get_instrument_from_param(
     if param.instrument is not None:
         return param.instrument
     raise InferError(f"Parameter {param} has no instrument")
+
+
+def get_parameter_chain(
+    param_chain: Parameter | Sequence[Parameter],
+    alt_source_attrs: Sequence[str] | None = None,
+) -> tuple[Parameter, ...]:
+    """Return the chain of DelegateParameters or other linking Parameters"""
+    alt_source_attrs_set = _merge_user_and_class_attrs(alt_source_attrs)
+
+    if not isinstance(param_chain, Sequence):
+        param_chain = (param_chain,)
+
+    param = param_chain[-1]
+    mutable_param_chain = list(param_chain)
+    if isinstance(param, DelegateParameter):
+        if param.source is None:
+            return tuple(param_chain)
+        mutable_param_chain.append(param.source)
+        return get_parameter_chain(
+            mutable_param_chain,
+            alt_source_attrs=alt_source_attrs,
+        )
+
+    for alt_source_attr in alt_source_attrs_set:
+        alt_source = getattr(param, alt_source_attr, DOES_NOT_EXIST)
+        if alt_source is None:
+            return tuple(param_chain)
+        elif isinstance(alt_source, Parameter):
+            mutable_param_chain.append(alt_source)
+            return get_parameter_chain(
+                mutable_param_chain,
+                alt_source_attrs=alt_source_attrs,
+            )
+    return tuple(param_chain)
+
+
+def _merge_user_and_class_attrs(
+    alt_source_attrs: Sequence[str] | None = None,
+) -> Iterable[str]:
+    if alt_source_attrs is None:
+        return InferAttrs.known_attrs()
+    else:
+        return set.union(set(alt_source_attrs), set(InferAttrs.known_attrs()))
