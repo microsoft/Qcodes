@@ -40,7 +40,11 @@ class FrequencyAxis(Parameter):
 
 class Trace(ParameterWithSetpoints):
     def __init__(
-        self, number: int, *args: Any, get_data: Callable[[int], ParamRawDataType], **kwargs: Any
+        self,
+        number: int,
+        *args: Any,
+        get_data: Callable[[int], ParamRawDataType],
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         # the parameter classes should ideally be generic in instrument
