@@ -162,7 +162,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             name="preamp_enabled",
             get_cmd=":SENS:POW:GAIN:STAT?",
             set_cmd=":SENS:POW:GAIN:STAT {}",
-            val_mapping=create_on_off_val_mapping("ON", "OFF"),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="Preamplifier state",
         )
 
@@ -261,14 +261,14 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             name="auto_sweep_time_enabled",
             get_cmd=":SENSe:SWEep:TIME:AUTO?",
             set_cmd=":SENSe:SWEep:TIME:AUTO {}",
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="enables auto sweep time",
         )
         self.add_parameter(
             name="auto_sweep_type_enabled",
             get_cmd=":SENSe:SWEep:TYPE:AUTO?",
             set_cmd=":SENSe:SWEep:TYPE:AUTO {}",
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="enables auto sweep type",
         )
         self.add_parameter(
@@ -464,7 +464,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             name="signal_tracking_enabled",
             get_cmd=":SENSe:FREQuency:CARRier:TRACk?",
             set_cmd=":SENSe:FREQuency:CARRier:TRACk {}",
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="Gets/Sets signal tracking. When signal tracking is "
             "enabled carrier signal is repeatedly realigned. Signal "
             "Tracking assumes the new acquisition occurs repeatedly "
@@ -643,7 +643,7 @@ class KeysightN9030B(VisaInstrument):
             initial_value=False,
             get_cmd=":INITiate:CONTinuous?",
             set_cmd=":INITiate:CONTinuous {}",
-            val_mapping=create_on_off_val_mapping(on_val="ON", off_val="OFF"),
+            val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="Enables or disables continuous measurement.",
         )
 
