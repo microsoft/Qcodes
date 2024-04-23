@@ -1,0 +1,4 @@
+Add methods to recursively search a chain of DelegateParameters and return either all the parameters in the chain or the 'root' parameter
+These methods may also be used with custom Parameters which link to other parameters via different attribute names
+
+Also add infer_channel and infer_instrument methods to find the InstrumentModule or Instrument of the root parameter 
