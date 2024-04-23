@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import logging
 import re
 import time
 from dataclasses import dataclass
+from typing import Any
 
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Enum, Numbers
-
-log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -61,7 +59,7 @@ class CryomagneticsModel4G(VisaInstrument):
         address: str,
         max_current_limits: dict[int, tuple[float, float]],
         coil_constant: float,
-        **kwargs,
+        **kwargs: Any,
     ):
         super().__init__(name, address, terminator="\n", **kwargs)
 
