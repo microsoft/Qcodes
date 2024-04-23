@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-from qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4G import (
+from qcodes.instrument_drivers.cryomagnetics import (
     Cryomagnetics4GException,
     CryomagneticsModel4G,
     CryomagneticsOperatingState,
