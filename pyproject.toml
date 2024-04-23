@@ -33,8 +33,6 @@ dependencies = [
     "jsonschema>=4.9.0",
     "matplotlib>=3.3.3",
     "numpy>=1.21.0",
-    "opencensus>=0.7.10",
-    "opencensus-ext-azure>=1.0.4, <2.0.0",
     "packaging>=20.0",
     "pandas>=1.2.0",
     "pyarrow>=11.0.0", # will become a requirement of pandas. Installing explicitly silences a warning
@@ -58,7 +56,6 @@ dependencies = [
     "tornado>=6.3.3",
     "ipython>=8.10.0",
     "pillow>=9.0.0",
-    "rsa>=4.7",
 ]
 
 dynamic = ["version"]
@@ -117,6 +114,10 @@ docs = [
     "scipy>=1.7.0", # examples using scipy
     "qcodes_loop>=0.1.1", # legacy dataset import examples
     "jinja2>=3.1.3", # transitive dependency pin due to cve in earlier version
+]
+opencensus = [
+    "opencensus>=0.7.10",
+    "opencensus-ext-azure>=1.0.4, <2.0.0",
 ]
 
 [project.scripts]

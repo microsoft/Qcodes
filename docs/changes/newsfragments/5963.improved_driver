@@ -1,0 +1,6 @@
+A number of new parameters are added to the Keysight N9030B Spectrum Analyzer to allow for Noise Spectral Density measurements.
+In particular we add various parameters for switching the detectors into the appropriate modes, as well as allowing for
+instrument parameters required for unit conversions to be saved in the snapshot.
+
+In addition, we use binary readout of the data and the ability to read data from the instrument buffer
+(without taking a new trace), and to read averaged data.

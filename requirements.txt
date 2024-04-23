@@ -66,7 +66,7 @@ cryptography==42.0.5
     #   pyjwt
 cycler==0.12.1
     # via matplotlib
-dask==2024.4.1
+dask==2024.4.2
     # via qcodes
 debugpy==1.8.1
     # via ipykernel
@@ -117,9 +117,7 @@ idna==3.7
 imagesize==1.4.1
     # via sphinx
 importlib-metadata==6.11.0
-    # via
-    #   dask
-    #   opentelemetry-api
+    # via opentelemetry-api
 incremental==22.10.0
     # via towncrier
 iniconfig==2.0.0
@@ -249,6 +247,7 @@ packaging==24.0
     #   dask
     #   h5netcdf
     #   ipykernel
+    #   lazy-loader
     #   matplotlib
     #   msal-extensions
     #   nbconvert
@@ -276,23 +275,26 @@ pillow==10.3.0
     #   qcodes
 platformdirs==4.2.0
     # via jupyter-core
-pluggy==1.4.0
+pluggy==1.5.0
     # via pytest
 portalocker==2.8.2
     # via msal-extensions
 prompt-toolkit==3.0.43
     # via ipython
+proto-plus==1.23.0
+    # via google-api-core
 protobuf==4.25.3
     # via
     #   google-api-core
     #   googleapis-common-protos
+    #   proto-plus
 psutil==5.9.8
     # via
     #   ipykernel
     #   opencensus-ext-azure
 pure-eval==0.2.2
     # via stack-data
-pyarrow==15.0.2
+pyarrow==16.0.0
 pyasn1==0.6.0
     # via
     #   pyasn1-modules
@@ -345,7 +347,7 @@ pyyaml==6.0.1
     #   dask
     #   pyvisa-sim
     #   sphinx-jsonschema
-pyzmq==26.0.0
+pyzmq==26.0.2
     # via
     #   ipykernel
     #   jupyter-client
@@ -391,7 +393,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.5
     # via beautifulsoup4
-sphinx==7.3.6
+sphinx==7.3.7
     # via
     #   autodocsumm
     #   nbsphinx
@@ -440,7 +442,7 @@ towncrier==23.11.0
     # via sphinxcontrib-towncrier
 tqdm==4.66.2
     # via qcodes
-traitlets==5.14.2
+traitlets==5.14.3
     # via
     #   comm
     #   ipykernel
@@ -458,7 +460,7 @@ types-pytz==2024.1.0.20240417
     # via pandas-stubs
 types-pywin32==306.0.0.20240408
 types-requests==2.31.0.20240406
-types-setuptools==69.5.0.20240415
+types-setuptools==69.5.0.20240423
 types-tabulate==0.9.0.20240106
 types-tqdm==4.66.0.20240417
 typing-extensions==4.11.0
@@ -513,7 +515,7 @@ zhinst-timing-models==24.1.54288
     # via zhinst-utils
 zhinst-toolkit==0.6.3
     # via zhinst-qcodes
-zhinst-utils==0.4.0
+zhinst-utils==0.4.1
     # via zhinst-toolkit
 zipp==3.18.1
     # via importlib-metadata
