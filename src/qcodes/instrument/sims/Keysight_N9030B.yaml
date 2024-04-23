@@ -9,6 +9,8 @@ devices:
     dialogues:
       - q: "*RST"
       - q: ":ABORt"
+      - q: "FORM REAL,64"
+      - q: "FORM:BORD SWAP"
       - q: ":INSTrument:CATalog?"
         r: '"SA 1, PNOISE 14"'
       - q: ":CONFigure:CATalog?"
