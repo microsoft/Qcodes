@@ -371,7 +371,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             )
 
         data = np.array(data).reshape((-1, 2))
-        return data[:0]
+        return data[:, 1]
 
     def update_trace(self) -> None:
         """
