@@ -117,9 +117,7 @@ idna==3.7
 imagesize==1.4.1
     # via sphinx
 importlib-metadata==6.11.0
-    # via
-    #   dask
-    #   opentelemetry-api
+    # via opentelemetry-api
 incremental==22.10.0
     # via towncrier
 iniconfig==2.0.0
@@ -249,6 +247,7 @@ packaging==24.0
     #   dask
     #   h5netcdf
     #   ipykernel
+    #   lazy-loader
     #   matplotlib
     #   msal-extensions
     #   nbconvert
@@ -282,10 +281,13 @@ portalocker==2.8.2
     # via msal-extensions
 prompt-toolkit==3.0.43
     # via ipython
+proto-plus==1.23.0
+    # via google-api-core
 protobuf==4.25.3
     # via
     #   google-api-core
     #   googleapis-common-protos
+    #   proto-plus
 psutil==5.9.8
     # via
     #   ipykernel
