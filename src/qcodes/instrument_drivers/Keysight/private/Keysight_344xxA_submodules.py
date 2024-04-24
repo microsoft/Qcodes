@@ -322,10 +322,7 @@ class TimeTrace(ParameterWithSetpoints):
     """
 
     def __init__(self, name: str, instrument: Instrument, **kwargs: Any):
-        # the parameter classes should ideally be generic in instrument
-        # and root instrument classes so we can specialize here.
-        # for now we have to ignore a type error from pyright
-        self.instrument: Instrument  # pyright: ignore[reportIncompatibleMethodOverride]
+        self.instrument: Instrument
         super().__init__(name=name, instrument=instrument, **kwargs)
 
         # the extra time needed to avoid timeouts during acquisition
