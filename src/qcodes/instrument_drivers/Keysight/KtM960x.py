@@ -15,20 +15,16 @@ from .KtM960xDefs import *  # noqa F403
 
 class Measure(MultiParameter):
     def __init__(self, name: str, instrument: "KeysightM960x") -> None:
-        super().__init__(name=name,
-                         names=("voltage", "current", "resistance", "status",
-                                "timestamp", "source"),
-                         shapes=((), (), (), (), (), ()),
-                         units=("V", "A", "Ohm", "", "", ""),
-                         instrument=instrument,
-                         labels="Measurement Data",
-                         docstring="param that returns measurement values")
-        # the parameter classes should ideally be generic in instrument
-        # and root instrument classes so we can specialize here.
-        # for now we have to ignore a type error from pyright
-        self.instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
-            "KeysightM960x"
+        super().__init__(
+            name=name,
+            names=("voltage", "current", "resistance", "status", "timestamp", "source"),
+            shapes=((), (), (), (), (), ()),
+            units=("V", "A", "Ohm", "", "", ""),
+            instrument=instrument,
+            labels="Measurement Data",
+            docstring="param that returns measurement values",
         )
+        self.instrument: "KeysightM960x"
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
         return self.instrument._measure()
