@@ -57,7 +57,7 @@ contextlib2==21.6.0
     # via schema
 contourpy==1.2.1
     # via matplotlib
-coverage==7.4.4
+coverage==7.5.0
     # via pytest-cov
 cryptography==42.0.5
     # via
