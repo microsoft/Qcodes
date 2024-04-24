@@ -102,7 +102,7 @@ def test_get_root_parameter_valid(instrument_fixture, good_inst_delegates):
     InferAttrs.clear_attrs()
     assert get_root_parameter(good_inst_del_3) is good_inst_del_3
 
-    InferAttrs.add_attr("linked_parameter")
+    InferAttrs.add_attrs("linked_parameter")
     assert get_root_parameter(good_inst_del_3) is inst.good_inst_parameter
 
 
@@ -133,7 +133,7 @@ def test_get_root_parameter_none_user_attr(good_inst_delegates):
 def test_infer_instrument_valid(instrument_fixture, good_inst_delegates):
     inst = instrument_fixture
     _, _, good_inst_del_3 = good_inst_delegates
-    InferAttrs.add_attr("linked_parameter")
+    InferAttrs.add_attrs("linked_parameter")
     assert infer_instrument(good_inst_del_3) is inst
 
 
