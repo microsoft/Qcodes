@@ -43,7 +43,9 @@ class DummyDelegateInstrument(InstrumentBase):
             name="inst_delegate", source=None, instrument=self, bind_to_instrument=True
         )
         self.module = DummyDelegateModule(name="dummy_delegate_module", parent=self)
-        self.inst_base_parameter = ManualParameter("inst_base_parameter")
+        self.inst_base_parameter = ManualParameter(
+            "inst_base_parameter", instrument=self
+        )
 
 
 class DummyDelegateModule(InstrumentModule):
@@ -148,8 +150,9 @@ def test_infer_instrument_no_instrument(instrument_fixture):
 def test_infer_instrument_root_instrument_base():
     delegate_inst = DummyDelegateInstrument("dummy_delegate_instrument")
 
-    with pytest.raises(InferError):
+    with pytest.raises(InferError) as exc_info:
         infer_instrument(delegate_inst.inst_base_parameter)
+    assert "Could not determine source instrument for parameter" in str(exc_info.value)
 
 
 def test_infer_channel_valid(instrument_fixture):
@@ -221,6 +224,24 @@ def test_parameters_on_delegate_instruments(instrument_fixture, good_inst_delega
 
 
 def test_merge_user_and_class_attrs():
-    InferAttrs.add_attr("attr1")
+    InferAttrs.add_attrs("attr1")
     attr_set = _merge_user_and_class_attrs("attr2")
     assert set(("attr1", "attr2")) == attr_set
+
+    attr_set_list = _merge_user_and_class_attrs(("attr2", "attr3"))
+    assert set(("attr1", "attr2", "attr3")) == attr_set_list
+
+
+def test_infer_attrs():
+    InferAttrs.clear_attrs()
+    assert InferAttrs.known_attrs() == ()
+
+    InferAttrs.add_attrs("attr1")
+    assert set(InferAttrs.known_attrs()) == set(("attr1",))
+
+    InferAttrs.add_attrs("attr2")
+    InferAttrs.discard_attr("attr1")
+    assert set(InferAttrs.known_attrs()) == set(("attr2",))
+
+    InferAttrs.add_attrs(("attr1", "attr3"))
+    assert set(InferAttrs.known_attrs()) == set(("attr1", "attr2", "attr3"))

@@ -21,8 +21,10 @@ class InferAttrs:
     _known_attrs: ClassVar[set[str]] = set()
 
     @classmethod
-    def add_attr(cls, attr: str) -> None:
-        cls._known_attrs.add(attr)
+    def add_attrs(cls, attrs: str | Iterable[str]) -> None:
+        if isinstance(attrs, str):
+            attrs = (attrs,)
+        cls._known_attrs.update(set(attrs))
 
     @classmethod
     def known_attrs(cls) -> tuple[str, ...]:
