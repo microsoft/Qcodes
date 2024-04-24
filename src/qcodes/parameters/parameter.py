@@ -287,7 +287,9 @@ class Parameter(ParameterBase):
                     exec_str=exec_str_ask,
                 )
             self._gettable = True
-            self.get = self._wrap_get()
+            # mypy resolves the type of self.get_raw to object here.
+            # this may be resolvable if Command above is correctly wrapped in MethodType
+            self.get = self._wrap_get(self.get_raw)  # type: ignore[arg-type]
 
         if self.settable and set_cmd not in (None, False):
             raise TypeError(
@@ -317,7 +319,9 @@ class Parameter(ParameterBase):
                     arg_count=1, cmd=set_cmd, exec_str=exec_str_write
                 )
             self._settable = True
-            self.set = self._wrap_set()
+            # mypy resolves the type of self.get_raw to object here.
+            # this may be resolvable if Command above is correctly wrapped in MethodType
+            self.set = self._wrap_set(self.set_raw)  # type: ignore[arg-type]
 
         self._meta_attrs.extend(["label", "unit", "vals"])
 

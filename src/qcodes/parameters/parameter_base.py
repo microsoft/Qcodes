@@ -258,7 +258,7 @@ class ParameterBase(MetadatableWithName):
         )
         self._gettable = False
         if implements_get_raw:
-            self.get = self._wrap_get()
+            self.get = self._wrap_get(self.get_raw)
             self._gettable = True
         elif hasattr(self, "get"):
             raise RuntimeError(
@@ -273,7 +273,7 @@ class ParameterBase(MetadatableWithName):
         )
         self._settable: bool = False
         if implements_set_raw:
-            self.set = self._wrap_set()
+            self.set = self._wrap_set(self.set_raw)
             self._settable = True
         elif hasattr(self, "set"):
             raise RuntimeError(
@@ -647,9 +647,10 @@ class ParameterBase(MetadatableWithName):
         return value
 
     def _wrap_get(
-        self,
+        self, get_function: Callable[..., ParamRawDataType]
     ) -> Callable[..., ParamDataType]:
-        @wraps(self.get_raw)
+
+        @wraps(get_function)
         def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             if not self.gettable:
                 raise TypeError("Trying to get a parameter that is not gettable.")
@@ -659,7 +660,7 @@ class ParameterBase(MetadatableWithName):
                 )
             try:
                 # There might be cases where a .get also has args/kwargs
-                raw_value = self.get_raw(*args, **kwargs)
+                raw_value = get_function(*args, **kwargs)
 
                 value = self._from_raw_value_to_value(raw_value)
 
@@ -676,10 +677,8 @@ class ParameterBase(MetadatableWithName):
 
         return get_wrapper
 
-    def _wrap_set(
-        self,
-    ) -> Callable[..., None]:
-        @wraps(self.set_raw)
+    def _wrap_set(self, set_function: Callable[..., None]) -> Callable[..., None]:
+        @wraps(set_function)
         def set_wrapper(value: ParamDataType, **kwargs: Any) -> None:
             try:
                 if not self.settable:
@@ -712,7 +711,7 @@ class ParameterBase(MetadatableWithName):
                     # Start timer to measure execution time of set_function
                     t0 = time.perf_counter()
 
-                    self.set_raw(raw_val_step, **kwargs)
+                    set_function(raw_val_step, **kwargs)
 
                     # Update last set time (used for calculating delays)
                     self._t_last_set = time.perf_counter()
