@@ -60,8 +60,11 @@ jobs:
         echo "SPHINX_OPTS=-W -v --keep-going -j 2" >> $GITHUB_ENV
       if: ${{ fromJSON(env.SPHINX_WARNINGS_AS_ERROR) }}
     - name: install pandoc linux
+    # add the || true logic to not error in case the index cannot be fetched.
+    # this is known to have happened before e.g.
+    # https://github.com/microsoft/linux-package-repositories/issues/130
       run: |
-        sudo apt update
+        sudo apt update || true
         sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
