@@ -59,7 +59,7 @@ def get_root_parameter(
     parameter_chain = get_parameter_chain(param, alt_source_attrs)
     root_param = parameter_chain[-1]
 
-    if root_param is parameter_chain[0]:
+    if root_param is parameter_chain[0] and len(parameter_chain) > 1:
         raise InferError(f"{param} generated a loop of linking parameters")
     if isinstance(root_param, DelegateParameter):
         raise InferError(f"Parameter {param} is not attached to a source")

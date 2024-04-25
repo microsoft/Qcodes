@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
 import pytest
 
 from qcodes.extensions.infer import (
@@ -67,7 +68,7 @@ class UserLinkingParameter(Parameter):
 @pytest.fixture(name="instrument_fixture")
 def make_instrument_fixture():
     inst = DummyInstrument("dummy_instrument")
-    InferAttrs.clear_attrs()
+    InferAttrs.clear()
     try:
         yield inst
     finally:
@@ -99,10 +100,10 @@ def test_get_root_parameter_valid(instrument_fixture, good_inst_delegates):
         is inst.good_inst_parameter
     )
 
-    InferAttrs.clear_attrs()
+    InferAttrs.clear()
     assert get_root_parameter(good_inst_del_3) is good_inst_del_3
 
-    InferAttrs.add_attrs("linked_parameter")
+    InferAttrs.add("linked_parameter")
     assert get_root_parameter(good_inst_del_3) is inst.good_inst_parameter
 
 
@@ -118,7 +119,7 @@ def test_get_root_parameter_no_source(good_inst_delegates):
 
 def test_get_root_parameter_no_user_attr(good_inst_delegates):
     _, _, good_inst_del_3 = good_inst_delegates
-    InferAttrs.clear_attrs()
+    InferAttrs.clear()
     assert get_root_parameter(good_inst_del_3, "external_parameter") is good_inst_del_3
 
 
@@ -133,7 +134,7 @@ def test_get_root_parameter_none_user_attr(good_inst_delegates):
 def test_infer_instrument_valid(instrument_fixture, good_inst_delegates):
     inst = instrument_fixture
     _, _, good_inst_del_3 = good_inst_delegates
-    InferAttrs.add_attrs("linked_parameter")
+    InferAttrs.add("linked_parameter")
     assert infer_instrument(good_inst_del_3) is inst
 
 
@@ -184,29 +185,40 @@ def test_get_parameter_chain(instrument_fixture, good_inst_delegates):
     inst = instrument_fixture
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
     parameter_chain = get_parameter_chain(good_inst_del_3, "linked_parameter")
-    assert set(
-        (
-            inst.good_inst_parameter,
-            good_inst_del_1,
-            good_inst_del_2,
-            good_inst_del_3,
-        )
-    ) == set(parameter_chain)
+    expected_chain = (
+        good_inst_del_3,
+        good_inst_del_2,
+        good_inst_del_1,
+        inst.good_inst_parameter,
+    )
+    assert np.all(
+        [parameter_chain[i] is param for i, param in enumerate(expected_chain)]
+    )
 
     # This is a broken chain. get_root_parameter would throw an InferError, but
     # get_parameter_chain should run successfully
     good_inst_del_1.source = None
     parameter_chain = get_parameter_chain(good_inst_del_3, "linked_parameter")
-    assert set((good_inst_del_1, good_inst_del_2, good_inst_del_3)) == set(
-        parameter_chain
+    expected_chain = (
+        good_inst_del_3,
+        good_inst_del_2,
+        good_inst_del_1,
+    )
+    assert np.all(
+        [parameter_chain[i] is param for i, param in enumerate(expected_chain)]
     )
 
     # Make the linked_parameter at the end of the chain
     good_inst_del_3.linked_parameter = None
     good_inst_del_1.source = good_inst_del_3
     parameter_chain = get_parameter_chain(good_inst_del_2, "linked_parameter")
-    assert set((good_inst_del_1, good_inst_del_2, good_inst_del_3)) == set(
-        parameter_chain
+    expected_chain = (
+        good_inst_del_2,
+        good_inst_del_1,
+        good_inst_del_3,
+    )
+    assert np.all(
+        [parameter_chain[i] is param for i, param in enumerate(expected_chain)]
     )
 
 
@@ -224,7 +236,7 @@ def test_parameters_on_delegate_instruments(instrument_fixture, good_inst_delega
 
 
 def test_merge_user_and_class_attrs():
-    InferAttrs.add_attrs("attr1")
+    InferAttrs.add("attr1")
     attr_set = _merge_user_and_class_attrs("attr2")
     assert set(("attr1", "attr2")) == attr_set
 
@@ -233,15 +245,38 @@ def test_merge_user_and_class_attrs():
 
 
 def test_infer_attrs():
-    InferAttrs.clear_attrs()
+    InferAttrs.clear()
     assert InferAttrs.known_attrs() == ()
 
-    InferAttrs.add_attrs("attr1")
+    InferAttrs.add("attr1")
     assert set(InferAttrs.known_attrs()) == set(("attr1",))
 
-    InferAttrs.add_attrs("attr2")
-    InferAttrs.discard_attr("attr1")
+    InferAttrs.add("attr2")
+    InferAttrs.discard("attr1")
     assert set(InferAttrs.known_attrs()) == set(("attr2",))
 
-    InferAttrs.add_attrs(("attr1", "attr3"))
+    InferAttrs.add(("attr1", "attr3"))
     assert set(InferAttrs.known_attrs()) == set(("attr1", "attr2", "attr3"))
+
+
+def test_get_parameter_chain_with_loops(good_inst_delegates):
+    good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
+    good_inst_del_1.source = good_inst_del_3
+    parameter_chain = get_parameter_chain(good_inst_del_3, "linked_parameter")
+    expected_chain = (
+        good_inst_del_3,
+        good_inst_del_2,
+        good_inst_del_1,
+        good_inst_del_3,
+    )
+    assert np.all(
+        [parameter_chain[i] is param for i, param in enumerate(expected_chain)]
+    )
+
+
+def test_get_root_parameter_with_loops(good_inst_delegates):
+    good_inst_del_1, _, good_inst_del_3 = good_inst_delegates
+    good_inst_del_1.source = good_inst_del_3
+    with pytest.raises(InferError) as exc_info:
+        get_root_parameter(good_inst_del_3, "linked_parameter")
+    assert "generated a loop of linking parameters" in str(exc_info.value)
