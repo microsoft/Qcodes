@@ -275,8 +275,8 @@ def test_get_parameter_chain_with_loops(good_inst_delegates):
 
 
 def test_get_root_parameter_with_loops(good_inst_delegates):
-    good_inst_del_1, _, good_inst_del_3 = good_inst_delegates
+    good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
     good_inst_del_1.source = good_inst_del_3
     with pytest.raises(InferError) as exc_info:
-        get_root_parameter(good_inst_del_3, "linked_parameter")
+        get_root_parameter(good_inst_del_2, "linked_parameter")
     assert "generated a loop of linking parameters" in str(exc_info.value)
