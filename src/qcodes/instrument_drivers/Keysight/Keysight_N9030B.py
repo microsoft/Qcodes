@@ -50,12 +50,10 @@ class Trace(ParameterWithSetpoints):
         # the parameter classes should ideally be generic in instrument
         # and root instrument classes so we can specialize here.
         # for now we have to ignore a type error from pyright
-        self.instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
+        self.instrument: (
             KeysightN9030BSpectrumAnalyzerMode | KeysightN9030BPhaseNoiseMode
         )
-        self.root_instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
-            KeysightN9030B
-        )
+        self.root_instrument: KeysightN9030B
 
         self.number = number
         self.get_data = get_data

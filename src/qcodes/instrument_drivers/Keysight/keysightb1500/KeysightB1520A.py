@@ -883,16 +883,10 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
             setpoint_labels=(('Voltage',),) * 2,
             setpoint_units=(('V',),) * 2,
             instrument=instrument,
-            **kwargs)
-        # the parameter classes should ideally be generic in instrument
-        # and root instrument classes so we can specialize here.
-        # for now we have to ignore a type error from pyright
-        self.instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
-            "KeysightB1520A"
+            **kwargs,
         )
-        self.root_instrument: (  # pyright: ignore[reportIncompatibleMethodOverride]
-            "KeysightB1500"
-        )
+        self.instrument: "KeysightB1520A"
+        self.root_instrument: "KeysightB1500"
 
         self.update_name_label_unit_from_impedance_model()
 
