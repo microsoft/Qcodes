@@ -277,9 +277,8 @@ def xarray_to_h5netcdf_with_complex_numbers(
             path=file_path,
             engine="h5netcdf",
             invalid_netcdf=allow_invalid_netcdf,
-            compute=compute,  # pyright: ignore
+            compute=compute,
         )
-        # https://github.com/microsoft/pyright/issues/6069
         if not compute and maybe_write_job is not None:
             # Dask and therefor tqdm.dask is slow to
             # import and only used here so defer the import
