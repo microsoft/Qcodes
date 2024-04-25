@@ -450,7 +450,7 @@ class DummyChannel(InstrumentChannel):
         pass
 
 
-class DummyChannelInstrument(Instrument):
+class DummyChannelInstrument(DummyBase):
     """
     Dummy instrument with channels
     """
@@ -471,6 +471,25 @@ class DummyChannelInstrument(Instrument):
             channel = DummyChannel(self, chan_name, chan_id)
             channels.append(channel)
             self.add_submodule(chan_id, channel)
+        self.add_submodule("channels", channels.to_channel_tuple())
+
+
+class DummyChannelOnlyInstrument(DummyBase):
+    """
+    Dummy instrument with channels that have not been added as individual submodules.
+    Also use module names with _ in them to check that we can handle that.
+    """
+
+    def __init__(self, name: str, **kwargs: Any):
+        super().__init__(name, **kwargs)
+
+        channels = ChannelList(self, "Temp_Sensors", DummyChannel)
+        channel_ids: Sequence[str] = ("A_a", "B_b", "C_c", "D_d", "E_e", "F_f")
+        channel_names = tuple(f"Chan{chan_name}" for chan_name in channel_ids)
+
+        for chan_name, chan_id in zip(channel_names, channel_ids):
+            channel = DummyChannel(self, chan_name, chan_id)
+            channels.append(channel)
         self.add_submodule("channels", channels.to_channel_tuple())
 
 
