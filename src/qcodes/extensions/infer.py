@@ -43,30 +43,53 @@ def get_root_parameter(
     param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
 ) -> Parameter:
-    """Return the root parameter in a chain of DelegateParameters or other linking Parameters"""
+    """
+    Return the root parameter in a chain of DelegateParameters or other linking Parameters
+
+    This method calls get_parameter_chain and then checks for various error conditions
+    Args:
+        param: The DelegateParameter or other linking parameter to find the root parameter from
+        alt_source_attrs: The attribute names for custom linking parameters
+
+    Raises:
+        InferError: If the linking parameters do not end with a non-linking parameter
+        InferError: If the chain of linking parameters loops on itself
+    """
+
+    parameter_chain = get_parameter_chain(param, alt_source_attrs)
+    root_param = parameter_chain[-1]
+
+    if root_param is parameter_chain[0]:
+        raise InferError(f"{param} generated a loop of linking parameters")
+    if isinstance(root_param, DelegateParameter):
+        raise InferError(f"Parameter {param} is not attached to a source")
+
     alt_source_attrs_set = _merge_user_and_class_attrs(alt_source_attrs)
-
-    if isinstance(param, DelegateParameter):
-        if param.source is None:
-            raise InferError(f"Parameter {param} is not attached to a source")
-        return get_root_parameter(param.source)
-
     for alt_source_attr in alt_source_attrs_set:
         alt_source = getattr(param, alt_source_attr, DOES_NOT_EXIST)
         if alt_source is None:
             raise InferError(
                 f"Parameter {param} is not attached to a source on attribute {alt_source_attr}"
             )
-        elif isinstance(alt_source, Parameter):
-            return get_root_parameter(alt_source, alt_source_attrs=alt_source_attrs)
-    return param
+    return root_param
 
 
 def infer_instrument(
     param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
 ) -> InstrumentBase:
-    """Find the instrument that owns a parameter or delegate parameter."""
+    """
+    Find the instrument that owns a parameter or delegate parameter.
+
+    Args:
+        param: The DelegateParameter or other linking parameter to find the instrument from
+        alt_source_attrs: The attribute names for custom linking parameters
+
+    Raises:
+        InferError: If the linking parameters do not end with a non-linking parameter
+        InferError: If the instrument of the root parameter is None
+        InferError: If the instrument of the root parameter is not an instance of Instrument
+    """
     root_param = get_root_parameter(param, alt_source_attrs=alt_source_attrs)
     instrument = get_instrument_from_param(root_param)
     if isinstance(instrument, InstrumentModule):
@@ -81,7 +104,18 @@ def infer_instrument_module(
     param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
 ) -> InstrumentModule:
-    """Find the instrument module that owns a parameter or delegate parameter"""
+    """
+    Find the instrument module that owns a parameter or delegate parameter
+
+    Args:
+        param: The DelegateParameter or other linking parameter to find the instrument module from
+        alt_source_attrs: The attribute names for custom linking parameters
+
+    Raises:
+        InferError: If the linking parameters do not end with a non-linking parameter
+        InferError: If the instrument module of the root parameter is None
+        InferError: If the instrument module of the root parameter is not an instance of InstrumentModule
+    """
     root_param = get_root_parameter(param, alt_source_attrs=alt_source_attrs)
     channel = get_instrument_from_param(root_param)
     if isinstance(channel, InstrumentModule):
@@ -102,6 +136,15 @@ def infer_channel(
 def get_instrument_from_param(
     param: Parameter,
 ) -> InstrumentBase:
+    """
+    Return the instrument attribute from a parameter
+
+    Args:
+        param: The parameter to get the instrument module from
+
+    Raises:
+        InferError: If the parameter does not have an instrument
+    """
     if param.instrument is not None:
         return param.instrument
     raise InferError(f"Parameter {param} has no instrument")
@@ -111,7 +154,24 @@ def get_parameter_chain(
     param_chain: Parameter | Sequence[Parameter],
     alt_source_attrs: str | Sequence[str] | None = None,
 ) -> tuple[Parameter, ...]:
-    """Return the chain of DelegateParameters or other linking Parameters"""
+    """
+    Return the chain of DelegateParameters or other linking Parameters
+
+    This method traverses singly-linked parameters and returns the resulting chain
+    If the parameters loop, then the first and last linking parameters in the chain
+    will be identical. Otherwise, the chain starts with the initial argument passed
+    and ends when the chain terminates in either a non-linking parameter or a
+    linking parameter that links to None
+
+    The search prioritizes the `source` attribute of DelegateParameters first, and
+    then looks for other linking attributes in undetermined order.
+
+    Args:
+        param_chain: The initial linking parameter or a List linking parameters
+            from which to return the chain
+        alt_source_attrs: The attribute names for custom linking parameters
+    """
+
     alt_source_attrs_set = _merge_user_and_class_attrs(alt_source_attrs)
 
     if not isinstance(param_chain, Sequence):
@@ -123,6 +183,8 @@ def get_parameter_chain(
         if param.source is None:
             return tuple(param_chain)
         mutable_param_chain.append(param.source)
+        if param.source in param_chain:  # There is a loop in the links
+            return tuple(mutable_param_chain)
         return get_parameter_chain(
             mutable_param_chain,
             alt_source_attrs=alt_source_attrs,
@@ -130,10 +192,12 @@ def get_parameter_chain(
 
     for alt_source_attr in alt_source_attrs_set:
         alt_source = getattr(param, alt_source_attr, DOES_NOT_EXIST)
-        if alt_source is None:
+        if alt_source is None:  # Valid linking attribute, but no link parameter
             return tuple(param_chain)
         elif isinstance(alt_source, Parameter):
             mutable_param_chain.append(alt_source)
+            if alt_source in param_chain:  # There is a loop in the links
+                return tuple(mutable_param_chain)
             return get_parameter_chain(
                 mutable_param_chain,
                 alt_source_attrs=alt_source_attrs,
@@ -144,6 +208,7 @@ def get_parameter_chain(
 def _merge_user_and_class_attrs(
     alt_source_attrs: str | Sequence[str] | None = None,
 ) -> Iterable[str]:
+    """Merges user-supplied linking attributes with attributes from InferAttrs"""
     if alt_source_attrs is None:
         return InferAttrs.known_attrs()
     elif isinstance(alt_source_attrs, str):
