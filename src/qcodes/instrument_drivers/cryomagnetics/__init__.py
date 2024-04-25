@@ -1,4 +1,4 @@
-from ._cryomagnetics4G import (
+from ._cryomagnetics4g import (
     Cryomagnetics4GException,
     Cryomagnetics4GWarning,
     CryomagneticsModel4G,
