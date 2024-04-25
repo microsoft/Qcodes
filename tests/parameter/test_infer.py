@@ -4,9 +4,7 @@ from typing import Any
 
 import pytest
 
-from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
-from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
-from qcodes.parameters.infer import (
+from qcodes.extensions.infer import (
     InferAttrs,
     InferError,
     _merge_user_and_class_attrs,
@@ -15,6 +13,8 @@ from qcodes.parameters.infer import (
     infer_channel,
     infer_instrument,
 )
+from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
+from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
 
 
 class DummyModule(InstrumentModule):

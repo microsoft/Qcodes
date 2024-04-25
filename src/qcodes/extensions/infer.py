@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, ClassVar
 
 from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
-from qcodes.instrument.parameter import DelegateParameter, Parameter
+from qcodes.parameters import DelegateParameter, Parameter
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -21,7 +21,7 @@ class InferAttrs:
     _known_attrs: ClassVar[set[str]] = set()
 
     @classmethod
-    def add_attrs(cls, attrs: str | Iterable[str]) -> None:
+    def add(cls, attrs: str | Iterable[str]) -> None:
         if isinstance(attrs, str):
             attrs = (attrs,)
         cls._known_attrs.update(set(attrs))
@@ -31,11 +31,11 @@ class InferAttrs:
         return tuple(cls._known_attrs)
 
     @classmethod
-    def discard_attr(cls, attr: str) -> None:
+    def discard(cls, attr: str) -> None:
         cls._known_attrs.discard(attr)
 
     @classmethod
-    def clear_attrs(cls) -> None:
+    def clear(cls) -> None:
         cls._known_attrs = set()
 
 
@@ -77,7 +77,7 @@ def infer_instrument(
     raise InferError(f"Could not determine source instrument for parameter {param}")
 
 
-def infer_channel(
+def infer_instrument_module(
     param: Parameter,
     alt_source_attrs: Sequence[str] | None = None,
 ) -> InstrumentModule:
@@ -89,6 +89,14 @@ def infer_channel(
     raise InferError(
         f"Could not determine a root instrument channel for parameter {param}"
     )
+
+
+def infer_channel(
+    param: Parameter,
+    alt_source_attrs: Sequence[str] | None = None,
+) -> InstrumentModule:
+    """An alias for infer_instrument_module"""
+    return infer_instrument_module(param, alt_source_attrs)
 
 
 def get_instrument_from_param(
