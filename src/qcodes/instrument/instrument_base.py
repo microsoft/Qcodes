@@ -257,12 +257,26 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     def _get_component_by_name(
         self, potential_top_level_name: str, remaining_name_parts: list[str]
     ) -> MetadatableWithName:
+
+        log.debug(
+            "trying to find component %s on %s, remaining %s",
+            potential_top_level_name,
+            self.full_name,
+            remaining_name_parts,
+        )
         component: MetadatableWithName | None = None
 
         sub_component_name_map = {
             sub_component.short_name: sub_component
             for sub_component in self.submodules.values()
         }
+
+        channel_name_map: dict[str, InstrumentModule] = {}
+        for channel_list in self._channel_lists.values():
+            local_channels_name_map: dict[str, InstrumentModule] = {
+                channel.short_name: channel for channel in channel_list
+            }
+            channel_name_map.update(local_channels_name_map.items())
 
         if potential_top_level_name in self.parameters:
             component = self.parameters[potential_top_level_name]
@@ -283,12 +297,17 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 remaining_name = "_".join(remaining_name_parts)
                 component = component.get_component(remaining_name)
                 remaining_name_parts = []
+        elif potential_top_level_name in channel_name_map:
+            component = channel_name_map[potential_top_level_name]
+            if len(remaining_name_parts) > 0:
+                remaining_name_parts.reverse()
+                remaining_name = "_".join(remaining_name_parts)
+                component = component.get_component(remaining_name)
+                remaining_name_parts = []
 
         if component is not None:
             if len(remaining_name_parts) == 0:
                 return component
-
-            remaining_name_parts.reverse()
 
         if len(remaining_name_parts) == 0:
             raise KeyError(
@@ -299,7 +318,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         new_potential_top_level_name = (
             f"{potential_top_level_name}_{remaining_name_parts.pop()}"
         )
-        remaining_name_parts.reverse()
+
         component = self._get_component_by_name(
             new_potential_top_level_name, remaining_name_parts
         )
