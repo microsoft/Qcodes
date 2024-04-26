@@ -39,8 +39,8 @@ def set_data_export_type(export_type: str) -> None:
 
     else:
         _log.warning(
-            "Could not set export type to '%s' because it is not supported."
-            % export_type
+            "Could not set export type to '%s' because it is not supported.",
+            export_type,
         )
 
 
