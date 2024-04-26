@@ -1,0 +1,2 @@
+Station.get_component and Instrument.get_component has gained the ability to lookup a component
+on an instrument that is only added as a member of a chanellist/tuple and not added as an individual component.

@@ -15,6 +15,7 @@ from qcodes import validators
 from qcodes.instrument import Instrument
 from qcodes.instrument_drivers.mock_instruments import (
     DummyChannelInstrument,
+    DummyChannelOnlyInstrument,
     DummyInstrument,
 )
 from qcodes.monitor import Monitor
@@ -891,14 +892,22 @@ def test_station_config_created_with_multiple_config_files() -> None:
 
 def test_get_component_by_name() -> None:
     instr = DummyChannelInstrument(name="dummy")
+    instr2 = DummyChannelOnlyInstrument(name="some_other_dummy")
     param = Parameter(name="param", set_cmd=None, get_cmd=None)
-    station = Station(instr, param)
+    station = Station(instr, instr2, param)
 
     assert station.get_component("dummy") is instr
     assert station.get_component("dummy_A") is instr.A
     assert station.get_component("dummy_ChanA") is instr.A
     assert station.get_component("dummy_A_temperature") is instr.A.temperature
     assert station.get_component("dummy_ChanA_temperature") is instr.A.temperature
+
+    assert station.get_component("some_other_dummy") is instr2
+    assert station.get_component("some_other_dummy_ChanA_a") is instr2.channels[0]
+    assert (
+        station.get_component("some_other_dummy_ChanA_a_temperature")
+        is instr2.channels[0].temperature
+    )
 
     assert station.get_component("param") is param
 
