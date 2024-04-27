@@ -17,10 +17,12 @@ from qcodes.logger import get_instrument_logger
 from qcodes.utils import DelayedKeyboardInterrupt
 
 from .instrument import Instrument
-from .instrument_base import InstrumentBase
+from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
@@ -75,6 +77,7 @@ class VisaInstrument(Instrument):
             ``qcodes.instruments.sims:AimTTi_PL601P.yaml`` in which case it is loaded
             from the supplied module. Note that it is an error to pass both
             ``pyvisa_sim_file`` and ``visalib``.
+        **kwargs: Other kwargs are forwarded to the baseclass.
 
     See help for :class:`.Instrument` for additional information on writing
     instrument subclasses.
@@ -90,7 +93,7 @@ class VisaInstrument(Instrument):
         device_clear: bool = True,
         visalib: str | None = None,
         pyvisa_sim_file: str | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
 
         super().__init__(name, **kwargs)

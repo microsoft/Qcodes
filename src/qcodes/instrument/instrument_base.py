@@ -7,6 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
+from typing_extensions import TypedDict
 
 from qcodes.logger import get_instrument_logger
 from qcodes.metadatable import Metadatable, MetadatableWithName
@@ -16,6 +17,8 @@ from qcodes.utils import DelegateAttributes, full_class
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
+    from typing_extensions import NotRequired
+
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -23,6 +26,10 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
+
+class InstrumentBaseKWArgs(TypedDict):
+    metadata: NotRequired[Mapping[Any, Any] | None]
+    label: NotRequired[str | None]
 
 class InstrumentBase(MetadatableWithName, DelegateAttributes):
     """

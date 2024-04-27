@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from qcodes.instrument import ChannelList, Instrument, InstrumentBase, InstrumentChannel
+from qcodes.instrument import (
+    ChannelList,
+    Instrument,
+    InstrumentBase,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+)
 from qcodes.parameters import (
     ArrayParameter,
     MultiParameter,
@@ -20,6 +26,8 @@ from qcodes.validators import Sequence as ValidatorSequence
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
+
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -887,10 +895,15 @@ class SnapShotTestInstrument(DummyBase):
             a subset of params
     """
 
-    def __init__(self, name: str, params: Sequence[str] = ('v1', 'v2', 'v3'),
-                 params_to_skip: Sequence[str] = ('v2')):
+    def __init__(
+        self,
+        name: str,
+        params: Sequence[str] = ("v1", "v2", "v3"),
+        params_to_skip: Sequence[str] = ("v2"),
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
 
-        super().__init__(name)
+        super().__init__(name, **kwargs)
 
         if not(set(params_to_skip).issubset(params)):
             raise ValueError('Invalid input; params_to_skip must be a subset '

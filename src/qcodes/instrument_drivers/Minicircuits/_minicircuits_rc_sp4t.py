@@ -1,8 +1,16 @@
 import math
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, InstrumentChannel, IPInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    IPInstrument,
+)
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class MiniCircuitsRCSP4TChannel(InstrumentChannel):
@@ -66,10 +74,17 @@ class MiniCircuitsRCSP4T(IPInstrument):
         name: the name of the instrument
         address: ip address ie "10.0.0.1"
         port: port to connect to default Telnet:23
+        **kwargs: Forwarded to the baseclass
     """
 
-    def __init__(self, name: str, address: str, port: int = 23):
-        super().__init__(name, address, port)
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        port: int = 23,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        super().__init__(name, address, port, **kwargs)
         self.flush_connection()
 
         channels = ChannelList(
