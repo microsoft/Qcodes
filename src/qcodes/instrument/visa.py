@@ -47,6 +47,18 @@ def _close_visa_handle(
         # the resource is already closed
         pass
 
+
+class VisaInstrumentNoTerminatorKWArgs(InstrumentBaseKWArgs):
+    timeout: float
+    device_clear: bool
+    visalib: str | None
+    pyvisa_sim_file: str | None
+
+
+class VisaInstrumentKWArgs(VisaInstrumentNoTerminatorKWArgs):
+    terminator: str | None
+
+
 class VisaInstrument(Instrument):
 
     """

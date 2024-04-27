@@ -19,7 +19,7 @@ from .channel import ChannelList, ChannelTuple, InstrumentChannel, InstrumentMod
 from .instrument import Instrument, find_or_create_instrument
 from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .ip import IPInstrument
-from .visa import VisaInstrument
+from .visa import VisaInstrument, VisaInstrumentKWArgs, VisaInstrumentNoTerminatorKWArgs
 
 __all__ = [
     "ChannelList",
@@ -31,5 +31,7 @@ __all__ = [
     "InstrumentChannel",
     "InstrumentModule",
     "VisaInstrument",
+    "VisaInstrumentNoTerminatorKWArgs",
+    "VisaInstrumentKWArgs",
     "find_or_create_instrument",
 ]
