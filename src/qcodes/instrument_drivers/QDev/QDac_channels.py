@@ -10,11 +10,19 @@ import pyvisa.constants
 from pyvisa.resources.serial import SerialInstrument
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    Instrument,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import MultiChannelInstrumentParameter, ParamRawDataType
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -176,12 +184,14 @@ class QDevQDac(VisaInstrument):
     # set nonzero value (seconds) to accept older status when reading settings
     max_status_age = 1
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 num_chans: int = 48,
-                 update_currents: bool = True,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        num_chans: int = 48,
+        update_currents: bool = True,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
         """
         Instantiates the instrument.
 

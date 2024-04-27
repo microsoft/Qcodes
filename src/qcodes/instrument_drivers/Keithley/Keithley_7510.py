@@ -2,7 +2,11 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypedDict, Union, cas
 
 import numpy as np
 
-from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentNoTerminatorKWArgs,
+)
 from qcodes.parameters import (
     DelegateParameter,
     MultiParameter,
@@ -16,6 +20,8 @@ from qcodes.validators import Arrays, Enum, Ints, Lists, Numbers
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from types import TracebackType
+
+    from typing_extensions import Unpack
 
 
 class DataArray7510(MultiParameter):
@@ -683,7 +689,13 @@ class Keithley7510(VisaInstrument):
     The QCoDeS driver for the Keithley 7510 DMM
     """
 
-    def __init__(self, name: str, address: str, terminator: str = "\n", **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        terminator: str = "\n",
+        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+    ):
         """
         Create an instance of the instrument.
 

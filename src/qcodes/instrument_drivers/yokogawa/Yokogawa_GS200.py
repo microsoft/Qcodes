@@ -1,9 +1,16 @@
 from functools import partial
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
-from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentNoTerminatorKWArgs,
+)
 from qcodes.parameters import DelegateParameter
 from qcodes.validators import Bool, Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 ModeType = Literal["CURR", "VOLT"]
 
@@ -265,7 +272,11 @@ class YokogawaGS200(VisaInstrument):
     """
 
     def __init__(
-        self, name: str, address: str, terminator: str = "\n", **kwargs: Any
+        self,
+        name: str,
+        address: str,
+        terminator: str = "\n",
+        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
     ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 

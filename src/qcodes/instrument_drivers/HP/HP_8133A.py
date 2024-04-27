@@ -1,7 +1,10 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentNoTerminatorKWArgs
 from qcodes.validators import Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class HP8133A(VisaInstrument):
@@ -9,7 +12,13 @@ class HP8133A(VisaInstrument):
     QCoDeS driver for Hewlett Packard 8133A Pulse Generator.
     """
 
-    def __init__(self, name: str, address: str, reset: bool = False, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        reset: bool = False,
+        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+    ):
         super().__init__(name, address, terminator="\n", **kwargs)
 
         self.add_parameter(
