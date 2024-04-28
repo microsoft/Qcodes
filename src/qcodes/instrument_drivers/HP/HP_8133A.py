@@ -17,9 +17,10 @@ class HP8133A(VisaInstrument):
         name: str,
         address: str,
         reset: bool = False,
+        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
     ):
-        super().__init__(name, address, terminator="\n", **kwargs)
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter(
             name="frequency",

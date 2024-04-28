@@ -17,7 +17,7 @@ class Keithley2400(VisaInstrument):
         self,
         name: str,
         address: str,
-        terminator="\n",
+        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
     ):
         super().__init__(name, address, terminator=terminator, **kwargs)

@@ -147,7 +147,7 @@ class KeithleyS46(VisaInstrument):
         self,
         name: str,
         address: str,
-        terminator="\n",
+        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
     ):
 
