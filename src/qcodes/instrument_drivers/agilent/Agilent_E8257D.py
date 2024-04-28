@@ -1,12 +1,14 @@
 import warnings
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentNoTerminatorKWArgs
 from qcodes.parameters import create_on_off_val_mapping
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 class AgilentE8257D(VisaInstrument):
     """
@@ -22,7 +24,7 @@ class AgilentE8257D(VisaInstrument):
         address: str,
         step_attenuator: Optional[bool] = None,
         terminator: str = "\n",
-        **kwargs: Any
+        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
     ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
