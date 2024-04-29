@@ -1,6 +1,16 @@
 from enum import IntFlag
 from itertools import takewhile
-from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Optional,
+    SupportsBytes,
+    SupportsIndex,
+    TextIO,
+    Union,
+    cast,
+)
 
 from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
 from qcodes.parameters import Group, GroupParameter
@@ -8,6 +18,8 @@ from qcodes.validators import Enum, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from typing_extensions import Buffer, Self
 
 
 def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
@@ -78,6 +90,60 @@ class LakeshoreModel325Status(IntFlag):
     temp_overrange = 32
     temp_underrange = 16
     invalid_reading = 1
+
+    # we reimplement from_bytes and to_bytes in order to fix docstrings that are incorrectly formatted
+    # this in turn will enable us to build docs with warnings as errors.
+    # This can be removed for python versions where https://github.com/python/cpython/pull/117847
+    # is merged
+    @classmethod
+    def from_bytes(
+        cls: "type[Self]",
+        bytes: "Union[Iterable[SupportsIndex], SupportsBytes, Buffer]",
+        byteorder: Literal["big", "little"] = "big",
+        *,
+        signed: bool = False,
+    ) -> "Self":
+        """
+        Return the integer represented by the given array of bytes.
+
+        Args:
+            bytes: Holds the array of bytes to convert.  The argument must either
+                support the buffer protocol or be an iterable object producing bytes.
+                Bytes and bytearray are examples of built-in objects that support the
+                buffer protocol.
+            byteorder: The byte order used to represent the integer.  If byteorder is 'big',
+                the most significant byte is at the beginning of the byte array.  If
+                byteorder is 'little', the most significant byte is at the end of the
+                byte array.  To request the native byte order of the host system, use
+                `sys.byteorder` as the byte order value.  Default is to use 'big'.
+            signed: Indicates whether two\'s complement is used to represent the integer.
+        """
+        return super().from_bytes(bytes, byteorder, signed=signed)
+
+    def to_bytes(
+        self,
+        length: SupportsIndex = 1,
+        byteorder: Literal["little", "big"] = "big",
+        *,
+        signed: bool = False,
+    ) -> bytes:
+        """
+        Return an array of bytes representing an integer.
+
+        Args:
+            length: Length of bytes object to use.  An OverflowError is raised if the
+                integer is not representable with the given number of bytes.  Default
+                is length 1.
+            byteorder: The byte order used to represent the integer.  If byteorder is \'big\',
+                the most significant byte is at the beginning of the byte array.  If
+                byteorder is \'little\', the most significant byte is at the end of the
+                byte array. To request the native byte order of the host system, use
+                `sys.byteorder` as the byte order value.  Default is to use \'big\'.
+            signed: Determines whether two\'s complement is used to represent the integer.
+                If signed is False and a negative integer is given, an OverflowError
+                is raised.
+        """
+        return super().to_bytes(length, byteorder, signed=signed)
 
 
 class LakeshoreModel325Curve(InstrumentChannel):
