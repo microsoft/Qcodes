@@ -2,7 +2,7 @@ import logging
 import signal
 import threading
 from types import FrameType, TracebackType
-from typing import Optional, cast
+from typing import Any, Callable, Optional, Union, cast
 
 log = logging.getLogger(__name__)
 
@@ -16,8 +16,11 @@ class DelayedKeyboardInterrupt:
 
     Inspired by https://stackoverflow.com/questions/842557/how-to-prevent-a-block-of-code-from-being-interrupted-by-keyboardinterrupt-in-py
     """
-    signal_received = None
-    old_handler = None
+
+    signal_received: Optional[tuple[int, Optional[FrameType]]] = None
+    # the handler type is seemingly only defined in typesheeed so copy it here
+    # manually https://github.com/python/typeshed/blob/main/stdlib/signal.pyi
+    old_handler: Union[Callable[[int, Optional[FrameType]], Any], int, None] = None
 
     def __enter__(self) -> None:
         is_main_thread = threading.current_thread() is threading.main_thread()
