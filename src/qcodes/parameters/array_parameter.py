@@ -200,10 +200,10 @@ class ArrayParameter(ParameterBase):
             (
                 "Parameter class:",
                 "",
-                "* `name` %s" % self.name,
-                "* `label` %s" % self.label,
-                "* `unit` %s" % self.unit,
-                "* `shape` %s" % repr(self.shape),
+                f"* `name` {self.name}",
+                f"* `label` {self.label}",
+                f"* `unit` {self.unit}",
+                f"* `shape` {self.shape!r}",
             )
         )
 

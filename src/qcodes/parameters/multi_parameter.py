@@ -211,10 +211,10 @@ class MultiParameter(ParameterBase):
             (
                 "MultiParameter class:",
                 "",
-                "* `name` %s" % self.name,
-                "* `names` %s" % ", ".join(self.names),
-                "* `labels` %s" % ", ".join(self.labels),
-                "* `units` %s" % ", ".join(self.units),
+                f"* `name` {self.name}",
+                "* `names` {}".format(", ".join(self.names)),
+                "* `labels` {}".format(", ".join(self.labels)),
+                "* `units` {}".format(", ".join(self.units)),
             )
         )
 
