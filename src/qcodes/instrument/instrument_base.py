@@ -28,8 +28,22 @@ log = logging.getLogger(__name__)
 
 
 class InstrumentBaseKWArgs(TypedDict):
+    """
+    This TypedDict defines the type of the kwargs that can be passed to the InstrumentBase class.
+    A subclass of VisaInstrument should take ``**kwargs: Unpack[InstrumentBaseKWArgs]`` as input
+    and forward this to the super class to ensure that it can accept all the arguments defined here.
+    """
+
     metadata: NotRequired[Mapping[Any, Any] | None]
+    """
+    Additional static metadata to add to this
+    instrument's JSON snapshot.
+    """
     label: NotRequired[str | None]
+    """
+    Nicely formatted name of the instrument; if None,
+    the ``name`` is used.
+    """
 
 class InstrumentBase(MetadatableWithName, DelegateAttributes):
     """

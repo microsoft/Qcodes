@@ -49,12 +49,47 @@ def _close_visa_handle(
 
 
 class VisaInstrumentKWArgs(TypedDict):
+    """
+    This TypedDict defines the type of the kwargs that can be passed to the VisaInstrument class.
+    A subclass of VisaInstrument should take ``**kwargs: Unpack[VisaInstrumentKWArgs]`` as input
+    and forward this to the super class to ensure that it can accept all the arguments defined here.
+    """
+
     metadata: NotRequired[Mapping[Any, Any] | None]
+    """
+    Additional static metadata to add to this
+    instrument's JSON snapshot.
+    """
     label: NotRequired[str | None]
+    """
+    Nicely formatted name of the instrument; if None,
+    the ``name`` is used.
+    """
     timeout: NotRequired[float]
+    "Seconds to allow for responses. Default 5."
     device_clear: NotRequired[bool]
+    "Perform a device clear. Default True."
     visalib: NotRequired[str | None]
+    """
+    Visa backend to use when connecting to this instrument.
+    This should be in the form of a string '<pathtofile>@<backend>'.
+    Both parts can be omitted and pyvisa will try to infer the
+    path to the visa backend file.
+    By default the IVI backend is used if found, but '@py' will use the
+    ``pyvisa-py`` backend. Note that QCoDeS does not install (or even require)
+    ANY backends, it is up to the user to do that. see eg:
+    http://pyvisa.readthedocs.org/en/stable/names.html
+    """
     pyvisa_sim_file: NotRequired[str | None]
+    """
+    Name of a pyvisa-sim yaml file used to simulate the instrument.
+    The file is expected to be loaded from a python module.
+    The file can be given either as only the file name in which case it is loaded
+    from ``qcodes.instruments.sims`` or in the format ``module:filename`` e.g.
+    ``qcodes.instruments.sims:AimTTi_PL601P.yaml`` in which case it is loaded
+    from the supplied module. Note that it is an error to pass both
+    ``pyvisa_sim_file`` and ``visalib``.
+    """
 
 
 class VisaInstrument(Instrument):
