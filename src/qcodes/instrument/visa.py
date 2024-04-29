@@ -48,15 +48,11 @@ def _close_visa_handle(
         pass
 
 
-class VisaInstrumentNoTerminatorKWArgs(InstrumentBaseKWArgs):
+class VisaInstrumentKWArgs(InstrumentBaseKWArgs):
     timeout: float
     device_clear: bool
     visalib: str | None
     pyvisa_sim_file: str | None
-
-
-class VisaInstrumentKWArgs(VisaInstrumentNoTerminatorKWArgs):
-    terminator: str | None
 
 
 class VisaInstrument(Instrument):

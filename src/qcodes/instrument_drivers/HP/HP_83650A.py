@@ -30,12 +30,13 @@ class HP83650A(VisaInstrument):
         verbose: int = 1,
         reset: bool = False,
         server_name: Optional[str] = None,
+        terminator: Optional[str] = None,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
 
         self.verbose = verbose
         log.debug('Initializing instrument')
-        super().__init__(name, address, **kwargs)
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter('frequency',
                            label='Frequency',

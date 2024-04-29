@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
 
-from qcodes.instrument import VisaInstrument, VisaInstrumentNoTerminatorKWArgs
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Numbers
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ class AgilentE8267C(VisaInstrument):
         name: str,
         address: str,
         terminator: str = "\n",
-        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
         # general commands

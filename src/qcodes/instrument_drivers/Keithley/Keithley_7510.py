@@ -5,7 +5,7 @@ import numpy as np
 from qcodes.instrument import (
     InstrumentChannel,
     VisaInstrument,
-    VisaInstrumentNoTerminatorKWArgs,
+    VisaInstrumentKWArgs,
 )
 from qcodes.parameters import (
     DelegateParameter,
@@ -694,7 +694,7 @@ class Keithley7510(VisaInstrument):
         name: str,
         address: str,
         terminator: str = "\n",
-        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         """
         Create an instance of the instrument.

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional
 from qcodes.instrument import (
     Instrument,
     VisaInstrument,
-    VisaInstrumentNoTerminatorKWArgs,
+    VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Parameter, ParamRawDataType
 
@@ -148,7 +148,7 @@ class KeithleyS46(VisaInstrument):
         name: str,
         address: str,
         terminator: str = "\n",
-        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
 
         super().__init__(name, address, terminator=terminator, **kwargs)

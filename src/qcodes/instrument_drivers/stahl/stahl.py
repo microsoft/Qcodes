@@ -17,7 +17,7 @@ from qcodes.instrument import (
     ChannelList,
     InstrumentChannel,
     VisaInstrument,
-    VisaInstrumentNoTerminatorKWArgs,
+    VisaInstrumentKWArgs,
 )
 from qcodes.validators import Numbers
 
@@ -169,9 +169,10 @@ class Stahl(VisaInstrument):
         self,
         name: str,
         address: str,
-        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+        terminator: Optional[str] = "\r",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-        super().__init__(name, address, terminator="\r", **kwargs)
+        super().__init__(name, address, terminator=terminator, **kwargs)
         if isinstance(self.visa_handle, TCPIPSocket):
             pass  # allow connection to remote serial device
         elif isinstance(self.visa_handle, SerialInstrument):

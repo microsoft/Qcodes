@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 from qcodes.instrument import (
     InstrumentChannel,
     VisaInstrument,
-    VisaInstrumentNoTerminatorKWArgs,
+    VisaInstrumentKWArgs,
 )
 from qcodes.parameters import DelegateParameter
 from qcodes.validators import Bool, Enum, Ints, Numbers
@@ -276,7 +276,7 @@ class YokogawaGS200(VisaInstrument):
         name: str,
         address: str,
         terminator: str = "\n",
-        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 

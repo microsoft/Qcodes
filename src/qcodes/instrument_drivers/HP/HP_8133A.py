@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from qcodes.instrument import VisaInstrument, VisaInstrumentNoTerminatorKWArgs
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Numbers
 
 if TYPE_CHECKING:
@@ -18,7 +18,7 @@ class HP8133A(VisaInstrument):
         address: str,
         reset: bool = False,
         terminator: str = "\n",
-        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         super().__init__(name, address, terminator=terminator, **kwargs)
 

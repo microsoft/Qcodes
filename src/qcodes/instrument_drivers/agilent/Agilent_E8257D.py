@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.instrument import VisaInstrument, VisaInstrumentNoTerminatorKWArgs
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import create_on_off_val_mapping
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ class AgilentE8257D(VisaInstrument):
         address: str,
         step_attenuator: Optional[bool] = None,
         terminator: str = "\n",
-        **kwargs: "Unpack[VisaInstrumentNoTerminatorKWArgs]",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         super().__init__(name, address, terminator=terminator, **kwargs)
 
