@@ -22,7 +22,7 @@ from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from typing_extensions import Unpack
+    from typing_extensions import NotRequired, Unpack
 
 VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
 
@@ -49,10 +49,10 @@ def _close_visa_handle(
 
 
 class VisaInstrumentKWArgs(InstrumentBaseKWArgs):
-    timeout: float
-    device_clear: bool
-    visalib: str | None
-    pyvisa_sim_file: str | None
+    timeout: NotRequired[float]
+    device_clear: NotRequired[bool]
+    visalib: NotRequired[str | None]
+    pyvisa_sim_file: NotRequired[str | None]
 
 
 class VisaInstrument(Instrument):
