@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 import pyvisa
 import pyvisa.constants
+import pyvisa.resources
 from pytest import FixtureRequest
 
 from qcodes.instrument import Instrument, VisaInstrument
@@ -39,6 +40,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
     def __init__(self):
         self.state = 0
         self.closed = False
+        self._session = None  # required for session property
 
     def clear(self):
         self.state = 0
