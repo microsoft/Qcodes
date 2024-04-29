@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import warnings
 from importlib.resources import as_file, files
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 from weakref import finalize
 
 import pyvisa
@@ -20,7 +20,7 @@ from .instrument import Instrument
 from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
     from typing_extensions import NotRequired, Unpack
 
@@ -48,7 +48,9 @@ def _close_visa_handle(
         pass
 
 
-class VisaInstrumentKWArgs(InstrumentBaseKWArgs):
+class VisaInstrumentKWArgs(TypedDict):
+    metadata: NotRequired[Mapping[Any, Any] | None]
+    label: NotRequired[str | None]
     timeout: NotRequired[float]
     device_clear: NotRequired[bool]
     visalib: NotRequired[str | None]
