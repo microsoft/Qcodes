@@ -1,8 +1,11 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import DelegateParameter, Parameter
 from qcodes.validators import Enum, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class BaselSP983(Instrument):
@@ -29,10 +32,14 @@ class BaselSP983(Instrument):
             used to set offset voltage parameter of the preamp and the
             source parameter should represent a voltage source that is
             connected to the "Offset Input Voltage" connector of the SP983C.
+        **kwargs: Forwarded to base class.
     """
 
     def __init__(
-        self, name: str, input_offset_voltage: Optional[Parameter] = None, **kwargs: Any
+        self,
+        name: str,
+        input_offset_voltage: Optional[Parameter] = None,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         super().__init__(name, **kwargs)
 

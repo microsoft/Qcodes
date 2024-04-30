@@ -1,12 +1,15 @@
 import logging
 from functools import partial
-from typing import Any, Union
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import ArrayParameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -112,8 +115,14 @@ class HP8753D(VisaInstrument):
     QCoDeS driver for the Hewlett Packard 8753D Network Analyzer.
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\n", **kwargs)
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        terminator: str = "\n",
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
+        super().__init__(name, address, terminator=terminator, **kwargs)
 
         self.add_parameter(
             "start_freq",
