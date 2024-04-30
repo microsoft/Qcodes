@@ -124,7 +124,7 @@ iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.4
     # via qcodes
-ipython==8.18.1; python_version == "3.9"
+ipython==8.24.0; python_version == "3.9"
 ipython==8.24.0; python_version >= "3.10"
     # via
     #   ipykernel
