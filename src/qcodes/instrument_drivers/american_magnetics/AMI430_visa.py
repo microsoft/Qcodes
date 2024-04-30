@@ -187,7 +187,7 @@ class AMIModel430(VisaInstrument):
                 category=QCoDeSDeprecationWarning,
             )
             # this key should not be here so mypy complains about it
-            kwargs.pop("has_current_rating")  # type: ignore
+            kwargs.pop("has_current_rating")  # type: ignore[typeddict-item]
 
         super().__init__(
             name,
