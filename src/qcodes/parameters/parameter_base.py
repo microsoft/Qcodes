@@ -77,7 +77,16 @@ class _SetParamContext:
             self._parameter._settable = self._original_settable
 
         if self._parameter.cache() != self._original_value:
-            self._parameter.set(self._original_value)
+            try:
+                self._parameter.validate(self._original_value)
+            except Exception:
+                # Likely an uninitialized Parameter
+                vals = self._parameter._vals
+                self._parameter._vals = []
+                self._parameter.cache.set(self._original_value)
+                self._parameter._vals = vals
+            else:
+                self._parameter.set(self._original_value)
 
 
 def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
