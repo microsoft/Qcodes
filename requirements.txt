@@ -145,7 +145,7 @@ jsonpointer==2.4
     # via sphinx-jsonschema
 jsonref==1.1.0
     # via zhinst-toolkit
-jsonschema==4.21.1
+jsonschema==4.22.0
     # via
     #   nbformat
     #   qcodes
