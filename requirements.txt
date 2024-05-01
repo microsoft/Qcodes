@@ -95,7 +95,7 @@ fsspec==2024.3.1
     # via dask
 future==1.0.0
     # via uncertainties
-google-api-core==2.18.0
+google-api-core==2.19.0
     # via opencensus
 google-auth==2.29.0
     # via google-api-core
