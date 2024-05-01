@@ -506,12 +506,12 @@ xarray==2024.3.0
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==24.1.55273
+zhinst-core==24.4.57831
     # via
     #   zhinst-toolkit
     #   zhinst-utils
 zhinst-qcodes==0.5.3
-zhinst-timing-models==24.1.54288
+zhinst-timing-models==24.4.57831
     # via zhinst-utils
 zhinst-toolkit==0.6.3
     # via zhinst-qcodes
