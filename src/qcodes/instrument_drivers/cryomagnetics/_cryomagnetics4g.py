@@ -5,6 +5,8 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+from pyvisa import VisaIOError
+
 from qcodes.instrument import VisaInstrument
 from qcodes.validators import Enum, Numbers
 
@@ -377,3 +379,40 @@ class CryomagneticsModel4G(VisaInstrument):
         for range_index, (upper_limit, max_rate) in self.max_current_limits.items():
             self.write(f"RANGE {range_index} {upper_limit}")
             self.write(f"RATE {range_index} {max_rate}")
+
+    def write_raw(self, cmd: str) -> None:
+
+        try:
+            super().write_raw(cmd)
+        except VisaIOError as err:
+            # The ami communication has found to be unstable
+            # so we retry the communication here
+            msg = f"Got VisaIOError while writing {cmd} to instrument."
+            if self._RETRY_WRITE_ASK:
+                msg += f" Will retry in {self._RETRY_TIME} sec."
+            self.log.exception(msg)
+            if self._RETRY_WRITE_ASK:
+                time.sleep(self._RETRY_TIME)
+                self.device_clear()
+                super().write_raw(cmd)
+            else:
+                raise err
+
+    def ask_raw(self, cmd: str) -> str:
+
+        try:
+            result = super().ask_raw(cmd)
+        except VisaIOError as err:
+            # The communication has found to be unstable
+            # so we retry the communication here
+            msg = f"Got VisaIOError while asking the instrument: {cmd}"
+            if self._RETRY_WRITE_ASK:
+                msg += f" Will retry in {self._RETRY_TIME} sec."
+            self.log.exception(msg)
+            if self._RETRY_WRITE_ASK:
+                time.sleep(self._RETRY_TIME)
+                self.device_clear()
+                result = super().ask_raw(cmd)
+            else:
+                raise err
+        return result
