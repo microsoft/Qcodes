@@ -1,0 +1,22 @@
+Added a new QCoDeS driver for the Cryomagnetics Model 4G superconducting magnet power supply.
+
+The `CryomagneticsModel4G` driver provides an interface to control and communicate with the Cryomagnetics Model 4G
+superconducting magnet power supply using the VISA protocol. It allows setting and reading the magnetic field, ramp rate,
+and various other parameters of the instrument.
+
+Key features of the driver include:
+
+* Setting and reading the magnetic field in Tesla, considering the coil constant and current limits.
+
+* Controlling the ramp rate in Tesla per minute.
+
+* Checking the operating state of the magnet and handling quench conditions and power module failures.
+
+* Blocking and non-blocking ramping of the magnetic field.
+
+* Handling communication errors and retrying failed operations.
+
+The driver is located in ``qcodes/instrument_drivers/cryomagnetics/cryomagnetics_4g.py``.
+
+For more details and usage examples, please refer to the driver's documentation:
+https://qcodes.github.io/Qcodes/examples/driver_examples/Qcodes_example_with_cryomagnetics4g.html
