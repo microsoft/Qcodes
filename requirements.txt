@@ -352,7 +352,7 @@ pyzmq==26.0.2
     #   ipykernel
     #   jupyter-client
 qcodes-loop==0.1.2
-referencing==0.35.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
