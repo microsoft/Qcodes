@@ -6,7 +6,14 @@ from __future__ import annotations
 import logging
 import os
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Callable, Generic, Literal
+
+from qcodes.metadatable.metadatable_base import (
+    EmptyMetaDataModel,
+    EmptyTypedSnapShot,
+    MetaDataSnapShotType,
+    SnapShotType,
+)
 
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
@@ -21,7 +28,10 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class Parameter(ParameterBase):
+class Parameter(
+    ParameterBase[SnapShotType, MetaDataSnapShotType],
+    Generic[SnapShotType, MetaDataSnapShotType],
+):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -179,6 +189,8 @@ class Parameter(ParameterBase):
         docstring: str | None = None,
         initial_cache_value: float | str | None = None,
         bind_to_instrument: bool = True,
+        model: type[SnapShotType] = EmptyTypedSnapShot,
+        metadata_model: type[MetaDataSnapShotType] = EmptyMetaDataModel,
         **kwargs: Any,
     ) -> None:
         def _get_manual_parameter(self: Parameter) -> ParamRawDataType:
@@ -240,6 +252,8 @@ class Parameter(ParameterBase):
             vals=vals,
             max_val_age=max_val_age,
             bind_to_instrument=bind_to_instrument,
+            model=model,
+            metadata_model=metadata_model,
             **kwargs,
         )
 
@@ -439,6 +453,19 @@ class Parameter(ParameterBase):
             >[15.0, 13.5, 12.0, 10.5]
         """
         return SweepFixedValues(self, start=start, stop=stop, step=step, num=num)
+
+
+class ParameterSnapshot(EmptyTypedSnapShot):
+    # need to handle replacing __class__ with a different name that is compatible
+    value: Any  # use paramdatatype
+    raw_value: Any  # useparamdatatype
+    ts: str | None
+    inter_delay: float
+    name: str
+    post_delay: float
+    validators: list[str]
+    label: str
+    unit: str
 
 
 class ManualParameter(Parameter):
