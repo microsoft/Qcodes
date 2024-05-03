@@ -5,10 +5,10 @@ import collections.abc
 import logging
 import warnings
 from collections.abc import Callable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np
-from typing_extensions import TypedDict, deprecated
+from typing_extensions import TypedDict, TypeVar, deprecated
 
 from qcodes.logger import get_instrument_logger
 from qcodes.metadatable import Metadatable, MetadatableWithName
@@ -27,7 +27,7 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
-TParameter = TypeVar("TParameter", bound=ParameterBase)
+TParameter = TypeVar("TParameter", bound=ParameterBase, default=Parameter)
 
 
 class InstrumentBaseKWArgs(TypedDict):
