@@ -132,7 +132,8 @@ class Monitor(Thread):
     """
     QCodes Monitor - WebSockets server to monitor qcodes parameters.
     """
-    running = None
+
+    running: Monitor | None = None
 
     def __init__(
         self,

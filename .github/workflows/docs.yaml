@@ -39,16 +39,11 @@ jobs:
             python-version: 3.11
     env:
       OS: ${{ matrix.os }}
-      # The std-lib docstring of Int is not valid
-      # causing errors like in the docstring of from_bytes (from Int)
-      # WARNING: Inline interpreted text or phrase reference start-string without end-string.
-      # when documenting subclasses of IntFlag such as in the lakeshore driver.
-      # see https://github.com/python/cpython/pull/117847
-      SPHINX_WARNINGS_AS_ERROR: false
+      SPHINX_WARNINGS_AS_ERROR: true
       SPHINX_OPTS: "-v -j 2"
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+      uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
       with:
         egress-policy: audit
     - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
@@ -118,7 +113,7 @@ jobs:
     steps:
 
     - name: Harden Runner
-      uses: step-security/harden-runner@63c24ba6bd7ba022e95695ff85de572c04a18142 # v2.7.0
+      uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
       with:
         egress-policy: audit
 

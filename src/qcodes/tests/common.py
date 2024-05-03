@@ -202,7 +202,7 @@ def compare_dictionaries(
     value_err = ""
     old_path = path
     for k in dict_1.keys():
-        path = old_path + "[%s]" % k
+        path = old_path + f"[{k}]"
         if k not in dict_2.keys():
             key_err += f"Key {dict_1_name}{path} not in {dict_2_name}\n"
         elif isinstance(dict_1[k], dict) and isinstance(dict_2[k], dict):

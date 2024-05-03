@@ -53,7 +53,7 @@ class Instrument(InstrumentBase, metaclass=InstrumentMeta):
     _all_instruments: weakref.WeakValueDictionary[
         str, Instrument
     ] = weakref.WeakValueDictionary()
-    _type = None
+    _type: type[Instrument] | None = None
     _instances: weakref.WeakSet[Instrument] = weakref.WeakSet()
 
     def __init__(

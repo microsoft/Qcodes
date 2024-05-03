@@ -95,7 +95,7 @@ fsspec==2024.3.1
     # via dask
 future==1.0.0
     # via uncertainties
-google-api-core==2.18.0
+google-api-core==2.19.0
     # via opencensus
 google-auth==2.29.0
     # via google-api-core
@@ -111,7 +111,7 @@ h5py==3.11.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.100.1
+hypothesis==6.100.2
 idna==3.7
     # via requests
 imagesize==1.4.1
@@ -125,7 +125,7 @@ iniconfig==2.0.0
 ipykernel==6.29.4
     # via qcodes
 ipython==8.18.1; python_version == "3.9"
-ipython==8.23.0; python_version >= "3.10"
+ipython==8.24.0; python_version >= "3.10"
     # via
     #   ipykernel
     #   ipywidgets
@@ -145,7 +145,7 @@ jsonpointer==2.4
     # via sphinx-jsonschema
 jsonref==1.1.0
     # via zhinst-toolkit
-jsonschema==4.21.1
+jsonschema==4.22.0
     # via
     #   nbformat
     #   qcodes
@@ -201,7 +201,7 @@ mypy-extensions==1.0.0
     # via mypy
 nbclient==0.10.0
     # via nbconvert
-nbconvert==7.16.3
+nbconvert==7.16.4
     # via nbsphinx
 nbformat==5.10.4
     # via
@@ -314,7 +314,7 @@ pyjwt==2.8.0
     # via msal
 pyparsing==3.1.2
     # via matplotlib
-pytest==8.1.1
+pytest==8.2.0
     # via
     #   pytest-asyncio
     #   pytest-cov
@@ -325,7 +325,7 @@ pytest-asyncio==0.23.6
 pytest-cov==5.0.0
 pytest-mock==3.14.0
 pytest-rerunfailures==14.0
-pytest-xdist==3.5.0
+pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
     # via
     #   jupyter-client
@@ -347,12 +347,12 @@ pyyaml==6.0.1
     #   dask
     #   pyvisa-sim
     #   sphinx-jsonschema
-pyzmq==26.0.2
+pyzmq==26.0.3
     # via
     #   ipykernel
     #   jupyter-client
 qcodes-loop==0.1.2
-referencing==0.35.0
+referencing==0.35.1
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -440,7 +440,7 @@ tornado==6.4
     #   qcodes
 towncrier==23.11.0
     # via sphinxcontrib-towncrier
-tqdm==4.66.2
+tqdm==4.66.4
     # via qcodes
 traitlets==5.14.3
     # via
@@ -455,7 +455,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.21.0.20240331
+types-jsonschema==4.22.0.20240501
 types-pytz==2024.1.0.20240417
     # via pandas-stubs
 types-pywin32==306.0.0.20240408
@@ -482,7 +482,7 @@ urllib3==2.2.1
     # via
     #   requests
     #   types-requests
-versioningit==3.1.0
+versioningit==3.1.1
     # via
     #   broadbean
     #   qcodes
@@ -506,12 +506,12 @@ xarray==2024.3.0
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==24.1.55273
+zhinst-core==24.4.57831
     # via
     #   zhinst-toolkit
     #   zhinst-utils
 zhinst-qcodes==0.5.3
-zhinst-timing-models==24.1.54288
+zhinst-timing-models==24.4.57831
     # via zhinst-utils
 zhinst-toolkit==0.6.3
     # via zhinst-qcodes

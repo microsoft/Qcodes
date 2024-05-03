@@ -118,19 +118,18 @@ class HP83650A(VisaInstrument):
 
     def print_all(self) -> None:
         log.debug('Reading all settings from instrument')
-        print(self.rfstatus.label + ':', self.rfstatus.get())
-        print(self.power.label + ':', self.power.get(), self.power.unit)
-        print(self.frequency.label +
-              ': %e' % self.frequency.get(), self.frequency.unit)
-        print(self.freqmode.label + ':', self.freqmode.get())
+        print(f"{self.rfstatus.label}: {self.rfstatus.get()}")
+        print(f"{self.power.label}: {self.power.get()} {self.power.unit}")
+        print(f"{self.frequency.label}: {self.frequency.get():e} {self.frequency.unit}")
+        print(f"{self.freqmode.label}: {self.freqmode.get()}")
         self.print_modstatus()
 
     def print_modstatus(self) -> None:
-        print(self.fmstatus.label + ':', self.fmstatus.get())
-        print(self.fmcoup.label + ':', self.fmcoup.get())
-        print(self.amstatus.label + ':', self.amstatus.get())
-        print(self.pulsestatus.label + ':', self.pulsestatus.get())
-        print(self.pulsesource.label + ':', self.pulsesource.get())
+        print(f"{self.fmstatus.label}: {self.fmstatus.get()}")
+        print(f"{self.fmcoup.label}: {self.fmcoup.get()}")
+        print(f"{self.amstatus.label}: {self.amstatus.get()}")
+        print(f"{self.pulsestatus.label}: {self.pulsestatus.get()}")
+        print(f"{self.pulsesource.label}: {self.pulsesource.get()}")
 
 
 class HP_83650A(HP83650A):

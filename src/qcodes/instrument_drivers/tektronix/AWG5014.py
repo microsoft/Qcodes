@@ -543,7 +543,7 @@ class TektronixAWG5014(VisaInstrument):
             A comma-seperated string of the folder contents.
         """
 
-        dircheck = '%s, DIR' % folder
+        dircheck = f"{folder}, DIR"
         if dircheck in self.get_folder_contents():
             self.change_folder(folder)
             log.debug("Directory already exists")
