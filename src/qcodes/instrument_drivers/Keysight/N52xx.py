@@ -275,6 +275,12 @@ class KeysightPNATrace(InstrumentChannel):
             vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)),
         )
 
+    def disable(self):
+        """
+        Disable a trace on the PNA
+        """
+        self.write(f"DISP:TRAC{self.trace_num}:STAT 0")
+
     @staticmethod
     def _parse_polar_data(data: np.ndarray) -> np.ndarray:
         """
@@ -641,6 +647,29 @@ class PNABase(VisaInstrument):
     def get_options(self) -> "Sequence[str]":
         # Query the instrument for what options are installed
         return self.ask('*OPT?').strip('"').split(',')
+
+    def add_trace(self) -> KeysightPNATrace:
+        """
+        Add a new trace to the instrument and return it
+        """
+        existing_traces = [tr.trace_name for tr in self.traces]
+        self.write("DISP:TRAC:NEW 0")
+        time.sleep(0.5)
+        for new_trace, old_trace in zip(self.traces, existing_traces):
+            if new_trace.trace_name != old_trace:
+                return new_trace
+        raise RuntimeError("Failed to add PNA trace")
+
+    def enable_trace(self, trace_num: int) -> KeysightPNATrace:
+        """
+        Enable a trace given by trace_num and return it
+        """
+        self.write(f"DISP:TRAC{trace_num}:STAT 1")
+        time.sleep(0.5)
+        for trace in self.traces:
+            if trace.trace_num == trace_num:
+                return trace
+        raise RuntimeError(f"Failed to enable PNA trace tr{trace_num}")
 
     def get_trace_catalog(self) -> str:
         """
