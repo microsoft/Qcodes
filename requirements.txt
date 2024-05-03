@@ -440,7 +440,7 @@ tornado==6.4
     #   qcodes
 towncrier==23.11.0
     # via sphinxcontrib-towncrier
-tqdm==4.66.2
+tqdm==4.66.4
     # via qcodes
 traitlets==5.14.3
     # via
