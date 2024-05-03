@@ -70,6 +70,7 @@ class CryomagneticsModel4G(VisaInstrument):
         self.max_current_limits = max_current_limits
 
         # Initialize  rate manager based on hypothetical hardware specific limits
+        # Initialize rate manager based on hypothetical hardware specific limits
         self._initialize_max_current_limits()
 
         # Adding parameters
@@ -177,7 +178,6 @@ class CryomagneticsModel4G(VisaInstrument):
 
         Returns:
             CryomagneticsOperatingState: An object representing the current operating state of the magnet.
-            An object representing the current operating state of the magnet.
 
         Raises:
             Cryomagnetics4GException: If the magnet is in a state that prevents ramping, such as quench condition,
