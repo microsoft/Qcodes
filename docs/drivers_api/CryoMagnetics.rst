@@ -1,4 +1,4 @@
-.. _Cryomagnetics_api :
+.. _cryomagnetics_api :
 
 Cryomagnetics Drivers
 =====================
