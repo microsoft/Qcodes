@@ -1,2 +1,0 @@
-The AMI drivers in ``qcodes.instrument_drivers.american_magnetics.AMI430`` and their submodules has been deprecated. Use the ``AMIModel430`` and
-``AMIModel4303D`` drivers from ``qcodes.instrument_drivers.american_magnetics`` instead.
