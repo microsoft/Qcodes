@@ -662,7 +662,8 @@ class PNABase(VisaInstrument):
 
     def enable_trace(self, trace_num: int) -> KeysightPNATrace:
         """
-        Enable a trace given by trace_num and return it
+        Enable a trace given by trace_num and return it. Note, if the trace is
+        already enabled, we simply return it.
         """
         self.write(f"DISP:TRAC{trace_num}:STAT 1")
         time.sleep(0.5)
