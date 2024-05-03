@@ -1,1 +1,0 @@
-An issue where simulated instruments powered by pyvisa-sim could raise an error during the teardown has been resolved.
