@@ -461,7 +461,7 @@ class OxfordTriton(IPInstrument):
             options = config.options(section)
             namestr = '"m_lpszname"'
             if namestr in options:
-                chan_number = int(section.split("\\")[-1].split("[")[-1]) + 1
+                chan_number = int(re.findall('\d+', section)[-1]) + 1
                 # the names used in the register file are base 0 but the api and the gui
                 # uses base one names so add one
                 chan = "T" + str(chan_number)
