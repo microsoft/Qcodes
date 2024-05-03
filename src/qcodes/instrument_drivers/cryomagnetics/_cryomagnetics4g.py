@@ -183,7 +183,7 @@ class CryomagneticsModel4G(VisaInstrument):
             Cryomagnetics4GException: If the magnet is in a state that prevents ramping, such as quench condition,
                                        power module failure, or already ramping.
 
-        The operating state is determined by querying the status byte (*STB?) of the instrument. The status byte is
+        The operating state is determined by querying the status byte (`*STB?`) of the instrument. The status byte is
         interpreted as follows:
         - Bit 0: Holding (not ramping)
         - Bit 1: Ramping
