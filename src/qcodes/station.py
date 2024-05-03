@@ -519,6 +519,7 @@ class Station(Metadatable, DelegateAttributes):
 
     def load_instrument(self, identifier: str,
                         revive_instance: bool = False,
+                        update_snapshot: bool = True,
                         **kwargs: Any) -> Instrument:
         """
         Creates an :class:`~.Instrument` instance as described by the
@@ -529,6 +530,8 @@ class Station(Metadatable, DelegateAttributes):
                 configuration file, which identifies the instrument to be added.
             revive_instance: If ``True``, try to return an instrument with the
                 specified name instead of closing it and creating a new one.
+            update_snapshot: Immediately update the snapshot
+                of the instrument as it is added to the Station.
             **kwargs: Additional keyword arguments that get passed on to the
                 ``__init__``-method of the instrument to be added.
         """
@@ -688,7 +691,7 @@ class Station(Metadatable, DelegateAttributes):
             if isinstance(local_instr, ChannelTuple):
                 raise RuntimeError("A parameter cannot be added to an ChannelTuple")
             add_parameter_from_dict(local_instr, parts[-1], options)
-        self.add_component(instr)
+        self.add_component(instr, update_snapshot=update_snapshot)
         update_monitor()
         return instr
 
