@@ -275,7 +275,7 @@ class KeysightPNATrace(InstrumentChannel):
             vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)),
         )
 
-    def disable(self):
+    def disable(self) -> None:
         """
         Disable a trace on the PNA
         """
