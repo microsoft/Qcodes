@@ -34,14 +34,14 @@ class DacReader:
         based on the minimum/maximum values of a given channel.
         Midrange is 32768.
         """
-        if volt < self.min_val or volt >= self.max_val:
+        if volt < self.min_val or volt > self.max_val:
             raise ValueError(
                 f"Cannot convert voltage {volt} V to a voltage code, value out of range "
                 f"({self.min_val} V - {self.max_val} V)."
             )
 
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
-        val = int(round(frac * 65536))
+        val = int(round(frac * 65535))
         # extra check to be absolutely sure that the instrument does nothing
         # receive an out-of-bounds value
         if val > 65535 or val < 0:
@@ -57,7 +57,7 @@ class DacReader:
         based on the minimum/maximum values of a given channel.
         Midrange is 32768.
         """
-        frac = code/65536.0
+        frac = code/65535.0
         return (frac * (self.max_val - self.min_val)) + self.min_val
 
     def _set_slot(self):
