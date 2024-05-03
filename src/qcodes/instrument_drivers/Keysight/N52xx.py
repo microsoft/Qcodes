@@ -277,7 +277,7 @@ class KeysightPNATrace(InstrumentChannel):
 
     def disable(self) -> None:
         """
-        Disable a trace on the PNA
+        Disable this trace on the PNA
         """
         self.write(f"DISP:TRAC{self.trace_num}:STAT 0")
 
