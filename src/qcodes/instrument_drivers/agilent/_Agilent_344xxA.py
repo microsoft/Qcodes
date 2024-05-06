@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class _Agilent344xxA(VisaInstrument):
+class Agilent344xxA(VisaInstrument):
     """
     This is the QCoDeS driver for the Agilent_34400A DMM Series,
     tested with Agilent_34401A, Agilent_34410A, and Agilent_34411A.
@@ -64,11 +64,12 @@ class _Agilent344xxA(VisaInstrument):
         )
         """Resolution """
 
-        self.add_parameter(
+        self.volt: Parameter = self.add_parameter(
             "volt", get_cmd="READ?", label="Voltage", get_parser=float, unit="V"
         )
+        """Parameter volt"""
 
-        self.add_parameter(
+        self.fetch: Parameter = self.add_parameter(
             "fetch",
             get_cmd="FETCH?",
             label="Voltage",
@@ -83,8 +84,9 @@ class _Agilent344xxA(VisaInstrument):
                 "for data in the first place!"
             ),
         )
+        """Parameter fetch"""
 
-        self.add_parameter(
+        self.NPLC: Parameter = self.add_parameter(
             "NPLC",
             get_cmd="VOLT:NPLC?",
             get_parser=float,
@@ -93,46 +95,55 @@ class _Agilent344xxA(VisaInstrument):
             label="Integration time",
             unit="NPLC",
         )
+        """Parameter NPLC"""
 
-        self.add_parameter("terminals", get_cmd="ROUT:TERM?")
+        self.terminals: Parameter = self.add_parameter(
+            "terminals", get_cmd="ROUT:TERM?"
+        )
+        """Parameter terminals"""
 
-        self.add_parameter(
+        self.range_auto: Parameter = self.add_parameter(
             "range_auto",
             get_cmd="VOLT:RANG:AUTO?",
             set_cmd="VOLT:RANG:AUTO {:d}",
             val_mapping={"on": 1, "off": 0},
         )
+        """Parameter range_auto"""
 
-        self.add_parameter(
+        self.range: Parameter = self.add_parameter(
             "range",
             get_cmd="SENS:VOLT:DC:RANG?",
             get_parser=float,
             set_cmd="SENS:VOLT:DC:RANG {:f}",
             vals=Enum(0.1, 1.0, 10.0, 100.0, 1000.0),
         )
+        """Parameter range"""
 
         if self.model in ["34401A"]:
-            self.add_parameter(
+            self.display_text: Parameter = self.add_parameter(
                 "display_text",
                 get_cmd="DISP:TEXT?",
                 set_cmd='DISP:TEXT "{}"',
                 vals=Strings(),
             )
+            """Parameter display_text"""
 
         elif self.model in ["34410A", "34411A"]:
-            self.add_parameter(
+            self.display_text: Parameter = self.add_parameter(
                 "display_text",
                 get_cmd="DISP:WIND1:TEXT?",
                 set_cmd='DISP:WIND1:TEXT "{}"',
                 vals=Strings(),
             )
+            """Parameter display_text"""
 
-            self.add_parameter(
+            self.display_text_2: Parameter = self.add_parameter(
                 "display_text_2",
                 get_cmd="DISP:WIND2:TEXT?",
                 set_cmd='DISP:WIND2:TEXT "{}"',
                 vals=Strings(),
             )
+            """Parameter display_text_2"""
 
         self.connect_message()
 
