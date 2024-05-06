@@ -18,7 +18,7 @@ azure-core==1.30.1
     #   opencensus-ext-azure
 azure-identity==1.16.0
     # via opencensus-ext-azure
-babel==2.14.0
+babel==2.15.0
     # via sphinx
 beautifulsoup4==4.12.3
     # via nbconvert
