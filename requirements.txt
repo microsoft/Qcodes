@@ -12,12 +12,6 @@ attrs==23.2.0
     #   jsonschema
     #   referencing
 autodocsumm==0.2.12
-azure-core==1.30.1
-    # via
-    #   azure-identity
-    #   opencensus-ext-azure
-azure-identity==1.16.0
-    # via opencensus-ext-azure
 babel==2.15.0
     # via sphinx
 beautifulsoup4==4.12.3
@@ -26,14 +20,10 @@ bleach==6.1.0
     # via nbconvert
 broadbean==0.14.0
     # via qcodes
-cachetools==5.3.3
-    # via google-auth
 certifi==2024.2.2
     # via requests
 cf-xarray==0.9.0
     # via qcodes
-cffi==1.16.0
-    # via cryptography
 charset-normalizer==3.3.2
     # via requests
 click==8.1.7
@@ -53,17 +43,10 @@ comm==0.2.2
     # via
     #   ipykernel
     #   ipywidgets
-contextlib2==21.6.0
-    # via schema
 contourpy==1.2.1
     # via matplotlib
 coverage==7.5.1
     # via pytest-cov
-cryptography==42.0.6
-    # via
-    #   azure-identity
-    #   msal
-    #   pyjwt
 cycler==0.12.1
     # via matplotlib
 dask==2024.5.0
@@ -95,12 +78,6 @@ fsspec==2024.3.1
     # via dask
 future==1.0.0
     # via uncertainties
-google-api-core==2.19.0
-    # via opencensus
-google-auth==2.29.0
-    # via google-api-core
-googleapis-common-protos==1.63.0
-    # via google-api-core
 h5netcdf==1.3.0
     # via qcodes
 h5py==3.11.0
@@ -190,12 +167,6 @@ matplotlib-inline==0.1.7
     #   ipython
 mistune==3.0.2
     # via nbconvert
-msal==1.28.0
-    # via
-    #   azure-identity
-    #   msal-extensions
-msal-extensions==1.1.0
-    # via azure-identity
 mypy==1.10.0
 mypy-extensions==1.0.0
     # via mypy
@@ -230,14 +201,6 @@ numpy==1.26.4
     #   zhinst-timing-models
     #   zhinst-toolkit
     #   zhinst-utils
-opencensus==0.11.4
-    # via
-    #   opencensus-ext-azure
-    #   qcodes
-opencensus-context==0.1.3
-    # via opencensus
-opencensus-ext-azure==1.1.13
-    # via qcodes
 opentelemetry-api==1.23.0
     # via qcodes
 ordered-set==4.1.0
@@ -249,7 +212,6 @@ packaging==24.0
     #   ipykernel
     #   lazy-loader
     #   matplotlib
-    #   msal-extensions
     #   nbconvert
     #   pytest
     #   pytest-rerunfailures
@@ -277,32 +239,14 @@ platformdirs==4.2.1
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
-portalocker==2.8.2
-    # via msal-extensions
 prompt-toolkit==3.0.43
     # via ipython
-proto-plus==1.23.0
-    # via google-api-core
-protobuf==4.25.3
-    # via
-    #   google-api-core
-    #   googleapis-common-protos
-    #   proto-plus
 psutil==5.9.8
-    # via
-    #   ipykernel
-    #   opencensus-ext-azure
+    # via ipykernel
 pure-eval==0.2.2
     # via stack-data
 pyarrow==16.0.0
-pyasn1==0.6.0
-    # via
-    #   pyasn1-modules
-    #   rsa
-pyasn1-modules==0.4.0
-    # via google-auth
-pycparser==2.22
-    # via cffi
+    # via qcodes
 pyelftools==0.31
     # via zhinst-toolkit
 pygments==2.18.0
@@ -310,8 +254,6 @@ pygments==2.18.0
     #   ipython
     #   nbconvert
     #   sphinx
-pyjwt==2.8.0
-    # via msal
 pyparsing==3.1.2
     # via matplotlib
 pytest==8.2.0
@@ -341,7 +283,6 @@ pyvisa-sim==0.6.0
 pywin32==306; sys_platform == 'win32'
     # via
     #   jupyter-core
-    #   portalocker
 pyyaml==6.0.1
     # via
     #   dask
@@ -359,20 +300,12 @@ referencing==0.35.1
     #   types-jsonschema
 requests==2.31.0
     # via
-    #   azure-core
-    #   google-api-core
-    #   msal
-    #   opencensus-ext-azure
     #   sphinx
     #   sphinx-jsonschema
 rpds-py==0.18.0
     # via
     #   jsonschema
     #   referencing
-rsa==4.9
-    # via
-    #   google-auth
-    #   qcodes
 ruamel-yaml==0.18.6
     # via qcodes
 ruamel-yaml-clib==0.2.8
@@ -383,9 +316,7 @@ scipy==1.13.0
 six==1.16.0
     # via
     #   asttokens
-    #   azure-core
     #   bleach
-    #   opencensus
     #   python-dateutil
 snowballstemmer==2.2.0
     # via sphinx
@@ -465,7 +396,6 @@ types-tabulate==0.9.0.20240106
 types-tqdm==4.66.0.20240417
 typing-extensions==4.11.0
     # via
-    #   azure-core
     #   mypy
     #   pyvisa
     #   pyvisa-sim
