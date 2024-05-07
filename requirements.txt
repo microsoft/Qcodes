@@ -229,7 +229,7 @@ pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
     # via jedi
-partd==1.4.1
+partd==1.4.2
     # via dask
 pillow==10.3.0
     # via
