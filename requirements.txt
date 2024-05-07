@@ -179,7 +179,7 @@ nbformat==5.10.4
     #   nbclient
     #   nbconvert
     #   nbsphinx
-nbsphinx==0.9.3
+nbsphinx==0.9.4
 nest-asyncio==1.6.0
     # via ipykernel
 numpy==1.26.4
