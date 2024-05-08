@@ -174,6 +174,24 @@ def test_set_via_function() -> None:
         f(20)
 
 
+def test_parameter_call() -> None:
+    p = Parameter("test", get_cmd=None, set_cmd=None)
+
+    p(1)
+
+    assert p() == 1
+
+    with pytest.raises(TypeError, match="takes 1 positional argument but 2 were given"):
+        p(1, 2)  # type: ignore[call-overload]
+
+    p(value=2)
+
+    assert p() == 2
+
+    with pytest.raises(TypeError, match="got multiple values for argument"):
+        p(2, value=2)  # type: ignore[call-overload]
+
+
 def test_unknown_args_to_baseparameter_raises() -> None:
     """
     Passing an unknown kwarg to ParameterBase should trigger a TypeError
