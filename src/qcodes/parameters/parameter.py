@@ -315,13 +315,11 @@ class Parameter(ParameterBase):
                 # TODO get_raw should also be a method here. This should probably be done by wrapping
                 # it with MethodType like above
                 # ignore typeerror since mypy does not allow setting a method dynamically
-                self.set_raw = Command(  # type: ignore[method-assign]
+                self.set_raw = Command(  # type: ignore[assignment]
                     arg_count=1, cmd=set_cmd, exec_str=exec_str_write
                 )
             self._settable = True
-            # mypy resolves the type of self.get_raw to object here.
-            # this may be resolvable if Command above is correctly wrapped in MethodType
-            self.set = self._wrap_set(self.set_raw)  # type: ignore[arg-type]
+            self.set = self._wrap_set(self.set_raw)
 
         self._meta_attrs.extend(["label", "unit", "vals"])
 
