@@ -1,7 +1,7 @@
 import pytest
 
 import qcodes.validators as vals
-from qcodes.parameters import Function, Parameter, ParameterBase
+from qcodes.parameters import Function, Parameter, ParameterBase, ParamRawDataType
 
 from .conftest import (
     GettableParam,
@@ -190,6 +190,35 @@ def test_parameter_call() -> None:
 
     with pytest.raises(TypeError, match="got multiple values for argument"):
         p(2, value=2)  # type: ignore[call-overload]
+
+
+def test_parameter_set_extra_kwargs() -> None:
+    class ParameterWithSetKwargs(Parameter):
+        def set_raw(
+            self,
+            value: ParamRawDataType,
+            must_be_set_true: bool = False,
+        ) -> None:
+            if must_be_set_true is True:
+                self.cache._set_from_raw_value(value)
+            else:
+                raise ValueError("must_be_set_true must be True")
+
+    p = ParameterWithSetKwargs("testparam", get_cmd=None)
+
+    with pytest.raises(ValueError, match="must_be_set_true must be True"):
+        p(1)
+
+    with pytest.raises(ValueError, match="must_be_set_true must be True"):
+        p.set(1)
+
+    p(1, must_be_set_true=True)
+
+    assert p() == 1
+
+    p.set(2, must_be_set_true=True)
+
+    assert p() == 2
 
 
 def test_unknown_args_to_baseparameter_raises() -> None:
