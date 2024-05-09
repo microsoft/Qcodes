@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from .multi_parameter import MultiParameter
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
     from .parameter_base import ParamRawDataType
 
 InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
+LOG = logging.getLogger(__name__)
 
 
 class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleType]):
@@ -45,7 +47,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
         """
         return tuple(chan.parameters[self._param_name].get() for chan in self._channels)
 
-    def set_raw(self, value: ParamRawDataType) -> None:
+    def set_raw(self, value: ParamRawDataType | Sequence[ParamRawDataType]) -> None:
         """
         Set all parameters to this value.
 
@@ -53,8 +55,23 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
             value: The value to set to. The type is given by the
                 underlying parameter.
         """
-        for chan in self._channels:
-            getattr(chan, self._param_name).set(value)
+        try:
+            for chan in self._channels:
+                getattr(chan, self._param_name).set(value)
+        except Exception as err:
+            try:
+                for chan, val in zip(self._channels, value, strict=True):
+                    getattr(chan, self._param_name).set(val)
+            except (TypeError, ValueError):
+                note = ('Value should either be valid for a single parameter of the channel list '
+                        'or a sequence of valid values of the same length as the list.')
+                try:
+                    err.add_note(note)
+                except AttributeError:
+                    # <3.11
+                    LOG.error(note)
+                finally:
+                    raise
 
     @property
     def full_names(self) -> tuple[str, ...]:
