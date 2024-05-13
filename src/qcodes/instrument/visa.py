@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import warnings
 from importlib.resources import as_file, files
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 from weakref import finalize
 
 import pyvisa
@@ -53,42 +53,32 @@ class VisaInstrumentKWArgs(TypedDict):
     This TypedDict defines the type of the kwargs that can be passed to the VisaInstrument class.
     A subclass of VisaInstrument should take ``**kwargs: Unpack[VisaInstrumentKWArgs]`` as input
     and forward this to the super class to ensure that it can accept all the arguments defined here.
+
+    Consult the documentation of :class:`.VisaInstrument` for more information on the arguments.
     """
 
     metadata: NotRequired[Mapping[Any, Any] | None]
     """
-    Additional static metadata to add to this
-    instrument's JSON snapshot.
+    Additional static metadata to add to this instrument's JSON snapshot.
     """
     label: NotRequired[str | None]
     """
     Nicely formatted name of the instrument; if None,
     the ``name`` is used.
     """
+    terminator: NotRequired[str | None]
+    """Read and write termination character(s)."""
     timeout: NotRequired[float]
-    "Seconds to allow for responses. Default 5."
+    "Seconds to allow for responses."
     device_clear: NotRequired[bool]
-    "Perform a device clear. Default True."
+    "Perform a device clear."
     visalib: NotRequired[str | None]
     """
     Visa backend to use when connecting to this instrument.
-    This should be in the form of a string '<pathtofile>@<backend>'.
-    Both parts can be omitted and pyvisa will try to infer the
-    path to the visa backend file.
-    By default the IVI backend is used if found, but '@py' will use the
-    ``pyvisa-py`` backend. Note that QCoDeS does not install (or even require)
-    ANY backends, it is up to the user to do that. see eg:
-    http://pyvisa.readthedocs.org/en/stable/names.html
     """
     pyvisa_sim_file: NotRequired[str | None]
     """
     Name of a pyvisa-sim yaml file used to simulate the instrument.
-    The file is expected to be loaded from a python module.
-    The file can be given either as only the file name in which case it is loaded
-    from ``qcodes.instruments.sims`` or in the format ``module:filename`` e.g.
-    ``qcodes.instruments.sims:AimTTi_PL601P.yaml`` in which case it is loaded
-    from the supplied module. Note that it is an error to pass both
-    ``pyvisa_sim_file`` and ``visalib``.
     """
 
 
@@ -100,8 +90,10 @@ class VisaInstrument(Instrument):
     Args:
         name: What this instrument is called locally.
         address: The visa resource name to use to connect.
-        timeout: seconds to allow for responses. Default 5.
+        timeout: seconds to allow for responses.  If "unset" will read the value from
+           `self.default_timeout`. None means wait forever. Default 5.
         terminator: Read and write termination character(s).
+            If unset will use `self.default_terminator`.
             If None the terminator will not be set and we
             rely on the defaults from PyVisa. Default None.
         device_clear: Perform a device clear. Default True.
@@ -129,17 +121,32 @@ class VisaInstrument(Instrument):
 
     """
 
+    default_terminator: str | None = None
+    """
+    The default terminator to use if the terminator is not specified when creating the instrument.
+    None means use the default terminator from PyVisa.
+    """
+    default_timeout: float | None = 5
+    """
+    The default timeout in seconds if the timeout is not specified when creating the instrument.
+    None means no timeout e.g. wait forever.
+    """
+
     def __init__(
         self,
         name: str,
         address: str,
-        timeout: float = 5,
-        terminator: str | None = None,
+        timeout: float | None | Literal["Unset"] = "Unset",
+        terminator: str | None | Literal["Unset"] = "Unset",
         device_clear: bool = True,
         visalib: str | None = None,
         pyvisa_sim_file: str | None = None,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
+        if terminator == "Unset":
+            terminator = self.default_terminator
+        if timeout == "Unset":
+            timeout = self.default_timeout
 
         super().__init__(name, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
