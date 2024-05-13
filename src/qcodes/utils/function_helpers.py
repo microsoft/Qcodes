@@ -40,6 +40,5 @@ def is_function(f: object, arg_count: int, coroutine: bool = False) -> bool:
         inputs = [0] * arg_count
         sig.bind(*inputs)
         return True
-    except TypeError as e:
-        raise e
+    except TypeError:
         return False
