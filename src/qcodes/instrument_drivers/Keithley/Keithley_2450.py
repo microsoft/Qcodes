@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union, cast
 
 import numpy as np
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, Unpack
 
-from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.instrument import InstrumentChannel, VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
@@ -564,9 +564,12 @@ class Keithley2450(VisaInstrument):
     The QCoDeS driver for the Keithley 2450 SMU
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    default_terminator = "\n"
 
-        super().__init__(name, address, terminator="\n", **kwargs)
+    def __init__(
+        self, name: str, address: str, **kwargs: Unpack[VisaInstrumentKWArgs]
+    ) -> None:
+        super().__init__(name, address, **kwargs)
 
         if not self._has_correct_language_mode():
             self.log.warning(
