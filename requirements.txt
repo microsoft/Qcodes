@@ -150,7 +150,7 @@ lazy-loader==0.4
     # via qcodes-loop
 locket==1.0.0
     # via partd
-lxml==5.2.1
+lxml==5.2.2
 lxml-stubs==0.5.1
 markupsafe==2.1.5
     # via
