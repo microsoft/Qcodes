@@ -8,7 +8,13 @@ import numpy as np
 from packaging import version
 
 import qcodes.validators as vals
-from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,
 )
@@ -18,11 +24,18 @@ from qcodes.utils import convert_legacy_version_to_supported_version
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from typing_extensions import Unpack
+
 
 class Trigger(InstrumentChannel):
     """Implements triggering parameters and methods of Keysight 344xxA."""
 
-    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "_Keysight_344xxA",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         super().__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
@@ -152,7 +165,12 @@ class Trigger(InstrumentChannel):
 class Sample(InstrumentChannel):
     """Implements sampling parameters of Keysight 344xxA."""
 
-    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "_Keysight_344xxA",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         super().__init__(parent, name, **kwargs)
 
         if self.parent.is_34465A_34470A:
@@ -273,7 +291,12 @@ class Sample(InstrumentChannel):
 class Display(InstrumentChannel):
     """Implements interaction with the display of Keysight 344xxA."""
 
-    def __init__(self, parent: '_Keysight_344xxA', name: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "_Keysight_344xxA",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         super().__init__(parent, name, **kwargs)
 
         self.add_parameter('enabled',
@@ -442,8 +465,15 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ranges: A list of the available voltage ranges
     """
 
-    def __init__(self, name: str, address: str, silent: bool = False,
-                 **kwargs: Any):
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        silent: bool = False,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
         """
         Create an instance of the instrument.
 
@@ -455,7 +485,7 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
             **kwargs: kwargs are forwarded to base class.
         """
 
-        super().__init__(name, address, terminator='\n', **kwargs)
+        super().__init__(name, address, **kwargs)
 
         idn = self.IDN.get()
         self.model = idn['model']

@@ -3,7 +3,7 @@ import textwrap
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Optional, Union
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, create_on_off_val_mapping
 
 from . import constants
@@ -25,6 +25,8 @@ from .message_builder import MessageBuilder
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from typing_extensions import Unpack
+
 
 class KeysightB1500(VisaInstrument):
     """Driver for Keysight B1500 Semiconductor Parameter Analyzer.
@@ -33,8 +35,12 @@ class KeysightB1500(VisaInstrument):
     """
     calibration_time_out = 60  # 30 seconds suggested by manual
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
-        super().__init__(name, address, terminator="\r\n", **kwargs)
+    default_terminator = "\r\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
+        super().__init__(name, address, **kwargs)
         self.by_slot: dict[constants.SlotNr, B1500Module] = {}
         self.by_channel: dict[constants.ChNr, B1500Module] = {}
         self.by_kind: dict[constants.ModuleKind, list[B1500Module]] = defaultdict(list)

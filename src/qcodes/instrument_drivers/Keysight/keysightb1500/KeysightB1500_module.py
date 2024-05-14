@@ -1,11 +1,11 @@
 import re
 from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Optional, Union, cast
 
 import numpy as np
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, Unpack
 
-from qcodes.instrument import InstrumentChannel
+from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 
 from . import constants
 from .constants import ChannelName, ChNr, MeasurementStatus, ModuleKind, SlotNr
@@ -289,7 +289,7 @@ class B1500Module(InstrumentChannel):
         parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
         name: Optional[str],
         slot_nr: int,
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         # self.channels will be populated in the concrete module subclasses
         # because channel count is module specific
