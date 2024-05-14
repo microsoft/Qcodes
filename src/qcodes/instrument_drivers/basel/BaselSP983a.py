@@ -26,15 +26,16 @@ class BaselSP983a(VisaInstrument):
         **kwargs: Forwarded to base class.
     """
 
+    default_terminator = "\r\n"
+
     def __init__(
         self,
         name: str,
         address: str,
         input_offset_voltage: Optional[Parameter] = None,
-        terminator: str = "\r\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.connect_message()
 

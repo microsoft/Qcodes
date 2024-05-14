@@ -13,14 +13,15 @@ class Keithley2400(VisaInstrument):
     QCoDeS driver for the Keithley 2400 voltage source.
     """
 
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter(
             "rangev",

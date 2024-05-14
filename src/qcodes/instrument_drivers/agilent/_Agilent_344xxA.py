@@ -17,14 +17,15 @@ class _Agilent344xxA(VisaInstrument):
     Note that most models are better supported by the Keysight 33xxA drivers.
     """
 
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         idn = self.IDN.get()
         self.model = idn["model"]

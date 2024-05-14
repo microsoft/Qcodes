@@ -268,17 +268,17 @@ class YokogawaGS200(VisaInstrument):
       name: What this instrument is called locally.
       address: The GPIB or USB address of this instrument
       kwargs: kwargs to be passed to VisaInstrument class
-      terminator: read terminator for reads/writes to the instrument.
     """
+
+    default_terminator = "\n"
 
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter(
             "output",

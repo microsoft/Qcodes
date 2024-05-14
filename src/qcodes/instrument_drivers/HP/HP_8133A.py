@@ -12,15 +12,16 @@ class HP8133A(VisaInstrument):
     QCoDeS driver for Hewlett Packard 8133A Pulse Generator.
     """
 
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
         address: str,
         reset: bool = False,
-        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter(
             name="frequency",

@@ -153,12 +153,13 @@ class AMIModel430(VisaInstrument):
     _RETRY_WRITE_ASK = True
     _RETRY_TIME = 5
 
+    default_terminator = "\r\n"
+
     def __init__(
         self,
         name: str,
         address: str,
         reset: bool = False,
-        terminator: str = "\r\n",
         current_ramp_limit: float | None = None,
         **kwargs: Unpack[VisaInstrumentKWArgs],
     ):
@@ -176,7 +177,6 @@ class AMIModel430(VisaInstrument):
                 Of the form ``TCPIP[board]::host address::port::SOCKET``
                 e.g. ``TCPIP0::192.168.0.1::7800::SOCKET``
             reset: Should the reset method be called on the instrument at init time
-            terminator: Read and write termination character(s).
             current_ramp_limit: A current ramp limit, in units of A/s
             **kwargs: Additional kwargs are passed to the base class
         """
@@ -192,7 +192,6 @@ class AMIModel430(VisaInstrument):
         super().__init__(
             name,
             address,
-            terminator=terminator,
             **kwargs,
         )
 

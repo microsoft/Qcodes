@@ -165,14 +165,15 @@ class Stahl(VisaInstrument):
     In this case the VISA address would be: ``"TCPIP0::hostname::8088::SOCKET"``
     """
 
+    default_terminator = "\r"
+
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: Optional[str] = "\r",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
         if isinstance(self.visa_handle, TCPIPSocket):
             pass  # allow connection to remote serial device
         elif isinstance(self.visa_handle, SerialInstrument):

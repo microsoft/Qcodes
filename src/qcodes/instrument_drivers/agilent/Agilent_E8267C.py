@@ -13,14 +13,15 @@ class AgilentE8267C(VisaInstrument):
     This is the QCoDeS driver for the Agilent E8267C signal generator.
     """
 
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
         # general commands
         self.add_parameter(
             name="frequency",

@@ -190,7 +190,6 @@ class QDevQDac(VisaInstrument):
         address: str,
         num_chans: int = 48,
         update_currents: bool = True,
-        terminator: Optional[str] = None,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         """
@@ -202,15 +201,12 @@ class QDevQDac(VisaInstrument):
             num_chans: Number of channels to assign. Default: 48
             update_currents: Whether to query all channels for their
                 current current value on startup. Default: True.
-            terminator: Read and write termination character(s).
-                If None the terminator will not be set and we
-                rely on the defaults from PyVisa. Default None.
             **kwargs: kwargs are forwarded to base class.
 
         Returns:
             QDac object
         """
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
         self._output_n_lines = 50
         handle = self.visa_handle
         assert isinstance(handle, SerialInstrument)

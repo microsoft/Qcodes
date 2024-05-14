@@ -143,15 +143,15 @@ class KeithleyS46(VisaInstrument):
     # Make a reverse dict for efficient alias lookup given a channel number
     aliases: ClassVar[dict[int, str]] = {v: k for k, v in channel_numbers.items()}
 
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
         try:
             self.add_parameter(
                 "closed_channels",

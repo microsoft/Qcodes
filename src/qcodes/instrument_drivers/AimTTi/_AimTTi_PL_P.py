@@ -233,24 +233,21 @@ class AimTTi(VisaInstrument):
         "PL303QMT-P": 3,
         "QL355TP": 3,
     }
+    default_terminator = "\n"
 
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\n",
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS.
             address: VISA resource address
-            terminator: Read and write termination character(s).
-                If None the terminator will not be set and we
-                rely on the defaults from PyVisa. Default None.
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         channels = ChannelList(self, "Channels", AimTTiChannel, snapshotable=False)
 
