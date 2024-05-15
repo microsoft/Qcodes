@@ -82,8 +82,11 @@ class _SetParamContext:
             except Exception:
                 # Likely an uninitialized Parameter
                 vals = self._parameter._vals
+                set_parser = self._parameter.set_parser
                 self._parameter._vals = []
+                self._parameter.set_parser = None
                 self._parameter.cache.set(self._original_value)
+                self._parameter.set_parser = set_parser
                 self._parameter._vals = vals
 
 

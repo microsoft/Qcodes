@@ -35,11 +35,12 @@ class DummyTrackingInstrument(DummyInstrument):
                            set_parser=int)
 
         # A parameter that is not initialized and whose cache value does not
-        # pass the validator
+        # pass the validator or the set parser
         self.add_parameter("uninitialized_param",
                            initial_cache_value=None,
                            set_cmd=None,
-                           vals=vals.Enum("foo"))
+                           set_parser=int,
+                           vals=vals.Enum(2))
 
         # A parameter that counts the number of times it has been set
         self.add_parameter("counting_parameter",
@@ -168,8 +169,8 @@ def test_context(instrument: DummyTrackingInstrument) -> None:
     # The cached value does not pass the validator (since it was not
     # initialized). Make sure no exception is raised when __exit__ing the
     # context
-    with instrument.uninitialized_param.set_to('foo'):
-        assert instrument.uninitialized_param.get() == 'foo'
+    with instrument.uninitialized_param.set_to(2):
+        assert instrument.uninitialized_param.get() == 2
     assert instrument.uninitialized_param.cache.get() is None
 
 
