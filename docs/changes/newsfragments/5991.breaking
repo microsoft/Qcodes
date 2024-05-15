@@ -1,5 +1,0 @@
-QCoDeS no longer installs opencensus and opencensus-ext-azure are no longer installed by default and opencensus integration is deprecated.
-This means that the option ``qcodes.config.telemetry.enabled`` to ``True`` is deprecated. For the time being opencensus and opencensus-ext-azure
-can be installed by installing QCoDeS with the opencensus option e.g. ``pip install qcodes[opencensus]``. We however, recommend that any use
-of this telemetry integration is replaced by the use of OpenTelemetry. QCoDeS will not include any telemetry integration but the codebase
-has been instrumented using OpenTelemetry spans and python log messages enabling any user to collect telemetry if they should so wish.

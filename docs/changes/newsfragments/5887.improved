@@ -1,2 +1,0 @@
-Add support for integer indexing in parameter paths in Station Files,
-e.g ``channel[0].voltage`` or ``sigouts[0].enables[1].value``.

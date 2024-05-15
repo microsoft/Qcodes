@@ -1,9 +1,0 @@
-QCoDeS is now type checked to ensure that subclasses are implemented in a way consistent with the parent class.
-This has resulted in a number of changes to the API. The following is a list of the changes that have been made
-to the API to make subclasses match their parent class. These changes are not expected to break any existing code, since they are
-primarily in positional arguments or unused arguments.
-
-* The first argument to `NumpyJSONEncoder.default` has changed from `obj` to `o` to match the naming in the std library `json.JSONEncoder.default`.
-* Unused args `idn_part` and `being_time` to `QDevQDac.connect_message` have been changed to `idn_param` and `begin_time` respectively to match the parent class.
-* Unused arguments to stub methods `DSOTraceParam.setpoints`, `DSOTraceParam.unit` and `FormattedSweep.setpoints` have been changed to match the parent class.
-* Alazar `DemodulationAcquisitionController.handle_buffer` the first argument has been renamed from `data` to `buffer` to match the parent class.
