@@ -224,7 +224,7 @@ pandas==2.2.2
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==2.2.1.240316
+pandas-stubs==2.2.2.240514
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
