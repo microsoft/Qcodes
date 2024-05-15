@@ -34,6 +34,13 @@ class DummyTrackingInstrument(DummyInstrument):
                            get_cmd=self._pp_getter,
                            set_parser=int)
 
+        # A parameter that is not initialized and whose cache value does not
+        # pass the validator
+        self.add_parameter("uninitialized_param",
+                           initial_cache_value=None,
+                           set_cmd=None,
+                           vals=vals.Enum("foo"))
+
         # A parameter that counts the number of times it has been set
         self.add_parameter("counting_parameter",
                            set_cmd=self._cp_setter,
@@ -157,6 +164,13 @@ def test_context(instrument: DummyTrackingInstrument) -> None:
     with instrument.a.set_to(3):
         assert instrument.a.get() == 3
     assert instrument.a.get() == 2
+
+    # The cached value does not pass the validator (since it was not
+    # initialized). Make sure no exception is raised when __exit__ing the
+    # context
+    with instrument.uninitialized_param.set_to('foo'):
+        assert instrument.uninitialized_param.get() == 'foo'
+    assert instrument.uninitialized_param.cache.get() is None
 
 
 def test_validated_param(instrument: DummyTrackingInstrument) -> None:
