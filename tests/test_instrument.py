@@ -13,6 +13,7 @@ from weakref import WeakValueDictionary
 
 import pytest
 from pytest import FixtureRequest
+from typing_extensions import assert_type
 
 from qcodes.instrument import (
     Instrument,
@@ -78,6 +79,15 @@ def _close_before_and_after():
         yield
     finally:
         Instrument.close_all()
+
+
+def test_instrument_type(request: pytest.FixtureRequest) -> None:
+    # make sure that the type of the instrument is correct.
+    # Due to our use of a metaclass for instrument this could be
+    # incorrect. See comment in instrument.py
+    testldummy = DummyInstrument("dummy")
+    request.addfinalizer(testldummy.close)
+    assert_type(testldummy, DummyInstrument)
 
 
 def test_validate_function(testdummy: DummyInstrument) -> None:

@@ -64,18 +64,19 @@ class MockVisaInstrument:
         else:
             super().write_raw(cmd)  # type: ignore[misc]
 
-    def ask_raw(self, query) -> Any:
-        query_parts = query.split(' ')
+    def ask_raw(self, cmd) -> Any:
+        query_parts = cmd.split(" ")
         query_str = query_parts[0].upper()
         if query_str in self.queries:
-            args = ''.join(query_parts[1:])
-            self.visa_log.debug(f'Query: '
-                      f'{query} for command {query_str} with args {args}')
+            args = "".join(query_parts[1:])
+            self.visa_log.debug(
+                f"Query: {cmd} for command {query_str} with args {args}"
+            )
             response = self.queries[query_str](args)
             self.visa_log.debug(f"Response: {response}")
             return response
         else:
-            super().ask_raw(query)  # type: ignore[misc]
+            super().ask_raw(cmd)  # type: ignore[misc]
 
 
 def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:

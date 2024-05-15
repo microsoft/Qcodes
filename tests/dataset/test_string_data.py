@@ -196,7 +196,7 @@ def test_list_of_strings(experiment) -> None:
                 hypnumpy.timedelta64_dtypes(),
                 hypnumpy.datetime64_dtypes(),
             )
-        ),  # pyright: ignore[reportGeneralTypeIssues]
+        ),  # pyright: ignore[reportCallIssue,reportArgumentType]
         shape=hypnumpy.array_shapes(),
     )
 )

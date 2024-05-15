@@ -2,6 +2,7 @@ import gc
 import logging
 import re
 from pathlib import Path
+from typing import Any, Optional
 
 import pytest
 import pyvisa
@@ -22,7 +23,11 @@ class MockVisa(VisaInstrument):
                            set_cmd='STAT:{:.3f}',
                            vals=Numbers(-20, 20))
 
-    def _open_resource(self, address: str, visalib):
+    def _open_resource(
+        self, address: str, visalib: Optional[str]
+    ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
+        if visalib is None:
+            visalib = "MockVisaLib"
         return MockVisaHandle(), visalib, pyvisa.ResourceManager("@sim")
 
 
@@ -49,10 +54,15 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
         # make it an error to ask or write after close
         self.closed = True
 
-    def write(self, cmd):
+    def write(
+        self,
+        message: str,
+        termination: Optional[str] = None,
+        encoding: Optional[str] = None,
+    ) -> int:
         if self.closed:
             raise RuntimeError("Trying to write to a closed instrument")
-        num = float(cmd.split(':')[-1])
+        num = float(message.split(":")[-1])
         self.state = num
 
         if num < 0:
@@ -61,7 +71,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
         if num == 0:
             raise pyvisa.VisaIOError(pyvisa.constants.VI_ERROR_TMO)
 
-        return len(cmd)
+        return len(message)
 
     def ask(self, cmd):
         if self.closed:
@@ -70,15 +80,16 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
             raise ValueError("I'm out of fingers")
         return self.state
 
-    def query(self, cmd):
+    def query(self, message: str, delay: Optional[float] = None) -> str:
         if self.state > 10:
             raise ValueError("I'm out of fingers")
-        return self.state
+        return str(self.state)
 
     def set_visa_attribute(
-            self, name, state
-    ):
+        self, name: pyvisa.constants.ResourceAttribute, state: Any
+    ) -> pyvisa.constants.StatusCode:
         setattr(self, str(name), state)
+        return pyvisa.constants.StatusCode.success
 
     def __del__(self):
         pass
