@@ -1,7 +1,12 @@
-from typing import Any, Callable
+from typing import Callable, TypeVar
+
+from typing_extensions import ParamSpec
+
+input = ParamSpec("input")
+output = TypeVar("output")
 
 
-def qcodes_abstractmethod(funcobj: Callable[..., Any]) -> Callable[..., Any]:
+def qcodes_abstractmethod(funcobj: Callable[input, output]) -> Callable[input, output]:
     """
     A decorator indicating abstract methods.
 

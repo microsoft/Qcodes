@@ -88,7 +88,7 @@ h5py==3.11.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.100.5
+hypothesis==6.102.3
 idna==3.7
     # via requests
 imagesize==1.4.1
@@ -150,7 +150,7 @@ lazy-loader==0.4
     # via qcodes-loop
 locket==1.0.0
     # via partd
-lxml==5.2.1
+lxml==5.2.2
 lxml-stubs==0.5.1
 markupsafe==2.1.5
     # via
@@ -224,7 +224,7 @@ pandas==2.2.2
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==2.2.1.240316
+pandas-stubs==2.2.2.240514
 pandocfilters==1.5.1
     # via nbconvert
 parso==0.8.4
@@ -235,7 +235,7 @@ pillow==10.3.0
     # via
     #   matplotlib
     #   qcodes
-platformdirs==4.2.1
+platformdirs==4.2.2
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
@@ -245,7 +245,7 @@ psutil==5.9.8
     # via ipykernel
 pure-eval==0.2.2
     # via stack-data
-pyarrow==16.0.0
+pyarrow==16.1.0
     # via qcodes
 pyelftools==0.31
     # via zhinst-toolkit
@@ -391,7 +391,7 @@ types-pytz==2024.1.0.20240417
     # via pandas-stubs
 types-pywin32==306.0.0.20240408
 types-requests==2.31.0.20240406
-types-setuptools==69.5.0.20240423
+types-setuptools==69.5.0.20240513
 types-tabulate==0.9.0.20240106
 types-tqdm==4.66.0.20240417
 typing-extensions==4.11.0
@@ -431,7 +431,7 @@ wrapt==1.16.0
     # via
     #   deprecated
     #   qcodes
-xarray==2024.3.0
+xarray==2024.5.0
     # via
     #   cf-xarray
     #   qcodes

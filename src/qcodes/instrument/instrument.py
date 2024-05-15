@@ -35,9 +35,19 @@ class InstrumentProtocol(Protocol):
 
 T = TypeVar("T", bound="Instrument")
 
+# a metaclass that overrides __call__ means that we lose
+# both the args and return type hints.
+# Since our metaclass does not modify the signature
+# is is safe simply not to use that metaclass in typechecking context.
+# See https://github.com/microsoft/pyright/discussions/5561 and
+# https://github.com/microsoft/pyright/issues/5488
+if TYPE_CHECKING:
+    instrument_meta_class = type
+else:
+    instrument_meta_class = InstrumentMeta
 
-class Instrument(InstrumentBase, metaclass=InstrumentMeta):
 
+class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     """
     Base class for all QCodes instruments.
 
