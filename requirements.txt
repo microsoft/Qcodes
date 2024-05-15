@@ -245,7 +245,7 @@ psutil==5.9.8
     # via ipykernel
 pure-eval==0.2.2
     # via stack-data
-pyarrow==16.0.0
+pyarrow==16.1.0
     # via qcodes
 pyelftools==0.31
     # via zhinst-toolkit
