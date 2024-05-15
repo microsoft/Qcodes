@@ -49,10 +49,10 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
 
     def set_raw(self, value: ParamRawDataType | Sequence[ParamRawDataType]) -> None:
         """
-        Set all parameters to this value.
+        Set all parameters to this/these value(s).
 
         Args:
-            value: The value to set to. The type is given by the
+            value: The value(s) to set to. The type is given by the
                 underlying parameter.
         """
         try:
