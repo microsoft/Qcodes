@@ -235,7 +235,7 @@ pillow==10.3.0
     # via
     #   matplotlib
     #   qcodes
-platformdirs==4.2.1
+platformdirs==4.2.2
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
