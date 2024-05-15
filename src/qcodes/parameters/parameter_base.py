@@ -249,8 +249,8 @@ class ParameterBase(MetadatableWithName):
         else:
             self.inverse_val_mapping = invert_val_mapping(val_mapping)
 
-        self.get_parser = get_parser
-        self.set_parser = set_parser
+        self.get_parser: Callable[..., Any] | None = get_parser
+        self.set_parser: Callable[..., Any] | None = set_parser
 
         # ``_Cache`` stores "latest" value (and raw value) and timestamp
         # when it was set or measured
