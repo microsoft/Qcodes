@@ -464,7 +464,7 @@ class ParameterBase(MetadatableWithName):
         pass
 
     @overload
-    def __call__(self, *args: Any, **kwargs: Any) -> None:
+    def __call__(self, value: ParamDataType, **kwargs: Any) -> None:
         pass
 
     def __call__(self, *args: Any, **kwargs: Any) -> ParamDataType | None:
@@ -659,7 +659,6 @@ class ParameterBase(MetadatableWithName):
     def _wrap_get(
         self, get_function: Callable[..., ParamRawDataType]
     ) -> Callable[..., ParamDataType]:
-
         @wraps(get_function)
         def get_wrapper(*args: Any, **kwargs: Any) -> ParamDataType:
             if not self.gettable:

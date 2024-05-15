@@ -1,0 +1,57 @@
+spec: "1.0"
+devices:
+  cryomagnetics_4g:
+    eom:
+      GPIB INSTR:
+        q: "\n"
+        r: "\n"
+        error: ERROR
+    dialogues:
+      - q: "*IDN?"
+        r: "Cryomagnetics,4G,2239,1.02,208"
+      - q: "UNITS?"
+        r: "T"
+      - q: "UNITS A"
+        r: ""
+      - q: "UNITS kG"
+        r: ""
+      - q: "UNITS T"
+        r: ""
+      - q: "VMAG?"
+        r: "4.75"
+      - q: "VOUT?"
+        r: "12.0"
+      - q: "IOUT?"
+        r: "85.0"
+      - q: "QRESET"
+        r: ""
+      - q: "REMOTE"
+        r: ""
+      - q: "SWEEP ZERO"
+        r: ""
+      - q: "*STB?"
+        r: "0"  # standby mode
+      - q: "*STB?"
+        r: "1"  # ramping mode
+      - q: "IMAG?"
+        r: "85.0 kG"
+      - q: "RATE?"
+        r: "5.0"
+      - q: "LLIM 50"
+        r: ""
+      - q: "ULIM 100"
+        r: ""
+      - q: "SWEEP UP"
+        r: ""
+      - q: "SWEEP DOWN"
+        r: ""
+      - q: "RANGE 0 100.0"
+        r: ""
+      - q: "RATE 0 1.0"
+        r: ""
+      - q: "SWEEP PAUSE"
+        r: ""
+
+resources:
+  GPIB::1::INSTR:
+    device: cryomagnetics_4g

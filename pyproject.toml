@@ -203,7 +203,7 @@ module = [
 ignore_missing_imports = true
 
 [tool.pyright]
-include = ["src"]
+include = ["src","tests"]
 ignore = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
     ]
