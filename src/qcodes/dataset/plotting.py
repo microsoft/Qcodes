@@ -2,6 +2,7 @@
 This plotting module provides various functions to plot the data measured
 using QCoDeS.
 """
+
 from __future__ import annotations
 
 import inspect
@@ -236,7 +237,6 @@ def plot_dataset(
     new_colorbars: list[Colorbar | None] = []
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
-
         if len(data) == 2:  # 1D PLOTTING
             log.debug(f"Doing a 1D plot with kwargs: {kwargs}")
 
@@ -330,7 +330,11 @@ def plot_dataset(
 
 def plot_and_save_image(
     data: DataSetProtocol, save_pdf: bool = True, save_png: bool = True
-) -> tuple[DataSetProtocol, tuple[Axes, ...], tuple[Colorbar | None, ...],]:
+) -> tuple[
+    DataSetProtocol,
+    tuple[Axes, ...],
+    tuple[Colorbar | None, ...],
+]:
     """
     The utility function to plot results and save the figures either in pdf or
     png or both formats.
@@ -578,7 +582,6 @@ def plot_2d_scatterplot(
         The matplotlib axis handles for plot and colorbar
     """
     import matplotlib
-    import matplotlib.cm
 
     if "rasterized" in kwargs.keys():
         rasterized = kwargs.pop("rasterized")
@@ -597,7 +600,7 @@ def plot_2d_scatterplot(
 
     if z_is_stringy:
         name = getattr(cmap, "name", _DEFAULT_COLORMAP)
-        cmap = matplotlib.cm.get_cmap(name, len(z_strings))
+        cmap = matplotlib.colormaps.get_cmap(name).resampled(len(z_strings))
 
     # according to the docs the c argument should support an ndarray
     # but that fails type checking
@@ -649,7 +652,6 @@ def plot_on_a_plain_grid(
         The matplotlib axes handle for plot and colorbar
     """
     import matplotlib
-    import matplotlib.cm
 
     log.debug(f"Got kwargs: {kwargs}")
 
@@ -698,7 +700,7 @@ def plot_on_a_plain_grid(
 
     if z_is_stringy:
         name = getattr(cmap, "name", _DEFAULT_COLORMAP)
-        cmap = matplotlib.cm.get_cmap(name, len(z_strings))
+        cmap = matplotlib.colormaps.get_cmap(name).resampled(len(z_strings))
 
     colormesh = ax.pcolormesh(
         x_to_plot,
