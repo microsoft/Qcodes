@@ -582,7 +582,6 @@ def plot_2d_scatterplot(
         The matplotlib axis handles for plot and colorbar
     """
     import matplotlib
-    import matplotlib.cm
 
     if "rasterized" in kwargs.keys():
         rasterized = kwargs.pop("rasterized")
@@ -653,7 +652,6 @@ def plot_on_a_plain_grid(
         The matplotlib axes handle for plot and colorbar
     """
     import matplotlib
-    import matplotlib.cm
 
     log.debug(f"Got kwargs: {kwargs}")
 
