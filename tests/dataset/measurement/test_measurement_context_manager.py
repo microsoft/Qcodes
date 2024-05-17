@@ -51,6 +51,31 @@ def test_log_includes_extra_info(
     assert "some extra info" in caplog.text
 
 
+@pytest.mark.usefixtures("experiment")
+def test_register_parameter_arg_types(DAC, DMM):
+    """Test basis and setpoints argument types."""
+    meas = Measurement()
+    meas.register_parameter(DAC.ch1)
+
+    with pytest.raises(TypeError):
+        meas.register_parameter(DMM.v1, basis=DAC.ch1)
+
+    with pytest.raises(TypeError):
+        meas.register_parameter(DMM.v1, setpoints=DAC.ch1)
+
+    with pytest.raises(TypeError):
+        meas.register_parameter(DMM.v1, basis="foo")
+
+    with pytest.raises(TypeError):
+        meas.register_parameter(DMM.v1, setpoints="foo")
+
+    with pytest.raises(TypeError):
+        meas.register_parameter(DMM.v1, basis=(DAC.ch1, 3))
+
+    with pytest.raises(TypeError):
+        meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, 3))
+
+
 def test_register_parameter_numbers(DAC, DMM) -> None:
     """
     Test the registration of scalar QCoDeS parameters
