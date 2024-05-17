@@ -70,10 +70,10 @@ def test_register_parameter_arg_types(DAC, DMM):
         meas.register_parameter(DMM.v1, setpoints="foo")
 
     with pytest.raises(TypeError):
-        meas.register_parameter(DMM.v1, basis=(DAC.ch1, 3))
+        meas.register_parameter(DMM.v1, basis=(DAC.ch1, 3))  # type: ignore[arg-type]
 
     with pytest.raises(TypeError):
-        meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, 3))
+        meas.register_parameter(DMM.v1, setpoints=(DAC.ch1, 3))  # type: ignore[arg-type]
 
 
 def test_register_parameter_numbers(DAC, DMM) -> None:
