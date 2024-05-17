@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.instrument import InstrumentChannel
+from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, MultiParameter
 
 from . import constants
@@ -26,6 +26,8 @@ from .KeysightB1500_module import (
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500_base import (
         KeysightB1500,
     )
@@ -35,7 +37,12 @@ _pattern = re.compile(r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
 
 
 class KeysightB1500CVSweeper(InstrumentChannel):
-    def __init__(self, parent: "KeysightB1520A", name: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "KeysightB1520A",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         super().__init__(parent, name, **kwargs)
 
         self.add_parameter(name='sweep_auto_abort',

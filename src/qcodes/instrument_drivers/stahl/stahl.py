@@ -7,14 +7,22 @@ import re
 from collections import OrderedDict
 from collections.abc import Iterable
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import numpy as np
 from pyvisa.resources.serial import SerialInstrument
 from pyvisa.resources.tcpip import TCPIPSocket
 
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.validators import Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 logger = logging.getLogger()
 
@@ -157,8 +165,15 @@ class Stahl(VisaInstrument):
     In this case the VISA address would be: ``"TCPIP0::hostname::8088::SOCKET"``
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
-        super().__init__(name, address, terminator="\r", **kwargs)
+    default_terminator = "\r"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
+        super().__init__(name, address, **kwargs)
         if isinstance(self.visa_handle, TCPIPSocket):
             pass  # allow connection to remote serial device
         elif isinstance(self.visa_handle, SerialInstrument):

@@ -1,8 +1,11 @@
 from functools import partial
-from typing import Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable, Union
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 def _parse_output_string(s: str) -> str:
@@ -37,8 +40,16 @@ class Keithley2000(VisaInstrument):
     Driver for the Keithley 2000 multimeter.
     """
 
-    def __init__(self, name: str, address: str, reset: bool = False, **kwargs: Any):
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        reset: bool = False,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
+        super().__init__(name, address, **kwargs)
 
         self._trigger_sent = False
 

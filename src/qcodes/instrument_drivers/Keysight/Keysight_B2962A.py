@@ -1,18 +1,35 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class KeysightB2962AChannel(InstrumentChannel):
     """
 
     """
-    def __init__(self, parent: Instrument, name: str, chan: int) -> None:
+
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        chan: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         """
         Args:
             parent: The instrument to which the channel is attached.
             name: The name of the channel
             chan: The number of the channel in question (1-2)
+            **kwargs: Forwarded to base class.
         """
         # Sanity Check inputs
         if name not in ["ch1", "ch2"]:
@@ -20,7 +37,7 @@ class KeysightB2962AChannel(InstrumentChannel):
         if chan not in [1, 2]:
             raise ValueError(f"Invalid Channel: {chan}, expected '1' or '2'")
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter('source_voltage',
                            label=f"Channel {chan} Voltage",
@@ -96,8 +113,13 @@ class KeysightB2962A(VisaInstrument):
         - Similar drivers have special handlers to map return values of
           9.9e+37 to inf, is this needed?
     """
-    def __init__(self, name: str, address: str, **kwargs: Any):
-        super().__init__(name, address, terminator='\n', **kwargs)
+
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
+        super().__init__(name, address, **kwargs)
 
         # The B2962A supports two channels
         for ch_num in [1, 2]:

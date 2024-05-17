@@ -1,8 +1,11 @@
 from functools import partial
-from typing import Any, Callable, TypeVar, Union
+from typing import TYPE_CHECKING, Callable, TypeVar, Union
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 T = TypeVar("T")
 
@@ -45,8 +48,14 @@ class Keithley6500CommandSetError(Exception):
 
 
 class Keithley6500(VisaInstrument):
+    default_terminator = "\n"
+
     def __init__(
-        self, name: str, address: str, reset_device: bool = False, **kwargs: Any
+        self,
+        name: str,
+        address: str,
+        reset_device: bool = False,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         """Driver for the Keithley 6500 multimeter. Based on the Keithley 2000 driver,
             commands have been adapted for the Keithley 6500. This driver does not contain
@@ -60,7 +69,7 @@ class Keithley6500(VisaInstrument):
             reset_device: Reset the device on startup if true.
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, terminator="\n", **kwargs)
+        super().__init__(name, address, **kwargs)
 
         command_set = self.ask("*LANG?")
         if command_set != "SCPI":

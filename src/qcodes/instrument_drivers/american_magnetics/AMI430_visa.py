@@ -8,16 +8,25 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import Any, Callable, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
 
-from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.math_utils import FieldVector
 from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 
 log = logging.getLogger(__name__)
 
@@ -132,21 +141,7 @@ class AMI430SwitchHeater(InstrumentChannel):
 
 
 class AMIModel430(VisaInstrument):
-    """
-    Driver for the American Magnetics Model 430 magnet power supply programmer.
 
-    This class controls a single magnet power supply. In order to use two or
-    three magnets simultaneously to set field vectors, first instantiate the
-    individual magnets using this class and then pass them as arguments to
-    the AMIModel4303D virtual instrument classes.
-
-    Args:
-        name: a name for the instrument
-        address: VISA formatted address of the power supply programmer.
-            Of the form ``TCPIP[board]::host address::port::SOCKET``
-            e.g. ``TCPIP0::192.168.0.1::7800::SOCKET``
-        current_ramp_limit: A current ramp limit, in units of A/s
-    """
 
     _SHORT_UNITS: ClassVar[dict[str, str]] = {
         "seconds": "s",
@@ -158,27 +153,45 @@ class AMIModel430(VisaInstrument):
     _RETRY_WRITE_ASK = True
     _RETRY_TIME = 5
 
+    default_terminator = "\r\n"
+
     def __init__(
         self,
         name: str,
         address: str,
         reset: bool = False,
-        terminator: str = "\r\n",
         current_ramp_limit: float | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
     ):
+        """
+        Driver for the American Magnetics Model 430 magnet power supply programmer.
+
+        This class controls a single magnet power supply. In order to use two or
+        three magnets simultaneously to set field vectors, first instantiate the
+        individual magnets using this class and then pass them as arguments to
+        the AMIModel4303D virtual instrument classes.
+
+        Args:
+            name: a name for the instrument
+            address: VISA formatted address of the power supply programmer.
+                Of the form ``TCPIP[board]::host address::port::SOCKET``
+                e.g. ``TCPIP0::192.168.0.1::7800::SOCKET``
+            reset: Should the reset method be called on the instrument at init time
+            current_ramp_limit: A current ramp limit, in units of A/s
+            **kwargs: Additional kwargs are passed to the base class
+        """
         if "has_current_rating" in kwargs.keys():
             warnings.warn(
                 "'has_current_rating' kwarg to AMIModel430 "
                 "is deprecated and has no effect",
                 category=QCoDeSDeprecationWarning,
             )
-            kwargs.pop("has_current_rating")
+            # this key should not be here so mypy complains about it
+            kwargs.pop("has_current_rating")  # type: ignore[typeddict-item]
 
         super().__init__(
             name,
             address,
-            terminator=terminator,
             **kwargs,
         )
 

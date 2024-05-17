@@ -1,12 +1,17 @@
 from functools import partial
 from time import time
-from typing import Union, cast
+from typing import TYPE_CHECKING, cast
 
 import qcodes.validators as vals
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 
-number = Union[float, int]
-
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 class HarvardDecadacException(Exception):
     pass
@@ -441,9 +446,14 @@ class HarvardDecadac(VisaInstrument, DacReader):
     DAC_CHANNEL_CLASS = HarvardDecadacChannel
     DAC_SLOT_CLASS = HarvardDecadacSlot
 
-    def __init__(self, name: str, address: str,
-                 min_val: number=-5, max_val: number=5,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        min_val: float = -5,
+        max_val: float = 5,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
         """
 
         Creates an instance of the Decadac instruments

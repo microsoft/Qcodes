@@ -19,7 +19,10 @@ from qcodes.validators import Validator
 from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from .instrument import Instrument
+    from .instrument_base import InstrumentBaseKWArgs
 
 
 class InstrumentModule(InstrumentBase):
@@ -33,15 +36,14 @@ class InstrumentModule(InstrumentBase):
     Args:
         parent: The instrument to which this module should be
           attached.
-
         name: The name of this module.
+        **kwargs: Forwarded to the base class.
 
     """
 
-    def __init__(self,
-                 parent: InstrumentBase,
-                 name: str,
-                 **kwargs: Any) -> None:
+    def __init__(
+        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+    ) -> None:
         # need to specify parent before `super().__init__` so that the right
         # `full_name` is available in that scope. `full_name` is used for
         # registering the filter for the log messages. It is composed by

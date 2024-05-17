@@ -10,7 +10,12 @@ from typing import TYPE_CHECKING, Any, Literal
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import (
     ArrayParameter,
     Parameter,
@@ -23,6 +28,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from qcodes_loop.data.data_set import DataSet
+    from typing_extensions import Unpack
 
 
 if sys.version_info >= (3, 11):
@@ -785,14 +791,18 @@ class Keithley2600(VisaInstrument):
 
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: Unpack[VisaInstrumentKWArgs]
+    ) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
             address: VISA resource address
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, terminator="\n", **kwargs)
+        super().__init__(name, address, **kwargs)
 
         model = self.ask("localnode.model")
 

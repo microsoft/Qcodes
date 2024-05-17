@@ -3,13 +3,17 @@ This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers.
 
 Colloquially known as the "stepper motors".
 """
-from typing import Any, Optional
+
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 import numpy.typing as npt
 
-from qcodes.instrument import Instrument, InstrumentChannel
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.validators import Enum, Ints, Multiples
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 try:
     import gclib  # pyright: ignore[reportMissingImports]
@@ -29,7 +33,9 @@ class GalilMotionController(Instrument):
     Base class for Galil Motion Controller drivers
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[InstrumentBaseKWArgs]"
+    ) -> None:
         """
         Initializes and opens the connection to the Galil Motion Controller
 

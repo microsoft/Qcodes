@@ -9,14 +9,13 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, overload
 from qcodes.utils import strip_attrs
 from qcodes.validators import Anything
 
-from .instrument_base import InstrumentBase
+from .instrument_base import InstrumentBase, InstrumentBaseKWArgs
 from .instrument_meta import InstrumentMeta
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from typing_extensions import Unpack
 
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
-
 
 log = logging.getLogger(__name__)
 
@@ -66,16 +65,11 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
     _type: type[Instrument] | None = None
     _instances: weakref.WeakSet[Instrument] = weakref.WeakSet()
 
-    def __init__(
-        self,
-        name: str,
-        metadata: Mapping[Any, Any] | None = None,
-        label: str | None = None,
-    ) -> None:
+    def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
 
         self._t0 = time.time()
 
-        super().__init__(name=name, metadata=metadata, label=label)
+        super().__init__(name=name, **kwargs)
 
         self.add_parameter("IDN", get_cmd=self.get_idn, vals=Anything())
 

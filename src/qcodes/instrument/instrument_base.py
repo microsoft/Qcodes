@@ -7,6 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
+from typing_extensions import TypedDict
 
 from qcodes.logger import get_instrument_logger
 from qcodes.metadatable import Metadatable, MetadatableWithName
@@ -16,6 +17,8 @@ from qcodes.utils import DelegateAttributes, full_class
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
+    from typing_extensions import NotRequired
+
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -23,6 +26,24 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
+
+class InstrumentBaseKWArgs(TypedDict):
+    """
+    This TypedDict defines the type of the kwargs that can be passed to the InstrumentBase class.
+    A subclass of VisaInstrument should take ``**kwargs: Unpack[InstrumentBaseKWArgs]`` as input
+    and forward this to the super class to ensure that it can accept all the arguments defined here.
+    """
+
+    metadata: NotRequired[Mapping[Any, Any] | None]
+    """
+    Additional static metadata to add to this
+    instrument's JSON snapshot.
+    """
+    label: NotRequired[str | None]
+    """
+    Nicely formatted name of the instrument; if None,
+    the ``name`` is used.
+    """
 
 class InstrumentBase(MetadatableWithName, DelegateAttributes):
     """

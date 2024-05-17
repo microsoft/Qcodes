@@ -1,8 +1,17 @@
-from typing import Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    Instrument,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import create_on_off_val_mapping
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class NotKnownModel(Exception):
@@ -224,15 +233,21 @@ class AimTTi(VisaInstrument):
         "PL303QMT-P": 3,
         "QL355TP": 3,
     }
+    default_terminator = "\n"
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS.
             address: VISA resource address
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, terminator="\n", **kwargs)
+        super().__init__(name, address, **kwargs)
 
         channels = ChannelList(self, "Channels", AimTTiChannel, snapshotable=False)
 

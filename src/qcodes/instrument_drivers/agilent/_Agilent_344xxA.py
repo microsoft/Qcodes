@@ -1,8 +1,12 @@
-from typing import Any
 
-from qcodes.instrument import VisaInstrument
+from typing import TYPE_CHECKING
+
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter
 from qcodes.validators import Enum, Strings
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class _Agilent344xxA(VisaInstrument):
@@ -13,8 +17,15 @@ class _Agilent344xxA(VisaInstrument):
     Note that most models are better supported by the Keysight 33xxA drivers.
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
+        super().__init__(name, address, **kwargs)
 
         idn = self.IDN.get()
         self.model = idn["model"]

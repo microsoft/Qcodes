@@ -1,10 +1,15 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import numpy as np
 
-from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import (
     Parameter,
     ParameterWithSetpoints,
@@ -12,6 +17,9 @@ from qcodes.parameters import (
     create_on_off_val_mapping,
 )
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class FrequencyAxis(Parameter):
@@ -73,7 +81,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         name: str,
         *arg: Any,
         additional_wait: int = 1,
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(parent, name, *arg, **kwargs)
 
@@ -411,7 +419,13 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
     Phase Noise Mode for Keysight N9030B instrument.
     """
 
-    def __init__(self, parent: KeysightN9030B, name: str, *arg: Any, **kwargs: Any):
+    def __init__(
+        self,
+        parent: KeysightN9030B,
+        name: str,
+        *arg: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         super().__init__(parent, name, *arg, **kwargs)
 
         self._min_freq = 1
@@ -611,8 +625,12 @@ class KeysightN9030B(VisaInstrument):
         address
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: Unpack[VisaInstrumentKWArgs]
+    ) -> None:
+        super().__init__(name, address, **kwargs)
 
         self._min_freq: float
         self._max_freq: float

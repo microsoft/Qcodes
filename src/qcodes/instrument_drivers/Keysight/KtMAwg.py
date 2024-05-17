@@ -1,12 +1,15 @@
 import ctypes
 from functools import partial
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import Instrument, InstrumentChannel
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import create_on_off_val_mapping
 from qcodes.validators import Numbers
 
 from .KtMAwgDefs import *  # noqa F403
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class KeysightM9336AAWGChannel(InstrumentChannel):
@@ -16,14 +19,20 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
     seperate waveforms.
     """
 
-    def __init__(self, parent: "KeysightM9336A", name: str, chan: int) -> None:
+    def __init__(
+        self,
+        parent: "KeysightM9336A",
+        name: str,
+        chan: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         # Sanity Check inputs
         if name not in ["ch1", "ch2", "ch3"]:
             raise ValueError(f"Invalid channel: {name}, expecting ch1:ch3")
         if chan not in [1, 2, 3]:
             raise ValueError(f"Invalid channel: {chan}, expecting ch1:ch3")
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self._channel = ctypes.create_string_buffer(
             f"Channel{chan}".encode("ascii")
         )
@@ -225,13 +234,14 @@ class KeysightM9336A(Instrument):
     """
     _default_buf_size = 256
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 options: str = "",
-                 dll_path: str = r"C:\Program Files\IVI "
-                                 r"Foundation\IVI\Bin\KtMAwg_64.dll",
-                 **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        options: str = "",
+        dll_path: str = r"C:\Program Files\IVI Foundation\IVI\Bin\KtMAwg_64.dll",
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         super().__init__(name, **kwargs)
 
         self._address = bytes(address, "ascii")

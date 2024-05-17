@@ -1,8 +1,11 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import create_on_off_val_mapping
 from qcodes.validators import Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class N51x1(VisaInstrument):
@@ -11,8 +14,17 @@ class N51x1(VisaInstrument):
     It has been tested with N5171B, N5181A, N5173B, N5183B
     """
 
-    def __init__(self, name: str, address: str, min_power: int = -144, max_power: int = 19, **kwargs: Any):
-        super().__init__(name, address, terminator='\n', **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        min_power: int = -144,
+        max_power: int = 19,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
+        super().__init__(name, address, **kwargs)
 
         self._options = self.ask("*OPT?")
         # Determine installed frequency option
