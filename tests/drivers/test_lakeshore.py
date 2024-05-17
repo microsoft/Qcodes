@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+import warnings
 from contextlib import suppress
 from functools import wraps
 from typing import Any, Callable, Literal, TypeVar
@@ -13,6 +14,7 @@ from qcodes.instrument import InstrumentBase
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 from qcodes.logger import get_instrument_logger
+from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
@@ -46,12 +48,17 @@ class MockVisaInstrument:
         func_names = dir(self)
         # cycle through all methods
         for func_name in func_names:
-            f = getattr(self, func_name)
-            # only add for methods that have such an attribute
-            with suppress(AttributeError):
-                self.queries[getattr(f, 'query_name')] = f
-            with suppress(AttributeError):
-                self.cmds[getattr(f, 'command_name')] = f
+            with warnings.catch_warnings():
+                if func_name == "_name":
+                    # silence warning when getting deprecated attribute
+                    warnings.simplefilter("ignore", category=QCoDeSDeprecationWarning)
+
+                f = getattr(self, func_name)
+                # only add for methods that have such an attribute
+                with suppress(AttributeError):
+                    self.queries[getattr(f, "query_name")] = f
+                with suppress(AttributeError):
+                    self.cmds[getattr(f, "command_name")] = f
 
     def write_raw(self, cmd) -> None:
         cmd_parts = cmd.split(' ')
