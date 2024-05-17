@@ -932,6 +932,12 @@ class Measurement:
                 f"{ParamSpec.allowed_types} are supported."
             )
 
+        if setpoints is not None:
+            self._check_setpoints_type(setpoints, "setpoints")
+
+        if basis is not None:
+            self._check_setpoints_type(basis, "basis")
+
         if isinstance(parameter, ArrayParameter):
             self._register_arrayparameter(parameter, setpoints, basis, paramtype)
         elif isinstance(parameter, ParameterWithSetpoints):
@@ -969,6 +975,18 @@ class Measurement:
             )
 
         return self
+
+    @staticmethod
+    def _check_setpoints_type(arg: setpoints_type, name: str) -> None:
+        if (
+            not isinstance(arg, Sequence)
+            or isinstance(arg, str)
+            or any(not isinstance(a, (str, ParameterBase)) for a in arg)
+        ):
+            raise TypeError(
+                f"{name} should be a sequence of str or ParameterBase, not "
+                f"{type(arg)}"
+            )
 
     @staticmethod
     def _infer_paramtype(parameter: ParameterBase, paramtype: str | None) -> str | None:

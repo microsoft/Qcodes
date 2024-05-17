@@ -1,0 +1,1 @@
+Measurement.register_parameter() now tests for correct types of arguments setpoints and basis.
