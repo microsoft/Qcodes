@@ -1,6 +1,6 @@
 import re
 import time
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from pyvisa import constants, errors
@@ -148,8 +148,8 @@ class KeysightPNAPort(InstrumentChannel):
         parent: "PNABase",
         name: str,
         port: int,
-        min_power: Union[int, float],
-        max_power: Union[int, float],
+        min_power: float,
+        max_power: float,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
@@ -168,9 +168,7 @@ class KeysightPNAPort(InstrumentChannel):
                            vals=Numbers(min_value=min_power,
                                         max_value=max_power))
 
-    def _set_power_limits(self,
-                          min_power: Union[int, float],
-                          max_power: Union[int, float]) -> None:
+    def _set_power_limits(self, min_power: float, max_power: float) -> None:
         """
         Set port power limits
         """
@@ -399,11 +397,11 @@ class PNABase(VisaInstrument):
         name: str,
         address: str,
         # Set frequency ranges
-        min_freq: Union[int, float],
-        max_freq: Union[int, float],
+        min_freq: float,
+        max_freq: float,
         # Set power ranges
-        min_power: Union[int, float],
-        max_power: Union[int, float],
+        min_power: float,
+        max_power: float,
         nports: int,  # Number of ports on the PNA
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
@@ -724,9 +722,7 @@ class PNABase(VisaInstrument):
         """
         self.averages_enabled(False)
 
-    def _set_power_limits(self,
-                          min_power: Union[int, float],
-                          max_power: Union[int, float]) -> None:
+    def _set_power_limits(self, min_power: float, max_power: float) -> None:
         """
         Set port power limits
         """
