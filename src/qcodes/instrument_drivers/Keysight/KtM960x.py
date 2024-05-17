@@ -1,9 +1,9 @@
 import ctypes
 from functools import partial
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import qcodes.validators as vals
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import (
     MultiParameter,
     ParamRawDataType,
@@ -11,6 +11,9 @@ from qcodes.parameters import (
 )
 
 from .KtM960xDefs import *  # noqa F403
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class Measure(MultiParameter):
@@ -40,13 +43,14 @@ class KeysightM960x(Instrument):
 
     _default_buf_size = 256
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 options: str = "",
-                 dll_path: str = r"C:\Program Files\IVI "
-                                 r"Foundation\IVI\Bin\KtM960x_64.dll",
-                 **kwargs: Any) -> None:
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        options: str = "",
+        dll_path: str = r"C:\Program Files\IVI Foundation\IVI\Bin\KtM960x_64.dll",
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         super().__init__(name, **kwargs)
 
         self._address = bytes(address, "ascii")

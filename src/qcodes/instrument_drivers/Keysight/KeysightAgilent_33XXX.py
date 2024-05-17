@@ -1,11 +1,20 @@
 import logging
 from functools import partial
-from typing import Any, Union
+from typing import TYPE_CHECKING, Union
 
 from qcodes import validators as vals
-from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 
 from .private.error_handling import KeysightErrorQueueMixin
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -19,15 +28,23 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
     """
     Class to hold the output channel of a Keysight 33xxxx waveform generator.
     """
-    def __init__(self, parent: Instrument, name: str, channum: int) -> None:
+
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        channum: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         """
         Args:
             parent: The instrument to which the channel is
                 attached.
             name: The name of the channel
             channum: The number of the channel in question (1-2)
+            **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         def val_parser(parser: type, inputstring: str) -> Union[float,int]:
             """
@@ -288,8 +305,15 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
     waveform generators
     """
 
-    def __init__(self, name: str, address: str,
-                 silent: bool = False, **kwargs: Any):
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        silent: bool = False,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
         """
         Args:
             name: The name of the instrument used internally
@@ -299,7 +323,7 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
             **kwargs: kwargs are forwarded to base class.
         """
 
-        super().__init__(name, address, terminator='\n', **kwargs)
+        super().__init__(name, address, **kwargs)
         self.model = self.IDN()['model']
 
         #######################################################################

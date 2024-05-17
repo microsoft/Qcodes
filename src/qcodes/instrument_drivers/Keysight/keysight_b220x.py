@@ -3,11 +3,14 @@ import warnings
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Ints, Lists, MultiType
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
+
 
 T = TypeVar('T')
 
@@ -54,8 +57,12 @@ class KeysightB220X(VisaInstrument):
     _available_input_ports = Ints(1, 14)
     _available_output_ports = Ints(1, 48)
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
-        super().__init__(name, address, terminator='\n', **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
+        super().__init__(name, address, **kwargs)
 
         self._card = 0
 
