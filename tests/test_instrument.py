@@ -31,6 +31,7 @@ from qcodes.instrument_drivers.mock_instruments import (
 )
 from qcodes.metadatable import Metadatable
 from qcodes.parameters import Function, Parameter
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -273,12 +274,20 @@ def test_add_remove_f_p(testdummy) -> None:
     testdummy.add_function("dac1", call_cmd="foo")
 
     # test custom __get_attr__ for functions
-    fcn = testdummy["function"]
-    assert isinstance(fcn, Function)
+    with pytest.warns(
+        QCoDeSDeprecationWarning,
+        match="Use attributes directly on the instrument object instead",
+    ):
+        fcn = testdummy["function"]
+        assert isinstance(fcn, Function)
     # by design, one gets the parameter if a function exists
     # and has same name
-    dac1 = testdummy["dac1"]
-    assert isinstance(dac1, Parameter)
+    with pytest.warns(
+        QCoDeSDeprecationWarning,
+        match="Use attributes directly on the instrument object instead",
+    ):
+        dac1 = testdummy["dac1"]
+        assert isinstance(dac1, Parameter)
 
 
 def test_instances(testdummy, parabola) -> None:
