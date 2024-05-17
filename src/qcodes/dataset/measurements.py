@@ -977,7 +977,7 @@ class Measurement:
         return self
 
     @staticmethod
-    def _check_setpoints_type(arg: setpoints_type, name: str):
+    def _check_setpoints_type(arg: setpoints_type, name: str) -> None:
         if (
             not isinstance(arg, Sequence)
             or isinstance(arg, str)
