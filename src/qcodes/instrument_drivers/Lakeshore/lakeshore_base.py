@@ -5,42 +5,48 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional
 import numpy as np
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import Group, GroupParameter
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from typing_extensions import Unpack
+
 
 class BaseOutput(InstrumentChannel):
-    """
-    Base class for the outputs of Lakeshore temperature controllers
-
-    Args:
-        parent
-            instrument that this channel belongs to
-        output_name
-            name of this output
-        output_index
-            identifier for this output that is used in VISA commands of the
-            instrument
-        has_pid
-            if True, then the output supports closed loop control,
-            hence it will have three parameters to set it up: 'P', 'I', and 'D'
-    """
-
     MODES: ClassVar[dict[str, int]] = {}
     RANGES: ClassVar[dict[str, int]] = {}
 
     _input_channel_parameter_kwargs: ClassVar[dict[str, Any]] = {}
 
     def __init__(
-            self,
-            parent: "LakeshoreBase",
-            output_name: str,
-            output_index: int,
-            has_pid: bool = True):
-        super().__init__(parent, output_name)
+        self,
+        parent: "LakeshoreBase",
+        output_name: str,
+        output_index: int,
+        has_pid: bool = True,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        """
+        Base class for the outputs of Lakeshore temperature controllers
+
+        Args:
+            parent: instrument that this channel belongs to
+            output_name: name of this output
+            output_index: identifier for this output that is used in VISA commands of the
+              instrument
+            has_pid: if True, then the output supports closed loop control,
+              hence it will have three parameters to set it up: 'P', 'I', and 'D'
+            **kwargs: Forwarded to baseclass.
+        """
+        super().__init__(parent, output_name, **kwargs)
 
         self.INVERSE_RANGES: dict[int, str] = {v: k for k, v in self.RANGES.items()}
 
@@ -330,28 +336,28 @@ class BaseOutput(InstrumentChannel):
 
 
 class BaseSensorChannel(InstrumentChannel):
-    """
-    Base class for Lakeshore Temperature Controller sensor channels
-
-    Args:
-        parent
-            instrument instance that this channel belongs to
-        name
-            name of the channel
-        channel
-            string identifier of the channel as referenced in commands;
-            for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
-    """
-
     # A dictionary of sensor statuses that assigns a string representation of
     # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
     SENSOR_STATUSES: ClassVar[dict[int, str]] = {}
 
     def __init__(
-            self,
-            parent: "LakeshoreBase",
-            name: str,
-            channel: str):
+        self,
+        parent: "LakeshoreBase",
+        name: str,
+        channel: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        """
+        Base class for Lakeshore Temperature Controller sensor channels
+
+        Args:
+            parent: instrument instance that this channel belongs to
+            name: name of the channel
+            channel: string identifier of the channel as referenced in commands;
+              for example, '1' or '6' for model 372, or 'A' and 'C' for model 336
+            **kwargs: Forwarded to base class.
+        """
+
         super().__init__(parent, name)
 
         self._channel = channel  # Channel on the temperature controller
@@ -488,15 +494,16 @@ class LakeshoreBase(VisaInstrument):
         dict[Any, str]
     ]
 
+    default_terminator = "\r\n"
+
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\r\n",
         print_connect_message: bool = True,
-        **kwargs: Any,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         # Allow access to channels either by referring to the channel name
         # or through a channel list, i.e. instr.A.temperature() and

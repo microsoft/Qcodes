@@ -1,4 +1,4 @@
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
@@ -7,6 +7,11 @@ from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
     LakeshoreBase,
 )
 from qcodes.parameters import Group, GroupParameter
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import InstrumentBaseKWArgs, VisaInstrumentKWArgs
 
 # There are 16 sensors channels (a.k.a. measurement inputs) in Model 372
 _n_channels = 16
@@ -43,9 +48,13 @@ class LakeshoreModel372Output(BaseOutput):
     }
 
     def __init__(
-        self, parent: "LakeshoreModel372", output_name: str, output_index: int
+        self,
+        parent: "LakeshoreModel372",
+        output_name: str,
+        output_index: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
-        super().__init__(parent, output_name, output_index, has_pid=True)
+        super().__init__(parent, output_name, output_index, has_pid=True, **kwargs)
 
         # Add more parameters for OUTMODE command
         # and redefine the corresponding group
@@ -111,8 +120,14 @@ class LakeshoreModel372Channel(BaseSensorChannel):
         128: "T. UNDER",
     }
 
-    def __init__(self, parent: "LakeshoreModel372", name: str, channel: str):
-        super().__init__(parent, name, channel)
+    def __init__(
+        self,
+        parent: "LakeshoreModel372",
+        name: str,
+        channel: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        super().__init__(parent, name, channel, **kwargs)
 
         # Parameters related to Input Channel Parameter Command (INSET)
         self.add_parameter(
@@ -298,7 +313,9 @@ class LakeshoreModel372(LakeshoreBase):
 
     CHANNEL_CLASS = LakeshoreModel372Channel
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
         super().__init__(name, address, **kwargs)
 
         heaters = {"sample_heater": 0, "warmup_heater": 1, "analog_heater": 2}

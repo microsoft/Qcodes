@@ -12,14 +12,20 @@ from typing import (
     cast,
 )
 
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import Group, GroupParameter
 from qcodes.validators import Enum, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from typing_extensions import Buffer, Self
+    from typing_extensions import Buffer, Self, Unpack
 
 
 def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
@@ -154,11 +160,15 @@ class LakeshoreModel325Curve(InstrumentChannel):
     valid_sensor_units = ("mV", "V", "Ohm", "log Ohm")
     temperature_key = "Temperature (K)"
 
-    def __init__(self, parent: "LakeshoreModel325", index: int) -> None:
-
+    def __init__(
+        self,
+        parent: "LakeshoreModel325",
+        index: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         self._index = index
         name = f"curve_{index}"
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter("serial_number", parameter_class=GroupParameter)
 
@@ -288,8 +298,13 @@ class LakeshoreModel325Sensor(InstrumentChannel):
         inp (str): Either "A" or "B"
     """
 
-    def __init__(self, parent: "LakeshoreModel325", name: str, inp: str) -> None:
-
+    def __init__(
+        self,
+        parent: "LakeshoreModel325",
+        name: str,
+        inp: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         if inp not in ["A", "B"]:
             raise ValueError("Please either specify input 'A' or 'B'")
 
@@ -365,21 +380,27 @@ class LakeshoreModel325Sensor(InstrumentChannel):
 
 
 class LakeshoreModel325Heater(InstrumentChannel):
-    """
-    InstrumentChannel for heater control on a Lakeshore Model 325.
+    def __init__(
+        self,
+        parent: "LakeshoreModel325",
+        name: str,
+        loop: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        """
+        InstrumentChannel for heater control on a Lakeshore Model 325.
 
-    Args:
-        parent (LakeshoreModel325): The instrument this heater belongs to
-        name (str)
-        loop (int): Either 1 or 2
-    """
-
-    def __init__(self, parent: "LakeshoreModel325", name: str, loop: int) -> None:
+        Args:
+            parent: The instrument this heater belongs to
+            name: Name of the Channel
+            loop: Either 1 or 2
+            **kwargs: Forwarded to baseclass.
+        """
 
         if loop not in [1, 2]:
             raise ValueError("Please either specify loop 1 or 2")
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self._loop = loop
 
         self.add_parameter(
@@ -514,8 +535,12 @@ class LakeshoreModel325(VisaInstrument):
     QCoDeS driver for Lakeshore Model 325 Temperature Controller.
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\r\n", **kwargs)
+    default_terminator = "\r\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
+        super().__init__(name, address, **kwargs)
 
         sensors = ChannelList(
             self, "sensor", LakeshoreModel325Sensor, snapshotable=False
