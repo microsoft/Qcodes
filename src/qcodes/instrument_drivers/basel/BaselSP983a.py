@@ -1,10 +1,13 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
 from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import DelegateParameter, Parameter
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class BaselSP983a(VisaInstrument):
@@ -19,18 +22,20 @@ class BaselSP983a(VisaInstrument):
             user's responsibility to ensure this. This source parameter is
             used to set offset voltage parameter of the preamp and the
             source parameter should represent a voltage source that is
-            connected to the "Offset Input Volgate" connector of the SP983C.
+            connected to the "Offset Input Voltage" connector of the SP983C.
+        **kwargs: Forwarded to base class.
     """
+
+    default_terminator = "\r\n"
 
     def __init__(
         self,
         name: str,
         address: str,
         input_offset_voltage: Optional[Parameter] = None,
-        terminator: str = "\r\n",
-        **kwargs: Any,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.connect_message()
 

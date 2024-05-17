@@ -3,10 +3,10 @@ import textwrap
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
 
 import numpy as np
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, Unpack
 
 import qcodes.validators as vals
-from qcodes.instrument import InstrumentChannel
+from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Group, GroupParameter, Parameter, ParamRawDataType
 
 from . import constants
@@ -50,7 +50,12 @@ class SweepSteps(TypedDict):
 
 
 class KeysightB1500IVSweeper(InstrumentChannel):
-    def __init__(self, parent: "KeysightB1517A", name: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "KeysightB1517A",
+        name: str,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         super().__init__(parent, name, **kwargs)
         self._sweep_step_parameters: SweepSteps = \
             {"sweep_mode": constants.SweepMode.LINEAR,
@@ -649,7 +654,7 @@ class KeysightB1517A(B1500Module):
         parent: "KeysightB1500",
         name: Optional[str],
         slot_nr: int,
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)

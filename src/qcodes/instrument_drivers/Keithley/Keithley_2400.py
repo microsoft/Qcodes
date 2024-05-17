@@ -1,8 +1,11 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import create_on_off_val_mapping
 from qcodes.validators import Enum, Strings
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class Keithley2400(VisaInstrument):
@@ -10,8 +13,15 @@ class Keithley2400(VisaInstrument):
     QCoDeS driver for the Keithley 2400 voltage source.
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter(
             "rangev",

@@ -5,11 +5,15 @@ import logging
 import socket
 from typing import TYPE_CHECKING, Any
 
-from .base import Instrument
+from .instrument import Instrument
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from types import TracebackType
+
+    from typing_extensions import Unpack
+
+    from .instrument_base import InstrumentBaseKWArgs
 
 log = logging.getLogger(__name__)
 
@@ -21,25 +25,17 @@ class IPInstrument(Instrument):
 
     Args:
         name: What this instrument is called locally.
-
         address: The IP address or name. If not given on
             construction, must be provided before any communication.
-
         port: The IP port. If not given on construction, must
             be provided before any communication.
-
         timeout: Seconds to allow for responses. Default 5.
-
         terminator: Character(s) to terminate each send. Default '\n'.
-
         persistent: Whether to leave the socket open between calls.
             Default True.
-
         write_confirmation: Whether the instrument acknowledges writes
             with some response we should read. Default True.
-
-        kwargs: additional static metadata to add to this
-            instrument's JSON snapshot.
+        **kwargs: Forwarded to the base class.
 
     See help for ``qcodes.Instrument`` for additional information on writing
     instrument subclasses.
@@ -54,7 +50,7 @@ class IPInstrument(Instrument):
         terminator: str = "\n",
         persistent: bool = True,
         write_confirmation: bool = True,
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(name, **kwargs)
 

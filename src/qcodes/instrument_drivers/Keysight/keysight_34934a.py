@@ -4,13 +4,19 @@ from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from qcodes import validators
 
-from .keysight_34980a_submodules import KeysightSwitchMatrixSubModule
+from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 if TYPE_CHECKING:
-    from qcodes.instrument import InstrumentChannel, VisaInstrument
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import (
+        InstrumentBaseKWArgs,
+        InstrumentChannel,
+        VisaInstrument,
+    )
 
 
-class Keysight34934A(KeysightSwitchMatrixSubModule):
+class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
     """
     Create an instance for module 34933A.
 
@@ -20,10 +26,13 @@ class Keysight34934A(KeysightSwitchMatrixSubModule):
         slot: the slot the module is installed
     """
     def __init__(
-        self, parent: Union["VisaInstrument", "InstrumentChannel"], name: str, slot: int
+        self,
+        parent: Union["VisaInstrument", "InstrumentChannel"],
+        name: str,
+        slot: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
-
-        super().__init__(parent, name, slot)
+        super().__init__(parent, name, slot, **kwargs)
 
         self.add_parameter(
             name="protection_mode",

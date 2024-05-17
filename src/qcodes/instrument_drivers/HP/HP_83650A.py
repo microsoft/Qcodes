@@ -2,10 +2,13 @@
 #
 # Written by Bruno Buijtendorp (brunobuijtendorp@gmail.com)
 import logging
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -20,13 +23,15 @@ class HP83650A(VisaInstrument):
 
     """
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 verbose: int = 1,
-                 reset: bool = False,
-                 server_name: Optional[str] = None,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        verbose: int = 1,
+        reset: bool = False,
+        server_name: Optional[str] = None,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
 
         self.verbose = verbose
         log.debug('Initializing instrument')

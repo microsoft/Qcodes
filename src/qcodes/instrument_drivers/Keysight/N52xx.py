@@ -1,11 +1,17 @@
 import re
 import time
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from pyvisa import constants, errors
 
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import (
     Parameter,
     ParameterBase,
@@ -16,6 +22,8 @@ from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
 
 
 class PNAAxisParameter(Parameter):
@@ -140,9 +148,9 @@ class KeysightPNAPort(InstrumentChannel):
         parent: "PNABase",
         name: str,
         port: int,
-        min_power: Union[int, float],
-        max_power: Union[int, float],
-        **kwargs: Any,
+        min_power: float,
+        max_power: float,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
@@ -160,9 +168,7 @@ class KeysightPNAPort(InstrumentChannel):
                            vals=Numbers(min_value=min_power,
                                         max_value=max_power))
 
-    def _set_power_limits(self,
-                          min_power: Union[int, float],
-                          max_power: Union[int, float]) -> None:
+    def _set_power_limits(self, min_power: float, max_power: float) -> None:
         """
         Set port power limits
         """
@@ -185,7 +191,7 @@ class KeysightPNATrace(InstrumentChannel):
         name: str,
         trace_name: str,
         trace_num: int,
-        **kwargs: Any,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         super().__init__(parent, name, **kwargs)
         self.trace_name = trace_name
@@ -384,16 +390,22 @@ class PNABase(VisaInstrument):
           may have unexpected results.
     """
 
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 # Set frequency ranges
-                 min_freq: Union[int, float], max_freq: Union[int, float],
-                 # Set power ranges
-                 min_power: Union[int, float], max_power: Union[int, float],
-                 nports: int, # Number of ports on the PNA
-                 **kwargs: Any) -> None:
-        super().__init__(name, address, terminator='\n', **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        # Set frequency ranges
+        min_freq: float,
+        max_freq: float,
+        # Set power ranges
+        min_power: float,
+        max_power: float,
+        nports: int,  # Number of ports on the PNA
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
+        super().__init__(name, address, **kwargs)
         self.min_freq = min_freq
         self.max_freq = max_freq
 
@@ -710,9 +722,7 @@ class PNABase(VisaInstrument):
         """
         self.averages_enabled(False)
 
-    def _set_power_limits(self,
-                          min_power: Union[int, float],
-                          max_power: Union[int, float]) -> None:
+    def _set_power_limits(self, min_power: float, max_power: float) -> None:
         """
         Set port power limits
         """

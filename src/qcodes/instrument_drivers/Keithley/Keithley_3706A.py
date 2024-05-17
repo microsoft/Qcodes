@@ -1,11 +1,14 @@
 import itertools
 import textwrap
 import warnings
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import qcodes.validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import create_on_off_val_mapping
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class Keithley3706AUnknownOrEmptySlot(Exception):
@@ -22,17 +25,21 @@ class Keithley3706A(VisaInstrument):
     System Switch.
     """
 
+    default_terminator = "\n"
+
     def __init__(
-        self, name: str, address: str, terminator: str = "\n", **kwargs: Any
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         """
         Args:
             name: Name to use internally in QCoDeS
             address: VISA resource address
-            terminator: Character to terminate messages with.
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter(
             "channel_connect_rule",

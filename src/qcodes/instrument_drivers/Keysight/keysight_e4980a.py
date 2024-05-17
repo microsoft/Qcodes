@@ -3,7 +3,12 @@ from typing import TYPE_CHECKING, Any, Union, cast
 from packaging import version
 from pyvisa.errors import VisaIOError
 
-from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import (
     Group,
     GroupParameter,
@@ -17,6 +22,8 @@ from qcodes.validators import Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
 
 
 class KeysightE4980AMeasurementPair(MultiParameter):
@@ -144,12 +151,14 @@ class KeysightE4980ACorrection(InstrumentChannel):
     """
     Module for correction settings.
     """
+
     def __init__(
-            self,
-            parent: VisaInstrument,
-            name: str,
+        self,
+        parent: VisaInstrument,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter(
             "open",
@@ -188,11 +197,12 @@ class KeysightE4980A(VisaInstrument):
     """
     QCodes driver for E4980A Precision LCR Meter
     """
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 terminator: str = '\n',
-                 **kwargs: Any):
+
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
         """
         Create an instance of the instrument.
 
@@ -202,7 +212,7 @@ class KeysightE4980A(VisaInstrument):
             terminator: Character to terminate messages with.
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         idn = self.IDN.get()
 

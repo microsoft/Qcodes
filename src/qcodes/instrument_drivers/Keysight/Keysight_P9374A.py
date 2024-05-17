@@ -1,12 +1,19 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
 from . import N52xx
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import VisaInstrumentKWArgs
 
 #  This is not the same class of Keysight devices but seems to work well...
 
 
 class KeysightP9374A(N52xx.PNAxBase):
-    def __init__(self, name: str, address: str, **kwargs: Any):
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
         super().__init__(
             name,
             address,

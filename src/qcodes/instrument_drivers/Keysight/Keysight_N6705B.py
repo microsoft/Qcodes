@@ -1,14 +1,29 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class KeysightN6705BChannel(InstrumentChannel):
-    def __init__(self, parent: Instrument, name: str, chan: int) -> None:
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        chan: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         if chan not in [1, 2, 3, 4]:
             raise ValueError('Invalid channel specified')
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter('source_voltage',
                            label=f"Channel {chan} Voltage",
@@ -62,8 +77,12 @@ N6705BChannel = KeysightN6705BChannel
 
 
 class KeysightN6705B(VisaInstrument):
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
+        super().__init__(name, address, **kwargs)
         self.channels: list[KeysightN6705BChannel] = []
         for ch_num in [1, 2, 3, 4]:
             ch_name = f"ch{ch_num}"

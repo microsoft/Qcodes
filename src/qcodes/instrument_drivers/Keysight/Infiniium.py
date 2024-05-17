@@ -9,9 +9,11 @@ import qcodes.validators as vals
 from qcodes.instrument import (
     ChannelList,
     InstrumentBase,
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     InstrumentModule,
     VisaInstrument,
+    VisaInstrumentKWArgs,
 )
 from qcodes.parameters import (
     Parameter,
@@ -22,6 +24,8 @@ from qcodes.parameters import (
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
 
 
 class DSOTimeAxisParam(Parameter):
@@ -244,7 +248,12 @@ class AbstractMeasurementSubsystem(InstrumentModule):
     the measurement value.
     """
 
-    def __init__(self, parent: InstrumentBase, name: str, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        parent: InstrumentBase,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         """
         Add parameters to measurement subsystem. Note: This should not be initialized
         directly, rather initialize BoundMeasurementSubsystem
@@ -458,7 +467,7 @@ class KeysightInfiniiumBoundMeasurement(AbstractMeasurementSubsystem):
         self,
         parent: Union["KeysightInfiniiumChannel", "KeysightInfiniiumFunction"],
         name: str,
-        **kwargs: Any,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         """
         Initialize measurement subsystem bound to a specific channel
@@ -477,7 +486,12 @@ Alias for backwards compatibility
 
 
 class KeysightInfiniiumUnboundMeasurement(AbstractMeasurementSubsystem):
-    def __init__(self, parent: "KeysightInfiniium", name: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: "KeysightInfiniium",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         """
         Initialize measurement subsystem where target is set by the parameter `source`.
         """
@@ -553,7 +567,11 @@ Alias for backwards compatibility
 
 class KeysightInfiniiumFunction(InstrumentChannel):
     def __init__(
-        self, parent: "KeysightInfiniium", name: str, channel: int, **kwargs: Any
+        self,
+        parent: "KeysightInfiniium",
+        name: str,
+        channel: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         """
         Initialize an infiniium channel.
@@ -671,7 +689,11 @@ Alias for backwards compatibility
 
 class KeysightInfiniiumChannel(InstrumentChannel):
     def __init__(
-        self, parent: "KeysightInfiniium", name: str, channel: int, **kwargs: Any
+        self,
+        parent: "KeysightInfiniium",
+        name: str,
+        channel: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         """
         Initialize an infiniium channel.
@@ -777,14 +799,16 @@ class KeysightInfiniium(VisaInstrument):
     This is the QCoDeS driver for the Keysight Infiniium oscilloscopes
     """
 
+    default_timeout = 20
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
         address: str,
-        timeout: float = 20,
         channels: int = 4,
         silence_pyvisapy_warning: bool = False,
-        **kwargs: Any,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         """
         Initialises the oscilloscope.
@@ -797,7 +821,7 @@ class KeysightInfiniium(VisaInstrument):
             silence_pyvisapy_warning: Don't warn about pyvisa-py at startup
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, timeout=timeout, terminator="\n", **kwargs)
+        super().__init__(name, address, **kwargs)
         self.connect_message()
 
         # Check if we are using pyvisa-py as our visa lib and warn users that

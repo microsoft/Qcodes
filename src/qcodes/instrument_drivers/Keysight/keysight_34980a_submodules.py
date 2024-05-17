@@ -1,6 +1,9 @@
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
-from qcodes.instrument import InstrumentChannel, VisaInstrument
+from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel, VisaInstrument
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class KeysightSubModule(InstrumentChannel):
@@ -13,13 +16,13 @@ class KeysightSubModule(InstrumentChannel):
         slot: the slot the module is installed
     """
     def __init__(
-            self,
-            parent: Union[VisaInstrument, InstrumentChannel],
-            name: str,
-            slot: int
+        self,
+        parent: Union[VisaInstrument, InstrumentChannel],
+        name: str,
+        slot: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
-
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.slot = slot
 

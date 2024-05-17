@@ -1,8 +1,11 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
 from qcodes.validators import Bool, Enum
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class CurrentParameter(MultiParameter):
@@ -69,7 +72,8 @@ class Ithaco1211(Instrument):
 
     This is a virtual driver only and will not talk to your instrument.
     """
-    def __init__(self, name: str, **kwargs: Any):
+
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]"):
         super().__init__(name, **kwargs)
 
         self.add_parameter('sens',

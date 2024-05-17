@@ -2,13 +2,16 @@ import logging
 import re
 import warnings
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
 
 from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 
 from .keysight_34934a import Keysight34934A
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 KEYSIGHT_MODELS = {'34934A': Keysight34934A}
 
@@ -45,21 +48,21 @@ class Keysight34980A(VisaInstrument):
     """
     QCodes driver for 34980A switch/measure unit
     """
-    def __init__(self,
-                 name: str,
-                 address: str,
-                 terminator: str = '\n',
-                 **kwargs: Any):
+
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
         """
         Create an instance of the instrument.
 
         Args:
             name: Name of the instrument instance
             address: Visa-resolvable instrument address.
-            terminator: Character to terminate messages with.
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self._total_slot = 8
         self._system_slots_info_dict: Optional[dict[int, dict[str, str]]] = None

@@ -1,18 +1,27 @@
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import numpy as np
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Numbers
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 class AgilentE8267C(VisaInstrument):
     """
     This is the QCoDeS driver for the Agilent E8267C signal generator.
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
+        super().__init__(name, address, **kwargs)
         # general commands
         self.add_parameter(
             name="frequency",

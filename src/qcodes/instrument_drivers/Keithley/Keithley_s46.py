@@ -3,10 +3,17 @@ Driver for the Keithley S46 RF switch
 """
 import re
 from itertools import product
-from typing import Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from qcodes.instrument import Instrument, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import Parameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class KeithleyS46LockAcquisitionError(Exception):
@@ -136,9 +143,15 @@ class KeithleyS46(VisaInstrument):
     # Make a reverse dict for efficient alias lookup given a channel number
     aliases: ClassVar[dict[int, str]] = {v: k for k, v in channel_numbers.items()}
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
+    default_terminator = "\n"
 
-        super().__init__(name, address, terminator="\n", **kwargs)
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
+        super().__init__(name, address, **kwargs)
         try:
             self.add_parameter(
                 "closed_channels",
