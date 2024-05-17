@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter
-from qcodes.validators import Enum, Strings
+from qcodes.validators import Enum
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -118,32 +118,6 @@ class Agilent344xxA(VisaInstrument):
             vals=Enum(0.1, 1.0, 10.0, 100.0, 1000.0),
         )
         """Parameter range"""
-
-        if self.model in ["34401A"]:
-            self.display_text: Parameter = self.add_parameter(
-                "display_text",
-                get_cmd="DISP:TEXT?",
-                set_cmd='DISP:TEXT "{}"',
-                vals=Strings(),
-            )
-            """Parameter display_text"""
-
-        elif self.model in ["34410A", "34411A"]:
-            self.display_text: Parameter = self.add_parameter(
-                "display_text",
-                get_cmd="DISP:WIND1:TEXT?",
-                set_cmd='DISP:WIND1:TEXT "{}"',
-                vals=Strings(),
-            )
-            """Parameter display_text"""
-
-            self.display_text_2: Parameter = self.add_parameter(
-                "display_text_2",
-                get_cmd="DISP:WIND2:TEXT?",
-                set_cmd='DISP:WIND2:TEXT "{}"',
-                vals=Strings(),
-            )
-            """Parameter display_text_2"""
 
         self.connect_message()
 
