@@ -517,10 +517,13 @@ class Station(Metadatable, DelegateAttributes):
         instrument.close()
         del instrument
 
-    def load_instrument(self, identifier: str,
-                        revive_instance: bool = False,
-                        update_snapshot: bool = True,
-                        **kwargs: Any) -> Instrument:
+    def load_instrument(
+        self,
+        identifier: str,
+        revive_instance: bool = False,
+        update_snapshot: bool = True,
+        **kwargs: Any,
+    ) -> Instrument:
         """
         Creates an :class:`~.Instrument` instance as described by the
         loaded configuration file.
