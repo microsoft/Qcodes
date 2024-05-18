@@ -81,13 +81,12 @@ class _SetParamContext:
                 self._parameter.set(self._original_value)
             except Exception:
                 # Likely an uninitialized Parameter
-                vals = self._parameter._vals
-                set_parser = self._parameter.set_parser
-                self._parameter._vals = []
-                self._parameter.set_parser = None
-                self._parameter.cache.set(self._original_value)
-                self._parameter.set_parser = set_parser
-                self._parameter._vals = vals
+                LOG.info(
+                    "Encountered an exception setting the original value "
+                    "when exiting set_to context of "
+                    f"{self._parameter.full_name}",
+                    exc_info=True,
+                )
 
 
 def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
