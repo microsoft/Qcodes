@@ -13,15 +13,22 @@ if TYPE_CHECKING:
 
 
 class MiniCircuitsRCSPDTChannel(InstrumentChannel):
-    def __init__(self, parent: "MiniCircuitsRCSPDT", name: str, channel_letter: str):
+    def __init__(
+        self,
+        parent: "MiniCircuitsRCSPDT",
+        name: str,
+        channel_letter: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         """
         Args:
             parent: The instrument the channel is a part of
             name: the name of the channel
             channel_letter: channel letter ['a', 'b', 'c' or 'd'])
+            **kwargs: Forwarded to the baseclass
         """
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self.channel_letter = channel_letter.upper()
         _chanlist = ["a", "b", "c", "d", "e", "f", "g", "h"]
         self.channel_number = _chanlist.index(channel_letter)

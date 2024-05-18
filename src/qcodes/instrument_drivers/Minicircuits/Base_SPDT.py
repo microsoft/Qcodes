@@ -3,24 +3,39 @@ from __future__ import annotations
 import logging
 import re
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from qcodes.instrument import ChannelList, Instrument, InstrumentChannel
+from qcodes.instrument import (
+    ChannelList,
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+)
 from qcodes.validators import Ints
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
 
 class SwitchChannelBase(InstrumentChannel):
-    def __init__(self, parent: Instrument, name: str, channel_letter: str):
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        channel_letter: str,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         """
         Args:
             parent: The instrument the channel is a part of
             name: the name of the channel
             channel_letter: channel letter ['a', 'b', 'c' or 'd'])
+            **kwargs: Forwarded to base class.
         """
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self.channel_letter = channel_letter.upper()
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self.channel_number = _chanlist.index(channel_letter)

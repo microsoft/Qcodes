@@ -1,17 +1,20 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 
 from .USBHIDMixin import MiniCircuitsHIDMixin
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 
 class MiniCircuitsRudat13G90Base(Instrument):
-    """
-    Args:
-        name (str)
-    """
-
-    def __init__(self, name: str, **kwargs: Any) -> None:
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]") -> None:
+        """
+        Args:
+            name: Name of the instrument
+            **kwargs: Forwarded to base class.
+        """
         super().__init__(name, **kwargs)
 
         self.add_parameter("model_name", get_cmd=":MN?")

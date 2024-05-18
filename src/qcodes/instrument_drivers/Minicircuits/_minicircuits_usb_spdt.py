@@ -1,11 +1,16 @@
 import os
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
     SPDT_Base,
     SwitchChannelBase,
 )
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import InstrumentBaseKWArgs
 
 try:
     import clr  # pyright: ignore[reportMissingTypeStubs,reportMissingImports]
@@ -27,17 +32,6 @@ class MiniCircuitsUsbSPDTSwitchChannel(SwitchChannelBase):
 
 
 class MiniCircuitsUsbSPDT(SPDT_Base):
-    """
-    Mini-Circuits SPDT RF switch
-
-    Args:
-            name: the name of the instrument
-            driver_path: path to the dll
-            serial_number: the serial number of the device
-               (printed on the sticker on the back side, without s/n)
-            kwargs: kwargs to be passed to Instrument class.
-    """
-
     CHANNEL_CLASS = MiniCircuitsUsbSPDTSwitchChannel
     PATH_TO_DRIVER = r"mcl_RF_Switch_Controller64"
     PATH_TO_DRIVER_45 = r"mcl_RF_Switch_Controller_NET45"
@@ -47,8 +41,18 @@ class MiniCircuitsUsbSPDT(SPDT_Base):
         name: str,
         driver_path: Optional[str] = None,
         serial_number: Optional[str] = None,
-        **kwargs: Any,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
+        """
+        Mini-Circuits SPDT RF switch
+
+        Args:
+                name: the name of the instrument
+                driver_path: path to the dll
+                serial_number: the serial number of the device
+                   (printed on the sticker on the back side, without s/n)
+                kwargs: kwargs to be passed to Instrument class.
+        """
         # we are eventually overwriting this but since it's called
         # in __getattr__ of `SPDT_Base` it's important that it's
         # always set to something to avoid infinite recursion
