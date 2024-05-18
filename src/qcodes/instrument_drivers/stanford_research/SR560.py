@@ -1,8 +1,11 @@
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
 from qcodes.validators import Bool, Enum
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class VoltageParameter(MultiParameter):
@@ -75,7 +78,8 @@ class SR560(Instrument):
           output. We restrict this driver to only the predefined gain values.
 
     """
-    def __init__(self, name: str, **kwargs: Any):
+
+    def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]"):
         super().__init__(name, **kwargs)
 
         cutoffs = ['DC', 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000,
