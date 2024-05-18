@@ -56,8 +56,8 @@ class MockParabola(DummyBase):
     testing of numerical optimizations.
     """
 
-    def __init__(self, name: str, **kw: Any):
-        super().__init__(name, **kw)
+    def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]):
+        super().__init__(name, **kwargs)
 
         # Instrument parameters
         for parname in ['x', 'y', 'z']:
@@ -101,11 +101,16 @@ class MockMetaParabola(InstrumentBase):
     snapshottable in a station.
     """
 
-    def __init__(self, name: str, mock_parabola_inst: MockParabola, **kw: Any):
+    def __init__(
+        self,
+        name: str,
+        mock_parabola_inst: MockParabola,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         """
         Create a new MockMetaParabola, connected to an existing MockParabola instance.
         """
-        super().__init__(name, **kw)
+        super().__init__(name, **kwargs)
         self.mock_parabola_inst = mock_parabola_inst
 
         # Instrument parameters
@@ -134,7 +139,7 @@ class DummyInstrument(DummyBase):
         self,
         name: str = "dummy",
         gates: Sequence[str] = ("dac1", "dac2", "dac3"),
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """
         Create a dummy instrument that can be used for testing
@@ -162,8 +167,12 @@ class DummyInstrument(DummyBase):
 
 
 class DummyFailingInstrument(DummyBase):
-    def __init__(self, name: str = "dummy", fail: bool = True, **kwargs: Any):
-
+    def __init__(
+        self,
+        name: str = "dummy",
+        fail: bool = True,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         """
         Create a dummy instrument that fails on initialization
         that can be used for testing
@@ -180,8 +189,7 @@ class DummyFailingInstrument(DummyBase):
 
 
 class DummyAttrInstrument(DummyBase):
-    def __init__(self, name: str = "dummy", **kwargs: Any):
-
+    def __init__(self, name: str = "dummy", **kwargs: Unpack[InstrumentBaseKWArgs]):
         """
         Create a dummy instrument that can be used for testing.
         This instrument has its parameters declared as attributes
@@ -287,7 +295,12 @@ class DmmGaussParameter(Parameter):
 
 
 class DummyInstrumentWithMeasurement(DummyBase):
-    def __init__(self, name: str, setter_instr: DummyInstrument, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        setter_instr: DummyInstrument,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         super().__init__(name=name, **kwargs)
         self._setter_instr = setter_instr
         self.add_parameter('v1',
@@ -311,7 +324,13 @@ class DummyChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent: Instrument, name: str, channel: str, **kwargs: Any):
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        channel: str,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         super().__init__(parent, name, **kwargs)
 
         self._channel = channel
@@ -464,7 +483,10 @@ class DummyChannelInstrument(DummyBase):
     """
 
     def __init__(
-        self, name: str, channel_names: Sequence[str] | None = None, **kwargs: Any
+        self,
+        name: str,
+        channel_names: Sequence[str] | None = None,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(name, **kwargs)
 
@@ -488,7 +510,7 @@ class DummyChannelOnlyInstrument(DummyBase):
     Also use module names with _ in them to check that we can handle that.
     """
 
-    def __init__(self, name: str, **kwargs: Any):
+    def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]):
         super().__init__(name, **kwargs)
 
         channels = ChannelList(self, "Temp_Sensors", DummyChannel)
@@ -945,7 +967,7 @@ class MockField(DummyBase):
         self,
         name: str,
         vals: Numbers = Numbers(min_value=-1.0, max_value=1.0),
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """Mock instrument for emulating a magnetic field axis
 
@@ -1021,7 +1043,7 @@ class MockField(DummyBase):
 
 
 class MockLockin(DummyBase):
-    def __init__(self, name: str, **kwargs: Any):
+    def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]):
         super().__init__(name=name, **kwargs)
         self.add_parameter("X",
                            parameter_class=Parameter,
@@ -1060,8 +1082,14 @@ class MockDACChannel(InstrumentChannel):
     A single dummy channel implementation
     """
 
-    def __init__(self, parent: InstrumentBase, name: str, num: str):
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: InstrumentBase,
+        name: str,
+        num: str,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
+        super().__init__(parent, name, **kwargs)
 
         self._num = num
         self.add_parameter('voltage',
@@ -1097,8 +1125,12 @@ class MockDACChannel(InstrumentChannel):
 
 
 class MockDAC(DummyBase):
-    def __init__(self, name: str = "mdac", num_channels: int = 10, **kwargs: Any):
-
+    def __init__(
+        self,
+        name: str = "mdac",
+        num_channels: int = 10,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
         """
         Create a dummy instrument that can be used for testing
 
@@ -1129,6 +1161,7 @@ class MockCustomChannel(InstrumentChannel):
         name: str,
         channel: str | InstrumentChannel,
         current_valid_range: Sequence[float] | None = None,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
         """
         A custom instrument channel emulating an existing channel.
@@ -1144,6 +1177,7 @@ class MockCustomChannel(InstrumentChannel):
             current_valid_range: Voltage range the channel is expected to show
                 interesting features. It's just an example of an additional
                 parameter a regular instrument channel does not have.
+            **kwargs: Forwarded to base class.
         """
         if isinstance(channel, str):
             _, channel_name = channel.split(".")
@@ -1154,7 +1188,7 @@ class MockCustomChannel(InstrumentChannel):
         else:
             raise ValueError('Unknown input type for "channel".')
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         if current_valid_range is None:
             current_valid_range = []
