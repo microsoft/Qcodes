@@ -1,10 +1,19 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import ParameterWithSetpoints
 from qcodes.validators import Arrays, Enum, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class RigolDS1074ZChannel(InstrumentChannel):
@@ -16,8 +25,14 @@ class RigolDS1074ZChannel(InstrumentChannel):
     can be obtained using 'trace' parameter.
     """
 
-    def __init__(self, parent: "RigolDS1074Z", name: str, channel: int):
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: "RigolDS1074Z",
+        name: str,
+        channel: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        super().__init__(parent, name, **kwargs)
         self.channel = channel
 
         self.add_parameter(
@@ -71,17 +86,16 @@ class RigolDS1074Z(VisaInstrument):
         terminator: terminator for SCPI commands.
     """
 
+    default_terminator = "\n"
+    default_timeout = 5
+
     def __init__(
         self,
         name: str,
         address: str,
-        terminator: str = "\n",
-        timeout: float = 5,
-        **kwargs: Any,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-        super().__init__(
-            name, address, terminator=terminator, timeout=timeout, **kwargs
-        )
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter(
             "waveform_xorigin", get_cmd="WAVeform:XORigin?", unit="s", get_parser=float

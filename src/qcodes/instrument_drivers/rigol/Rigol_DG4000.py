@@ -1,13 +1,14 @@
 from functools import partial
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Union
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Anything, Enum, Ints, MultiType, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     import numpy as np
+    from typing_extensions import Unpack
 
 
 def is_number(s: str) -> bool:
@@ -69,8 +70,16 @@ class RigolDG4000(VisaInstrument):
     This driver works for all four models (DG4202, DG4162, DG4102, DG4062).
     """
 
-    def __init__(self, name: str, address: str, reset: bool = False, **kwargs: Any):
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        reset: bool = False,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
+        super().__init__(name, address, **kwargs)
 
         model = self.get_idn()["model"]
 

@@ -1,14 +1,21 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
-from .private.DP8xx import _RigolDP8xx
+from .private.DP8xx import _RigelDP8xx
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import VisaInstrumentKWArgs
 
 
-class RigolDP821(_RigolDP8xx):
+class RigolDP821(_RigelDP8xx):
     """
     This is the qcodes driver for the Rigol DP821(A) Power Supply
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
         channel_ranges = [
             (60.0, 1.0),
             (8.0, 10.0),
