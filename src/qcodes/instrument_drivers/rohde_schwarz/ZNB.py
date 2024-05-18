@@ -1,11 +1,18 @@
 import logging
 from functools import partial
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import (
     ArrayParameter,
     ManualParameter,
@@ -13,6 +20,9 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -349,6 +359,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         channel: int,
         vna_parameter: Optional[str] = None,
         existing_trace_to_bind_to: Optional[str] = None,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
         Args:
@@ -361,6 +372,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             existing_trace_to_bind_to: Name of an existing trace on the VNA.
                 If supplied try to bind to an existing trace with this name
                 rather than creating a new trace.
+            **kwargs: Forwarded to base class.
         """
         n = channel
         self._instrument_channel = channel
@@ -368,7 +380,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         if vna_parameter is None:
             vna_parameter = name
         self._vna_parameter = vna_parameter
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         if existing_trace_to_bind_to is None:
             self._tracename = f"Trc{channel}"
@@ -961,7 +973,7 @@ class ZNB(VisaInstrument):
         address: str,
         init_s_params: bool = True,
         reset_channels: bool = True,
-        **kwargs: Any,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
 
         super().__init__(name=name, address=address, **kwargs)
