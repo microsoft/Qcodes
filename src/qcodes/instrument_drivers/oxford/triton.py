@@ -3,10 +3,13 @@ import logging
 import re
 from functools import partial
 from time import sleep
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
-from qcodes.instrument import IPInstrument
+from qcodes.instrument import InstrumentBaseKWArgs, IPInstrument
 from qcodes.validators import Enum, Ints, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class OxfordTriton(IPInstrument):
@@ -25,6 +28,7 @@ class OxfordTriton(IPInstrument):
             `[HKEY_CURRENT_USER\Software\Oxford Instruments\Triton System Control\Thermometry]`
             and is used to extract the available temperature channels.
         timeout: Defaults to 20.
+        **kwargs: Forwarded to base class.
 
     Status: beta-version.
 
@@ -40,7 +44,7 @@ class OxfordTriton(IPInstrument):
         terminator: str = "\r\n",
         tmpfile: Optional[str] = None,
         timeout: float = 20,
-        **kwargs: Any,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         super().__init__(
             name,

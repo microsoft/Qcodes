@@ -13,6 +13,7 @@ from qcodes import validators as vals
 from qcodes.instrument import (
     ChannelList,
     Instrument,
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -36,13 +37,20 @@ class QDevQDacChannel(InstrumentChannel):
 
     _CHANNEL_VALIDATION = vals.Numbers(1, 48)
 
-    def __init__(self, parent: Instrument, name: str, channum: int):
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        channum: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         """
         Args:
             parent: The instrument to which the channel is
                 attached.
             name: The name of the channel
             channum: The number of the channel in question (1-48)
+            **kwargs: Forwarded to base class.
         """
         super().__init__(parent, name)
 

@@ -1,13 +1,25 @@
 import warnings
 from functools import partial
 from time import sleep
-from typing import Any, Callable, ClassVar, Literal, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Literal,
+    Optional,
+    Union,
+    cast,
+)
 
 import numpy as np
 from pyvisa import VisaIOError
 
 import qcodes.validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class DynaCool(VisaInstrument):
@@ -40,11 +52,12 @@ class DynaCool(VisaInstrument):
         0: lambda: None,
     }
 
-    def __init__(self, name: str,
-                 address: str,
-                 **kwargs: Any) -> None:
-        super().__init__(name=name, address=address, terminator='\r\n',
-                         **kwargs)
+    default_terminator = "\r\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
+        super().__init__(name=name, address=address, **kwargs)
 
         self.add_parameter('temperature',
                            label='Temperature',
