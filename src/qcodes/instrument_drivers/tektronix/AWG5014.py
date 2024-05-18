@@ -6,13 +6,25 @@ from collections import abc
 from collections.abc import Sequence
 from io import BytesIO
 from time import localtime, sleep
-from typing import Any, ClassVar, Literal, NamedTuple, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Literal,
+    NamedTuple,
+    Optional,
+    Union,
+    cast,
+)
 
 import numpy as np
 from pyvisa.errors import VisaIOError
 
 from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -135,25 +147,26 @@ class TektronixAWG5014(VisaInstrument):
         'DC_OUTPUT_LEVEL_N': 'd',  # V
     }
 
+    default_timeout = 180
+
     def __init__(
-            self,
-            name: str,
-            address: str,
-            timeout: int = 180,
-            num_channels: int = 4,
-            **kwargs: Any):
+        self,
+        name: str,
+        address: str,
+        *,
+        num_channels: int = 4,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
         """
         Initializes the AWG5014.
 
         Args:
             name: name of the instrument
             address: GPIB or ethernet address as used by VISA
-            timeout: visa timeout, in secs. long default (180)
-                to accommodate large waveforms
             num_channels: number of channels on the device
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name, address, timeout=timeout, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self._address = address
         self.num_channels = num_channels

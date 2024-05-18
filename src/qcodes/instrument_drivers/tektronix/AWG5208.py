@@ -1,6 +1,11 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
 from .AWG70000A import AWG70000A
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import VisaInstrumentKWArgs
 
 
 class TektronixAWG5208(AWG70000A):
@@ -8,18 +13,22 @@ class TektronixAWG5208(AWG70000A):
     The QCoDeS driver for Tektronix AWG5208
     """
 
-    def __init__(self, name: str, address: str,
-                 timeout: float = 10, **kwargs: Any) -> None:
+    default_timeout = 10
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
             address: The VISA resource name of the instrument
-            timeout: The VISA timeout time (in seconds).
             **kwargs: kwargs are forwarded to base class.
         """
 
-        super().__init__(name, address, num_channels=8,
-                         timeout=timeout, **kwargs)
+        super().__init__(name, address, num_channels=8, **kwargs)
 
 
 class AWG5208(TektronixAWG5208):
