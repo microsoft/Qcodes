@@ -1,10 +1,13 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import Parameter
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class Weinschel8320(VisaInstrument):
@@ -14,8 +17,12 @@ class Weinschel8320(VisaInstrument):
     Weinschel is formerly known as Aeroflex/Weinschel
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
-        super().__init__(name, address, terminator='\r', **kwargs)
+    default_terminator = "\r"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
+        super().__init__(name, address, **kwargs)
         self.attenuation = Parameter(
             "attenuation",
             unit="dB",

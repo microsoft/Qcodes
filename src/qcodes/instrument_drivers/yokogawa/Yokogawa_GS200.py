@@ -2,6 +2,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from qcodes.instrument import (
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -48,8 +49,14 @@ class YokogawaGS200Monitor(InstrumentChannel):
         present
     """
 
-    def __init__(self, parent: "YokogawaGS200", name: str, present: bool) -> None:
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: "YokogawaGS200",
+        name: str,
+        present: bool,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
 
         self.present = present
 
@@ -188,8 +195,13 @@ class YokogawaGS200Monitor(InstrumentChannel):
 class YokogawaGS200Program(InstrumentChannel):
     """ """
 
-    def __init__(self, parent: "YokogawaGS200", name: str) -> None:
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: "YokogawaGS200",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
         self._repeat = 1
         self._file_name = None
 
