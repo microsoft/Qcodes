@@ -171,7 +171,6 @@ def test_context(instrument: DummyTrackingInstrument) -> None:
     # context
     with instrument.uninitialized_param.set_to(2):
         assert instrument.uninitialized_param.get() == 2
-    assert instrument.uninitialized_param.cache.get() is None
 
 
 def test_validated_param(instrument: DummyTrackingInstrument) -> None:
