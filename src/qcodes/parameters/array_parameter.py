@@ -146,9 +146,9 @@ class ArrayParameter(ParameterBase):
     ) -> None:
         super().__init__(
             name,
-            instrument,
-            snapshot_get,
-            metadata,
+            instrument=instrument,
+            snapshot_get=snapshot_get,
+            metadata=metadata,
             snapshot_value=snapshot_value,
             snapshot_exclude=snapshot_exclude,
             **kwargs,

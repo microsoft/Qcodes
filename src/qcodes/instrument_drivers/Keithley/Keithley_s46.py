@@ -76,7 +76,7 @@ class S46Parameter(Parameter):
         lock: KeithleyS46RelayLock,
         **kwargs: Any,
     ):
-        super().__init__(name, instrument, **kwargs)
+        super().__init__(name, instrument=instrument, **kwargs)
 
         self._lock = lock
         self._channel_number = channel_number
