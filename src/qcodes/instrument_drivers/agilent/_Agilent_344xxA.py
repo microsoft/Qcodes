@@ -11,8 +11,9 @@ if TYPE_CHECKING:
 
 class Agilent344xxA(VisaInstrument):
     """
-    This is the QCoDeS driver for the Agilent_34400A DMM Series,
-    tested with Agilent_34401A, Agilent_34410A, and Agilent_34411A.
+    This is the base class for QCoDeS driver for the Agilent 34400A DMM Series.
+    This class should not be instantiated directly but a specific sub model should
+    be used.
 
     Note that most models are better supported by the Keysight 33xxA drivers.
     """
