@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .parameter_base import ParamRawDataType
 
 InstrumentModuleType = TypeVar("InstrumentModuleType", bound="InstrumentModule")
-LOG = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleType]):
@@ -69,7 +69,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
                     err.add_note(note)
                 except AttributeError:
                     # <3.11
-                    LOG.error(note)
+                    _LOG.error(note)
                 finally:
                     raise
 
