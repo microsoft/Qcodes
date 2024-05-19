@@ -63,8 +63,10 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
                 for chan, val in zip(self._channels, value, strict=True):
                     getattr(chan, self._param_name).set(val)
             except (TypeError, ValueError):
-                note = ('Value should either be valid for a single parameter of the channel list '
-                        'or a sequence of valid values of the same length as the list.')
+                note = (
+                    "Value should either be valid for a single parameter of the channel list "
+                    "or a sequence of valid values of the same length as the list."
+                )
                 try:
                     err.add_note(note)
                 except AttributeError:
