@@ -6,5 +6,5 @@ This also means that the these arguments **must** be passed as keyword arguments
 This specifically includeds passing ``label`` and ``metadata`` to direct subclasses of ``Instrument`` as well as
 ``terminator`` to subclasses of ``VisaInstrument``.
 
-All drivers shipping with qcodes for Vendors from A-K have been updated.
-The remaining drivers will be updated in a subsequent pull request.
+All drivers shipping with qcodes for Vendors from A-K have been updated in this pr.
+The remaining drivers were updated in (:pr:`6087`).
