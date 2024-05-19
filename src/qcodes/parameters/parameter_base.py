@@ -77,7 +77,16 @@ class _SetParamContext:
             self._parameter._settable = self._original_settable
 
         if self._parameter.cache() != self._original_value:
-            self._parameter.set(self._original_value)
+            try:
+                self._parameter.set(self._original_value)
+            except Exception:
+                # Likely an uninitialized Parameter
+                LOG.info(
+                    "Encountered an exception setting the original value "
+                    "when exiting set_to context of "
+                    f"{self._parameter.full_name}",
+                    exc_info=True,
+                )
 
 
 def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
@@ -239,8 +248,8 @@ class ParameterBase(MetadatableWithName):
         else:
             self.inverse_val_mapping = invert_val_mapping(val_mapping)
 
-        self.get_parser = get_parser
-        self.set_parser = set_parser
+        self.get_parser: Callable[..., Any] | None = get_parser
+        self.set_parser: Callable[..., Any] | None = set_parser
 
         # ``_Cache`` stores "latest" value (and raw value) and timestamp
         # when it was set or measured
