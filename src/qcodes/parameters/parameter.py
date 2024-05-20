@@ -325,8 +325,7 @@ class Parameter(ParameterBase):
         if self.gettable and get_cmd not in (None, False):
             raise TypeError(
                 "Supplying a not None or False `get_cmd` to a Parameter"
-                " that already implements"
-                " get_raw is an error."
+                " that already implements get_raw is an error."
             )
         elif not self.gettable and get_cmd is not False:
             exec_str_ask: Callable[[str], ParamRawDataType] | None = (
@@ -344,8 +343,7 @@ class Parameter(ParameterBase):
         if self.settable and set_cmd not in (None, False):
             raise TypeError(
                 "Supplying a not None or False `set_cmd` to a Parameter"
-                " that already implements"
-                " set_raw is an error."
+                " that already implements set_raw is an error."
             )
         elif not self.settable and set_cmd is not False:
             if set_cmd is None:
