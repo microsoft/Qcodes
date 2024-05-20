@@ -256,7 +256,7 @@ pygments==2.18.0
     #   sphinx
 pyparsing==3.1.2
     # via matplotlib
-pytest==8.2.0
+pytest==8.2.1
     # via
     #   pytest-asyncio
     #   pytest-cov
