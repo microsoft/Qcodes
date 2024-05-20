@@ -245,20 +245,6 @@ class Parameter(ParameterBase):
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
-        def _get_manual_parameter(self: Parameter) -> ParamRawDataType:
-            if self.root_instrument is not None:
-                mylogger: InstrumentLoggerAdapter | logging.Logger = (
-                    self.root_instrument.log
-                )
-            else:
-                mylogger = log
-            mylogger.debug(
-                "Getting raw value of parameter: %s as %s",
-                self.full_name,
-                self.cache.raw_value,
-            )
-            return self.cache.raw_value
-
         def _set_manual_parameter(
             self: Parameter, x: ParamRawDataType
         ) -> ParamRawDataType:
