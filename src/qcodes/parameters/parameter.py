@@ -52,11 +52,14 @@ def _get_parameter_factory(
         # cast is safe since we just checked this above using is_function
         function = cast(Callable[[str], ParamRawDataType], function)
 
-        def get_parameter_ask(self: Parameter) -> ParamRawDataType:
+        def get_parameter_ask(self: Parameter, *args) -> ParamRawDataType:
             # for some reason mypy does not understand
             # that cmd is a str even if this is defined inside
             # an if isinstance block
             assert isinstance(cmd, str)
+            # TODO it is possible to format str with additional args.
+            # this does not seem to have been tested
+            cmd.format(*args)
             return function(cmd)
 
         return get_parameter_ask
@@ -317,7 +320,7 @@ class Parameter(ParameterBase):
             exec_str_ask: Callable[[str], ParamRawDataType] | None = (
                 getattr(instrument, "ask", None) if instrument else None
             )
-
+            # ignore typeerror since mypy does not allow setting a method dynamically
             self.get_raw = MethodType(  # type: ignore[method-assign]
                 _get_parameter_factory(exec_str_ask, cmd=get_cmd, parameter_name=name),
                 self,
