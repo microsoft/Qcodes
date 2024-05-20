@@ -119,8 +119,8 @@ def _get_parameter_factory(
             assert isinstance(cmd, str)
             # TODO it is possible to format str with additional args.
             # this does not seem to have been tested
-            cmd.format(*args)
-            return function(cmd)
+            formatted_cmd = cmd.format(*args)
+            return function(formatted_cmd)
 
         return get_parameter_ask
 
