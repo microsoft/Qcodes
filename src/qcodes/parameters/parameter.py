@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 from qcodes.utils import is_function
 
-from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
 
@@ -23,6 +22,67 @@ if TYPE_CHECKING:
 
 
 log = logging.getLogger(__name__)
+
+
+def _set_parameter_factory(
+    function: Callable[[str], ParamRawDataType] | None,
+    cmd: str | Callable[[ParamRawDataType], None] | None,
+    parameter_name: str,
+) -> Callable[[Parameter, ParamRawDataType], None]:
+    if cmd is None:
+
+        def _set_manual_parameter(
+            self: Parameter, x: ParamRawDataType
+        ) -> ParamRawDataType:
+            if self.root_instrument is not None:
+                mylogger: InstrumentLoggerAdapter | logging.Logger = (
+                    self.root_instrument.log
+                )
+            else:
+                mylogger = log
+            mylogger.debug(
+                "Setting raw value of parameter: %s to %s", self.full_name, x
+            )
+            self.cache._set_from_raw_value(x)
+            return x
+
+        return _set_manual_parameter
+    elif isinstance(cmd, str) and is_function(function, 1):
+        # cast is safe since we just checked this above using is_function
+        function = cast(Callable[[str], ParamRawDataType], function)
+
+        def set_parameter_write(self: Parameter, *args) -> None:
+            # for some reason mypy does not understand
+            # that cmd is a str even if this is defined inside
+            # an if isinstance block
+            assert isinstance(cmd, str)
+            # TODO it is possible to format str with additional args.
+            # this does not seem to have been tested
+            cmd.format(*args)
+            return function(cmd)
+
+        return set_parameter_write
+
+    elif is_function(cmd, 1):
+        # cast is safe since we just checked this above using is_function
+        cmd = cast(Callable[[ParamRawDataType], None], cmd)
+
+        def set_parameter_func(self: Parameter, value: ParamRawDataType) -> None:
+            return cmd(value)
+
+        return set_parameter_func
+
+    elif isinstance(cmd, str) and function is None:
+        raise TypeError(
+            f"Cannot use a str set_cmd without "
+            f"binding to an instrument. "
+            f"Got: set_cmd {cmd} for parameter {parameter_name}"
+        )
+    else:
+        raise TypeError(
+            "Unexpected options for parameter set. "
+            f"Got: set_cmd {cmd} for parameter {parameter_name}"
+        )
 
 
 def _get_parameter_factory(
@@ -248,21 +308,6 @@ class Parameter(ParameterBase):
         bind_to_instrument: bool = True,
         **kwargs: Any,
     ) -> None:
-        def _set_manual_parameter(
-            self: Parameter, x: ParamRawDataType
-        ) -> ParamRawDataType:
-            if self.root_instrument is not None:
-                mylogger: InstrumentLoggerAdapter | logging.Logger = (
-                    self.root_instrument.log
-                )
-            else:
-                mylogger = log
-            mylogger.debug(
-                "Setting raw value of parameter: %s to %s", self.full_name, x
-            )
-            self.cache._set_from_raw_value(x)
-            return x
-
         if instrument is not None and bind_to_instrument:
             existing_parameter = instrument.parameters.get(name, None)
 
@@ -335,26 +380,16 @@ class Parameter(ParameterBase):
                 " that already implements set_raw is an error."
             )
         elif not self.settable and set_cmd is not False:
-            if set_cmd is None:
-                # ignore typeerror since mypy does not allow setting a method dynamically
-                self.set_raw = MethodType(_set_manual_parameter, self)  # type: ignore[method-assign]
-            else:
-                if isinstance(set_cmd, str) and instrument is None:
-                    raise TypeError(
-                        f"Cannot use a str set_cmd without "
-                        f"binding to an instrument. "
-                        f"Got: set_cmd {set_cmd} for parameter {name}"
-                    )
-
-                exec_str_write = (
-                    getattr(instrument, "write", None) if instrument else None
-                )
-                # TODO get_raw should also be a method here. This should probably be done by wrapping
-                # it with MethodType like above
-                # ignore typeerror since mypy does not allow setting a method dynamically
-                self.set_raw = Command(  # type: ignore[assignment]
-                    arg_count=1, cmd=set_cmd, exec_str=exec_str_write
-                )
+            exec_str_write: Any | None = (
+                getattr(instrument, "write", None) if instrument else None
+            )
+            # ignore typeerror since mypy does not allow setting a method dynamically
+            self.set_raw = MethodType(  # type: ignore[method-assign]
+                _set_parameter_factory(
+                    exec_str_write, cmd=set_cmd, parameter_name=name
+                ),
+                self,
+            )
             self._settable = True
             self.set = self._wrap_set(self.set_raw)
 
