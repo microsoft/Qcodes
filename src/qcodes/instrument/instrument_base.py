@@ -7,7 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, deprecated
 
 from qcodes.logger import get_instrument_logger
 from qcodes.metadatable import Metadatable, MetadatableWithName
@@ -555,6 +555,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         return self.full_name
 
     @property
+    @deprecated(
+        "The private attribute `_name` is deprecated and will be removed. Use `full_name` instead.",
+        category=QCoDeSDeprecationWarning,
+    )
     def _name(self) -> str:
         """
         Private alias kept here for backwards compatibility
