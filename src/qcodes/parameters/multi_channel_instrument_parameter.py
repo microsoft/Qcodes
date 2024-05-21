@@ -61,7 +61,11 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
                 getattr(chan, self._param_name).set(value)
         except Exception as err:
             try:
-                for chan, val in zip(self._channels, value, strict=True):
+                # Catch wrong length of value before any setting is done
+                value_list = list(value)
+                if len(value_list) != len(self._channels):
+                    raise ValueError
+                for chan, val in zip(self._channels, value_list):
                     getattr(chan, self._param_name).set(val)
             except (TypeError, ValueError):
                 note = (
@@ -72,7 +76,7 @@ class MultiChannelInstrumentParameter(MultiParameter, Generic[InstrumentModuleTy
                     err.add_note(note)
                 else:
                     _LOG.error(note)
-                raise
+                raise err from None
 
     @property
     def full_names(self) -> tuple[str, ...]:
