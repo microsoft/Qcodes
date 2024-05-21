@@ -81,7 +81,7 @@ def test_gettable_settable_attributes_with_get_set_raw(
     assert a.gettable is True
     assert a.settable is True
 
-    b = ParameterBase("foo", None)
+    b = ParameterBase("foo", instrument=None)
 
     assert b.gettable is False
     assert b.settable is False

@@ -93,15 +93,15 @@ class InstrumentRefParameter(Parameter):
             raise RuntimeError("InstrumentRefParameter does not support set_cmd.")
         super().__init__(
             name,
-            instrument,
-            label,
-            unit,
-            get_cmd,
-            set_cmd,
-            initial_value,
-            max_val_age,
-            vals,
-            docstring,
+            instrument=instrument,
+            label=label,
+            unit=unit,
+            get_cmd=get_cmd,
+            set_cmd=set_cmd,
+            initial_value=initial_value,
+            max_val_age=max_val_age,
+            vals=vals,
+            docstring=docstring,
             **kwargs,
         )
 
