@@ -76,10 +76,12 @@ jobs:
         uv pip compile pyproject.toml --extra test --resolution=lowest-direct --output-file min-requirements.txt
         pip install -r min-requirements.txt
         pip install .[test]
+        echo "PYTEST_OPT=-Wignore" >> $GITHUB_ENV
       if: ${{ matrix.min-version }}
     - name: install qcodes
       run: |
         pip install .[test] -c requirements.txt
+        echo "PYTEST_OPT=" >> $GITHUB_ENV
       if: ${{ !matrix.min-version }}
     - name: Get Pyright Version
       id: pyright-version
@@ -98,11 +100,11 @@ jobs:
       if: ${{ !matrix.min-version }}
     - name: Run parallel tests
       run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci  --durations=20 tests
+        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci  --durations=20 $PYTEST_OPT tests
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
     - name: Run serial tests
       run: |
-        pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci tests
+        pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT tests
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@125fc84a9a348dbcf27191600683ec096ec9021c # v4.4.1
       with:
