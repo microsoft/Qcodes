@@ -4,14 +4,23 @@
 import logging
 import time
 import warnings
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 from packaging import version
 
 import qcodes.validators as vals
-from qcodes.instrument import Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import ArrayParameter, create_on_off_val_mapping
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -142,20 +151,27 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
     Class to hold a measurement of the scope.
     """
 
-    def __init__(self, parent: Instrument, name: str, meas_nr: int) -> None:
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        meas_nr: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         """
         Args:
             parent: The instrument to which the channel is attached
             name: The name of the measurement
             meas_nr: The number of the measurement in question. Must match the
                 actual number as used by the instrument (1..8)
+            **kwargs: Forwarded to base class.
         """
 
         if meas_nr not in range(1, 9):
             raise ValueError('Invalid measurement number; Min: 1, max 8')
 
         self.meas_nr = meas_nr
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.sources = vals.Enum('C1W1', 'C1W2', 'C1W3',
                                  'C2W1', 'C2W2', 'C2W3',
@@ -301,13 +317,20 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
     invert, bandwidth, impedance, overload.
     """
 
-    def __init__(self, parent: Instrument, name: str, channum: int) -> None:
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        channum: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
         """
         Args:
             parent: The instrument to which the channel is attached
             name: The name of the channel
             channum: The number of the channel in question. Must match the
                 actual number as used by the instrument (1..4)
+            **kwargs: Forwarded to base class.
         """
 
         if channum not in [1, 2, 3, 4]:
@@ -315,7 +338,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
 
         self.channum = channum
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter('state',
                            label=f'Channel {channum} state',
@@ -445,26 +468,29 @@ class RohdeSchwarzRTO1000(VisaInstrument):
 
     """
 
-    def __init__(self, name: str, address: str,
-                 model: Optional[str] = None, timeout: float = 5.,
-                 HD: bool = True,
-                 terminator: str = '\n',
-                 **kwargs: Any) -> None:
+    default_timeout = 5.0
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        *,
+        model: Optional[str] = None,
+        HD: bool = True,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
         """
         Args:
             name: name of the instrument
             address: VISA resource address
             model: The instrument model. For newer firmware versions,
                 this can be auto-detected
-            timeout: The VISA query timeout
             HD: Does the unit have the High Definition Option (allowing
                 16 bit vertical resolution)
-            terminator: Command termination character to strip from VISA
-                commands.
             **kwargs: kwargs are forwarded to base class.
         """
-        super().__init__(name=name, address=address, timeout=timeout,
-                         terminator=terminator, **kwargs)
+        super().__init__(name=name, address=address, **kwargs)
 
         # With firmware versions earlier than 3.65, it seems that the
         # model number can NOT be queried from the instrument

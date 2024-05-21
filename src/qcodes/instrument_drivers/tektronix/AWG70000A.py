@@ -14,11 +14,20 @@ import numpy as np
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    Instrument,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import create_on_off_val_mapping
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -157,16 +166,23 @@ class Tektronix70000AWGChannel(InstrumentChannel):
     Class to hold a channel of the AWG.
     """
 
-    def __init__(self,  parent: Instrument, name: str, channel: int) -> None:
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        channel: int,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ) -> None:
         """
         Args:
             parent: The Instrument instance to which the channel is
                 to be attached.
             name: The name used in the DataSet
             channel: The channel number, either 1 or 2.
+            **kwargs: Forwarded to base class.
         """
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.channel = channel
 
@@ -413,27 +429,27 @@ class AWG70000A(VisaInstrument):
     subclasses of this general class.
     """
 
+    default_terminator = "\n"
+    default_timeout = 10
+
     def __init__(
         self,
         name: str,
         address: str,
         num_channels: int,
-        timeout: float = 10,
-        **kwargs: Any,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
     ) -> None:
         """
         Args:
             name: The name used internally by QCoDeS in the DataSet
             address: The VISA resource name of the instrument
-            timeout: The VISA timeout time (in seconds)
             num_channels: Number of channels on the AWG
             **kwargs: kwargs are forwarded to base class.
         """
 
         self.num_channels = num_channels
 
-        super().__init__(name, address, timeout=timeout, terminator='\n',
-                         **kwargs)
+        super().__init__(name, address, **kwargs)
 
         # The 'model' value begins with 'AWG'
         self.model = self.IDN()['model'][3:]

@@ -15,6 +15,7 @@ from pyvisa.resources.tcpip import TCPIPSocket
 
 from qcodes.instrument import (
     ChannelList,
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -65,8 +66,14 @@ class StahlChannel(InstrumentChannel):
 
     acknowledge_reply = chr(6)
 
-    def __init__(self, parent: VisaInstrument, name: str, channel_number: int):
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: VisaInstrument,
+        name: str,
+        channel_number: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        super().__init__(parent, name, **kwargs)
 
         self._channel_string = f"{channel_number:02d}"
         self._channel_number = channel_number

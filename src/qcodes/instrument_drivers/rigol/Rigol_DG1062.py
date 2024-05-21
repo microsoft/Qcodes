@@ -1,10 +1,19 @@
 import logging
 from functools import partial
-from typing import Any, ClassVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Union, cast
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.utils import partial_with_docstring
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -15,8 +24,14 @@ class RigolDG1062Burst(InstrumentChannel):
     group burst commands together.
     """
 
-    def __init__(self, parent: "RigolDG1062", name: str, channel: int):
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: "RigolDG1062",
+        name: str,
+        channel: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        super().__init__(parent, name, **kwargs)
         self.channel = channel
 
         self.add_parameter(
@@ -131,15 +146,22 @@ class RigolDG1062Channel(InstrumentChannel):
 
     waveforms: ClassVar[tuple[str, ...]] = tuple(waveform_params.keys())
 
-    def __init__(self, parent: "RigolDG1062", name: str, channel: int):
+    def __init__(
+        self,
+        parent: "RigolDG1062",
+        name: str,
+        channel: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         """
         Args:
             parent: The instrument this channel belongs to
             name: Name of the channel.
             channel: Number of the channel.
+            **kwargs: Forwarded to base class.
         """
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self.channel = channel
 
         for param, unit in [
@@ -361,9 +383,12 @@ class RigolDG1062(VisaInstrument):
 
     waveforms = RigolDG1062Channel.waveforms
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
+    default_terminator = "\n"
 
-        super().__init__(name, address, terminator="\n", **kwargs)
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ):
+        super().__init__(name, address, **kwargs)
 
         channels = ChannelList(self, "channel", RigolDG1062Channel, snapshotable=False)
 

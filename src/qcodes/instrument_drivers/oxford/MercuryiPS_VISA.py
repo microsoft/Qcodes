@@ -3,15 +3,22 @@ from __future__ import annotations
 import logging
 import time
 from functools import partial
-from typing import Any, Callable, cast
+from typing import TYPE_CHECKING, Callable, cast
 
 import numpy as np
 import numpy.typing as npt
 from packaging import version
 
-from qcodes.instrument.channel import InstrumentChannel
-from qcodes.instrument.visa import VisaInstrument
+from qcodes.instrument import (
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.math_utils import FieldVector
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -59,19 +66,26 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
     Class to hold a worker power supply for the Oxford MercuryiPS
     """
 
-    def __init__(self, parent: VisaInstrument, name: str, UID: str) -> None:
+    def __init__(
+        self,
+        parent: VisaInstrument,
+        name: str,
+        UID: str,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ) -> None:
         """
         Args:
             parent: The Instrument instance of the MercuryiPS
             name: The 'colloquial' name of the PS
             UID: The UID as used internally by the MercuryiPS, e.g.
                 'GRPX'
+            **kwargs: Forwarded to base class.
         """
         if ':' in UID:
             raise ValueError('Invalid UID. Must be axis group name or device '
                              'name, e.g. "GRPX" or "PSU.M1"')
 
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self.uid = UID
 
         # The firmware update from 2.5 -> 2.6 changed the command
@@ -222,21 +236,21 @@ class OxfordMercuryiPS(VisaInstrument):
     supply
     """
 
+    default_terminator = "\n"
+
     def __init__(
         self,
         name: str,
         address: str,
-        visalib: str | None = None,
+        *,
         field_limits: Callable[[float, float, float], bool] | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
     ) -> None:
         """
         Args:
             name: The name to give this instrument internally in QCoDeS
             address: The VISA resource of the instrument. Note that a
                 socket connection to port 7020 must be made
-            visalib: The VISA library to use. Leave blank if not in simulation
-                mode.
             field_limits: A function describing the allowed field
                 range (T). The function shall take (x, y, z) as an input and
                 return a boolean describing whether that field value is
@@ -261,8 +275,7 @@ class OxfordMercuryiPS(VisaInstrument):
                 "TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET."
             )
 
-        super().__init__(name, address, terminator='\n', visalib=visalib,
-                         **kwargs)
+        super().__init__(name, address, **kwargs)
         self.firmware = self.IDN()['firmware']
 
         # TODO: Query instrument to ensure which PSUs are actually present

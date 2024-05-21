@@ -2,13 +2,16 @@ import ctypes as ct
 import logging
 from enum import IntEnum
 from time import sleep
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 
 import qcodes.validators as vals
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import ArrayParameter, Parameter, ParameterWithSetpoints
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -186,7 +189,12 @@ class SignalHoundUSBSA124B(Instrument):
 
     dll_path = "C:\\Program Files\\Signal Hound\\Spike\\sa_api.dll"
 
-    def __init__(self, name: str, dll_path: Optional[str] = None, **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        dll_path: Optional[str] = None,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
         """
         Args:
             name: Name of the instrument.

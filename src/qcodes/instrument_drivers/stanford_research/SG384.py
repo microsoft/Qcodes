@@ -1,7 +1,10 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
 from qcodes import validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class SG384(VisaInstrument):
@@ -11,10 +14,18 @@ class SG384(VisaInstrument):
     Status: beta version
     Includes the essential commands from the manual
     """
-    def __init__(self, name: str, address: str,
-                 reset: bool = False, **kwargs: Any):
-        super().__init__(name, address, terminator='\n', **kwargs)
-    # signal synthesis commands
+
+    default_terminator = "\n"
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        reset: bool = False,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ):
+        super().__init__(name, address, **kwargs)
+        # signal synthesis commands
         self.add_parameter(name='frequency',
                            label='Frequency',
                            unit='Hz',

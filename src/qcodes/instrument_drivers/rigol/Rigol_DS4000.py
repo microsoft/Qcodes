@@ -5,14 +5,23 @@ import re
 import time
 import warnings
 from collections import namedtuple
-from typing import Any
+from typing import TYPE_CHECKING
 
 import numpy as np
 from packaging import version
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import ArrayParameter, ParamRawDataType
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -190,8 +199,14 @@ class ScopeArray(ArrayParameter):
 
 
 class RigolDS4000Channel(InstrumentChannel):
-    def __init__(self, parent: RigolDS4000, name: str, channel: int):
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: RigolDS4000,
+        name: str,
+        channel: int,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
+    ):
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter(
             "amplitude", get_cmd=f":MEASure:VAMP? chan{channel}", get_parser=float
@@ -219,21 +234,28 @@ class RigolDS4000(VisaInstrument):
     This is the QCoDeS driver for the Rigol DS4000 series oscilloscopes.
     """
 
-    def __init__(self, name: str, address: str, timeout: float = 20, **kwargs: Any):
+    default_timeout = 20
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
+    ):
         """
         Initialises the DS4000.
 
         Args:
             name: Name of the instrument used by QCoDeS
             address: Instrument address as used by VISA
-            timeout: visa timeout, in secs. long default (180)
-                to accommodate large waveforms
             **kwargs: kwargs are forwarded to base class.
         """
 
         # Init VisaInstrument. device_clear MUST NOT be issued, otherwise communications hangs
         # due a bug in firmware
-        super().__init__(name, address, device_clear=False, timeout=timeout, **kwargs)
+        kwargs["device_clear"] = False
+
+        super().__init__(name, address, **kwargs)
         self.connect_message()
 
         self._check_firmware_version()

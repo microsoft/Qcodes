@@ -4,7 +4,7 @@ A mixin module for USB Human Interface Device instruments
 import os
 import struct
 import time
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 try:
     from pywinusb import hid  # pyright: ignore[reportMissingModuleSource]
@@ -17,16 +17,14 @@ except ImportError:
 
 from qcodes.instrument.base import Instrument
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import InstrumentBaseKWArgs
+
 
 class USBHIDMixin(Instrument):
-    """
-    Args:
-        instance_id: The id of the instrument we want to connect to. If
-            there is only one instrument, then this argument is optional.
-            If more than one instrument happen to be connected, use
-            `enumerate_devices` method to query their IDs
-        timeout: Specify a timeout for this instrument in seconds
-    """
+
     # The following class attributes should be set by subclasses
     vendor_id = 0x0000
     product_id = 0x0000
@@ -42,9 +40,23 @@ class USBHIDMixin(Instrument):
                 "'pip install pywinusb' in a qcodes environment terminal"
             )
 
-    def __init__(self, name: str, instance_id: Optional[str] = None,
-                 timeout: float = 2,
-                 **kwargs: Any):
+    def __init__(
+        self,
+        name: str,
+        instance_id: Optional[str] = None,
+        timeout: float = 2,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        """
+        Args:
+            name: Name of the instrument.
+            instance_id: The id of the instrument we want to connect to. If
+                there is only one instrument, then this argument is optional.
+                If more than one instrument happen to be connected, use
+                `enumerate_devices` method to query their IDs
+            timeout: Specify a timeout for this instrument in seconds
+            **kwargs: Forwarded to base class.
+        """
         self._check_hid_import()
 
         devs = hid.HidDeviceFilter(  # pyright: ignore[reportPossiblyUnboundVariable]
@@ -153,25 +165,29 @@ class USBHIDMixin(Instrument):
 
 
 class MiniCircuitsHIDMixin(USBHIDMixin):
-    """
-    The specific implementation for mini circuit human interface devices.
+    def __init__(
+        self,
+        name: str,
+        instance_id: Optional[str] = None,
+        timeout: float = 2,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        """
+        The specific implementation for mini circuit human interface devices.
 
-    This implementation allows to use `write`/`ask` methods of the instrument
-    instance to send SCPI commands to MiniCircuits instruments over USB HID
-    connection.
+        This implementation allows to use `write`/`ask` methods of the instrument
+        instance to send SCPI commands to MiniCircuits instruments over USB HID
+        connection.
 
-    Args:
-        name: instrument name
-        instance_id: The id of the instrument we want to connect. If there is
-            only one instrument then this is an optional argument. If we have
-            more then one instrument, use the class method
-            `enumerate_devices` to query their IDs
-        timeout: Specify a timeout for this instrument in seconds
-    """
-
-    def __init__(self, name: str, instance_id: Optional[str] = None,
-                 timeout: float = 2,
-                 **kwargs: Any):
+        Args:
+            name: instrument name
+            instance_id: The id of the instrument we want to connect. If there is
+                only one instrument then this is an optional argument. If we have
+                more then one instrument, use the class method
+                `enumerate_devices` to query their IDs
+            timeout: Specify a timeout for this instrument in seconds
+            **kwargs: Forwarded to base class.
+        """
         # USB interrupt code for sending SCPI commands
         self._sending_scpi_cmds_code = 1
         self._usb_endpoint = 0

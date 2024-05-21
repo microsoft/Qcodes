@@ -5,10 +5,16 @@ from typing import Any
 
 import numpy as np
 from pyvisa.errors import VisaIOError
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, Unpack
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 log = logging.getLogger(__name__)
@@ -213,7 +219,11 @@ class ScopeArray(ArrayParameter):
 
 class TektronixTPS2012Channel(InstrumentChannel):
     def __init__(
-        self, parent: "TektronixTPS2012", name: str, channel: int, **kwargs: Any
+        self,
+        parent: "TektronixTPS2012",
+        name: str,
+        channel: int,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(parent, name, **kwargs)
 
@@ -263,20 +273,24 @@ class TektronixTPS2012(VisaInstrument):
     This is the QCoDeS driver for the Tektronix 2012B oscilloscope.
     """
 
-    def __init__(self, name: str, address: str,
-                 timeout: float = 20, **kwargs: Any):
+    default_timeout = 20
+
+    def __init__(
+        self,
+        name: str,
+        address: str,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
+    ):
         """
         Initialises the TPS2012.
 
         Args:
             name: Name of the instrument used by QCoDeS
             address: Instrument address as used by VISA
-            timeout: visa timeout, in secs. long default (180)
-              to accommodate large waveforms
             **kwargs: kwargs are forwarded to base class.
         """
 
-        super().__init__(name, address, timeout=timeout, **kwargs)
+        super().__init__(name, address, **kwargs)
         self.connect_message()
 
         # Scope trace boolean

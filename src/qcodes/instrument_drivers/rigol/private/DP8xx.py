@@ -1,23 +1,32 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from qcodes import validators as vals
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
 
 
 class RigolDP8xxChannel(InstrumentChannel):
     def __init__(
         self,
-        parent: "_RigolDP8xx",
+        parent: "_RigelDP8xx",
         name: str,
         channel: int,
         ch_range: tuple[float, float],
         ovp_range: tuple[float, float],
         ocp_range: tuple[float, float],
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.vmax = ch_range[0]
         self.imax = ch_range[1]
@@ -127,7 +136,7 @@ class RigolDP8xxChannel(InstrumentChannel):
         )
 
 
-class _RigolDP8xx(VisaInstrument):
+class _RigelDP8xx(VisaInstrument):
     """
     This is the general DP8xx Power Supply driver class that implements shared parameters and functionality
     among all similar power supply from Rigole.
@@ -146,7 +155,7 @@ class _RigolDP8xx(VisaInstrument):
         ocp_ranges: tuple[
             "Sequence[tuple[float, float]]", "Sequence[tuple[float, float]]"
         ],
-        **kwargs: Any,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
         super().__init__(name, address, **kwargs)
 

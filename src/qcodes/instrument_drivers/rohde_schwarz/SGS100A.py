@@ -1,8 +1,11 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
 import qcodes.validators as vals
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import create_on_off_val_mapping
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
 
 
 class RohdeSchwarzSGS100A(VisaInstrument):
@@ -30,8 +33,12 @@ class RohdeSchwarzSGS100A(VisaInstrument):
     only the ones most commonly used.
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\n", **kwargs)
+    default_terminator = "\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
+        super().__init__(name, address, **kwargs)
 
         self.add_parameter(
             name="frequency",

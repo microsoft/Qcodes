@@ -1,9 +1,14 @@
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
 
 from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import InstrumentBaseKWArgs, VisaInstrumentKWArgs
 
 # There are 4 sensors channels (a.k.a. measurement inputs) in Model 336.
 # Unlike other Lakeshore models, Model 336 refers to the channels using
@@ -42,9 +47,13 @@ class LakeshoreModel336CurrentSource(BaseOutput):
     }
 
     def __init__(
-        self, parent: "LakeshoreModel336", output_name: str, output_index: int
+        self,
+        parent: "LakeshoreModel336",
+        output_name: str,
+        output_index: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
-        super().__init__(parent, output_name, output_index, has_pid=True)
+        super().__init__(parent, output_name, output_index, has_pid=True, **kwargs)
 
         self.P.vals = vals.Numbers(0.1, 1000)
         self.I.vals = vals.Numbers(0.1, 1000)
@@ -71,9 +80,13 @@ class LakeshoreModel336VoltageSource(BaseOutput):
     RANGES: ClassVar[dict[str, int]] = {"off": 0, "low": 1, "medium": 2, "high": 3}
 
     def __init__(
-        self, parent: "LakeshoreModel336", output_name: str, output_index: int
+        self,
+        parent: "LakeshoreModel336",
+        output_name: str,
+        output_index: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
-        super().__init__(parent, output_name, output_index, has_pid=False)
+        super().__init__(parent, output_name, output_index, has_pid=False, **kwargs)
 
 
 class LakeshoreModel336Channel(BaseSensorChannel):
@@ -91,8 +104,14 @@ class LakeshoreModel336Channel(BaseSensorChannel):
         128: "Sensor Units Overrange",
     }
 
-    def __init__(self, parent: "LakeshoreModel336", name: str, channel: str):
-        super().__init__(parent, name, channel)
+    def __init__(
+        self,
+        parent: "LakeshoreModel336",
+        name: str,
+        channel: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        super().__init__(parent, name, channel, **kwargs)
 
         # Parameters related to Input Type Parameter Command (INTYPE)
         self.add_parameter(
@@ -174,7 +193,9 @@ class LakeshoreModel336(LakeshoreBase):
         _channel_name_to_command_map
     )
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
         super().__init__(name, address, **kwargs)
 
         self.output_1 = LakeshoreModel336CurrentSource(self, "output_1", 1)

@@ -3,7 +3,7 @@ This contains an alias of the Lakeshore Model 336 driver.
 It will eventually be deprecated and removed
 """
 
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
@@ -18,6 +18,11 @@ from .Lakeshore_model_336 import (
 )
 from .Lakeshore_model_336 import _channel_name_to_command_map
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.instrument import VisaInstrumentKWArgs
+
 
 class Model_336(LakeshoreBase):
     """
@@ -31,7 +36,9 @@ class Model_336(LakeshoreBase):
     input_channel_parameter_values_to_channel_name_on_instrument = \
         _channel_name_to_command_map
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
         super().__init__(name, address, **kwargs)
 
         self.output_1 = Output_336_CurrentSource(self, "output_1", 1)  # type: ignore[arg-type]

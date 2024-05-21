@@ -9,9 +9,17 @@ from functools import partial
 from typing import Any, Callable, ClassVar, Union, cast
 
 import numpy as np
-from typing_extensions import deprecated
+from typing_extensions import Unpack, deprecated
 
-from qcodes.instrument import ChannelList, Instrument, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    Instrument,
+    InstrumentBase,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import (
     Parameter,
     ParameterWithSetpoints,
@@ -52,15 +60,12 @@ class TektronixDPO7000xx(VisaInstrument):
     number_of_channels = 4
     number_of_measurements = 8  # The number of available
     # measurements does not change.
+    default_terminator = "\n"
 
     def __init__(
-            self,
-            name: str,
-            address: str,
-            **kwargs: Any
+        self, name: str, address: str, **kwargs: Unpack[VisaInstrumentKWArgs]
     ) -> None:
-
-        super().__init__(name, address, terminator="\n", **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.add_submodule(
             "horizontal",
@@ -146,12 +151,9 @@ class TektronixDPOData(InstrumentChannel):
     """
 
     def __init__(
-            self,
-            parent: Union[Instrument, InstrumentChannel],
-            name: str
+        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
     ) -> None:
-
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         # We can choose to retrieve data from arbitrary
         # start and stop indices of the buffer.
         self.add_parameter(
@@ -213,13 +215,13 @@ class TektronixDPOWaveform(InstrumentChannel):
     ]
 
     def __init__(
-            self,
-            parent: Union[Instrument, InstrumentChannel],
-            name: str,
-            identifier: str,
+        self,
+        parent: InstrumentBase,
+        name: str,
+        identifier: str,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
-
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         if identifier not in self.valid_identifiers:
             raise ValueError(
@@ -376,12 +378,9 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     """
 
     def __init__(
-            self,
-            parent: Union[Instrument, InstrumentChannel],
-            name: str
+        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
     ) -> None:
-
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter(
             "data_format",
@@ -430,13 +429,13 @@ class TektronixDPOChannel(InstrumentChannel):
     the instrument display.
     """
     def __init__(
-            self,
-            parent: Union[Instrument, InstrumentChannel],
-            name: str,
-            channel_number: int,
+        self,
+        parent: Union[Instrument, InstrumentChannel],
+        name: str,
+        channel_number: int,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
-
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self._identifier = f"CH{channel_number}"
 
         self.add_submodule(
@@ -526,12 +525,12 @@ class TektronixDPOHorizontal(InstrumentChannel):
     """
 
     def __init__(
-            self,
-            parent: Union[Instrument, InstrumentChannel],
-            name: str
+        self,
+        parent: Union[Instrument, InstrumentChannel],
+        name: str,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
-
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter(
             "mode",
@@ -643,12 +642,13 @@ class TektronixDPOTrigger(InstrumentChannel):
     https://download.tek.com/manual/MSO70000C-DX-DPO70000C-DX-MSO-DPO7000C-MSO-DPO5000B-Oscilloscope-Quick-Start-User-Manual-071298006.pdf
     """
     def __init__(
-            self,
-            parent: Instrument,
-            name: str,
-            delayed_trigger: bool = False
+        self,
+        parent: Instrument,
+        name: str,
+        delayed_trigger: bool = False,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self._identifier = "B" if delayed_trigger else "A"
 
         trigger_types = ["edge", "logic", "pulse"]
@@ -834,13 +834,13 @@ class TektronixDPOMeasurement(InstrumentChannel):
     ]
 
     def __init__(
-            self,
-            parent: Instrument,
-            name: str,
-            measurement_number: int
+        self,
+        parent: Instrument,
+        name: str,
+        measurement_number: int,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
-
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
         self._measurement_number = measurement_number
         self._adjustment_time = time.perf_counter()
 
@@ -909,8 +909,10 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
 
 class TektronixDPOMeasurementStatistics(InstrumentChannel):
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self, parent: InstrumentBase, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+    ):
+        super().__init__(parent=parent, name=name, **kwargs)
 
         self.add_parameter(
             "mode",

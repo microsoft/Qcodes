@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import (
     ArrayParameter,
     Parameter,
@@ -17,6 +17,8 @@ from qcodes.validators import Arrays, ComplexNumbers, Enum, Ints, Numbers, Strin
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+    from typing_extensions import Unpack
 
 
 class ChannelTrace(ParameterWithSetpoints):
@@ -274,7 +276,7 @@ class SR830(VisaInstrument):
         v: k for k, v in _INPUT_CONFIG_TO_N.items()
     }
 
-    def __init__(self, name: str, address: str, **kwargs: Any):
+    def __init__(self, name: str, address: str, **kwargs: Unpack[VisaInstrumentKWArgs]):
         super().__init__(name, address, **kwargs)
 
         # Reference and phase

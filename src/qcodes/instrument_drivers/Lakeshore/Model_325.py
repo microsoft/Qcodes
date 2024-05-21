@@ -6,9 +6,14 @@ It will eventually be deprecated and removed
 from collections.abc import Iterable
 from enum import IntFlag
 from itertools import takewhile
-from typing import Any, Optional, TextIO, cast
+from typing import TYPE_CHECKING, Any, Optional, TextIO, cast
 
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import Group, GroupParameter
 from qcodes.validators import Enum, Numbers
 
@@ -19,14 +24,21 @@ from .Lakeshore_model_325 import LakeshoreModel325Status as Status
 from .Lakeshore_model_325 import _get_sanitize_data as get_sanitize_data
 from .Lakeshore_model_325 import _read_curve_file as read_curve_file
 
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
 
 class Model_325(VisaInstrument):
     """
     Lakeshore Model 325 Temperature Controller Driver
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
-        super().__init__(name, address, terminator="\r\n", **kwargs)
+    default_terminator = "\r\n"
+
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
+    ) -> None:
+        super().__init__(name, address, **kwargs)
 
         sensors = ChannelList(
             self, "sensor", Model_325_Sensor, snapshotable=False)

@@ -5,12 +5,20 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 import numpy as np
 
-from qcodes.instrument import ChannelList, InstrumentChannel, VisaInstrument
+from qcodes.instrument import (
+    ChannelList,
+    InstrumentBaseKWArgs,
+    InstrumentChannel,
+    VisaInstrument,
+    VisaInstrumentKWArgs,
+)
 from qcodes.parameters import ArrayParameter
 from qcodes.validators import ComplexNumbers, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from typing_extensions import Unpack
 
 log = logging.getLogger(__name__)
 
@@ -82,8 +90,10 @@ class SR86xBuffer(InstrumentChannel):
     manual: http://thinksrs.com/downloads/PDFs/Manuals/SR860m.pdf
     """
 
-    def __init__(self, parent: SR86x, name: str) -> None:
-        super().__init__(parent, name)
+    def __init__(
+        self, parent: SR86x, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+    ) -> None:
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter(
             "capture_length_in_kb",
@@ -582,8 +592,9 @@ class SR86xDataChannel(InstrumentChannel):
         cmd_id: str,
         cmd_id_name: str | None = None,
         color: str | None = None,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         self._cmd_id = cmd_id
         self._cmd_id_name = cmd_id_name
@@ -715,14 +726,17 @@ class SR86x(VisaInstrument):
 
     _N_DATA_CHANNELS = 4
 
+    default_terminator = "\n"
+
     def __init__(
-            self,
-            name: str,
-            address: str,
-            max_frequency: float,
-            reset: bool = False,
-            **kwargs: Any):
-        super().__init__(name, address, terminator='\n', **kwargs)
+        self,
+        name: str,
+        address: str,
+        max_frequency: float,
+        reset: bool = False,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
+    ):
+        super().__init__(name, address, **kwargs)
         self._max_frequency = max_frequency
         # Reference commands
         self.add_parameter(name='frequency',
