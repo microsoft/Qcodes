@@ -4,7 +4,8 @@ the instrument class. This in turn enables type checkers and
 documentation tools to detect the existence and type of the
 parameter statically.
 
-QCoDeS ships with a tool to automatically refactor instruments in this way.
+QCoDeS ships with a tool to automatically refactor instruments in this way. To use
+this tool qcodes should be installed with the refactor option e.g. ``pip install qcodes[refactor]``
 
 See `Creating-Instrument-Drivers <../examples/writing_drivers/Creating-Instrument-Drivers.ipynb>`__
 for more details.

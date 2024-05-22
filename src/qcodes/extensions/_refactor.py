@@ -203,7 +203,6 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-    args.tool
 
     if args.tool == choices[0]:
         path = Path(args.path).absolute()
