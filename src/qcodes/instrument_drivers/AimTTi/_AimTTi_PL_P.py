@@ -1,9 +1,10 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, ClassVar, Optional
 
 from qcodes import validators as vals
 from qcodes.instrument import (
     ChannelList,
     Instrument,
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -29,7 +30,11 @@ class AimTTiChannel(InstrumentChannel):
     """
 
     def __init__(
-        self, parent: Instrument, name: str, channel: int, **kwargs: Any
+        self,
+        parent: Instrument,
+        name: str,
+        channel: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
         Args:
