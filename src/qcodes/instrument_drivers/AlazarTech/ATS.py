@@ -103,8 +103,11 @@ class AlazarTech_ATS(Instrument):
         """
         # make a temporary instrument for this board, to make it easier
         # to get its info
-        board = cls(f'alazar_temp_{time.perf_counter_ns()}',
-                    system_id=system_id, board_id=board_id)
+        board = cls(
+            f"alazar_temp_{time.perf_counter_ns()}",
+            system_id=system_id,
+            board_id=board_id,
+        )
 
         handle = board._handle
 
