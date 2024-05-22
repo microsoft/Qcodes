@@ -165,6 +165,10 @@ class DummyInstrument(DummyBase):
                 set_cmd=None,
             )
 
+        self.fixed_parameter = self.add_parameter(
+            "fixed_parameter", set_cmd=None, get_cmd=None, initial_value=5
+        )
+
 
 class DummyFailingInstrument(DummyBase):
     def __init__(

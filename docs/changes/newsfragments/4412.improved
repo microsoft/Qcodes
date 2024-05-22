@@ -1,0 +1,14 @@
+`InstrumentBase.add_parameter` now returns the created parameter.
+This allows explicitly assigning the parameter as an attribute on
+the instrument class. This in turn enables type checkers and
+documentation tools to detect the existence and type of the
+parameter statically.
+
+QCoDeS ships with a tool to automatically refactor instruments in this way. To use
+this tool qcodes should be installed with the refactor option e.g. ``pip install qcodes[refactor]``
+
+See `Creating-Instrument-Drivers <../examples/writing_drivers/Creating-Instrument-Drivers.ipynb>`__
+for more details.
+
+It is the plan to transform all drivers shipping with QCoDeS in this way
+as soon as possible.

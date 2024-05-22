@@ -526,13 +526,12 @@ instruments:
     mock = st.load_instrument("mock")
     for ch in ["ch1", "ch2"]:
         assert ch in mock.parameters.keys()
-    assert len(mock.parameters) == 3  # there is also IDN
+    assert len(mock.parameters) == 4  # there is also IDN and a fixed param
 
     # Overwrite parameter
     mock = st.load_instrument("mock", gates=["TestGate"])
     assert "TestGate" in mock.parameters.keys()
-    assert len(mock.parameters) == 2  # there is also IDN
-
+    assert len(mock.parameters) == 3  # there is also IDN and a fixed param
     # test address
     sims_path = get_qcodes_path("instrument", "sims")
     st = station_from_config_str(

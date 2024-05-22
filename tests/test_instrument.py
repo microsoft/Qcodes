@@ -8,7 +8,7 @@ import gc
 import io
 import re
 import weakref
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from weakref import WeakValueDictionary
 
 import pytest
@@ -202,6 +202,17 @@ def test_attr_access(testdummy: DummyInstrument) -> None:
 
     # make sure the gate is removed
     assert not hasattr(testdummy, "dac1")
+
+
+def test_parameter_property(testdummy: DummyInstrument) -> None:
+    # since this is added dynamically we cannot know the type statically
+    assert_type(testdummy.dac1, Any)
+    # this is an assigned attribute so we know it statically
+    assert_type(testdummy.fixed_parameter, Parameter)
+
+    assert testdummy.fixed_parameter.get() == 5
+    testdummy.fixed_parameter.set(10)
+    assert testdummy.fixed_parameter.get() == 10
 
 
 def test_attr_access_channels(testdummychannelinstr: DummyChannelInstrument) -> None:
