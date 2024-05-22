@@ -226,8 +226,10 @@ class AimTTiChannel(InstrumentChannel):
 
 class AimTTi(VisaInstrument):
     """
-    This is the QCoDeS driver for the Aim TTi PL-P series power supply.
-    Tested with Aim TTi PL601-P equipped with a single output channel.
+    Base class for Aim TTi PL-P series power supply.
+    This class should not be instantiated directly, but rather one of the
+    subclasses corresponding to the specific model of the power supply should
+    be used.
     """
 
     _numOutputChannels: ClassVar[dict[str, int]] = {
