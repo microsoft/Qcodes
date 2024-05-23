@@ -4,14 +4,14 @@ import numpy as np
 from packaging import version
 
 from qcodes import validators
-from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
+from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTechATS
 from qcodes.instrument_drivers.AlazarTech.utils import TraceParameter
 
 if TYPE_CHECKING:
     from qcodes.parameters import Parameter
 
 
-class AlazarTechATS9373(AlazarTech_ATS):
+class AlazarTechATS9373(AlazarTechATS):
     """
     This class is the driver for the ATS9373 board.
 

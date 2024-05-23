@@ -5,14 +5,14 @@ from packaging import version
 
 from qcodes import validators
 
-from .ATS import AlazarTech_ATS
+from .ATS import AlazarTechATS
 from .utils import TraceParameter
 
 if TYPE_CHECKING:
     from qcodes.parameters import Parameter
 
 
-class AlazarTechATS9360(AlazarTech_ATS):
+class AlazarTechATS9360(AlazarTechATS):
     """
     This class is the driver for the ATS9360 board
     it inherits from the ATS base class

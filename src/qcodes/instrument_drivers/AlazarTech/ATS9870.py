@@ -2,14 +2,14 @@ from typing import TYPE_CHECKING, Any
 
 from qcodes import validators
 
-from .ATS import AlazarTech_ATS
+from .ATS import AlazarTechATS
 from .utils import TraceParameter
 
 if TYPE_CHECKING:
     from qcodes.parameters import Parameter
 
 
-class AlazarTechATS9870(AlazarTech_ATS):
+class AlazarTechATS9870(AlazarTechATS):
     """
     This class is the driver for the ATS9870 board
     it inherits from the ATS base class

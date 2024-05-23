@@ -12,7 +12,7 @@ from weakref import WeakValueDictionary
 import pytest
 from pytest import LogCaptureFixture
 
-from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTech_ATS
+from qcodes.instrument_drivers.AlazarTech.ATS import AlazarTechATS
 from qcodes.instrument_drivers.AlazarTech.ats_api import AlazarATSAPI
 from qcodes.instrument_drivers.AlazarTech.constants import (
     API_SUCCESS,
@@ -23,13 +23,15 @@ from qcodes.instrument_drivers.AlazarTech.dll_wrapper import DllWrapperMeta
 
 
 def _skip_if_alazar_dll_and_boards_not_installed():
-    if not os.path.exists(AlazarTech_ATS.dll_path + '.dll'):
+    if not os.path.exists(f"{AlazarTechATS.dll_path}.dll"):
         return pytest.mark.skip(
-            "Alazar API DLL was not found in 'AlazarTech_ATS.dll_path'.")
+            "Alazar API DLL was not found in 'AlazarTechATS.dll_path'."
+        )
 
     return pytest.mark.skipif(
-        len(AlazarTech_ATS.find_boards()) != 1,
-        reason='No, or more than one Alazar boards are installed on this PC.')
+        len(AlazarTechATS.find_boards()) != 1,
+        reason="No, or more than one Alazar boards are installed on this PC.",
+    )
 
 
 pytestmark = _skip_if_alazar_dll_and_boards_not_installed()
@@ -42,14 +44,14 @@ BOARD_ID = 1
 
 @pytest.fixture
 def alazar():
-    alazar = AlazarTech_ATS('alazar', system_id=SYSTEM_ID, board_id=BOARD_ID)
+    alazar = AlazarTechATS("alazar", system_id=SYSTEM_ID, board_id=BOARD_ID)
     yield alazar
     alazar.close()
 
 
 @pytest.fixture
 def alazar_api():
-    yield AlazarATSAPI(AlazarTech_ATS.dll_path)
+    yield AlazarATSAPI(AlazarTechATS.dll_path)
 
 
 def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
@@ -62,20 +64,20 @@ def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
     assert DllWrapperMeta._instances == WeakValueDictionary()
 
     with caplog.at_level(logging.DEBUG):
-        api1 = AlazarATSAPI(AlazarTech_ATS.dll_path)
+        api1 = AlazarATSAPI(AlazarTechATS.dll_path)
     assert DllWrapperMeta._instances == WeakValueDictionary(
-        {AlazarTech_ATS.dll_path: api1}
+        {AlazarTechATS.dll_path: api1}
     )
-    assert caplog.records[-1].message == creating_msg(AlazarTech_ATS.dll_path)
+    assert caplog.records[-1].message == creating_msg(AlazarTechATS.dll_path)
     caplog.clear()
 
     with caplog.at_level(logging.DEBUG):
-        api2 = AlazarATSAPI(AlazarTech_ATS.dll_path)
+        api2 = AlazarATSAPI(AlazarTechATS.dll_path)
     assert api2 is api1
     assert DllWrapperMeta._instances == WeakValueDictionary(
-        {AlazarTech_ATS.dll_path: api1}
+        {AlazarTechATS.dll_path: api1}
     )
-    assert caplog.records[-1].message == using_msg(AlazarTech_ATS.dll_path)
+    assert caplog.records[-1].message == using_msg(AlazarTechATS.dll_path)
     caplog.clear()
 
     # Indeed, this actually exposes a vulnarability of the setup. As far as
@@ -84,13 +86,13 @@ def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
     # the same `_handle` value. But here we will abuse this in order to create
     # a new instance of the Alazar API class by using the same DLL file.
     # This should probably be fixed.
-    dll_path_3 = AlazarTech_ATS.dll_path + '.dll'
+    dll_path_3 = AlazarTechATS.dll_path + ".dll"
     with caplog.at_level(logging.DEBUG):
         api3 = AlazarATSAPI(dll_path_3)
     assert api3 is not api1
     assert api3 is not api2
     assert DllWrapperMeta._instances == WeakValueDictionary(
-        {AlazarTech_ATS.dll_path: api1, dll_path_3: api3}
+        {AlazarTechATS.dll_path: api1, dll_path_3: api3}
     )
     assert caplog.records[-1].message == creating_msg(dll_path_3)
     caplog.clear()
@@ -98,7 +100,7 @@ def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
     del api2
     gc.collect()
     assert DllWrapperMeta._instances == WeakValueDictionary(
-        {AlazarTech_ATS.dll_path: api1, dll_path_3: api3}
+        {AlazarTechATS.dll_path: api1, dll_path_3: api3}
     )
 
     del api1
@@ -111,16 +113,16 @@ def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
 
 
 def test_find_boards() -> None:
-    boards = AlazarTech_ATS.find_boards()
+    boards = AlazarTechATS.find_boards()
     assert len(boards) == 1
     assert boards[0]['system_id'] == SYSTEM_ID
     assert boards[0]['board_id'] == BOARD_ID
 
 
 def test_get_board_info(alazar_api) -> None:
-    info = AlazarTech_ATS.get_board_info(api=alazar_api,
-                                         system_id=SYSTEM_ID,
-                                         board_id=BOARD_ID)
+    info = AlazarTechATS.get_board_info(
+        api=alazar_api, system_id=SYSTEM_ID, board_id=BOARD_ID
+    )
     assert {'system_id', 'board_id', 'board_kind',
             'max_samples', 'bits_per_sample'} == set(list(info.keys()))
     assert info['system_id'] == SYSTEM_ID
@@ -197,19 +199,19 @@ def test_writing_and_reading_registers(alazar) -> None:
 
 
 def test_get_num_channels() -> None:
-    assert 1 == AlazarTech_ATS.get_num_channels(1)
-    assert 1 == AlazarTech_ATS.get_num_channels(8)
+    assert 1 == AlazarTechATS.get_num_channels(1)
+    assert 1 == AlazarTechATS.get_num_channels(8)
 
-    assert 2 == AlazarTech_ATS.get_num_channels(3)
-    assert 2 == AlazarTech_ATS.get_num_channels(10)
+    assert 2 == AlazarTechATS.get_num_channels(3)
+    assert 2 == AlazarTechATS.get_num_channels(10)
 
-    assert 4 == AlazarTech_ATS.get_num_channels(15)
-    assert 8 == AlazarTech_ATS.get_num_channels(255)
-    assert 16 == AlazarTech_ATS.get_num_channels(65535)
+    assert 4 == AlazarTechATS.get_num_channels(15)
+    assert 8 == AlazarTechATS.get_num_channels(255)
+    assert 16 == AlazarTechATS.get_num_channels(65535)
 
     with pytest.raises(RuntimeError, match='0'):
-        AlazarTech_ATS.get_num_channels(0)
+        AlazarTechATS.get_num_channels(0)
     with pytest.raises(RuntimeError, match='17'):
-        AlazarTech_ATS.get_num_channels(17)
+        AlazarTechATS.get_num_channels(17)
     with pytest.raises(RuntimeError, match='100'):
-        AlazarTech_ATS.get_num_channels(100)
+        AlazarTechATS.get_num_channels(100)
