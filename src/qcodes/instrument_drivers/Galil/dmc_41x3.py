@@ -4,7 +4,7 @@ This file holds the QCoDeS driver for the Galil DMC-41x3 motor controllers.
 Colloquially known as the "stepper motors".
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -121,7 +121,10 @@ class GalilDMC4133VectorMode(InstrumentChannel):
     """
 
     def __init__(
-        self, parent: "GalilDMC4133Controller", name: str, **kwargs: Any
+        self,
+        parent: "GalilDMC4133Controller",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
         Initializes the vector mode submodule for the controller
@@ -254,7 +257,10 @@ class GalilDMC4133Motor(InstrumentChannel):
     """
 
     def __init__(
-        self, parent: "GalilDMC4133Controller", name: str, **kwargs: Any
+        self,
+        parent: "GalilDMC4133Controller",
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
         Initializes individual motor submodules
@@ -471,7 +477,9 @@ class GalilDMC4133Controller(GalilMotionController):
     Driver for Galil DMC-4133 Controller
     """
 
-    def __init__(self, name: str, address: str, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, address: str, **kwargs: "Unpack[InstrumentBaseKWArgs]"
+    ) -> None:
         """
         Initializes the DMC4133Controller class
 
