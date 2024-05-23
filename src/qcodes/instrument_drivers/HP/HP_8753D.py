@@ -9,7 +9,10 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 if TYPE_CHECKING:
+
     from typing_extensions import Unpack
+
+    from qcodes.parameters import Parameter
 
 log = logging.getLogger(__name__)
 
@@ -125,7 +128,7 @@ class HP8753D(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.add_parameter(
+        self.start_freq: Parameter = self.add_parameter(
             "start_freq",
             label="Sweep start frequency",
             unit="Hz",
@@ -134,8 +137,9 @@ class HP8753D(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(30000, 6000000000),
         )
+        """Parameter start_freq"""
 
-        self.add_parameter(
+        self.stop_freq: Parameter = self.add_parameter(
             "stop_freq",
             label="Sweep stop frequency",
             unit="Hz",
@@ -144,16 +148,18 @@ class HP8753D(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(30000, 6000000000),
         )
+        """Parameter stop_freq"""
 
-        self.add_parameter(
+        self.averaging: Parameter = self.add_parameter(
             "averaging",
             label="Averaging state",
             set_cmd="AVERO{}",
             get_cmd="AVERO?",
             val_mapping={"ON": 1, "OFF": 0},
         )
+        """Parameter averaging"""
 
-        self.add_parameter(
+        self.number_of_averages: Parameter = self.add_parameter(
             "number_of_averages",
             label="Number of averages",
             set_cmd="AVERFACT{}",
@@ -161,8 +167,9 @@ class HP8753D(VisaInstrument):
             get_parser=HPIntParser,
             vals=vals.Ints(0, 999),
         )
+        """Parameter number_of_averages"""
 
-        self.add_parameter(
+        self.trace_points: Parameter = self.add_parameter(
             "trace_points",
             label="Number of points in trace",
             set_cmd=partial(self.invalidate_trace, "POIN{}"),
@@ -170,8 +177,9 @@ class HP8753D(VisaInstrument):
             get_parser=HPIntParser,
             vals=vals.Enum(3, 11, 26, 51, 101, 201, 401, 801, 1601),
         )
+        """Parameter trace_points"""
 
-        self.add_parameter(
+        self.sweep_time: Parameter = self.add_parameter(
             "sweep_time",
             label="Sweep time",
             set_cmd="SWET{}",
@@ -180,8 +188,9 @@ class HP8753D(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(0.01, 86400),
         )
+        """Parameter sweep_time"""
 
-        self.add_parameter(
+        self.output_power: Parameter = self.add_parameter(
             "output_power",
             label="Output power",
             unit="dBm",
@@ -190,24 +199,27 @@ class HP8753D(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(-85, 20),
         )
+        """Parameter output_power"""
 
-        self.add_parameter(
+        self.s_parameter: Parameter = self.add_parameter(
             "s_parameter",
             label="S-parameter",
             set_cmd=self._s_parameter_setter,
             get_cmd=self._s_parameter_getter,
         )
+        """Parameter s_parameter"""
 
         # DISPLAY / Y SCALE PARAMETERS
-        self.add_parameter(
+        self.display_format: Parameter = self.add_parameter(
             "display_format",
             label="Display format",
             set_cmd=self._display_format_setter,
             get_cmd=self._display_format_getter,
         )
+        """Parameter display_format"""
 
         # TODO: update this on startup and via display format
-        self.add_parameter(
+        self.display_reference: Parameter = self.add_parameter(
             "display_reference",
             label="Display reference level",
             unit=None,  # will be set by display_format
@@ -216,8 +228,9 @@ class HP8753D(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(-500, 500),
         )
+        """Parameter display_reference"""
 
-        self.add_parameter(
+        self.display_scale: Parameter = self.add_parameter(
             "display_scale",
             label="Display scale",
             unit=None,  # will be set by display_format
@@ -226,8 +239,12 @@ class HP8753D(VisaInstrument):
             get_parser=float,
             vals=vals.Numbers(-500, 500),
         )
+        """Parameter display_scale"""
 
-        self.add_parameter(name="trace", parameter_class=HP8753DTrace)
+        self.trace: HP8753DTrace = self.add_parameter(
+            name="trace", parameter_class=HP8753DTrace
+        )
+        """Parameter trace"""
 
         # Startup
         self.startup()

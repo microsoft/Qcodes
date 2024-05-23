@@ -13,6 +13,9 @@ from qcodes.instrument import (
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
+
 class HarvardDecadacException(Exception):
     pass
 
@@ -216,7 +219,7 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
         # Note we will use the older addresses to read the value from the dac
         # rather than the newer 'd' command for backwards compatibility
         self._volt_val = vals.Numbers(self.min_val, self.max_val)
-        self.add_parameter(
+        self.volt: Parameter = self.add_parameter(
             "volt",
             get_cmd=partial(self._query_address, self._base_addr + 9, 1),
             get_parser=self._dac_code_to_v,
@@ -226,43 +229,73 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
             label=f"channel {channel+self._slot*4}",
             unit="V",
         )
+        """Parameter volt"""
         # The limit commands are used to sweep dac voltages. They are not
         # safety features.
-        self.add_parameter("lower_ramp_limit",
-                           get_cmd=partial(self._query_address,
-                                           self._base_addr+5),
-                           get_parser=self._dac_code_to_v,
-                           set_cmd="L{};", set_parser=self._dac_v_to_code,
-                           vals=self._volt_val,
-                           label="Lower_Ramp_Limit", unit="V")
-        self.add_parameter("upper_ramp_limit",
-                           get_cmd=partial(self._query_address,
-                                           self._base_addr+4),
-                           get_parser=self._dac_code_to_v,
-                           set_cmd="U{};", set_parser=self._dac_v_to_code,
-                           vals=self._volt_val,
-                           label="Upper_Ramp_Limit", unit="V")
-        self.add_parameter("update_period",
-                           get_cmd=partial(self._query_address,
-                                           self._base_addr),
-                           get_parser=int, set_cmd="T{};", set_parser=int,
-                           vals=vals.Ints(50, 65535),
-                           label="Update_Period", unit="us")
-        self.add_parameter("slope", get_cmd=partial(self._query_address,
-                                                    self._base_addr+6, 2),
-                           get_parser=int, set_cmd="S{};", set_parser=int,
-                           vals=vals.Ints(-(2**32), 2**32),
-                           label="Ramp_Slope")
+        self.lower_ramp_limit: Parameter = self.add_parameter(
+            "lower_ramp_limit",
+            get_cmd=partial(self._query_address, self._base_addr + 5),
+            get_parser=self._dac_code_to_v,
+            set_cmd="L{};",
+            set_parser=self._dac_v_to_code,
+            vals=self._volt_val,
+            label="Lower_Ramp_Limit",
+            unit="V",
+        )
+        """Parameter lower_ramp_limit"""
+        self.upper_ramp_limit: Parameter = self.add_parameter(
+            "upper_ramp_limit",
+            get_cmd=partial(self._query_address, self._base_addr + 4),
+            get_parser=self._dac_code_to_v,
+            set_cmd="U{};",
+            set_parser=self._dac_v_to_code,
+            vals=self._volt_val,
+            label="Upper_Ramp_Limit",
+            unit="V",
+        )
+        """Parameter upper_ramp_limit"""
+        self.update_period: Parameter = self.add_parameter(
+            "update_period",
+            get_cmd=partial(self._query_address, self._base_addr),
+            get_parser=int,
+            set_cmd="T{};",
+            set_parser=int,
+            vals=vals.Ints(50, 65535),
+            label="Update_Period",
+            unit="us",
+        )
+        """Parameter update_period"""
+        self.slope: Parameter = self.add_parameter(
+            "slope",
+            get_cmd=partial(self._query_address, self._base_addr + 6, 2),
+            get_parser=int,
+            set_cmd="S{};",
+            set_parser=int,
+            vals=vals.Ints(-(2**32), 2**32),
+            label="Ramp_Slope",
+        )
+        """Parameter slope"""
 
         # Manual parameters to control whether DAC channels should ramp to
         # voltages or jump
         self._ramp_val = vals.Numbers(0, 10)
-        self.add_parameter("enable_ramp", get_cmd=None, set_cmd=None,
-                           initial_value=False,
-                           vals=vals.Bool())
-        self.add_parameter("ramp_rate", get_cmd=None, set_cmd=None,
-                           initial_value=0.1,
-                           vals=self._ramp_val, unit="V/s")
+        self.enable_ramp: Parameter = self.add_parameter(
+            "enable_ramp",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value=False,
+            vals=vals.Bool(),
+        )
+        """Parameter enable_ramp"""
+        self.ramp_rate: Parameter = self.add_parameter(
+            "ramp_rate",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value=0.1,
+            vals=self._ramp_val,
+            unit="V/s",
+        )
+        """Parameter ramp_rate"""
 
         # Add ramp function to the list of functions
         self.add_function("ramp", call_cmd=self._ramp, args=(self._volt_val,
@@ -273,16 +306,19 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
         # NOTE: these values will be overwritten by a K3 calibration
         if self.parent._VERSA_EEPROM_available:
             _INITIAL_ADDR = [6, 8, 32774, 32776]
-            self.add_parameter("initial_value",
-                               get_cmd=partial(self._query_address,
-                                               _INITIAL_ADDR[self._channel],
-                                               versa_eeprom=True),
-                               get_parser=self._dac_code_to_v,
-                               set_cmd=partial(self._write_address,
-                                               _INITIAL_ADDR[self._channel],
-                                               versa_eeprom=True),
-                               set_parser=self._dac_v_to_code,
-                               vals=vals.Numbers(self.min_val, self.max_val))
+            self.initial_value: Parameter = self.add_parameter(
+                "initial_value",
+                get_cmd=partial(
+                    self._query_address, _INITIAL_ADDR[self._channel], versa_eeprom=True
+                ),
+                get_parser=self._dac_code_to_v,
+                set_cmd=partial(
+                    self._write_address, _INITIAL_ADDR[self._channel], versa_eeprom=True
+                ),
+                set_parser=self._dac_v_to_code,
+                vals=vals.Numbers(self.min_val, self.max_val),
+            )
+            """Parameter initial_value"""
 
     def _ramp(self, val, rate, block=True):
         """
@@ -400,9 +436,14 @@ class HarvardDecadacSlot(InstrumentChannel, DacReader):
             slot_modes = {"Off": 0, "Fine": 1, "Coarse": 2, "FineCald": 3}
         else:
             slot_modes = {"Off": 0, "Fine": 1, "Coarse": 2}
-        self.add_parameter('slot_mode', get_cmd="m;",
-                           get_parser=self._dac_parse, set_cmd="M{};",
-                           val_mapping=slot_modes)
+        self.slot_mode: Parameter = self.add_parameter(
+            "slot_mode",
+            get_cmd="m;",
+            get_parser=self._dac_parse,
+            set_cmd="M{};",
+            val_mapping=slot_modes,
+        )
+        """Parameter slot_mode"""
 
         # Enable all slots in coarse mode.
         self.slot_mode.set(self.SLOT_MODE_DEFAULT)

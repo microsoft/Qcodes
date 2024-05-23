@@ -6,6 +6,8 @@ from qcodes.validators import Numbers
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 
 class HP8133A(VisaInstrument):
     """
@@ -23,7 +25,7 @@ class HP8133A(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
 
-        self.add_parameter(
+        self.frequency: Parameter = self.add_parameter(
             name="frequency",
             label="Frequency",
             unit="Hz",
@@ -32,7 +34,8 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=31.3e6, max_value=3.5e9),
         )
-        self.add_parameter(
+        """Parameter frequency"""
+        self.period: Parameter = self.add_parameter(
             name="period",
             label="Period",
             unit="s",
@@ -41,7 +44,8 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=286e-12, max_value=31.949e-9),
         )
-        self.add_parameter(
+        """Parameter period"""
+        self.phase: Parameter = self.add_parameter(
             name="phase",
             label="Phase",
             unit="deg",
@@ -50,7 +54,8 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=-3.6e3, max_value=3.6e3),
         )
-        self.add_parameter(
+        """Parameter phase"""
+        self.duty_cycle: Parameter = self.add_parameter(
             name="duty_cycle",
             label="Duty cycle",
             unit="%",
@@ -59,7 +64,8 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=0, max_value=100),
         )
-        self.add_parameter(
+        """Parameter duty_cycle"""
+        self.delay: Parameter = self.add_parameter(
             name="delay",
             label="Delay",
             unit="s",
@@ -68,7 +74,8 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=-5e-9, max_value=5e-9),
         )
-        self.add_parameter(
+        """Parameter delay"""
+        self.width: Parameter = self.add_parameter(
             name="width",
             label="Width",
             unit="s",
@@ -77,7 +84,8 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=1e-12, max_value=10.5e-9),
         )
-        self.add_parameter(
+        """Parameter width"""
+        self.amplitude: Parameter = self.add_parameter(
             name="amplitude",
             label="Amplitude",
             unit="V",
@@ -86,7 +94,8 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=0.1, max_value=3.3),
         )
-        self.add_parameter(
+        """Parameter amplitude"""
+        self.amplitude_offset: Parameter = self.add_parameter(
             name="amplitude_offset",
             label="Offset",
             unit="V",
@@ -95,13 +104,15 @@ class HP8133A(VisaInstrument):
             get_parser=float,
             vals=Numbers(min_value=-2.95, max_value=3.95),
         )
-        self.add_parameter(
+        """Parameter amplitude_offset"""
+        self.output: Parameter = self.add_parameter(
             name="output",
             label="Output",
             get_cmd="OUTP?",
             set_cmd="OUTP {}",
             val_mapping={"OFF": 0, "ON": 1},
         )
+        """Parameter output"""
 
         # resets amplitude and offset each time user connects
         self.amplitude(0.1)
