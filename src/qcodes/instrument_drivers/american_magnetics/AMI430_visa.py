@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
+from typing_extensions import Concatenate, ParamSpec
 
 from qcodes.instrument import (
     Instrument,
@@ -33,7 +34,9 @@ log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = Callable[[float, float, float], bool]
 
+S = TypeVar("S", bound="AMI430SwitchHeater")
 T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class AMI430Exception(Exception):
@@ -47,9 +50,11 @@ class AMI430Warning(UserWarning):
 class AMI430SwitchHeater(InstrumentChannel):
     class _Decorators:
         @classmethod
-        def check_enabled(cls, f: Callable[..., T]) -> Callable[..., T]:
+        def check_enabled(
+            cls, f: Callable[Concatenate[S, P], T]
+        ) -> Callable[Concatenate[S, P], T]:
             def check_enabled_decorator(
-                self: AMI430SwitchHeater, *args: Any, **kwargs: Any
+                self: S, *args: P.args, **kwargs: P.kwargs
             ) -> T:
                 if not self.check_enabled():
                     raise AMI430Exception("Switch not enabled")
