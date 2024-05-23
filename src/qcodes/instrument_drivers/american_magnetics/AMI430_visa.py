@@ -62,8 +62,10 @@ class AMI430SwitchHeater(InstrumentChannel):
 
             return check_enabled_decorator
 
-    def __init__(self, parent: AMIModel430) -> None:
-        super().__init__(parent, "SwitchHeater")
+    def __init__(
+        self, parent: AMIModel430, **kwargs: Unpack[InstrumentBaseKWArgs]
+    ) -> None:
+        super().__init__(parent, "SwitchHeater", **kwargs)
 
         # Add state parameters
         self.enabled: Parameter = self.add_parameter(
