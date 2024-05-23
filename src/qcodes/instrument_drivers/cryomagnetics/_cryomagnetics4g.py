@@ -3,14 +3,16 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyvisa import VisaIOError
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Numbers
 
 if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
     from qcodes.parameters import Parameter
 
 
@@ -54,9 +56,12 @@ class CryomagneticsModel4G(VisaInstrument):
             current limits and rates for each range. The keys are the range indices, and the values
             are tuples containing the upper current limit and maximum rate for that range.
         coil_constant: The coil constant of the magnet in Tesla per Amp.
+        **kwargs: Forwarded to base class.
     """
 
     KG_TO_TESLA: float = 0.1  # Constant for unit conversion
+
+    default_terminator = "\n"
 
     def __init__(
         self,
@@ -64,10 +69,9 @@ class CryomagneticsModel4G(VisaInstrument):
         address: str,
         max_current_limits: dict[int, tuple[float, float]],
         coil_constant: float,
-        terminator: str = "\n",
-        **kwargs: Any,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
     ):
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.coil_constant = coil_constant
         self.max_current_limits = max_current_limits
