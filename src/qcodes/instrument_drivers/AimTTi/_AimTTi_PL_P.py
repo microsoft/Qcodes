@@ -89,11 +89,11 @@ class AimTTiChannel(InstrumentChannel):
             label="Current Range",
             unit="A",
             vals=vals.Numbers(1, 2),
-            docstring="Set the current range of the output."
+            docstring="Set the current range of the output. "
             "Here, the integer 1 is for the Low range, "
             "and integer 2 is for the High range.",
         )
-        """Set the current range of the output.Here, the integer 1 is for the Low range, and integer 2 is for the High range."""
+        """Set the current range of the output. Here, the integer 1 is for the Low range, and integer 2 is for the High range."""
 
         self.curr_step_size: Parameter = self.add_parameter(
             "curr_step_size",
