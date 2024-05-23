@@ -786,9 +786,9 @@ class Keithley2600Channel(InstrumentChannel):
 
 class Keithley2600(VisaInstrument):
     """
-    This is the qcodes driver for the Keithley 2600 Source-Meter series,
-    tested with Keithley 2614B
-
+    This is the base class for all  qcodes driver for the Keithley 2600 Source-Meter series.
+    This class should not be instantiated directly. Rather one of the subclasses for a
+    specific instrument should be used.
     """
 
     default_terminator = "\n"
