@@ -153,11 +153,12 @@ class KeithleyS46(VisaInstrument):
     ):
         super().__init__(name, address, **kwargs)
         try:
-            self.add_parameter(
+            self.closed_channels: Parameter = self.add_parameter(
                 "closed_channels",
                 get_cmd=":CLOS?",
                 get_parser=self._get_closed_channels_parser,
             )
+            """Parameter closed_channels"""
 
             self._available_channels: list[str] = []
 

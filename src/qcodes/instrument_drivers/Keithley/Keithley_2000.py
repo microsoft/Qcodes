@@ -7,6 +7,8 @@ from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 
 def _parse_output_string(s: str) -> str:
     """Parses and cleans string outputs of the Keithley"""
@@ -66,67 +68,75 @@ class Keithley2000(VisaInstrument):
             "frequency": '"FREQ"',
         }
 
-        self.add_parameter(
+        self.mode: Parameter = self.add_parameter(
             "mode",
             get_cmd="SENS:FUNC?",
             set_cmd="SENS:FUNC {}",
             val_mapping=self._mode_map,
         )
+        """Parameter mode"""
 
         # Mode specific parameters
-        self.add_parameter(
+        self.nplc: Parameter = self.add_parameter(
             "nplc",
             get_cmd=partial(self._get_mode_param, "NPLC", float),
             set_cmd=partial(self._set_mode_param, "NPLC"),
             vals=Numbers(min_value=0.01, max_value=10),
         )
+        """Parameter nplc"""
 
         # TODO: validator, this one is more difficult since different modes
         # require different validation ranges
-        self.add_parameter(
+        self.range: Parameter = self.add_parameter(
             "range",
             get_cmd=partial(self._get_mode_param, "RANG", float),
             set_cmd=partial(self._set_mode_param, "RANG"),
             vals=Numbers(),
         )
+        """Parameter range"""
 
-        self.add_parameter(
+        self.auto_range_enabled: Parameter = self.add_parameter(
             "auto_range_enabled",
             get_cmd=partial(self._get_mode_param, "RANG:AUTO", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "RANG:AUTO"),
             vals=Bool(),
         )
+        """Parameter auto_range_enabled"""
 
-        self.add_parameter(
+        self.digits: Parameter = self.add_parameter(
             "digits",
             get_cmd=partial(self._get_mode_param, "DIG", int),
             set_cmd=partial(self._set_mode_param, "DIG"),
             vals=Ints(min_value=4, max_value=7),
         )
+        """Parameter digits"""
 
-        self.add_parameter(
+        self.averaging_type: Parameter = self.add_parameter(
             "averaging_type",
             get_cmd=partial(self._get_mode_param, "AVER:TCON", _parse_output_string),
             set_cmd=partial(self._set_mode_param, "AVER:TCON"),
             vals=Enum("moving", "repeat"),
         )
+        """Parameter averaging_type"""
 
-        self.add_parameter(
+        self.averaging_count: Parameter = self.add_parameter(
             "averaging_count",
             get_cmd=partial(self._get_mode_param, "AVER:COUN", int),
             set_cmd=partial(self._set_mode_param, "AVER:COUN"),
             vals=Ints(min_value=1, max_value=100),
         )
+        """Parameter averaging_count"""
 
-        self.add_parameter(
+        self.averaging_enabled: Parameter = self.add_parameter(
             "averaging_enabled",
             get_cmd=partial(self._get_mode_param, "AVER:STAT", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "AVER:STAT"),
             vals=Bool(),
         )
+        """Parameter averaging_enabled"""
 
         # Global parameters
-        self.add_parameter(
+        self.display_enabled: Parameter = self.add_parameter(
             "display_enabled",
             get_cmd="DISP:ENAB?",
             get_parser=_parse_output_bool,
@@ -134,8 +144,9 @@ class Keithley2000(VisaInstrument):
             set_parser=int,
             vals=Bool(),
         )
+        """Parameter display_enabled"""
 
-        self.add_parameter(
+        self.trigger_continuous: Parameter = self.add_parameter(
             "trigger_continuous",
             get_cmd="INIT:CONT?",
             get_parser=_parse_output_bool,
@@ -143,8 +154,9 @@ class Keithley2000(VisaInstrument):
             set_parser=int,
             vals=Bool(),
         )
+        """Parameter trigger_continuous"""
 
-        self.add_parameter(
+        self.trigger_count: Parameter = self.add_parameter(
             "trigger_count",
             get_cmd="TRIG:COUN?",
             get_parser=int,
@@ -154,8 +166,9 @@ class Keithley2000(VisaInstrument):
                 Enum("inf", "default", "minimum", "maximum"),
             ),
         )
+        """Parameter trigger_count"""
 
-        self.add_parameter(
+        self.trigger_delay: Parameter = self.add_parameter(
             "trigger_delay",
             get_cmd="TRIG:DEL?",
             get_parser=float,
@@ -163,8 +176,9 @@ class Keithley2000(VisaInstrument):
             unit="s",
             vals=Numbers(min_value=0, max_value=999999.999),
         )
+        """Parameter trigger_delay"""
 
-        self.add_parameter(
+        self.trigger_source: Parameter = self.add_parameter(
             "trigger_source",
             get_cmd="TRIG:SOUR?",
             set_cmd="TRIG:SOUR {}",
@@ -176,8 +190,9 @@ class Keithley2000(VisaInstrument):
                 "external": "EXT",
             },
         )
+        """Parameter trigger_source"""
 
-        self.add_parameter(
+        self.trigger_timer: Parameter = self.add_parameter(
             "trigger_timer",
             get_cmd="TRIG:TIM?",
             get_parser=float,
@@ -185,8 +200,12 @@ class Keithley2000(VisaInstrument):
             unit="s",
             vals=Numbers(min_value=0.001, max_value=999999.999),
         )
+        """Parameter trigger_timer"""
 
-        self.add_parameter("amplitude", unit="arb.unit", get_cmd=self._read_next_value)
+        self.amplitude: Parameter = self.add_parameter(
+            "amplitude", unit="arb.unit", get_cmd=self._read_next_value
+        )
+        """Parameter amplitude"""
 
         self.add_function("reset", call_cmd="*RST")
 
