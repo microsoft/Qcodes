@@ -15,6 +15,7 @@ from pyvisa import VisaIOError
 
 from qcodes.instrument import (
     Instrument,
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -605,7 +606,7 @@ class AMIModel4303D(Instrument):
         instrument_y: AMIModel430 | str,
         instrument_z: AMIModel430 | str,
         field_limit: float | Iterable[CartesianFieldLimitFunction],
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """
         Driver for controlling three American Magnetics Model 430 magnet power
