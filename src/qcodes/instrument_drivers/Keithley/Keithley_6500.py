@@ -59,11 +59,12 @@ class Keithley6500(VisaInstrument):
         reset_device: bool = False,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-        """Driver for the Keithley 6500 multimeter. Based on the Keithley 2000 driver,
-            commands have been adapted for the Keithley 6500. This driver does not contain
-            all commands available, but only the ones most commonly used.
+        """
+        Driver for the Keithley 6500 multimeter. Based on the Keithley 2000 driver,
+        commands have been adapted for the Keithley 6500. This driver does not contain
+        all commands available, but only the ones most commonly used.
 
-            Status: beta-version.
+        Status: beta-version.
 
         Args:
             name: The name used internally by QCoDeS in the DataSet.

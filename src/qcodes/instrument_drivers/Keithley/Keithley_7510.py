@@ -417,27 +417,6 @@ class _FunctionMode(TypedDict):
 
 
 class Keithley7510Sense(InstrumentChannel):
-    """
-    The sense module of the Keithley 7510 DMM, based on the sense module of
-    Keithley 2450 SMU.
-
-    Args:
-        parent
-        name
-        proper_function: This can be one of modes listed in the dictionary
-            "function_modes", e.g.,  "current", "voltage", or "resistance".
-            "voltage"/"current" is for DC voltage/current.
-            "Avoltage"/"Acurrent" is for AC voltage/current.
-            "resistance" is for two-wire measurement of resistance.
-            "Fresistance" is for Four-wire measurement of resistance.
-
-            All parameters and methods in this submodule should only be
-            accessible to the user if
-            self.parent.sense_function.get() == self._proper_function. We
-            ensure this through the 'sense' property on the main driver class
-            which returns the proper submodule for any given function mode.
-    """
-
     function_modes: ClassVar[dict[str, _FunctionMode]] = {
         "voltage": {
             "name": '"VOLT:DC"',
@@ -471,9 +450,35 @@ class Keithley7510Sense(InstrumentChannel):
         },
     }
 
-    def __init__(self, parent: VisaInstrument, name: str, proper_function: str) -> None:
+    def __init__(
+        self,
+        parent: VisaInstrument,
+        name: str,
+        proper_function: str,
+        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+    ) -> None:
+        """
+        The sense module of the Keithley 7510 DMM, based on the sense module of
+        Keithley 2450 SMU.
 
-        super().__init__(parent, name)
+        All parameters and methods in this submodule should only be
+        accessible to the user if
+        self.parent.sense_function.get() == self._proper_function. We
+        ensure this through the 'sense' property on the main driver class
+        which returns the proper submodule for any given function mode.
+
+        Args:
+            parent: Parent instrument.
+            name: Name of the channel.
+            proper_function: This can be one of modes listed in the dictionary
+                "function_modes", e.g.,  "current", "voltage", or "resistance".
+                "voltage"/"current" is for DC voltage/current.
+                "Avoltage"/"Acurrent" is for AC voltage/current.
+                "resistance" is for two-wire measurement of resistance.
+                "Fresistance" is for Four-wire measurement of resistance.
+            **kwargs: Forwarded to base class.
+        """
+        super().__init__(parent, name, **kwargs)
 
         self._proper_function = proper_function
         range_vals = self.function_modes[self._proper_function]["range_vals"]
