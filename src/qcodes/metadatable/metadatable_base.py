@@ -21,29 +21,29 @@ if TYPE_CHECKING:
 Snapshot = dict[str, Any]
 
 
-class EmptyMetaDataModel(BaseModel):
+class EmptyMetadataModel(BaseModel):
     pass
 
-MetaDataSnapShotType = TypeVar("MetaDataSnapShotType", bound=EmptyMetaDataModel)
+MetadataType = TypeVar("MetadataType", bound=EmptyMetadataModel)
 
 
-class EmptyTypedSnapShot(BaseModel):
+class EmptySnapshotModel(BaseModel):
     pass
 
 
-SnapShotType = TypeVar("SnapShotType", bound=EmptyTypedSnapShot)
+SnapshotType = TypeVar("SnapshotType", bound=EmptySnapshotModel)
 
 
-class Metadatable(Generic[SnapShotType, MetaDataSnapShotType]):
+class Metadatable(Generic[SnapshotType, MetadataType]):
     def __init__(
         self,
         metadata: Optional["Mapping[str, Any]"] = None,
-        model: type[SnapShotType] = EmptyTypedSnapShot,
-        metadata_model: type[MetaDataSnapShotType] = EmptyMetaDataModel,
+        snapshot_model: type[SnapshotType] = EmptySnapshotModel,
+        metadata_model: type[MetadataType] = EmptyMetadataModel,
     ):
         self.metadata: dict[str, Any] = {}
-        self._model = model or EmptyTypedSnapShot
-        self._metadata_model = metadata_model or EmptyMetaDataModel
+        self._snapshot_model = snapshot_model or EmptySnapshotModel
+        self._metadata_model = metadata_model or EmptyMetadataModel
         self.load_metadata(metadata or {})
 
     def load_metadata(self, metadata: "Mapping[str, Any]") -> None:
@@ -77,13 +77,13 @@ class Metadatable(Generic[SnapShotType, MetaDataSnapShotType]):
         return snap
 
     @final
-    def typed_snapshot(self) -> SnapShotType:
+    def typed_snapshot(self) -> SnapshotType:
         snapshot_dict = self.snapshot()  # probably want to filter metadata here
-        snapshot = self._model(**snapshot_dict)
+        snapshot = self._snapshot_model(**snapshot_dict)
         return snapshot
 
     @final
-    def typed_metadata(self) -> MetaDataSnapShotType:
+    def typed_metadata(self) -> MetadataType:
         return self._metadata_model(**self.metadata)
 
     def snapshot_base(
@@ -106,10 +106,7 @@ class Metadatable(Generic[SnapShotType, MetaDataSnapShotType]):
     #     self._metadata_model = model
 
 
-class MetadatableWithName(
-    Metadatable[SnapShotType, MetaDataSnapShotType],
-    Generic[SnapShotType, MetaDataSnapShotType],
-):
+class MetadatableWithName(Metadatable[SnapshotType, MetadataType]):
     """Add short_name and full_name properties to Metadatable.
     This is used as a base class for all components in QCoDeS that
     are members of a station to ensure that they have a name and

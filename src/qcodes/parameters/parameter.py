@@ -6,13 +6,13 @@ from __future__ import annotations
 import logging
 import os
 from types import MethodType
-from typing import TYPE_CHECKING, Any, Callable, Generic, Literal
+from typing import TYPE_CHECKING, Any, Callable, Literal
 
 from qcodes.metadatable.metadatable_base import (
-    EmptyMetaDataModel,
-    EmptyTypedSnapShot,
-    MetaDataSnapShotType,
-    SnapShotType,
+    EmptyMetadataModel,
+    EmptySnapshotModel,
+    MetadataType,
+    SnapshotType,
 )
 
 from .command import Command
@@ -28,10 +28,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class Parameter(
-    ParameterBase[SnapShotType, MetaDataSnapShotType],
-    Generic[SnapShotType, MetaDataSnapShotType],
-):
+class Parameter(ParameterBase[SnapshotType, MetadataType]):
     """
     A parameter represents a single degree of freedom. Most often,
     this is the standard parameter for Instruments, though it can also be
@@ -189,8 +186,8 @@ class Parameter(
         docstring: str | None = None,
         initial_cache_value: float | str | None = None,
         bind_to_instrument: bool = True,
-        model: type[SnapShotType] = EmptyTypedSnapShot,
-        metadata_model: type[MetaDataSnapShotType] = EmptyMetaDataModel,
+        snapshot_model: type[SnapshotType] = EmptySnapshotModel,
+        metadata_model: type[MetadataType] = EmptyMetadataModel,
         **kwargs: Any,
     ) -> None:
         def _get_manual_parameter(self: Parameter) -> ParamRawDataType:
@@ -252,7 +249,7 @@ class Parameter(
             vals=vals,
             max_val_age=max_val_age,
             bind_to_instrument=bind_to_instrument,
-            model=model,
+            snapshot_model=snapshot_model,
             metadata_model=metadata_model,
             **kwargs,
         )
@@ -455,7 +452,7 @@ class Parameter(
         return SweepFixedValues(self, start=start, stop=stop, step=step, num=num)
 
 
-class ParameterSnapshot(EmptyTypedSnapShot):
+class ParameterSnapshot(EmptySnapshotModel):
     # need to handle replacing __class__ with a different name that is compatible
     value: Any  # use paramdatatype
     raw_value: Any  # useparamdatatype

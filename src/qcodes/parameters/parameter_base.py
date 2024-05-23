@@ -7,17 +7,17 @@ import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from functools import cached_property, wraps
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, overload
+from typing import TYPE_CHECKING, Any, ClassVar, overload
 
 from qcodes.metadatable import (
     Metadatable,
     MetadatableWithName,
 )
 from qcodes.metadatable.metadatable_base import (
-    EmptyMetaDataModel,
-    EmptyTypedSnapShot,
-    MetaDataSnapShotType,
-    SnapShotType,
+    EmptyMetadataModel,
+    EmptySnapshotModel,
+    MetadataType,
+    SnapshotType,
 )
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
 from qcodes.validators import Enum, Ints, Validator
@@ -94,10 +94,7 @@ def invert_val_mapping(val_mapping: Mapping[Any, Any]) -> dict[Any, Any]:
     return {v: k for k, v in val_mapping.items()}
 
 
-class ParameterBase(
-    MetadatableWithName[SnapShotType, MetaDataSnapShotType],
-    Generic[SnapShotType, MetaDataSnapShotType],
-):
+class ParameterBase(MetadatableWithName[SnapshotType, MetadataType]):
     """
     Shared behavior for all parameters. Not intended to be used
     directly, normally you should use ``Parameter``, ``ArrayParameter``,
@@ -213,11 +210,11 @@ class ParameterBase(
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
-        model: type[SnapShotType] = EmptyTypedSnapShot,
-        metadata_model: type[MetaDataSnapShotType] = EmptyMetaDataModel,
+        snapshot_model: type[SnapshotType] = EmptySnapshotModel,
+        metadata_model: type[MetadataType] = EmptyMetadataModel,
         **kwargs: Any,
     ) -> None:
-        super().__init__(metadata, model=model, metadata_model=metadata_model, **kwargs)
+        super().__init__(metadata, snapshot_model=snapshot_model, metadata_model=metadata_model, **kwargs)
         if not str(name).isidentifier():
             raise ValueError(
                 f"Parameter name must be a valid identifier "
