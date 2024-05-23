@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -1121,7 +1121,7 @@ class AMIModel4303D(Instrument):
         self.log.debug("Simultaneous ramp: returning from the ramp call")
 
     def _perform_default_ramp(self, values: tuple[float, float, float]) -> None:
-        operators: tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
+        operators: tuple[Callable[[float, float], bool], ...] = (np.less, np.greater)
         for operator in operators:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as
