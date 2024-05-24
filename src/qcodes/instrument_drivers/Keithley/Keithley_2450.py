@@ -698,6 +698,7 @@ class Keithley2450(VisaInstrument):
         self.write(
             f":SENS:FUNC {value}",
         )
+        assert self.sense_function.inverse_val_mapping is not None
         sense_function = self.sense_function.inverse_val_mapping[value]
         sense = self.submodules[f"_sense_{sense_function}"]
         if not isinstance(sense, Keithley2450Sense):
@@ -728,8 +729,9 @@ class Keithley2450(VisaInstrument):
             )
 
         self.write(f":SOUR:FUNC {value}")
+        assert self.source_function.inverse_val_mapping is not None
         source_function = self.source_function.inverse_val_mapping[value]
-        source = self.submodules[f"_source_{source_function}"]
+        source = cast(Keithley2450Source, self.submodules[f"_source_{source_function}"])
         self.sense.sweep.setpoints = (source.sweep_axis,)
         if not isinstance(source, Keithley2450Source):
             raise RuntimeError(

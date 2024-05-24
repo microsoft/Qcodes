@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypedDict, Union, cas
 import numpy as np
 
 from qcodes.instrument import (
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -455,7 +456,7 @@ class Keithley7510Sense(InstrumentChannel):
         parent: VisaInstrument,
         name: str,
         proper_function: str,
-        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
         The sense module of the Keithley 7510 DMM, based on the sense module of
