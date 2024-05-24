@@ -3,7 +3,7 @@ import logging
 import hypothesis.strategies as hst
 import numpy as np
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, given, reproduce_failure, settings
 from pytest import LogCaptureFixture
 
 from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
@@ -146,7 +146,7 @@ def get_ramp_order(caplog_records):
             order.append(axis.lower())
     return order
 
-
+@reproduce_failure("6.102.6", b"AAYAAf/k4jWj5QAABgAA4JvN2HJfDT4GAADgm83Ycl8NPg==")
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     x=hst.floats(min_value=-3, max_value=3),
