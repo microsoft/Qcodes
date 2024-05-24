@@ -19,6 +19,8 @@ from .private.error_handling import KeysightErrorQueueMixin
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 log = logging.getLogger(__name__)
 
 
@@ -74,185 +76,229 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
 
         self.model = self._parent.model
 
-        self.add_parameter('function_type',
-                           label=f'Channel {channum} function type',
-                           set_cmd=f'SOURce{channum}:FUNCtion {{}}',
-                           get_cmd=f'SOURce{channum}:FUNCtion?',
-                           get_parser=str.rstrip,
-                           vals=vals.Enum('SIN', 'SQU', 'TRI', 'RAMP',
-                                          'PULS', 'PRBS', 'NOIS', 'ARB',
-                                          'DC')
-                           )
+        self.function_type: Parameter = self.add_parameter(
+            "function_type",
+            label=f"Channel {channum} function type",
+            set_cmd=f"SOURce{channum}:FUNCtion {{}}",
+            get_cmd=f"SOURce{channum}:FUNCtion?",
+            get_parser=str.rstrip,
+            vals=vals.Enum(
+                "SIN", "SQU", "TRI", "RAMP", "PULS", "PRBS", "NOIS", "ARB", "DC"
+            ),
+        )
+        """Parameter function_type"""
 
-        self.add_parameter('frequency_mode',
-                           label=f'Channel {channum} frequency mode',
-                           set_cmd=f'SOURce{channum}:FREQuency:MODE {{}}',
-                           get_cmd=f'SOURce{channum}:FREQuency:MODE?',
-                           get_parser=str.rstrip,
-                           vals=vals.Enum('CW', 'LIST', 'SWEEP', 'FIXED')
-                           )
+        self.frequency_mode: Parameter = self.add_parameter(
+            "frequency_mode",
+            label=f"Channel {channum} frequency mode",
+            set_cmd=f"SOURce{channum}:FREQuency:MODE {{}}",
+            get_cmd=f"SOURce{channum}:FREQuency:MODE?",
+            get_parser=str.rstrip,
+            vals=vals.Enum("CW", "LIST", "SWEEP", "FIXED"),
+        )
+        """Parameter frequency_mode"""
 
         max_freq = self._parent._max_freqs[self.model]
-        self.add_parameter('frequency',
-                           label=f'Channel {channum} frequency',
-                           set_cmd=f'SOURce{channum}:FREQuency {{}}',
-                           get_cmd=f'SOURce{channum}:FREQuency?',
-                           get_parser=float,
-                           unit='Hz',
-                           # TODO: max. freq. actually really tricky
-                           vals=vals.Numbers(1e-6, max_freq)
-                           )
+        self.frequency: Parameter = self.add_parameter(
+            "frequency",
+            label=f"Channel {channum} frequency",
+            set_cmd=f"SOURce{channum}:FREQuency {{}}",
+            get_cmd=f"SOURce{channum}:FREQuency?",
+            get_parser=float,
+            unit="Hz",
+            # TODO: max. freq. actually really tricky
+            vals=vals.Numbers(1e-6, max_freq),
+        )
+        """Parameter frequency"""
 
-        self.add_parameter('phase',
-                           label=f'Channel {channum} phase',
-                           set_cmd=f'SOURce{channum}:PHASe {{}}',
-                           get_cmd=f'SOURce{channum}:PHASe?',
-                           get_parser=float,
-                           unit='deg',
-                           vals=vals.Numbers(0, 360)
-                           )
-        self.add_parameter('amplitude_unit',
-                           label=f'Channel {channum} amplitude unit',
-                           set_cmd=f'SOURce{channum}:VOLTage:UNIT {{}}',
-                           get_cmd=f'SOURce{channum}:VOLTage:UNIT?',
-                           vals=vals.Enum('VPP', 'VRMS', 'DBM'),
-                           get_parser=str.rstrip
-                           )
+        self.phase: Parameter = self.add_parameter(
+            "phase",
+            label=f"Channel {channum} phase",
+            set_cmd=f"SOURce{channum}:PHASe {{}}",
+            get_cmd=f"SOURce{channum}:PHASe?",
+            get_parser=float,
+            unit="deg",
+            vals=vals.Numbers(0, 360),
+        )
+        """Parameter phase"""
+        self.amplitude_unit: Parameter = self.add_parameter(
+            "amplitude_unit",
+            label=f"Channel {channum} amplitude unit",
+            set_cmd=f"SOURce{channum}:VOLTage:UNIT {{}}",
+            get_cmd=f"SOURce{channum}:VOLTage:UNIT?",
+            vals=vals.Enum("VPP", "VRMS", "DBM"),
+            get_parser=str.rstrip,
+        )
+        """Parameter amplitude_unit"""
 
-        self.add_parameter('amplitude',
-                           label=f'Channel {channum} amplitude',
-                           set_cmd=f'SOURce{channum}:VOLTage {{}}',
-                           get_cmd=f'SOURce{channum}:VOLTage?',
-                           unit='',  # see amplitude_unit
-                           get_parser=float)
+        self.amplitude: Parameter = self.add_parameter(
+            "amplitude",
+            label=f"Channel {channum} amplitude",
+            set_cmd=f"SOURce{channum}:VOLTage {{}}",
+            get_cmd=f"SOURce{channum}:VOLTage?",
+            unit="",  # see amplitude_unit
+            get_parser=float,
+        )
+        """Parameter amplitude"""
 
-        self.add_parameter('offset',
-                           label=f'Channel {channum} voltage offset',
-                           set_cmd=f'SOURce{channum}:VOLTage:OFFSet {{}}',
-                           get_cmd=f'SOURce{channum}:VOLTage:OFFSet?',
-                           unit='V',
-                           get_parser=float
-                           )
-        self.add_parameter('output',
-                           label=f'Channel {channum} output state',
-                           set_cmd=f'OUTPut{channum} {{}}',
-                           get_cmd=f'OUTPut{channum}?',
-                           val_mapping={'ON': 1, 'OFF': 0}
-                           )
+        self.offset: Parameter = self.add_parameter(
+            "offset",
+            label=f"Channel {channum} voltage offset",
+            set_cmd=f"SOURce{channum}:VOLTage:OFFSet {{}}",
+            get_cmd=f"SOURce{channum}:VOLTage:OFFSet?",
+            unit="V",
+            get_parser=float,
+        )
+        """Parameter offset"""
+        self.output: Parameter = self.add_parameter(
+            "output",
+            label=f"Channel {channum} output state",
+            set_cmd=f"OUTPut{channum} {{}}",
+            get_cmd=f"OUTPut{channum}?",
+            val_mapping={"ON": 1, "OFF": 0},
+        )
+        """Parameter output"""
 
-        self.add_parameter('ramp_symmetry',
-                           label=f'Channel {channum} ramp symmetry',
-                           set_cmd=f'SOURce{channum}:FUNCtion:RAMP:SYMMetry {{}}',
-                           get_cmd=f'SOURce{channum}:FUNCtion:RAMP:SYMMetry?',
-                           get_parser=float,
-                           unit='%',
-                           vals=vals.Numbers(0, 100)
-                           )
+        self.ramp_symmetry: Parameter = self.add_parameter(
+            "ramp_symmetry",
+            label=f"Channel {channum} ramp symmetry",
+            set_cmd=f"SOURce{channum}:FUNCtion:RAMP:SYMMetry {{}}",
+            get_cmd=f"SOURce{channum}:FUNCtion:RAMP:SYMMetry?",
+            get_parser=float,
+            unit="%",
+            vals=vals.Numbers(0, 100),
+        )
+        """Parameter ramp_symmetry"""
 
-        self.add_parameter('pulse_width',
-                           label=f"Channel {channum} pulse width",
-                           set_cmd=f'SOURce{channum}:FUNCtion:PULSE:WIDTh {{}}',
-                           get_cmd=f'SOURce{channum}:FUNCtion:PULSE:WIDTh?',
-                           get_parser=float,
-                           unit='S')
+        self.pulse_width: Parameter = self.add_parameter(
+            "pulse_width",
+            label=f"Channel {channum} pulse width",
+            set_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh {{}}",
+            get_cmd=f"SOURce{channum}:FUNCtion:PULSE:WIDTh?",
+            get_parser=float,
+            unit="S",
+        )
+        """Parameter pulse_width"""
 
         # TRIGGER MENU
-        self.add_parameter('trigger_source',
-                           label=f'Channel {channum} trigger source',
-                           set_cmd=f'TRIGger{channum}:SOURce {{}}',
-                           get_cmd=f'TRIGger{channum}:SOURce?',
-                           vals=vals.Enum('IMM', 'EXT', 'TIM', 'BUS'),
-                           get_parser=str.rstrip,
-                           )
+        self.trigger_source: Parameter = self.add_parameter(
+            "trigger_source",
+            label=f"Channel {channum} trigger source",
+            set_cmd=f"TRIGger{channum}:SOURce {{}}",
+            get_cmd=f"TRIGger{channum}:SOURce?",
+            vals=vals.Enum("IMM", "EXT", "TIM", "BUS"),
+            get_parser=str.rstrip,
+        )
+        """Parameter trigger_source"""
 
-        self.add_parameter('trigger_slope',
-                           label=f'Channel {channum} trigger slope',
-                           set_cmd=f'TRIGger{channum}:SLOPe {{}}',
-                           get_cmd=f'TRIGger{channum}:SLOPe?',
-                           vals=vals.Enum('POS', 'NEG'),
-                           get_parser=str.rstrip
-                           )
+        self.trigger_slope: Parameter = self.add_parameter(
+            "trigger_slope",
+            label=f"Channel {channum} trigger slope",
+            set_cmd=f"TRIGger{channum}:SLOPe {{}}",
+            get_cmd=f"TRIGger{channum}:SLOPe?",
+            vals=vals.Enum("POS", "NEG"),
+            get_parser=str.rstrip,
+        )
+        """Parameter trigger_slope"""
 
         # Older models do not have all the fancy trigger options
-        if self._parent.model[2] in ['5', '6']:
-            self.add_parameter('trigger_count',
-                               label=f'Channel {channum} trigger count',
-                               set_cmd=f'TRIGger{channum}:COUNt {{}}',
-                               get_cmd=f'TRIGger{channum}:COUNt?',
-                               vals=vals.Ints(1, 1000000),
-                               get_parser=partial(val_parser, int)
-                               )
+        if self._parent.model[2] in ["5", "6"]:
+            self.trigger_count: Parameter = self.add_parameter(
+                "trigger_count",
+                label=f"Channel {channum} trigger count",
+                set_cmd=f"TRIGger{channum}:COUNt {{}}",
+                get_cmd=f"TRIGger{channum}:COUNt?",
+                vals=vals.Ints(1, 1000000),
+                get_parser=partial(val_parser, int),
+            )
+            """Parameter trigger_count"""
 
-            self.add_parameter('trigger_delay',
-                               label=f'Channel {channum} trigger delay',
-                               set_cmd=f'TRIGger{channum}:DELay {{}}',
-                               get_cmd=f'TRIGger{channum}:DELay?',
-                               vals=vals.Numbers(0, 1000),
-                               get_parser=float,
-                               unit='s')
+            self.trigger_delay: Parameter = self.add_parameter(
+                "trigger_delay",
+                label=f"Channel {channum} trigger delay",
+                set_cmd=f"TRIGger{channum}:DELay {{}}",
+                get_cmd=f"TRIGger{channum}:DELay?",
+                vals=vals.Numbers(0, 1000),
+                get_parser=float,
+                unit="s",
+            )
+            """Parameter trigger_delay"""
 
-            self.add_parameter('trigger_timer',
-                               label=f'Channel {channum} trigger timer',
-                               set_cmd=f'TRIGger{channum}:TIMer {{}}',
-                               get_cmd=f'TRIGger{channum}:TIMer?',
-                               vals=vals.Numbers(1e-6, 8000),
-                               get_parser=float)
+            self.trigger_timer: Parameter = self.add_parameter(
+                "trigger_timer",
+                label=f"Channel {channum} trigger timer",
+                set_cmd=f"TRIGger{channum}:TIMer {{}}",
+                get_cmd=f"TRIGger{channum}:TIMer?",
+                vals=vals.Numbers(1e-6, 8000),
+                get_parser=float,
+            )
+            """Parameter trigger_timer"""
 
         # TODO: trigger level doesn't work remotely. Why?
 
         # output menu
-        self.add_parameter('output_polarity',
-                           label=f'Channel {channum} output polarity',
-                           set_cmd=f'OUTPut{channum}:POLarity {{}}',
-                           get_cmd=f'OUTPut{channum}:POLarity?',
-                           get_parser=str.rstrip,
-                           vals=vals.Enum('NORM', 'INV')
-                           )
+        self.output_polarity: Parameter = self.add_parameter(
+            "output_polarity",
+            label=f"Channel {channum} output polarity",
+            set_cmd=f"OUTPut{channum}:POLarity {{}}",
+            get_cmd=f"OUTPut{channum}:POLarity?",
+            get_parser=str.rstrip,
+            vals=vals.Enum("NORM", "INV"),
+        )
+        """Parameter output_polarity"""
         # BURST MENU
-        self.add_parameter('burst_state',
-                           label=f'Channel {channum} burst state',
-                           set_cmd=f'SOURce{channum}:BURSt:STATe {{}}',
-                           get_cmd=f'SOURce{channum}:BURSt:STATe?',
-                           val_mapping={'ON': 1, 'OFF': 0},
-                           vals=vals.Enum('ON', 'OFF')
-                           )
+        self.burst_state: Parameter = self.add_parameter(
+            "burst_state",
+            label=f"Channel {channum} burst state",
+            set_cmd=f"SOURce{channum}:BURSt:STATe {{}}",
+            get_cmd=f"SOURce{channum}:BURSt:STATe?",
+            val_mapping={"ON": 1, "OFF": 0},
+            vals=vals.Enum("ON", "OFF"),
+        )
+        """Parameter burst_state"""
 
-        self.add_parameter('burst_mode',
-                           label=f'Channel {channum} burst mode',
-                           set_cmd=f'SOURce{channum}:BURSt:MODE {{}}',
-                           get_cmd=f'SOURce{channum}:BURSt:MODE?',
-                           get_parser=str.rstrip,
-                           val_mapping={'N Cycle': 'TRIG', 'Gated': 'GAT'},
-                           vals=vals.Enum('N Cycle', 'Gated')
-                           )
+        self.burst_mode: Parameter = self.add_parameter(
+            "burst_mode",
+            label=f"Channel {channum} burst mode",
+            set_cmd=f"SOURce{channum}:BURSt:MODE {{}}",
+            get_cmd=f"SOURce{channum}:BURSt:MODE?",
+            get_parser=str.rstrip,
+            val_mapping={"N Cycle": "TRIG", "Gated": "GAT"},
+            vals=vals.Enum("N Cycle", "Gated"),
+        )
+        """Parameter burst_mode"""
 
-        self.add_parameter('burst_ncycles',
-                           label=f'Channel {channum} burst no. of cycles',
-                           set_cmd=f'SOURce{channum}:BURSt:NCYCles {{}}',
-                           get_cmd=f'SOURce{channum}:BURSt:NCYCLes?',
-                           get_parser=partial(val_parser, int),
-                           vals=vals.MultiType(vals.Ints(1),
-                                               vals.Enum('MIN', 'MAX',
-                                                         'INF'))
-                           )
+        self.burst_ncycles: Parameter = self.add_parameter(
+            "burst_ncycles",
+            label=f"Channel {channum} burst no. of cycles",
+            set_cmd=f"SOURce{channum}:BURSt:NCYCles {{}}",
+            get_cmd=f"SOURce{channum}:BURSt:NCYCLes?",
+            get_parser=partial(val_parser, int),
+            vals=vals.MultiType(vals.Ints(1), vals.Enum("MIN", "MAX", "INF")),
+        )
+        """Parameter burst_ncycles"""
 
-        self.add_parameter('burst_phase',
-                           label=f'Channel {channum} burst start phase',
-                           set_cmd=f'SOURce{channum}:BURSt:PHASe {{}}',
-                           get_cmd=f'SOURce{channum}:BURSt:PHASe?',
-                           vals=vals.Numbers(-360, 360),
-                           unit='degrees',
-                           get_parser=float
-                           )
+        self.burst_phase: Parameter = self.add_parameter(
+            "burst_phase",
+            label=f"Channel {channum} burst start phase",
+            set_cmd=f"SOURce{channum}:BURSt:PHASe {{}}",
+            get_cmd=f"SOURce{channum}:BURSt:PHASe?",
+            vals=vals.Numbers(-360, 360),
+            unit="degrees",
+            get_parser=float,
+        )
+        """Parameter burst_phase"""
 
-        self.add_parameter('burst_polarity',
-                           label=f'Channel {channum} burst gated polarity',
-                           set_cmd=f'SOURce{channum}:BURSt:GATE:POLarity {{}}',
-                           get_cmd=f'SOURce{channum}:BURSt:GATE:POLarity?',
-                           vals=vals.Enum('NORM', 'INV')
-                           )
+        self.burst_polarity: Parameter = self.add_parameter(
+            "burst_polarity",
+            label=f"Channel {channum} burst gated polarity",
+            set_cmd=f"SOURce{channum}:BURSt:GATE:POLarity {{}}",
+            get_cmd=f"SOURce{channum}:BURSt:GATE:POLarity?",
+            vals=vals.Enum("NORM", "INV"),
+        )
+        """Parameter burst_polarity"""
 
-        self.add_parameter(
+        self.burst_int_period: Parameter = self.add_parameter(
             "burst_int_period",
             label=(f"Channel {channum} burst internal period"),
             set_cmd=f"SOURce{channum}:BURSt:INTernal:PERiod {{}}",
@@ -266,6 +312,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
                 "bursts when trigger is immediate."
             ),
         )
+        """The burst period is the time between the starts of consecutive bursts when trigger is immediate."""
 
 
 OutputChannel = Keysight33xxxOutputChannel
@@ -285,22 +332,27 @@ class Keysight33xxxSyncChannel(InstrumentChannel):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter('output',
-                           label='Sync output state',
-                           set_cmd='OUTPut:SYNC {}',
-                           get_cmd='OUTPut:SYNC?',
-                           val_mapping={'ON': 1, 'OFF': 0},
-                           vals=vals.Enum('ON', 'OFF')
-                           )
+        self.output: Parameter = self.add_parameter(
+            "output",
+            label="Sync output state",
+            set_cmd="OUTPut:SYNC {}",
+            get_cmd="OUTPut:SYNC?",
+            val_mapping={"ON": 1, "OFF": 0},
+            vals=vals.Enum("ON", "OFF"),
+        )
+        """Parameter output"""
 
         if parent.num_channels == 2:
 
-            self.add_parameter('source',
-                               label='Source of sync function',
-                               set_cmd='OUTPut:SYNC:SOURce {}',
-                               get_cmd='OUTPut:SYNC:SOURce?',
-                               val_mapping={1: 'CH1', 2: 'CH2'},
-                               vals=vals.Enum(1, 2))
+            self.source: Parameter = self.add_parameter(
+                "source",
+                label="Source of sync function",
+                set_cmd="OUTPut:SYNC:SOURce {}",
+                get_cmd="OUTPut:SYNC:SOURce?",
+                val_mapping={1: "CH1", 2: "CH2"},
+                vals=vals.Enum(1, 2),
+            )
+            """Parameter source"""
 
 
 SyncChannel = Keysight33xxxSyncChannel
@@ -308,8 +360,8 @@ SyncChannel = Keysight33xxxSyncChannel
 
 class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
     """
-    QCoDeS driver for the Keysight/Agilent 33XXX series of
-    waveform generators
+    Base class for QCoDeS driver for the Keysight/Agilent 33XXX series of
+    waveform generators. Not to be instantiated directly.
     """
 
     default_terminator = "\n"
