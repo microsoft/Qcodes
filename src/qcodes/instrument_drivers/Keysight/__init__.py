@@ -41,7 +41,11 @@ from .Keysight_N9030B import (
     KeysightN9030BSpectrumAnalyzerMode,
 )
 from .Keysight_P9374A import KeysightP9374A
-from .KeysightAgilent_33XXX import Keysight33xxxOutputChannel, Keysight33xxxSyncChannel
+from .KeysightAgilent_33XXX import (
+    Keysight33xxx,
+    Keysight33xxxOutputChannel,
+    Keysight33xxxSyncChannel,
+)
 from .keysightb1500.KeysightB1500_base import KeysightB1500
 from .keysightb1500.KeysightB1511B import KeysightB1511B
 from .keysightb1500.KeysightB1517A import KeysightB1500IVSweeper, KeysightB1517A
@@ -64,6 +68,7 @@ __all__ = [
     "Keysight33512B",
     "Keysight33522B",
     "Keysight33622A",
+    "Keysight33xxx",
     "Keysight33xxxOutputChannel",
     "Keysight33xxxSyncChannel",
     "Keysight34410A",
