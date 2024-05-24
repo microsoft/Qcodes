@@ -360,8 +360,9 @@ SyncChannel = Keysight33xxxSyncChannel
 
 class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
     """
-    Base class for QCoDeS driver for the Keysight/Agilent 33XXX series of
-    waveform generators. Not to be instantiated directly.
+    Base class for Keysight/Agilent 33XXX waveform generators.
+
+    Not to be instantiated directly.
     """
 
     default_terminator = "\n"

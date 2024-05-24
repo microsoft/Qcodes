@@ -60,6 +60,7 @@ from .keysightb1500.KeysightB1530A import KeysightB1530A
 from .KtM960x import KeysightM960x
 from .KtMAwg import KeysightM9336A, KeysightM9336AAWGChannel
 from .N52xx import KeysightPNAPort, KeysightPNATrace
+from .private.error_handling import KeysightErrorQueueMixin
 
 __all__ = [
     "Keysight33210A",
@@ -98,6 +99,7 @@ __all__ = [
     "KeysightE4980ACorrection",
     "KeysightE4980AMeasurementPair",
     "KeysightE4980AMeasurements",
+    "KeysightErrorQueueMixin",
     "KeysightInfiniium",
     "KeysightInfiniiumBoundMeasurement",
     "KeysightInfiniiumChannel",
