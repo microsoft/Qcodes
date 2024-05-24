@@ -484,7 +484,10 @@ class Keithley2600Channel(InstrumentChannel):
             "set `sourcerange_v` instead",
             vals=vals.Enum(*vranges[self.model]),
         )
-        """The range to perform voltage measurements in. This affects the range and the precision of the measurement. Note that if you both measure and source current this will have no effect, set `sourcerange_v` instead"""
+        """
+        The range to perform voltage measurements in. This affects the range and the precision of the measurement.
+        Note that if you both measure and source current this will have no effect, set `sourcerange_v` instead
+        """
 
         self.measure_autorange_v_enabled: Parameter = self.add_parameter(
             "measure_autorange_v_enabled",
@@ -538,7 +541,9 @@ class Keithley2600Channel(InstrumentChannel):
             "`sourcerange_i` instead",
             vals=vals.Enum(*iranges[self.model]),
         )
-        """The range to perform current measurements in. This affects the range and the precision of the measurement. Note that if you both measure and source current this will have no effect, set `sourcerange_i` instead"""
+        """
+        The range to perform current measurements in. This affects the range and the precision of the measurement.
+        Note that if you both measure and source current this will have no effect, set `sourcerange_i` instead"""
 
         self.measure_autorange_i_enabled: Parameter = self.add_parameter(
             "measure_autorange_i_enabled",

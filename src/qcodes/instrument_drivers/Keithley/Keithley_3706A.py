@@ -65,21 +65,19 @@ class Keithley3706A(VisaInstrument):
             ),
             vals=vals.Enum("BREAK_BEFORE_MAKE", "MAKE_BEFORE_BREAK", "OFF"),
         )
-        """Controls the connection rule for closing
-and opening channels when using
-`exclusive_close` and `exclusive_slot_close`
-parameters.
+        """
+        Controls the connection rule for closing and opening channels when using
+        `exclusive_close` and `exclusive_slot_close`
+        parameters.
 
-If it is set to break before make,
-it is ensured that all channels open
-before any channels close.
+        If it is set to break before make, it is ensured that all channels open
+        before any channels close.
 
-If it is set to make before break, it is
-ensured that all channels close before any
-channels open.
+        If it is set to make before break, it is ensured that all channels close
+        before any channels open.
 
-If it is off, channels open and close
-simultaneously."""
+        If it is off, channels open and close simultaneously.
+        """
 
         self.gpib_enabled: Parameter = self.add_parameter(
             "gpib_enabled",
