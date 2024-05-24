@@ -878,7 +878,7 @@ class AcquisitionInterface(Generic[OutputType]):
 
 
 @deprecated(
-    "AlazarTech_ATS is deprecated used AlazarTechATS instead.",
+    "AlazarTech_ATS is deprecated, use AlazarTechATS instead.",
     category=QCoDeSDeprecationWarning,
 )
 class AlazarTech_ATS(AlazarTechATS):

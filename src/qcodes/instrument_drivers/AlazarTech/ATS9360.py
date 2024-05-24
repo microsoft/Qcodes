@@ -391,7 +391,8 @@ class AlazarTechATS9360(AlazarTechATS):
             docstring=f"If enabled Alazar will "
             f"ignore any additional triggers "
             f"while capturing a record. If disabled "
-            f"this will result in corrupt data. "
+            f"a trigger signal during a capture "
+            f" will result in corrupt data. "
             f"Support for this requires at least "
             f"firmware version "
             f"{self._trigger_holdoff_min_fw_version}",
@@ -399,7 +400,10 @@ class AlazarTechATS9360(AlazarTechATS):
             get_cmd=self._get_trigger_holdoff,
             set_cmd=self._set_trigger_holdoff,
         )
-        """None"""
+        """
+        If enabled Alazar will ignore any additional triggers
+        while capturing a record.
+        """
 
         model = self.get_idn()["model"]
         if model != "ATS9360":

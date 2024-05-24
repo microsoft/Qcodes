@@ -407,7 +407,8 @@ class AlazarTechATS9373(AlazarTechATS):
             docstring=f"If enabled Alazar will "
             f"ignore any additional triggers "
             f"while capturing a record. If disabled "
-            f"this will result in corrupt data. "
+            f"a trigger signal during a capture "
+            f"will result in corrupt data. "
             f"Support for this requires at least "
             f"firmware version "
             f"{self._trigger_holdoff_min_fw_version}",
