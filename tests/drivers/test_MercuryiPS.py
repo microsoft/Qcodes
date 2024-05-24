@@ -146,7 +146,6 @@ def get_ramp_order(caplog_records):
             order.append(axis.lower())
     return order
 
-
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     x=hst.floats(min_value=-3, max_value=3),

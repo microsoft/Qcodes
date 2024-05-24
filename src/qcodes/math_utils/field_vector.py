@@ -100,7 +100,9 @@ class FieldVector:
         rho = np.sqrt(x ** 2 + y ** 2)
         r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
         if r != 0:
-            theta = np.arccos(z / r)
+            z_r_frac = z / r
+            assert abs(z_r_frac) <= 1
+            theta = np.arccos(z_r_frac)
         else:
             theta = 0
 
