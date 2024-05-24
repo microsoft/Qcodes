@@ -9,8 +9,10 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, Union, cast
 
 import numpy as np
+from typing_extensions import deprecated
 
-from qcodes.instrument import Instrument
+from qcodes.instrument import Instrument, InstrumentBaseKWArgs
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .ats_api import AlazarATSAPI
 from .constants import NUMBER_OF_CHANNELS_FROM_BYTE_REPR, max_buffer_size
@@ -19,6 +21,8 @@ from .utils import TraceParameter
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
+
+    from typing_extensions import Unpack
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +37,13 @@ CtypesTypes = Union[
 ]
 
 
-class AlazarTech_ATS(Instrument):
+class AlazarTechATS(Instrument):
     """
-    This is the qcodes driver for Alazar data acquisition cards
+    This is the BaseClass for the qcodes drivers for Alazar data acquisition cards.
+    This should not be instantiated directly, but should be subclassed for a specific
+    card should be used.
 
-    status: beta-version
+
 
     Args:
         name: name for this instrument
@@ -131,7 +137,7 @@ class AlazarTech_ATS(Instrument):
         board_id: int = 1,
         dll_path: str | None = None,
         api: AlazarATSAPI | None = None,
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
         super().__init__(name, **kwargs)
         self.api = api or AlazarATSAPI(dll_path or self.dll_path)
@@ -871,6 +877,14 @@ class AcquisitionInterface(Generic[OutputType]):
         pass
 
 
+@deprecated(
+    "AlazarTech_ATS is deprecated, use AlazarTechATS instead.",
+    category=QCoDeSDeprecationWarning,
+)
+class AlazarTech_ATS(AlazarTechATS):
+    pass
+
+
 class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[OutputType]):
     """
     Compatibility class. The methods of :class:`AcquisitionController`
@@ -878,7 +892,9 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
     that are intended to be QCoDeS instruments at the same time.
     """
 
-    def __init__(self, name: str, alazar_name: str, **kwargs: Any):
+    def __init__(
+        self, name: str, alazar_name: str, **kwargs: Unpack[InstrumentBaseKWArgs]
+    ):
         """
         Args:
             name: The name of the AcquisitionController
@@ -886,11 +902,11 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
             **kwargs: kwargs are forwarded to base class.
         """
         super().__init__(name, **kwargs)
-        self._alazar: AlazarTech_ATS = self.find_instrument(
-            alazar_name, instrument_class=AlazarTech_ATS
+        self._alazar: AlazarTechATS = self.find_instrument(
+            alazar_name, instrument_class=AlazarTechATS
         )
 
-    def _get_alazar(self) -> AlazarTech_ATS:
+    def _get_alazar(self) -> AlazarTechATS:
         """
         returns a reference to the alazar instrument. A call to self._alazar is
         quicker, so use that if in need for speed

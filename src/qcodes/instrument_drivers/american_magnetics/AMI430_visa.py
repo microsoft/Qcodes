@@ -8,13 +8,15 @@ from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, Callable, ClassVar, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
+from typing_extensions import Concatenate, ParamSpec
 
 from qcodes.instrument import (
     Instrument,
+    InstrumentBaseKWArgs,
     InstrumentChannel,
     VisaInstrument,
     VisaInstrumentKWArgs,
@@ -32,7 +34,9 @@ log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = Callable[[float, float, float], bool]
 
+S = TypeVar("S", bound="AMI430SwitchHeater")
 T = TypeVar("T")
+P = ParamSpec("P")
 
 
 class AMI430Exception(Exception):
@@ -46,9 +50,11 @@ class AMI430Warning(UserWarning):
 class AMI430SwitchHeater(InstrumentChannel):
     class _Decorators:
         @classmethod
-        def check_enabled(cls, f: Callable[..., T]) -> Callable[..., T]:
+        def check_enabled(
+            cls, f: Callable[Concatenate[S, P], T]
+        ) -> Callable[Concatenate[S, P], T]:
             def check_enabled_decorator(
-                self: AMI430SwitchHeater, *args: Any, **kwargs: Any
+                self: S, *args: P.args, **kwargs: P.kwargs
             ) -> T:
                 if not self.check_enabled():
                     raise AMI430Exception("Switch not enabled")
@@ -56,33 +62,38 @@ class AMI430SwitchHeater(InstrumentChannel):
 
             return check_enabled_decorator
 
-    def __init__(self, parent: AMIModel430) -> None:
-        super().__init__(parent, "SwitchHeater")
+    def __init__(
+        self, parent: AMIModel430, **kwargs: Unpack[InstrumentBaseKWArgs]
+    ) -> None:
+        super().__init__(parent, "SwitchHeater", **kwargs)
 
         # Add state parameters
-        self.add_parameter(
+        self.enabled: Parameter = self.add_parameter(
             "enabled",
             label="Switch Heater Enabled",
             get_cmd=self.check_enabled,
             set_cmd=lambda x: (self.enable() if x else self.disable()),
             vals=Bool(),
         )
-        self.add_parameter(
+        """Parameter enabled"""
+        self.state: Parameter = self.add_parameter(
             "state",
             label="Switch Heater On",
             get_cmd=self.check_state,
             set_cmd=lambda x: (self.on() if x else self.off()),
             vals=Bool(),
         )
-        self.add_parameter(
+        """Parameter state"""
+        self.in_persistent_mode: Parameter = self.add_parameter(
             "in_persistent_mode",
             label="Persistent Mode",
             get_cmd="PERS?",
             val_mapping={True: 1, False: 0},
         )
+        """Parameter in_persistent_mode"""
 
         # Configuration Parameters
-        self.add_parameter(
+        self.current: Parameter = self.add_parameter(
             "current",
             label="Switch Heater Current",
             unit="mA",
@@ -91,7 +102,8 @@ class AMI430SwitchHeater(InstrumentChannel):
             set_cmd="CONF:PS:CURR {}",
             vals=Numbers(0, 125),
         )
-        self.add_parameter(
+        """Parameter current"""
+        self.heat_time: Parameter = self.add_parameter(
             "heat_time",
             label="Heating Time",
             unit="s",
@@ -100,7 +112,8 @@ class AMI430SwitchHeater(InstrumentChannel):
             set_cmd="CONF:PS:HTIME {}",
             vals=Ints(5, 120),
         )
-        self.add_parameter(
+        """Parameter heat_time"""
+        self.cool_time: Parameter = self.add_parameter(
             "cool_time",
             label="Cooling Time",
             unit="s",
@@ -109,6 +122,7 @@ class AMI430SwitchHeater(InstrumentChannel):
             set_cmd="CONF:PS:CTIME {}",
             vals=Ints(5, 3600),
         )
+        """Parameter cool_time"""
 
     def disable(self) -> None:
         """Turn measurement off"""
@@ -223,33 +237,37 @@ class AMIModel430(VisaInstrument):
             self.reset()
 
         # Add parameters setting instrument units
-        self.add_parameter(
+        self.ramp_rate_units: Parameter = self.add_parameter(
             "ramp_rate_units",
             get_cmd="RAMP:RATE:UNITS?",
             set_cmd=(lambda units: self._update_units(ramp_rate_units=units)),
             val_mapping={"seconds": 0, "minutes": 1},
         )
-        self.add_parameter(
+        """Parameter ramp_rate_units"""
+        self.field_units: Parameter = self.add_parameter(
             "field_units",
             get_cmd="FIELD:UNITS?",
             set_cmd=(lambda units: self._update_units(field_units=units)),
             val_mapping={"kilogauss": 0, "tesla": 1},
         )
+        """Parameter field_units"""
 
         # Set programmatic safety limits
-        self.add_parameter(
+        self.current_ramp_limit: Parameter = self.add_parameter(
             "current_ramp_limit",
             get_cmd=lambda: self._current_ramp_limit,
             set_cmd=self._update_ramp_rate_limit,
             unit="A/s",
         )
-        self.add_parameter(
+        """Parameter current_ramp_limit"""
+        self.field_ramp_limit: Parameter = self.add_parameter(
             "field_ramp_limit",
             get_cmd=lambda: self.current_ramp_limit(),
             set_cmd=lambda x: self.current_ramp_limit(x),
             scale=1 / float(self.ask("COIL?")),
             unit="T/s",
         )
+        """Parameter field_ramp_limit"""
         if current_ramp_limit is None:
             self._update_ramp_rate_limit(
                 AMIModel430._DEFAULT_CURRENT_RAMP_LIMIT, update=False
@@ -258,14 +276,15 @@ class AMIModel430(VisaInstrument):
             self._update_ramp_rate_limit(current_ramp_limit, update=False)
 
         # Add solenoid parameters
-        self.add_parameter(
+        self.coil_constant: Parameter = self.add_parameter(
             "coil_constant",
             get_cmd=self._update_coil_constant,
             set_cmd=self._update_coil_constant,
             vals=Numbers(0.001, 999.99999),
         )
+        """Parameter coil_constant"""
 
-        self.add_parameter(
+        self.current_limit: Parameter = self.add_parameter(
             "current_limit",
             unit="A",
             set_cmd="CONF:CURR:LIMIT {}",
@@ -273,29 +292,37 @@ class AMIModel430(VisaInstrument):
             get_parser=float,
             vals=Numbers(0, 80),
         )  # what are good numbers here?
+        """Parameter current_limit"""
 
-        self.add_parameter(
+        self.field_limit: Parameter = self.add_parameter(
             "field_limit",
             set_cmd=self.current_limit.set,
             get_cmd=self.current_limit.get,
             scale=1 / float(self.ask("COIL?")),
         )
+        """Parameter field_limit"""
 
         # Add current solenoid parameters
         # Note that field is validated in set_field
-        self.add_parameter(
+        self.field: Parameter = self.add_parameter(
             "field", get_cmd="FIELD:MAG?", get_parser=float, set_cmd=self.set_field
         )
-        self.add_parameter(
+        """Parameter field"""
+        self.ramp_rate: Parameter = self.add_parameter(
             "ramp_rate", get_cmd=self._get_ramp_rate, set_cmd=self._set_ramp_rate
         )
-        self.add_parameter("setpoint", get_cmd="FIELD:TARG?", get_parser=float)
-        self.add_parameter(
+        """Parameter ramp_rate"""
+        self.setpoint: Parameter = self.add_parameter(
+            "setpoint", get_cmd="FIELD:TARG?", get_parser=float
+        )
+        """Parameter setpoint"""
+        self.is_quenched: Parameter = self.add_parameter(
             "is_quenched", get_cmd="QU?", val_mapping={True: 1, False: 0}
         )
+        """Parameter is_quenched"""
         self.add_function("reset_quench", call_cmd="QU 0")
         self.add_function("set_quenched", call_cmd="QU 1")
-        self.add_parameter(
+        self.ramping_state: Parameter = self.add_parameter(
             "ramping_state",
             get_cmd="STATE?",
             get_parser=int,
@@ -312,13 +339,15 @@ class AMIModel430(VisaInstrument):
                 "cooling switch": 10,
             },
         )
-        self.add_parameter(
+        """Parameter ramping_state"""
+        self.ramping_state_check_interval: Parameter = self.add_parameter(
             "ramping_state_check_interval",
             initial_value=0.05,
             unit="s",
             vals=Numbers(0, 10),
             set_cmd=None,
         )
+        """Parameter ramping_state_check_interval"""
 
         # Add persistent switch
         switch_heater = AMI430SwitchHeater(self)
@@ -494,6 +523,7 @@ class AMIModel430(VisaInstrument):
             ramp_rate_units_int: str = self.ramp_rate_units()
         else:
             self.write(f"CONF:RAMP:RATE:UNITS {ramp_rate_units}")
+            assert self.ramp_rate_units.inverse_val_mapping is not None
             ramp_rate_units_int = self.ramp_rate_units.inverse_val_mapping[
                 ramp_rate_units
             ]
@@ -501,6 +531,7 @@ class AMIModel430(VisaInstrument):
             field_units_int: str = self.field_units()
         else:
             self.write(f"CONF:FIELD:UNITS {field_units}")
+            assert self.field_units.inverse_val_mapping is not None
             field_units_int = self.field_units.inverse_val_mapping[field_units]
 
         # Map to shortened unit names
@@ -582,7 +613,7 @@ class AMIModel4303D(Instrument):
         instrument_y: AMIModel430 | str,
         instrument_z: AMIModel430 | str,
         field_limit: float | Iterable[CartesianFieldLimitFunction],
-        **kwargs: Any,
+        **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """
         Driver for controlling three American Magnetics Model 430 magnet power
@@ -663,136 +694,157 @@ class AMIModel4303D(Instrument):
         )
 
         # Get-only parameters that return a measured value
-        self.add_parameter(
+        self.cartesian_measured: Parameter = self.add_parameter(
             "cartesian_measured",
             get_cmd=partial(self._get_measured, "x", "y", "z"),
             unit="T",
         )
+        """Parameter cartesian_measured"""
 
-        self.add_parameter(
+        self.x_measured: Parameter = self.add_parameter(
             "x_measured", get_cmd=partial(self._get_measured, "x"), unit="T"
         )
+        """Parameter x_measured"""
 
-        self.add_parameter(
+        self.y_measured: Parameter = self.add_parameter(
             "y_measured", get_cmd=partial(self._get_measured, "y"), unit="T"
         )
+        """Parameter y_measured"""
 
-        self.add_parameter(
+        self.z_measured: Parameter = self.add_parameter(
             "z_measured", get_cmd=partial(self._get_measured, "z"), unit="T"
         )
+        """Parameter z_measured"""
 
-        self.add_parameter(
+        self.spherical_measured: Parameter = self.add_parameter(
             "spherical_measured",
             get_cmd=partial(self._get_measured, "r", "theta", "phi"),
             unit="T",
         )
+        """Parameter spherical_measured"""
 
-        self.add_parameter(
+        self.phi_measured: Parameter = self.add_parameter(
             "phi_measured", get_cmd=partial(self._get_measured, "phi"), unit="deg"
         )
+        """Parameter phi_measured"""
 
-        self.add_parameter(
+        self.theta_measured: Parameter = self.add_parameter(
             "theta_measured", get_cmd=partial(self._get_measured, "theta"), unit="deg"
         )
+        """Parameter theta_measured"""
 
-        self.add_parameter(
+        self.field_measured: Parameter = self.add_parameter(
             "field_measured", get_cmd=partial(self._get_measured, "r"), unit="T"
         )
+        """Parameter field_measured"""
 
-        self.add_parameter(
+        self.cylindrical_measured: Parameter = self.add_parameter(
             "cylindrical_measured",
             get_cmd=partial(self._get_measured, "rho", "phi", "z"),
             unit="T",
         )
+        """Parameter cylindrical_measured"""
 
-        self.add_parameter(
+        self.rho_measured: Parameter = self.add_parameter(
             "rho_measured", get_cmd=partial(self._get_measured, "rho"), unit="T"
         )
+        """Parameter rho_measured"""
 
         # Get and set parameters for the set points of the coordinates
-        self.add_parameter(
+        self.cartesian: Parameter = self.add_parameter(
             "cartesian",
             get_cmd=partial(self._get_setpoints, ("x", "y", "z")),
             set_cmd=partial(self._set_setpoints, ("x", "y", "z")),
             unit="T",
             vals=Anything(),
         )
+        """Parameter cartesian"""
 
-        self.add_parameter(
+        self.x: Parameter = self.add_parameter(
             "x",
             get_cmd=partial(self._get_setpoints, ("x",)),
             set_cmd=partial(self._set_setpoints, ("x",)),
             unit="T",
             vals=Numbers(),
         )
+        """Parameter x"""
 
-        self.add_parameter(
+        self.y: Parameter = self.add_parameter(
             "y",
             get_cmd=partial(self._get_setpoints, ("y",)),
             set_cmd=partial(self._set_setpoints, ("y",)),
             unit="T",
             vals=Numbers(),
         )
+        """Parameter y"""
 
-        self.add_parameter(
+        self.z: Parameter = self.add_parameter(
             "z",
             get_cmd=partial(self._get_setpoints, ("z",)),
             set_cmd=partial(self._set_setpoints, ("z",)),
             unit="T",
             vals=Numbers(),
         )
+        """Parameter z"""
 
-        self.add_parameter(
+        self.spherical: Parameter = self.add_parameter(
             "spherical",
             get_cmd=partial(self._get_setpoints, ("r", "theta", "phi")),
             set_cmd=partial(self._set_setpoints, ("r", "theta", "phi")),
             unit="tuple?",
             vals=Anything(),
         )
+        """Parameter spherical"""
 
-        self.add_parameter(
+        self.phi: Parameter = self.add_parameter(
             "phi",
             get_cmd=partial(self._get_setpoints, ("phi",)),
             set_cmd=partial(self._set_setpoints, ("phi",)),
             unit="deg",
             vals=Numbers(),
         )
+        """Parameter phi"""
 
-        self.add_parameter(
+        self.theta: Parameter = self.add_parameter(
             "theta",
             get_cmd=partial(self._get_setpoints, ("theta",)),
             set_cmd=partial(self._set_setpoints, ("theta",)),
             unit="deg",
             vals=Numbers(),
         )
+        """Parameter theta"""
 
-        self.add_parameter(
+        self.field: Parameter = self.add_parameter(
             "field",
             get_cmd=partial(self._get_setpoints, ("r",)),
             set_cmd=partial(self._set_setpoints, ("r",)),
             unit="T",
             vals=Numbers(),
         )
+        """Parameter field"""
 
-        self.add_parameter(
+        self.cylindrical: Parameter = self.add_parameter(
             "cylindrical",
             get_cmd=partial(self._get_setpoints, ("rho", "phi", "z")),
             set_cmd=partial(self._set_setpoints, ("rho", "phi", "z")),
             unit="tuple?",
             vals=Anything(),
         )
+        """Parameter cylindrical"""
 
-        self.add_parameter(
+        self.rho: Parameter = self.add_parameter(
             "rho",
             get_cmd=partial(self._get_setpoints, ("rho",)),
             set_cmd=partial(self._set_setpoints, ("rho",)),
             unit="T",
             vals=Numbers(),
         )
+        """Parameter rho"""
 
-        self.add_parameter(
+        self.block_during_ramp: Parameter = self.add_parameter(
             "block_during_ramp", set_cmd=None, initial_value=True, unit="", vals=Bool()
         )
+        """Parameter block_during_ramp"""
 
         self.ramp_mode = Parameter(
             name="ramp_mode",
@@ -1069,7 +1121,7 @@ class AMIModel4303D(Instrument):
         self.log.debug("Simultaneous ramp: returning from the ramp call")
 
     def _perform_default_ramp(self, values: tuple[float, float, float]) -> None:
-        operators: tuple[Callable[[Any, Any], bool], ...] = (np.less, np.greater)
+        operators: tuple[Callable[[float, float], bool], ...] = (np.less, np.greater)
         for operator in operators:
             # First ramp the coils that are decreasing in field strength.
             # This will ensure that we are always in a safe region as

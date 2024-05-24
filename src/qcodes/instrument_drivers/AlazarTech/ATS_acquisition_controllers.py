@@ -1,9 +1,12 @@
 import math
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 
 from .ATS import AcquisitionController
+
+if TYPE_CHECKING:
+    from qcodes.parameters import Parameter
 
 
 # DFT AcquisitionController
@@ -44,7 +47,10 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
         # make a call to the parent class and by extension, create the parameter
         # structure of this class
         super().__init__(name, alazar_name, **kwargs)
-        self.add_parameter("acquisition", get_cmd=self.do_acquisition)
+        self.acquisition: Parameter = self.add_parameter(
+            "acquisition", get_cmd=self.do_acquisition
+        )
+        """Parameter acquisition"""
 
     def update_acquisitionkwargs(self, **kwargs: Any) -> None:
         """

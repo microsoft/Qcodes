@@ -39,7 +39,7 @@ class BaselSP983a(VisaInstrument):
 
         self.connect_message()
 
-        self.add_parameter(
+        self.gain: Parameter = self.add_parameter(
             "gain",
             label="Gain",
             unit="V/A",
@@ -47,7 +47,8 @@ class BaselSP983a(VisaInstrument):
             get_cmd=self._get_gain,
             vals=vals.Enum(1e5, 1e6, 1e7, 1e8, 1e9),
         )
-        self.add_parameter(
+        """Parameter gain"""
+        self.fcut: Parameter = self.add_parameter(
             "fcut",
             unit="Hz",
             label="Filter Cut-Off Frequency",
@@ -66,11 +67,13 @@ class BaselSP983a(VisaInstrument):
                 1e6: "FULL",
             },
         )
-        self.add_parameter(
+        """Parameter fcut"""
+        self.overload_status: Parameter = self.add_parameter(
             "overload_status", label="Overload Status", set_cmd=False, get_cmd="GET O"
         )
+        """Parameter overload_status"""
 
-        self.add_parameter(
+        self.offset_voltage: DelegateParameter = self.add_parameter(
             "offset_voltage",
             label="Offset Voltage for SP983C",
             unit="V",
@@ -79,6 +82,7 @@ class BaselSP983a(VisaInstrument):
             source=input_offset_voltage,
             parameter_class=DelegateParameter,
         )
+        """Parameter offset_voltage"""
 
     def get_idn(self) -> dict[str, Optional[str]]:
         vendor = "Physics Basel"

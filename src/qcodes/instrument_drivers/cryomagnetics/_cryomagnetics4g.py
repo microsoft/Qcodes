@@ -3,12 +3,17 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING
 
 from pyvisa import VisaIOError
 
-from qcodes.instrument import VisaInstrument
+from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Numbers
+
+if TYPE_CHECKING:
+    from typing_extensions import Unpack
+
+    from qcodes.parameters import Parameter
 
 
 @dataclass
@@ -51,9 +56,12 @@ class CryomagneticsModel4G(VisaInstrument):
             current limits and rates for each range. The keys are the range indices, and the values
             are tuples containing the upper current limit and maximum rate for that range.
         coil_constant: The coil constant of the magnet in Tesla per Amp.
+        **kwargs: Forwarded to base class.
     """
 
     KG_TO_TESLA: float = 0.1  # Constant for unit conversion
+
+    default_terminator = "\n"
 
     def __init__(
         self,
@@ -61,10 +69,9 @@ class CryomagneticsModel4G(VisaInstrument):
         address: str,
         max_current_limits: dict[int, tuple[float, float]],
         coil_constant: float,
-        terminator: str = "\n",
-        **kwargs: Any,
+        **kwargs: Unpack[VisaInstrumentKWArgs],
     ):
-        super().__init__(name, address, terminator=terminator, **kwargs)
+        super().__init__(name, address, **kwargs)
 
         self.coil_constant = coil_constant
         self.max_current_limits = max_current_limits
@@ -74,7 +81,7 @@ class CryomagneticsModel4G(VisaInstrument):
         self._initialize_max_current_limits()
 
         # Adding parameters
-        self.add_parameter(
+        self.units: Parameter = self.add_parameter(
             name="units",
             set_cmd="UNITS {}",
             get_cmd="UNITS?",
@@ -82,16 +89,18 @@ class CryomagneticsModel4G(VisaInstrument):
             vals=Enum("A", "kG", "T"),
             docstring="Field Units",
         )
+        """Field Units"""
 
-        self.add_parameter(
+        self.ramping_state_check_interval: Parameter = self.add_parameter(
             "ramping_state_check_interval",
             initial_value=0.05,
             unit="s",
             vals=Numbers(0, 10),
             set_cmd=None,
         )
+        """Parameter ramping_state_check_interval"""
 
-        self.add_parameter(
+        self.field: Parameter = self.add_parameter(
             name="field",
             unit="T",
             set_cmd=self.set_field,
@@ -100,8 +109,9 @@ class CryomagneticsModel4G(VisaInstrument):
             vals=Numbers(-9.001, 9.001),
             docstring="Magnetic Field in Tesla",
         )
+        """Magnetic Field in Tesla"""
 
-        self.add_parameter(
+        self.rate: Parameter = self.add_parameter(
             name="rate",
             unit="T/min",
             get_cmd=self._get_rate,
@@ -109,8 +119,9 @@ class CryomagneticsModel4G(VisaInstrument):
             get_parser=float,
             docstring="Rate for magnetic field T/min",
         )
+        """Rate for magnetic field T/min"""
 
-        self.add_parameter(
+        self.Vmag: Parameter = self.add_parameter(
             name="Vmag",
             unit="V",
             get_cmd="VMAG?",
@@ -118,8 +129,9 @@ class CryomagneticsModel4G(VisaInstrument):
             vals=Numbers(-10, 10),
             docstring="Magnet sense voltage",
         )
+        """Magnet sense voltage"""
 
-        self.add_parameter(
+        self.Vout: Parameter = self.add_parameter(
             name="Vout",
             unit="V",
             get_cmd="VOUT?",
@@ -127,14 +139,16 @@ class CryomagneticsModel4G(VisaInstrument):
             vals=Numbers(-12.8, 12.8),
             docstring="Magnet output voltage",
         )
+        """Magnet output voltage"""
 
-        self.add_parameter(
+        self.Iout: Parameter = self.add_parameter(
             name="Iout",
             unit="A",
             get_cmd="IOUT?",
             get_parser=float,
             docstring="Magnet output field/current",
         )
+        """Magnet output field/current"""
 
         # Set to remote mode
         self.operating_mode()
