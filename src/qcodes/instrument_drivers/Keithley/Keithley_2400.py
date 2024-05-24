@@ -143,11 +143,11 @@ class Keithley2400(VisaInstrument):
             get_parser=self._resistance_parser,
             label="Resistance",
             unit="Ohm",
-            docstring="Measure resistance from current and voltage "
+            docstring="Measure resistance from current and voltage. "
             "Note that it is an error to read current "
             "and voltage with output off",
         )
-        """Measure resistance from current and voltage Note that it is an error to read current and voltage with output off"""
+        """Measure resistance from current and voltage. Note that it is an error to read current and voltage with output off"""
 
         self.write(":TRIG:COUN 1;:FORM:ELEM VOLT,CURR")
         # This line sends 2 commands to the instrument:

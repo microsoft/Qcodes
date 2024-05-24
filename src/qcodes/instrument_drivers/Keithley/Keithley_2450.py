@@ -315,11 +315,11 @@ class Keithley2450Sense(InstrumentChannel):
             get_cmd=f":SENSe:{self._proper_function}:AZERo?",
             set_cmd=f":SENSe:{self._proper_function}:AZERo {{}}",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
-            docstring="This command enables or disables automatic updates to"
-            "the internal reference measurements (autozero) of the"
+            docstring="This command enables or disables automatic updates to "
+            "the internal reference measurements (autozero) of the "
             "instrument.",
         )
-        """This command enables or disables automatic updates tothe internal reference measurements (autozero) of theinstrument."""
+        """This command enables or disables automatic updates to the internal reference measurements (autozero) of the instrument."""
 
         self.count: Parameter = self.add_parameter(
             "count",
