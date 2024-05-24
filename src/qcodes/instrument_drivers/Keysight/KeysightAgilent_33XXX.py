@@ -2,6 +2,8 @@ import logging
 from functools import partial
 from typing import TYPE_CHECKING, Union
 
+from typing_extensions import deprecated
+
 from qcodes import validators as vals
 from qcodes.instrument import (
     Instrument,
@@ -10,6 +12,7 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .private.error_handling import KeysightErrorQueueMixin
 
@@ -274,9 +277,13 @@ class Keysight33xxxSyncChannel(InstrumentChannel):
     Has very few parameters for single channel instruments.
     """
 
-    def __init__(self, parent: Instrument, name: str):
-
-        super().__init__(parent, name)
+    def __init__(
+        self,
+        parent: Instrument,
+        name: str,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ):
+        super().__init__(parent, name, **kwargs)
 
         self.add_parameter('output',
                            label='Sync output state',
@@ -299,7 +306,7 @@ class Keysight33xxxSyncChannel(InstrumentChannel):
 SyncChannel = Keysight33xxxSyncChannel
 
 
-class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
+class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
     """
     QCoDeS driver for the Keysight/Agilent 33XXX series of
     waveform generators
@@ -363,3 +370,11 @@ class WaveformGenerator_33XXX(KeysightErrorQueueMixin, VisaInstrument):
 
         if not silent:
             self.connect_message()
+
+
+@deprecated(
+    "The base class for Keysight33xxx waveform generators has been renamed to Keysight33xxx",
+    category=QCoDeSDeprecationWarning,
+)
+class WaveformGenerator_33XXX(Keysight33xxx):
+    pass
