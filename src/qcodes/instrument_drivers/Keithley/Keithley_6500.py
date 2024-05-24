@@ -7,6 +7,8 @@ from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 T = TypeVar("T")
 
 
@@ -57,11 +59,12 @@ class Keithley6500(VisaInstrument):
         reset_device: bool = False,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-        """Driver for the Keithley 6500 multimeter. Based on the Keithley 2000 driver,
-            commands have been adapted for the Keithley 6500. This driver does not contain
-            all commands available, but only the ones most commonly used.
+        """
+        Driver for the Keithley 6500 multimeter. Based on the Keithley 2000 driver,
+        commands have been adapted for the Keithley 6500. This driver does not contain
+        all commands available, but only the ones most commonly used.
 
-            Status: beta-version.
+        Status: beta-version.
 
         Args:
             name: The name used internally by QCoDeS in the DataSet.
@@ -92,67 +95,75 @@ class Keithley6500(VisaInstrument):
             "frequency": "FREQ",
         }
 
-        self.add_parameter(
+        self.mode: Parameter = self.add_parameter(
             "mode",
             get_cmd="SENS:FUNC?",
             set_cmd="SENS:FUNC '{}'",
             val_mapping=self._mode_map,
         )
+        """Parameter mode"""
 
-        self.add_parameter(
+        self.nplc: Parameter = self.add_parameter(
             "nplc",
             get_cmd=partial(self._get_mode_param, "NPLC", float),
             set_cmd=partial(self._set_mode_param, "NPLC"),
             vals=Numbers(min_value=0.01, max_value=10),
         )
+        """Parameter nplc"""
 
         #  TODO: validator, this one is more difficult since different modes
         #  require different validation ranges.
-        self.add_parameter(
+        self.range: Parameter = self.add_parameter(
             "range",
             get_cmd=partial(self._get_mode_param, "RANG", float),
             set_cmd=partial(self._set_mode_param, "RANG"),
             vals=Numbers(),
         )
+        """Parameter range"""
 
-        self.add_parameter(
+        self.auto_range_enabled: Parameter = self.add_parameter(
             "auto_range_enabled",
             get_cmd=partial(self._get_mode_param, "RANG:AUTO", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "RANG:AUTO"),
             vals=Bool(),
         )
+        """Parameter auto_range_enabled"""
 
-        self.add_parameter(
+        self.digits: Parameter = self.add_parameter(
             "digits",
             get_cmd="DISP:VOLT:DC:DIG?",
             get_parser=int,
             set_cmd="DISP:VOLT:DC:DIG? {}",
             vals=Ints(min_value=4, max_value=7),
         )
+        """Parameter digits"""
 
-        self.add_parameter(
+        self.averaging_type: Parameter = self.add_parameter(
             "averaging_type",
             get_cmd=partial(self._get_mode_param, "AVER:TCON", _parse_output_string),
             set_cmd=partial(self._set_mode_param, "AVER:TCON"),
             vals=Enum("moving", "repeat"),
         )
+        """Parameter averaging_type"""
 
-        self.add_parameter(
+        self.averaging_count: Parameter = self.add_parameter(
             "averaging_count",
             get_cmd=partial(self._get_mode_param, "AVER:COUN", int),
             set_cmd=partial(self._set_mode_param, "AVER:COUN"),
             vals=Ints(min_value=1, max_value=100),
         )
+        """Parameter averaging_count"""
 
-        self.add_parameter(
+        self.averaging_enabled: Parameter = self.add_parameter(
             "averaging_enabled",
             get_cmd=partial(self._get_mode_param, "AVER:STAT", _parse_output_bool),
             set_cmd=partial(self._set_mode_param, "AVER:STAT"),
             vals=Bool(),
         )
+        """Parameter averaging_enabled"""
 
         # Global parameters
-        self.add_parameter(
+        self.display_backlight: Parameter = self.add_parameter(
             "display_backlight",
             docstring="Control the brightness of the display "
             "backligt. Off turns the display off and"
@@ -169,8 +180,9 @@ class Keithley6500(VisaInstrument):
                 "Blackout": "BLACkout",
             },
         )
+        """Control the brightness of the display backligt. Off turns the display off andBlackout also turns off indicators and key lights on the device."""
 
-        self.add_parameter(
+        self.trigger_count: Parameter = self.add_parameter(
             "trigger_count",
             get_parser=int,
             get_cmd="ROUT:SCAN:COUN:SCAN?",
@@ -180,6 +192,7 @@ class Keithley6500(VisaInstrument):
                 Enum("inf", "default", "minimum", "maximum"),
             ),
         )
+        """Parameter trigger_count"""
 
         for trigger in range(1, 5):
             self.add_parameter(
@@ -214,7 +227,7 @@ class Keithley6500(VisaInstrument):
 
         # Control interval between scans; the default value from the instrument is 0,
         # hence 0 is included in the validator's range of this parameter.
-        self.add_parameter(
+        self.trigger_timer: Parameter = self.add_parameter(
             "trigger_timer",
             get_parser=float,
             get_cmd="ROUT:SCAN:INT?",
@@ -222,10 +235,12 @@ class Keithley6500(VisaInstrument):
             unit="s",
             vals=Numbers(min_value=0, max_value=999999.999),
         )
+        """Parameter trigger_timer"""
 
-        self.add_parameter(
+        self.amplitude: Parameter = self.add_parameter(
             "amplitude", get_cmd=self._read_next_value, set_cmd=False, unit="a.u."
         )
+        """Parameter amplitude"""
 
         if reset_device:
             self.reset()

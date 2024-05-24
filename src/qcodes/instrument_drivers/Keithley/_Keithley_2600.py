@@ -374,23 +374,25 @@ class Keithley2600Channel(InstrumentChannel):
         vlimit_minmax = self.parent._vlimit_minmax
         ilimit_minmax = self.parent._ilimit_minmax
 
-        self.add_parameter(
+        self.volt: _MeasurementVoltageParameter = self.add_parameter(
             "volt",
             parameter_class=_MeasurementVoltageParameter,
             label="Voltage",
             unit="V",
             snapshot_get=False,
         )
+        """Parameter volt"""
 
-        self.add_parameter(
+        self.curr: _MeasurementCurrentParameter = self.add_parameter(
             "curr",
             parameter_class=_MeasurementCurrentParameter,
             label="Current",
             unit="A",
             snapshot_get=False,
         )
+        """Parameter curr"""
 
-        self.add_parameter(
+        self.res: Parameter = self.add_parameter(
             "res",
             get_cmd=f"{channel}.measure.r()",
             get_parser=float,
@@ -398,8 +400,9 @@ class Keithley2600Channel(InstrumentChannel):
             label="Resistance",
             unit="Ohm",
         )
+        """Parameter res"""
 
-        self.add_parameter(
+        self.mode: Parameter = self.add_parameter(
             "mode",
             get_cmd=f"{channel}.source.func",
             get_parser=float,
@@ -408,16 +411,18 @@ class Keithley2600Channel(InstrumentChannel):
             docstring="Selects the output source type. "
             "Can be either voltage or current.",
         )
+        """Selects the output source type. Can be either voltage or current."""
 
-        self.add_parameter(
+        self.output: Parameter = self.add_parameter(
             "output",
             get_cmd=f"{channel}.source.output",
             get_parser=float,
             set_cmd=f"{channel}.source.output={{:d}}",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Parameter output"""
 
-        self.add_parameter(
+        self.linefreq: Parameter = self.add_parameter(
             "linefreq",
             label="Line frequency",
             get_cmd="localnode.linefreq",
@@ -425,8 +430,9 @@ class Keithley2600Channel(InstrumentChannel):
             set_cmd=False,
             unit="Hz",
         )
+        """Parameter linefreq"""
 
-        self.add_parameter(
+        self.nplc: Parameter = self.add_parameter(
             "nplc",
             label="Number of power line cycles",
             set_cmd=f"{channel}.measure.nplc={{}}",
@@ -435,9 +441,10 @@ class Keithley2600Channel(InstrumentChannel):
             docstring="Number of power line cycles, used to perform measurements",
             vals=vals.Numbers(0.001, 25),
         )
+        """Number of power line cycles, used to perform measurements"""
         # volt range
         # needs get after set (WilliamHPNielsen): why?
-        self.add_parameter(
+        self.sourcerange_v: Parameter = self.add_parameter(
             "sourcerange_v",
             label="voltage source range",
             get_cmd=f"{channel}.source.rangev",
@@ -449,8 +456,9 @@ class Keithley2600Channel(InstrumentChannel):
             "of the source.",
             vals=vals.Enum(*vranges[self.model]),
         )
+        """The range used when sourcing voltage This affects the range and the precision of the source."""
 
-        self.add_parameter(
+        self.source_autorange_v_enabled: Parameter = self.add_parameter(
             "source_autorange_v_enabled",
             label="voltage source autorange",
             get_cmd=f"{channel}.source.autorangev",
@@ -459,8 +467,9 @@ class Keithley2600Channel(InstrumentChannel):
             docstring="Set autorange on/off for source voltage.",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Set autorange on/off for source voltage."""
 
-        self.add_parameter(
+        self.measurerange_v: Parameter = self.add_parameter(
             "measurerange_v",
             label="voltage measure range",
             get_cmd=f"{channel}.measure.rangev",
@@ -475,8 +484,12 @@ class Keithley2600Channel(InstrumentChannel):
             "set `sourcerange_v` instead",
             vals=vals.Enum(*vranges[self.model]),
         )
+        """
+        The range to perform voltage measurements in. This affects the range and the precision of the measurement.
+        Note that if you both measure and source current this will have no effect, set `sourcerange_v` instead
+        """
 
-        self.add_parameter(
+        self.measure_autorange_v_enabled: Parameter = self.add_parameter(
             "measure_autorange_v_enabled",
             label="voltage measure autorange",
             get_cmd=f"{channel}.measure.autorangev",
@@ -485,9 +498,10 @@ class Keithley2600Channel(InstrumentChannel):
             docstring="Set autorange on/off for measure voltage.",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Set autorange on/off for measure voltage."""
         # current range
         # needs get after set
-        self.add_parameter(
+        self.sourcerange_i: Parameter = self.add_parameter(
             "sourcerange_i",
             label="current source range",
             get_cmd=f"{channel}.source.rangei",
@@ -499,8 +513,9 @@ class Keithley2600Channel(InstrumentChannel):
             "precision of the source.",
             vals=vals.Enum(*iranges[self.model]),
         )
+        """The range used when sourcing current This affects the range and the precision of the source."""
 
-        self.add_parameter(
+        self.source_autorange_i_enabled: Parameter = self.add_parameter(
             "source_autorange_i_enabled",
             label="current source autorange",
             get_cmd=f"{channel}.source.autorangei",
@@ -509,8 +524,9 @@ class Keithley2600Channel(InstrumentChannel):
             docstring="Set autorange on/off for source current.",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Set autorange on/off for source current."""
 
-        self.add_parameter(
+        self.measurerange_i: Parameter = self.add_parameter(
             "measurerange_i",
             label="current measure range",
             get_cmd=f"{channel}.measure.rangei",
@@ -525,8 +541,11 @@ class Keithley2600Channel(InstrumentChannel):
             "`sourcerange_i` instead",
             vals=vals.Enum(*iranges[self.model]),
         )
+        """
+        The range to perform current measurements in. This affects the range and the precision of the measurement.
+        Note that if you both measure and source current this will have no effect, set `sourcerange_i` instead"""
 
-        self.add_parameter(
+        self.measure_autorange_i_enabled: Parameter = self.add_parameter(
             "measure_autorange_i_enabled",
             label="current autorange",
             get_cmd=f"{channel}.measure.autorangei",
@@ -535,8 +554,9 @@ class Keithley2600Channel(InstrumentChannel):
             docstring="Set autorange on/off for measure current.",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Set autorange on/off for measure current."""
         # Compliance limit
-        self.add_parameter(
+        self.limitv: Parameter = self.add_parameter(
             "limitv",
             get_cmd=f"{channel}.source.limitv",
             get_parser=float,
@@ -549,8 +569,9 @@ class Keithley2600Channel(InstrumentChannel):
             ),
             unit="V",
         )
+        """Voltage limit e.g. the maximum voltage allowed in current mode. If exceeded the current will be clipped."""
         # Compliance limit
-        self.add_parameter(
+        self.limiti: Parameter = self.add_parameter(
             "limiti",
             get_cmd=f"{channel}.source.limiti",
             get_parser=float,
@@ -563,18 +584,23 @@ class Keithley2600Channel(InstrumentChannel):
             ),
             unit="A",
         )
+        """Current limit e.g. the maximum current allowed in voltage mode. If exceeded the voltage will be clipped."""
 
-        self.add_parameter("fastsweep", parameter_class=LuaSweepParameter)
+        self.fastsweep: LuaSweepParameter = self.add_parameter(
+            "fastsweep", parameter_class=LuaSweepParameter
+        )
+        """Parameter fastsweep"""
 
-        self.add_parameter(
+        self.timetrace_npts: Parameter = self.add_parameter(
             "timetrace_npts",
             initial_value=500,
             label="Number of points",
             get_cmd=None,
             set_cmd=None,
         )
+        """Parameter timetrace_npts"""
 
-        self.add_parameter(
+        self.timetrace_dt: Parameter = self.add_parameter(
             "timetrace_dt",
             initial_value=1e-3,
             label="Time resolution",
@@ -582,8 +608,9 @@ class Keithley2600Channel(InstrumentChannel):
             get_cmd=None,
             set_cmd=None,
         )
+        """Parameter timetrace_dt"""
 
-        self.add_parameter(
+        self.time_axis: TimeAxis = self.add_parameter(
             name="time_axis",
             label="Time",
             unit="s",
@@ -591,21 +618,24 @@ class Keithley2600Channel(InstrumentChannel):
             vals=vals.Arrays(shape=(self.timetrace_npts,)),
             parameter_class=TimeAxis,
         )
+        """Parameter time_axis"""
 
-        self.add_parameter(
+        self.timetrace: TimeTrace = self.add_parameter(
             "timetrace",
             vals=vals.Arrays(shape=(self.timetrace_npts,)),
             setpoints=(self.time_axis,),
             parameter_class=TimeTrace,
         )
+        """Parameter timetrace"""
 
-        self.add_parameter(
+        self.timetrace_mode: Parameter = self.add_parameter(
             "timetrace_mode",
             initial_value="current",
             get_cmd=None,
             set_cmd=self.timetrace._set_mode,
             vals=vals.Enum("current", "voltage"),
         )
+        """Parameter timetrace_mode"""
 
         self.channel = channel
 
@@ -786,9 +816,9 @@ class Keithley2600Channel(InstrumentChannel):
 
 class Keithley2600(VisaInstrument):
     """
-    This is the qcodes driver for the Keithley 2600 Source-Meter series,
-    tested with Keithley 2614B
-
+    This is the base class for all  qcodes driver for the Keithley 2600 Source-Meter series.
+    This class should not be instantiated directly. Rather one of the subclasses for a
+    specific instrument should be used.
     """
 
     default_terminator = "\n"
@@ -923,9 +953,10 @@ class Keithley2600(VisaInstrument):
             self.channels.append(channel)
 
         # display
-        self.add_parameter(
+        self.display_settext: Parameter = self.add_parameter(
             "display_settext", set_cmd=self._display_settext, vals=vals.Strings()
         )
+        """Parameter display_settext"""
 
         self.connect_message()
 

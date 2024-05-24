@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional, Union
 
 import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.parameters import create_on_off_val_mapping
+from qcodes.parameters import Parameter, create_on_off_val_mapping
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -41,7 +41,7 @@ class Keithley3706A(VisaInstrument):
         """
         super().__init__(name, address, **kwargs)
 
-        self.add_parameter(
+        self.channel_connect_rule: Parameter = self.add_parameter(
             "channel_connect_rule",
             get_cmd=self._get_channel_connect_rule,
             set_cmd=self._set_channel_connect_rule,
@@ -65,16 +65,30 @@ class Keithley3706A(VisaInstrument):
             ),
             vals=vals.Enum("BREAK_BEFORE_MAKE", "MAKE_BEFORE_BREAK", "OFF"),
         )
+        """
+        Controls the connection rule for closing and opening channels when using
+        `exclusive_close` and `exclusive_slot_close`
+        parameters.
 
-        self.add_parameter(
+        If it is set to break before make, it is ensured that all channels open
+        before any channels close.
+
+        If it is set to make before break, it is ensured that all channels close
+        before any channels open.
+
+        If it is off, channels open and close simultaneously.
+        """
+
+        self.gpib_enabled: Parameter = self.add_parameter(
             "gpib_enabled",
             get_cmd=self._get_gpib_status,
             set_cmd=self._set_gpib_status,
             docstring="Enables or disables GPIB connection.",
             val_mapping=create_on_off_val_mapping(on_val="true", off_val="false"),
         )
+        """Enables or disables GPIB connection."""
 
-        self.add_parameter(
+        self.gpib_address: Parameter = self.add_parameter(
             "gpib_address",
             get_cmd=self._get_gpib_address,
             get_parser=int,
@@ -82,14 +96,16 @@ class Keithley3706A(VisaInstrument):
             docstring="Sets and gets the GPIB address.",
             vals=vals.Ints(1, 30),
         )
+        """Sets and gets the GPIB address."""
 
-        self.add_parameter(
+        self.lan_enabled: Parameter = self.add_parameter(
             "lan_enabled",
             get_cmd=self._get_lan_status,
             set_cmd=self._set_lan_status,
             docstring="Enables or disables LAN connection.",
             val_mapping=create_on_off_val_mapping(on_val="true", off_val="false"),
         )
+        """Enables or disables LAN connection."""
 
         self.connect_message()
 
