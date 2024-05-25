@@ -1,5 +1,9 @@
 from typing import TYPE_CHECKING
 
+from typing_extensions import deprecated
+
+from qcodes.utils import QCoDeSDeprecationWarning
+
 from .private.Keysight_344xxA_submodules import Keysight344xxA
 
 if TYPE_CHECKING:
@@ -23,6 +27,7 @@ class Keysight34461A(Keysight344xxA):
         super().__init__(name, address, silent, **kwargs)
 
 
+@deprecated("Use Keysight34461A", category=QCoDeSDeprecationWarning)
 class Keysight_34461A(Keysight344xxA):
     """
     Alias for backwards compatibility.
