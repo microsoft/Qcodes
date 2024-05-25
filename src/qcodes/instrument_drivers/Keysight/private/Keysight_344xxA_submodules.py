@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
 from packaging import version
+from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -19,7 +20,10 @@ from qcodes.instrument_drivers.Keysight.private.error_handling import (
     KeysightErrorQueueMixin,
 )
 from qcodes.parameters import Parameter, ParameterWithSetpoints
-from qcodes.utils import convert_legacy_version_to_supported_version
+from qcodes.utils import (
+    QCoDeSDeprecationWarning,
+    convert_legacy_version_to_supported_version,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -27,12 +31,12 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class Trigger(InstrumentChannel):
+class Keysight344xxATrigger(InstrumentChannel):
     """Implements triggering parameters and methods of Keysight 344xxA."""
 
     def __init__(
         self,
-        parent: "_Keysight_344xxA",
+        parent: "Keysight344xxA",
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
@@ -162,12 +166,12 @@ class Trigger(InstrumentChannel):
         self.write('*TRG')
 
 
-class Sample(InstrumentChannel):
+class Keysight344xxASample(InstrumentChannel):
     """Implements sampling parameters of Keysight 344xxA."""
 
     def __init__(
         self,
-        parent: "_Keysight_344xxA",
+        parent: "Keysight344xxA",
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
@@ -288,12 +292,12 @@ class Sample(InstrumentChannel):
             down per measurement)."""))
 
 
-class Display(InstrumentChannel):
+class Keysight344xxADisplay(InstrumentChannel):
     """Implements interaction with the display of Keysight 344xxA."""
 
     def __init__(
         self,
-        parent: "_Keysight_344xxA",
+        parent: "Keysight344xxA",
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
@@ -448,10 +452,12 @@ class TimeAxis(Parameter):
 
 
 
-class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
+class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
     """
-    Instrument class for Keysight 34410A, 34411A, 34460A, 34461A, 34465A and
+    Base class for Keysight 34410A, 34411A, 34460A, 34461A, 34465A and
     34470A multimeters.
+
+    Not to be instantiated directly.
 
     The driver currently only supports using the instrument as a voltmeter
     for DC measurements.
@@ -710,9 +716,9 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         ####################################
         # Submodules
 
-        self.add_submodule('display', Display(self, 'display'))
-        self.add_submodule('trigger', Trigger(self, 'trigger'))
-        self.add_submodule('sample', Sample(self, 'sample'))
+        self.add_submodule("display", Keysight344xxADisplay(self, "display"))
+        self.add_submodule("trigger", Keysight344xxATrigger(self, "trigger"))
+        self.add_submodule("sample", Keysight344xxASample(self, "sample"))
 
         ####################################
         # Measurement Parameters
@@ -1018,6 +1024,36 @@ class _Keysight_344xxA(KeysightErrorQueueMixin, VisaInstrument):
         else:
             self.range(self.ranges[0])
 
+@deprecated(
+    "Base class for Keysight 344xxA renamed Keysight344xxA",
+    category=QCoDeSDeprecationWarning,
+)
+class _Keysight_344xxA(Keysight344xxA):
+    pass
+
+
+@deprecated(
+    "Trigger class for Keysight 344xxA renamed Keysight344xxATrigger",
+    category=QCoDeSDeprecationWarning,
+)
+class Trigger(Keysight344xxATrigger):
+    pass
+
+
+@deprecated(
+    "Sample class for Keysight 344xxA renamed Keysight344xxASample",
+    category=QCoDeSDeprecationWarning,
+)
+class Sample(Keysight344xxASample):
+    pass
+
+
+@deprecated(
+    "Display class for Keysight 344xxA renamed Keysight344xxADisplay",
+    category=QCoDeSDeprecationWarning,
+)
+class Display(Keysight344xxADisplay):
+    pass
 
 def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     """

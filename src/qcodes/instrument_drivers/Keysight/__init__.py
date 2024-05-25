@@ -61,6 +61,12 @@ from .KtM960x import KeysightM960x
 from .KtMAwg import KeysightM9336A, KeysightM9336AAWGChannel
 from .N52xx import KeysightPNAPort, KeysightPNATrace
 from .private.error_handling import KeysightErrorQueueMixin
+from .private.Keysight_344xxA_submodules import (
+    Keysight344xxA,
+    Keysight344xxADisplay,
+    Keysight344xxASample,
+    Keysight344xxATrigger,
+)
 
 __all__ = [
     "Keysight33210A",
@@ -78,6 +84,10 @@ __all__ = [
     "Keysight34461A",
     "Keysight34465A",
     "Keysight34470A",
+    "Keysight344xxA",
+    "Keysight344xxADisplay",
+    "Keysight344xxASample",
+    "Keysight344xxATrigger",
     "Keysight34934A",
     "Keysight34980A",
     "Keysight34980ASwitchMatrixSubModule",
