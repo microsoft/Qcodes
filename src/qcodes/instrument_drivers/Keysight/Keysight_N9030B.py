@@ -102,7 +102,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
         self._max_freq = self._valid_max_freq[opt]
 
         # Frequency Parameters
-        self.add_parameter(
+        self.start: Parameter = self.add_parameter(
             name="start",
             unit="Hz",
             get_cmd=":SENSe:FREQuency:STARt?",
@@ -111,7 +111,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(self._min_freq, self._max_freq - 10),
             docstring="Start Frequency",
         )
-        self.add_parameter(
+        """Start Frequency"""
+        self.stop: Parameter = self.add_parameter(
             name="stop",
             unit="Hz",
             get_cmd=":SENSe:FREQuency:STOP?",
@@ -120,7 +121,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(self._min_freq + 10, self._max_freq),
             docstring="Stop Frequency",
         )
-        self.add_parameter(
+        """Stop Frequency"""
+        self.center: Parameter = self.add_parameter(
             name="center",
             unit="Hz",
             get_cmd=":SENSe:FREQuency:CENTer?",
@@ -129,7 +131,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(self._min_freq + 5, self._max_freq - 5),
             docstring="Sets and gets center frequency",
         )
-        self.add_parameter(
+        """Sets and gets center frequency"""
+        self.span: Parameter = self.add_parameter(
             name="span",
             unit="Hz",
             get_cmd=":SENSe:FREQuency:SPAN?",
@@ -138,7 +141,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(10, self._max_freq - self._min_freq),
             docstring="Changes span of frequency",
         )
-        self.add_parameter(
+        """Changes span of frequency"""
+        self.npts: Parameter = self.add_parameter(
             name="npts",
             get_cmd=":SENSe:SWEep:POINts?",
             set_cmd=":SENSe:SWEep:POINts {}",
@@ -146,9 +150,10 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Ints(1, 20001),
             docstring="Number of points for the sweep",
         )
+        """Number of points for the sweep"""
 
         # Amplitude/Input Parameters
-        self.add_parameter(
+        self.mech_attenuation: Parameter = self.add_parameter(
             name="mech_attenuation",
             unit="dB",
             get_cmd=":SENS:POW:ATT?",
@@ -157,23 +162,26 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Ints(0, 70),
             docstring="Internal mechanical attenuation",
         )
-        self.add_parameter(
+        """Internal mechanical attenuation"""
+        self.preamp: Parameter = self.add_parameter(
             name="preamp",
             get_cmd=":SENS:POW:GAIN:BAND?",
             set_cmd=":SENS:POW:GAIN:BAND {}",
             vals=Enum("LOW", "FULL"),
             docstring="Preamplifier selection",
         )
-        self.add_parameter(
+        """Preamplifier selection"""
+        self.preamp_enabled: Parameter = self.add_parameter(
             name="preamp_enabled",
             get_cmd=":SENS:POW:GAIN:STAT?",
             set_cmd=":SENS:POW:GAIN:STAT {}",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="Preamplifier state",
         )
+        """Preamplifier state"""
 
         # Resolution parameters
-        self.add_parameter(
+        self.res_bw: Parameter = self.add_parameter(
             name="res_bw",
             unit="Hz",
             get_cmd=":SENS:BAND:RES?",
@@ -182,7 +190,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(1, 8e6),
             docstring="Resolution Bandwidth",
         )
-        self.add_parameter(
+        """Resolution Bandwidth"""
+        self.video_bw: Parameter = self.add_parameter(
             name="video_bw",
             unit="Hz",
             get_cmd=":SENS:BAND:VID?",
@@ -191,7 +200,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             vals=Numbers(1, 50e6),
             docstring="Video Filter Bandwidth",
         )
-        self.add_parameter(
+        """Video Filter Bandwidth"""
+        self.res_bw_type: Parameter = self.add_parameter(
             name="res_bw_type",
             get_cmd=":SENS:BAND:TYPE?",
             set_cmd=":SENS:BAND:TYPE {}",
@@ -211,16 +221,32 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
                 "same power for impulsive (narrow pulsed) signals."
             ),
         )
+        """
+        The instrument provides four ways of specifying the bandwidth
+        of a Gaussian filter:
+
+            1. The -3 dB bandwidth of the filter (DB3)
+            2. The -6 dB bandwidth of the filter (DB6)
+            3. The equivalent Noise bandwidth of the filter,
+               which is defined as the bandwidth of a rectangular
+               filter with the same peak gain which would pass the
+               same power for noise signals
+            4. The equivalent Impulse bandwidth of the filter,
+               which is defined as the bandwidth of a rectangular filter
+               with the same peak gain which would pass the same power
+               for impulsive (narrow pulsed) signals.
+            """
 
         # Input parameters
-        self.add_parameter(
+        self.detector: Parameter = self.add_parameter(
             name="detector",
             get_cmd=":SENS:DET:TRAC?",
             set_cmd=":SENS:DET:TRAC {}",
             vals=Enum("NORM", "AVER", "POS", "SAMP", "NEG"),
             docstring="Detector type",
         )
-        self.add_parameter(
+        """Detector type"""
+        self.average_type: Parameter = self.add_parameter(
             name="average_type",
             get_cmd=":SENS:AVER:TYPE?",
             set_cmd=":SENS:AVER:TYPE {}",
@@ -252,9 +278,42 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
                 "of those noise signals. This is compensated for in the Marker Noise function."
             ),
         )
+        """
+        Lets you control the way averaging is done. The averaging
+        processes affected are:
+
+        1. Trace averaging
+        2. Average detector averages signals within the resolution BW
+        3. Noise marker is corrected for average type
+        4. VBW filtering (not affected if Average detector is used).
+
+        The averaging types are:
+
+        1. LOG: Selects the logarithmic (decibel) scale for all filtering
+           and averaging processes. This scale is sometimes called
+           'Video' because it is the most common display and analysis
+           scale for the video signal within a spectrum instrument.
+           This scale is excellent for finding CW signals near noise,
+           but its response to noise-like signals is 2.506 dB lower
+           than the average power of those noise signals.
+           This is compensated for in the Marker Noise function.
+        2. RMS: All filtering and averaging processes work on the power
+           (the square of the magnitude) of the signal, instead of its
+           log or envelope voltage. This scale is best for measuring
+           the true time average power of complex signals. This scale
+           is sometimes called RMS because the resulting voltage is
+           proportional to the square root of the mean of the square
+           of the voltage.
+        3. SCAL: (Voltage) All filtering and averaging processes
+           work on the voltage of the envelope of the signal.
+           This scale is good for observing rise and fall behavior
+           of AM or pulse-modulated signals such as radar and TDMA transmitters,
+           but its response to noise-like signals is 1.049 dB lower than
+           the average power of those noise signals. This is compensated
+           for in the Marker Noise function."""
 
         # Sweep Parameters
-        self.add_parameter(
+        self.sweep_time: Parameter = self.add_parameter(
             name="sweep_time",
             label="Sweep time",
             get_cmd=":SENSe:SWEep:TIME?",
@@ -263,21 +322,24 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             unit="s",
             docstring="gets sweep time",
         )
-        self.add_parameter(
+        """gets sweep time"""
+        self.auto_sweep_time_enabled: Parameter = self.add_parameter(
             name="auto_sweep_time_enabled",
             get_cmd=":SENSe:SWEep:TIME:AUTO?",
             set_cmd=":SENSe:SWEep:TIME:AUTO {}",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="enables auto sweep time",
         )
-        self.add_parameter(
+        """enables auto sweep time"""
+        self.auto_sweep_type_enabled: Parameter = self.add_parameter(
             name="auto_sweep_type_enabled",
             get_cmd=":SENSe:SWEep:TYPE:AUTO?",
             set_cmd=":SENSe:SWEep:TYPE:AUTO {}",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="enables auto sweep type",
         )
-        self.add_parameter(
+        """enables auto sweep type"""
+        self.sweep_type: Parameter = self.add_parameter(
             name="sweep_type",
             get_cmd=":SENSe:SWEep:TYPE?",
             set_cmd=":SENSe:SWEep:TYPE {}",
@@ -287,9 +349,10 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             },
             docstring="Sets up sweep type. Possible options are 'fft' and 'sweep'.",
         )
+        """Sets up sweep type. Possible options are 'fft' and 'sweep'."""
 
         # Array (Data) Parameters
-        self.add_parameter(
+        self.freq_axis: FrequencyAxis = self.add_parameter(
             name="freq_axis",
             label="Frequency",
             unit="Hz",
@@ -301,7 +364,8 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             docstring="Creates frequency axis for the sweep from start, "
             "stop and npts values.",
         )
-        self.add_parameter(
+        """Creates frequency axis for the sweep from start, stop and npts values."""
+        self.trace: Trace = self.add_parameter(
             name="trace",
             label="Trace",
             unit="dB",
@@ -312,6 +376,7 @@ class KeysightN9030BSpectrumAnalyzerMode(InstrumentChannel):
             parameter_class=Trace,
             docstring="Gets trace data.",
         )
+        """Gets trace data."""
 
     def _set_start(self, val: float) -> None:
         """
@@ -443,7 +508,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
         assert opt is not None
         self._max_freq = self._valid_max_freq[opt]
 
-        self.add_parameter(
+        self.npts: Parameter = self.add_parameter(
             name="npts",
             get_cmd=":SENSe:LPLot:SWEep:POINts?",
             set_cmd=":SENSe:LPLot:SWEep:POINts {}",
@@ -451,8 +516,9 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             vals=Ints(601, 20001),
             docstring="Number of points for the sweep",
         )
+        """Number of points for the sweep"""
 
-        self.add_parameter(
+        self.start_offset: Parameter = self.add_parameter(
             name="start_offset",
             unit="Hz",
             get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STARt?",
@@ -461,8 +527,9 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             vals=Numbers(self._min_freq, self._max_freq - 10),
             docstring="start frequency offset for the plot",
         )
+        """start frequency offset for the plot"""
 
-        self.add_parameter(
+        self.stop_offset: Parameter = self.add_parameter(
             name="stop_offset",
             unit="Hz",
             get_cmd=":SENSe:LPLot:FREQuency:OFFSet:STOP?",
@@ -471,8 +538,9 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             vals=Numbers(self._min_freq + 99, self._max_freq),
             docstring="stop frequency offset for the plot",
         )
+        """stop frequency offset for the plot"""
 
-        self.add_parameter(
+        self.signal_tracking_enabled: Parameter = self.add_parameter(
             name="signal_tracking_enabled",
             get_cmd=":SENSe:FREQuency:CARRier:TRACk?",
             set_cmd=":SENSe:FREQuency:CARRier:TRACk {}",
@@ -482,8 +550,14 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             "Tracking assumes the new acquisition occurs repeatedly "
             "without pause.",
         )
+        """
+        Gets/Sets signal tracking.
+        When signal tracking is enabled carrier signal is repeatedly
+        realigned. Signal Tracking assumes the new acquisition occurs
+        repeatedly without pause.
+        """
 
-        self.add_parameter(
+        self.freq_axis: FrequencyAxis = self.add_parameter(
             name="freq_axis",
             label="Frequency",
             unit="Hz",
@@ -495,8 +569,12 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             docstring="Creates frequency axis for the sweep from "
             "start_offset, stop_offset and npts values.",
         )
+        """
+        Creates frequency axis for the sweep from start_offset,
+        stop_offset and npts values.
+        """
 
-        self.add_parameter(
+        self.trace: Trace = self.add_parameter(
             name="trace",
             label="Trace",
             unit="dB",
@@ -507,6 +585,7 @@ class KeysightN9030BPhaseNoiseMode(InstrumentChannel):
             parameter_class=Trace,
             docstring="Gets trace data",
         )
+        """Gets trace data"""
 
     def _set_start_offset(self, val: float) -> None:
         """
@@ -636,7 +715,7 @@ class KeysightN9030B(VisaInstrument):
         self._max_freq: float
         self._additional_wait: float = 1
 
-        self.add_parameter(
+        self.mode: Parameter = self.add_parameter(
             name="mode",
             get_cmd=":INSTrument:SELect?",
             set_cmd=":INSTrument:SELect {}",
@@ -644,8 +723,12 @@ class KeysightN9030B(VisaInstrument):
             docstring="Allows setting of different modes present and licensed "
             "for the instrument.",
         )
+        """
+        Allows setting of different modes present and licensed
+        for the instrument.
+        """
 
-        self.add_parameter(
+        self.measurement: Parameter = self.add_parameter(
             name="measurement",
             get_cmd=":CONFigure?",
             set_cmd=":CONFigure:{}",
@@ -653,8 +736,9 @@ class KeysightN9030B(VisaInstrument):
             docstring="Sets measurement type from among the available "
             "measurement types.",
         )
+        """Sets measurement type from among the available measurement types."""
 
-        self.add_parameter(
+        self.cont_meas: Parameter = self.add_parameter(
             name="cont_meas",
             initial_value=False,
             get_cmd=":INITiate:CONTinuous?",
@@ -662,11 +746,12 @@ class KeysightN9030B(VisaInstrument):
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             docstring="Enables or disables continuous measurement.",
         )
+        """Enables or disables continuous measurement."""
 
         # Set auto_sweep parameter
         # If we want to return multiple traces per setpoint without sweeping
         # multiple times, or return data on screen, then we can set this value false
-        self.add_parameter(
+        self.auto_sweep: Parameter = self.add_parameter(
             "auto_sweep",
             label="Auto Sweep",
             set_cmd=None,
@@ -674,15 +759,17 @@ class KeysightN9030B(VisaInstrument):
             vals=Bool(),
             initial_value=True,
         )
+        """Parameter auto_sweep"""
 
         # Set binary format and don't allow change. There isn't much point to
         # allow this value to be varied. Retained for backwards compatibility.
-        self.add_parameter(
+        self.format: Parameter = self.add_parameter(
             name="format",
             get_cmd=lambda: "real64",
             set_cmd=False,
             docstring="Sets up format of data received",
         )
+        """Sets up format of data received"""
         # Set default format on initialisation
         self.write("FORM REAL,64")
         self.write("FORM:BORD SWAP")
