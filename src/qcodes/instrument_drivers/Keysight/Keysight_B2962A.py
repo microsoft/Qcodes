@@ -13,9 +13,6 @@ if TYPE_CHECKING:
 
 
 class KeysightB2962AChannel(InstrumentChannel):
-    """
-
-    """
 
     def __init__(
         self,
@@ -25,6 +22,9 @@ class KeysightB2962AChannel(InstrumentChannel):
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """
+        InstrumentChannel that represents a singe channel of a
+        KeysightB2962A.
+
         Args:
             parent: The instrument to which the channel is attached.
             name: The name of the channel

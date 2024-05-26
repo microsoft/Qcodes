@@ -1,7 +1,9 @@
 import re
 import warnings
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Callable, TypeVar
+
+from typing_extensions import ParamSpec
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Enum, Ints, Lists, MultiType
@@ -9,23 +11,26 @@ from qcodes.validators import Enum, Ints, Lists, MultiType
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from typing_extensions import Unpack
+    from typing_extensions import Concatenate, Unpack
 
 
-T = TypeVar('T')
+S = TypeVar("S", bound="KeysightB220X")
+P = ParamSpec("P")
+T = TypeVar("T")
 
-
-def post_execution_status_poll(func: Callable[..., T]) -> Callable[..., T]:
+def post_execution_status_poll(
+    func: Callable["Concatenate[S, P]", T],
+) -> Callable["Concatenate[S, P]", T]:
     """
     Generates a decorator that clears the instrument's status registers
     before executing the actual call and reads the status register after the
-    function call to determine whether an error occured.
+    function call to determine whether an error occurred.
 
     :param func: function to wrap
     """
 
     @wraps(func)
-    def wrapper(self: "KeysightB220X", *args: Any, **kwargs: Any) -> T:
+    def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
         self.clear_status()
         retval = func(self, *args, **kwargs)
 
