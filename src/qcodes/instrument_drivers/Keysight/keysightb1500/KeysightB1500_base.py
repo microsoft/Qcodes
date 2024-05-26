@@ -8,7 +8,7 @@ from qcodes.parameters import MultiParameter, create_on_off_val_mapping
 
 from . import constants
 from .KeysightB1500_module import (
-    B1500Module,
+    KeysightB1500Module,
     StatusMixin,
     _FMTResponse,
     convert_dummy_val_to_nan,
@@ -41,9 +41,11 @@ class KeysightB1500(VisaInstrument):
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ):
         super().__init__(name, address, **kwargs)
-        self.by_slot: dict[constants.SlotNr, B1500Module] = {}
-        self.by_channel: dict[constants.ChNr, B1500Module] = {}
-        self.by_kind: dict[constants.ModuleKind, list[B1500Module]] = defaultdict(list)
+        self.by_slot: dict[constants.SlotNr, KeysightB1500Module] = {}
+        self.by_channel: dict[constants.ChNr, KeysightB1500Module] = {}
+        self.by_kind: dict[constants.ModuleKind, list[KeysightB1500Module]] = (
+            defaultdict(list)
+        )
 
         self._find_modules()
 
@@ -91,7 +93,7 @@ class KeysightB1500(VisaInstrument):
             raise RuntimeError(f"While setting this parameter received "
                                f"error: {error_message}")
 
-    def add_module(self, name: str, module: B1500Module) -> None:
+    def add_module(self, name: str, module: KeysightB1500Module) -> None:
         super().add_submodule(name, module)
 
         self.by_kind[module.MODULE_KIND].append(module)
@@ -130,8 +132,9 @@ class KeysightB1500(VisaInstrument):
             self.add_module(name=module.short_name, module=module)
 
     @staticmethod
-    def from_model_name(model: str, slot_nr: int, parent: 'KeysightB1500',
-                        name: Optional[str] = None) -> 'B1500Module':
+    def from_model_name(
+        model: str, slot_nr: int, parent: "KeysightB1500", name: Optional[str] = None
+    ) -> "KeysightB1500Module":
         """Creates the correct instance of instrument module by model name.
 
         Args:

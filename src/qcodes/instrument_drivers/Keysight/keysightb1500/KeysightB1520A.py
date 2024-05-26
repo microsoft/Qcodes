@@ -11,7 +11,7 @@ from qcodes.parameters import Group, GroupParameter, MultiParameter
 from . import constants
 from .constants import MM, ChNr, ModuleKind
 from .KeysightB1500_module import (
-    B1500Module,
+    KeysightB1500Module,
     StatusMixin,
     _DCORRResponse,
     _FMTResponse,
@@ -318,7 +318,7 @@ Alias for backwards compatibility
 """
 
 
-class KeysightB1520A(B1500Module):
+class KeysightB1520A(KeysightB1500Module):
     """
     Driver for Keysight B1520A Capacitance Measurement Unit module for B1500
     Semiconductor Parameter Analyzer.

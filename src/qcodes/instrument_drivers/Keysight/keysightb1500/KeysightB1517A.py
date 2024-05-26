@@ -21,7 +21,7 @@ from .constants import (
     VMeasRange,
     VOutputRange,
 )
-from .KeysightB1500_module import B1500Module, parse_spot_measurement_response
+from .KeysightB1500_module import KeysightB1500Module, parse_spot_measurement_response
 from .KeysightB1500_sampling_measurement import SamplingMeasurement
 from .message_builder import MessageBuilder
 
@@ -634,7 +634,7 @@ class _SpotMeasurementCurrentParameter(_ParameterWithStatus):
         return parsed["value"]
 
 
-class KeysightB1517A(B1500Module):
+class KeysightB1517A(KeysightB1500Module):
     """
     Driver for Keysight B1517A Source/Monitor Unit module for B1500
     Semiconductor Parameter Analyzer.

@@ -47,6 +47,7 @@ from .KeysightAgilent_33XXX import (
     Keysight33xxxSyncChannel,
 )
 from .keysightb1500.KeysightB1500_base import KeysightB1500
+from .keysightb1500.KeysightB1500_module import KeysightB1500Module
 from .keysightb1500.KeysightB1511B import KeysightB1511B
 from .keysightb1500.KeysightB1517A import KeysightB1500IVSweeper, KeysightB1517A
 from .keysightb1500.KeysightB1520A import (
@@ -92,6 +93,7 @@ __all__ = [
     "Keysight34980A",
     "Keysight34980ASwitchMatrixSubModule",
     "KeysightB1500",
+    "KeysightB1500Module",
     "KeysightB1500CVSweepMeasurement",
     "KeysightB1500CVSweeper",
     "KeysightB1500Correction",

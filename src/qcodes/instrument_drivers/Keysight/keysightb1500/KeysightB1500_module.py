@@ -3,9 +3,10 @@ from collections import namedtuple
 from typing import TYPE_CHECKING, Optional, Union, cast
 
 import numpy as np
-from typing_extensions import TypedDict, Unpack
+from typing_extensions import TypedDict, Unpack, deprecated
 
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from . import constants
 from .constants import ChannelName, ChNr, MeasurementStatus, ModuleKind, SlotNr
@@ -265,7 +266,7 @@ def _convert_to_nan_if_dummy_value(value: float) -> float:
     return float('nan') if value > 1e99 else value
 
 
-class B1500Module(InstrumentChannel):
+class KeysightB1500Module(InstrumentChannel):
     """Base class for all modules of B1500 Parameter Analyzer
 
     When subclassing,
@@ -358,6 +359,11 @@ class B1500Module(InstrumentChannel):
         (FMT3 and FMT4).
         """
         self.root_instrument.clear_timer_count(chnum=self.channels)
+
+
+@deprecated("Use KeysightB1500Module", category=QCoDeSDeprecationWarning)
+class B1500Module(KeysightB1500Module):
+    pass
 
 
 class StatusMixin:
