@@ -21,7 +21,7 @@ from .Keysight_34470A_submodules import Keysight34470A
 from .keysight_34934a import Keysight34934A
 from .keysight_34980a import Keysight34980A
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
-from .keysight_b220x import KeysightB2200, KeysightB2201
+from .keysight_b220x import KeysightB220X, KeysightB2200, KeysightB2201
 from .Keysight_B2962A import KeysightB2962A, KeysightB2962AChannel
 from .keysight_e4980a import (
     KeysightE4980A,
@@ -101,6 +101,7 @@ __all__ = [
     "KeysightB1517A",
     "KeysightB1520A",
     "KeysightB1530A",
+    "KeysightB220X",
     "KeysightB2200",
     "KeysightB2201",
     "KeysightB2962A",
