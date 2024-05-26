@@ -66,14 +66,16 @@ class KeysightB1500IVSweeper(InstrumentChannel):
              "current_compliance": None,
              "power_compliance": None}
 
-        self.add_parameter(name='sweep_auto_abort',
-                           set_cmd=self._set_sweep_auto_abort,
-                           get_cmd=self._get_sweep_auto_abort,
-                           set_parser=constants.Abort,
-                           get_parser=constants.Abort,
-                           vals=vals.Enum(*list(constants.Abort)),
-                           initial_cache_value=constants.Abort.ENABLED,
-                           docstring=textwrap.dedent("""
+        self.sweep_auto_abort: Parameter = self.add_parameter(
+            name="sweep_auto_abort",
+            set_cmd=self._set_sweep_auto_abort,
+            get_cmd=self._get_sweep_auto_abort,
+            set_parser=constants.Abort,
+            get_parser=constants.Abort,
+            vals=vals.Enum(*list(constants.Abort)),
+            initial_cache_value=constants.Abort.ENABLED,
+            docstring=textwrap.dedent(
+                """
         The WM command enables or disables the automatic abort function for
         the staircase sweep sources and the pulsed sweep source. The
         automatic abort function stops the measurement when one of the
@@ -90,51 +92,102 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         If the measurement is stopped by the automatic abort function,
         the staircase sweep sources force the start value, and the pulsed
         sweep source forces the pulse base value after sweep.
-        """))
+        """
+            ),
+        )
+        """
+        The WM command enables or disables the automatic abort function for
+        the staircase sweep sources and the pulsed sweep source. The
+        automatic abort function stops the measurement when one of the
+        following conditions occurs:
+        - Compliance on the measurement channel
+        - Compliance on the non-measurement channel
+        - Overflow on the AD converter
+        - Oscillation on any channel
+        This command also sets the post measurement condition for the sweep
+        sources. After the measurement is normally completed, the staircase
+        sweep sources force the value specified by the post parameter,
+        and the pulsed sweep source forces the pulse base value.
 
-        self.add_parameter(name='post_sweep_voltage_condition',
-                           set_cmd=self._set_post_sweep_voltage_condition,
-                           get_cmd=self._get_post_sweep_voltage_condition,
-                           set_parser=constants.WM.Post,
-                           get_parser=constants.WM.Post,
-                           vals=vals.Enum(*list(constants.WM.Post)),
-                           initial_cache_value=constants.WM.Post.START,
-                           docstring=textwrap.dedent("""
+        If the measurement is stopped by the automatic abort function,
+        the staircase sweep sources force the start value, and the pulsed
+        sweep source forces the pulse base value after sweep.
+        """
+
+        self.post_sweep_voltage_condition: Parameter = self.add_parameter(
+            name="post_sweep_voltage_condition",
+            set_cmd=self._set_post_sweep_voltage_condition,
+            get_cmd=self._get_post_sweep_voltage_condition,
+            set_parser=constants.WM.Post,
+            get_parser=constants.WM.Post,
+            vals=vals.Enum(*list(constants.WM.Post)),
+            initial_cache_value=constants.WM.Post.START,
+            docstring=textwrap.dedent(
+                """
         Source output value after the measurement is normally completed. If
         this parameter is not set, the sweep sources force the start value.
-                                 """))
+                                 """
+            ),
+        )
+        """
+        Source output value after the measurement is normally completed. If
+        this parameter is not set, the sweep sources force the start value.
+        """
 
-        self.add_parameter(name='hold_time',
-                           initial_value=0.0,
-                           vals=vals.Numbers(0, 655.35),
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.hold_time: GroupParameter = self.add_parameter(
+            name="hold_time",
+            initial_value=0.0,
+            vals=vals.Numbers(0, 655.35),
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                            Hold time (in seconds) that is the
                            wait time after starting measurement
                            and before starting delay time for
                            the first step 0 to 655.35 s, with 10
                            ms resolution. Numeric expression.
-                          """))
+                          """
+            ),
+        )
+        """
+        Hold time (in seconds) that is the
+        wait time after starting measurement
+        and before starting delay time for
+        the first step 0 to 655.35 s, with 10
+        ms resolution. Numeric expression.
+        """
 
-        self.add_parameter(name='delay',
-                           initial_value=0.0,
-                           vals=vals.Numbers(0, 65.535),
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.delay: GroupParameter = self.add_parameter(
+            name="delay",
+            initial_value=0.0,
+            vals=vals.Numbers(0, 65.535),
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                            Delay time (in seconds) that is the wait time after
                            starting to force a step output and before
                             starting a step measurement. 0 to 65.535 s,
                             with 0.1 ms resolution. Numeric expression.
-                            """))
+                            """
+            ),
+        )
+        """
+        Delay time (in seconds) that is the wait time after
+        starting to force a step output and before
+        starting a step measurement. 0 to 65.535 s,
+        with 0.1 ms resolution. Numeric expression.
+        """
 
-        self.add_parameter(name='step_delay',
-                           initial_value=0.0,
-                           vals=vals.Numbers(0, 1),
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.step_delay: GroupParameter = self.add_parameter(
+            name="step_delay",
+            initial_value=0.0,
+            vals=vals.Numbers(0, 1),
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                             Step delay time (in seconds) that is the wait time
                             after starting a step measurement and before
                             starting to force the next step output. 0 to 1 s,
@@ -143,13 +196,27 @@ class KeysightB1500IVSweeper(InstrumentChannel):
                             step delay is shorter than the measurement time,
                             the B1500 waits until the measurement completes,
                             then forces the next step output.
-                            """))
+                            """
+            ),
+        )
+        """
+        Step delay time (in seconds) that is the wait time
+        after starting a step measurement and before
+        starting to force the next step output. 0 to 1 s,
+        with 0.1 ms resolution. Numeric expression. If
+        this parameter is not set, step delay will be 0. If
+        step delay is shorter than the measurement time,
+        the B1500 waits until the measurement completes,
+        then forces the next step output.
+        """
 
-        self.add_parameter(name='trigger_delay',
-                           initial_value=0.0,
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.trigger_delay: GroupParameter = self.add_parameter(
+            name="trigger_delay",
+            initial_value=0.0,
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                             Step source trigger delay time (in seconds) that
                             is the wait time after completing a step output
                             setup and before sending a step output setup
@@ -157,21 +224,44 @@ class KeysightB1500IVSweeper(InstrumentChannel):
                             with 0.1 ms resolution.
                             If this parameter is not set,
                             trigger delay will be 0.
-                            """))
+                            """
+            ),
+        )
+        """
+        Step source trigger delay time (in seconds) that
+        is the wait time after completing a step output
+        setup and before sending a step output setup
+        completion trigger. 0 to the value of ``delay`` s,
+        with 0.1 ms resolution.
+        If this parameter is not set,
+        trigger delay will be 0.
+        """
 
-        self.add_parameter(name='measure_delay',
-                           initial_value=0.0,
-                           unit='s',
-                           vals=vals.Numbers(0, 65.535),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.measure_delay: GroupParameter = self.add_parameter(
+            name="measure_delay",
+            initial_value=0.0,
+            unit="s",
+            vals=vals.Numbers(0, 65.535),
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                            Step measurement trigger delay time (in seconds)
                            that is the wait time after receiving a start step
                            measurement trigger and before starting a step
                            measurement. 0 to 65.535 s, with 0.1 ms resolution.
                            Numeric expression. If this parameter is not set,
                            measure delay will be 0.
-                           """))
+                           """
+            ),
+        )
+        """
+        Step measurement trigger delay time (in seconds)
+        that is the wait time after receiving a start step
+        measurement trigger and before starting a step
+        measurement. 0 to 65.535 s, with 0.1 ms resolution.
+        Numeric expression. If this parameter is not set,
+        measure delay will be 0.
+        """
 
         self._set_sweep_delays_group = Group(
             [self.hold_time,
@@ -188,28 +278,42 @@ class KeysightB1500IVSweeper(InstrumentChannel):
             get_cmd=self._get_sweep_delays(),
             get_parser=self._get_sweep_delays_parser)
 
-        self.add_parameter(name='sweep_mode',
-                           set_cmd=self._set_sweep_mode,
-                           get_cmd=self._get_sweep_mode,
-                           vals=vals.Enum(*list(constants.SweepMode)),
-                           set_parser=constants.SweepMode,
-                           snapshot_get=False,
-                           docstring=textwrap.dedent("""
+        self.sweep_mode: Parameter = self.add_parameter(
+            name="sweep_mode",
+            set_cmd=self._set_sweep_mode,
+            get_cmd=self._get_sweep_mode,
+            vals=vals.Enum(*list(constants.SweepMode)),
+            set_parser=constants.SweepMode,
+            snapshot_get=False,
+            docstring=textwrap.dedent(
+                """
                  Sweep mode. Note that Only linear sweep (mode=1 or 3) is
                  available for the staircase sweep with pulsed bias.
                      1: Linear sweep (single stair, start to stop.)
                      2: Log sweep (single stair, start to stop.)
                      3: Linear sweep (double stair, start to stop to start.)
                      4: Log sweep (double stair, start to stop to start.)
-                                """))
+                                """
+            ),
+        )
+        """
+        Sweep mode. Note that Only linear sweep (mode=1 or 3) is
+        available for the staircase sweep with pulsed bias.
+            1: Linear sweep (single stair, start to stop.)
+            2: Log sweep (single stair, start to stop.)
+            3: Linear sweep (double stair, start to stop to start.)
+            4: Log sweep (double stair, start to stop to start.)
+        """
 
-        self.add_parameter(name='sweep_range',
-                           set_cmd=self._set_sweep_range,
-                           get_cmd=self._get_sweep_range,
-                           vals=vals.Enum(*list(constants.VOutputRange)),
-                           set_parser=constants.VOutputRange,
-                           snapshot_get=False,
-                           docstring=textwrap.dedent("""
+        self.sweep_range: Parameter = self.add_parameter(
+            name="sweep_range",
+            set_cmd=self._set_sweep_range,
+            get_cmd=self._get_sweep_range,
+            vals=vals.Enum(*list(constants.VOutputRange)),
+            set_parser=constants.VOutputRange,
+            snapshot_get=False,
+            docstring=textwrap.dedent(
+                """
         Ranging type for staircase sweep voltage output. Integer expression.
         See Table 4-4 on page 20. The B1500 usually uses the minimum range
         that covers both start and stop values to force the staircase sweep
@@ -221,46 +325,87 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         the specified range.
          - Icomp > maximum current for the output range
          - Pcomp/output voltage > maximum current for the output range
-        """))
+        """
+            ),
+        )
+        """
+        Ranging type for staircase sweep voltage output. Integer expression.
+        See Table 4-4 on page 20. The B1500 usually uses the minimum range
+        that covers both start and stop values to force the staircase sweep
+        voltage. However, if you set `power_compliance` and if the following
+        formulas are true, the B1500 uses the minimum range that covers the
+        output value, and changes the output range dynamically (20 V range or
+        above). Range changing may cause 0 V output in a moment. For the
+        limited auto ranging, the instrument never uses the range less than
+        the specified range.
+        - Icomp > maximum current for the output range
+        - Pcomp/output voltage > maximum current for the output range
+        """
 
-        self.add_parameter(name='sweep_start',
-                           set_cmd=self._set_sweep_start,
-                           get_cmd=self._get_sweep_start,
-                           unit='V',
-                           vals=vals.Numbers(-25, 25),
-                           snapshot_get=False,
-                           docstring=textwrap.dedent("""
+        self.sweep_start: Parameter = self.add_parameter(
+            name="sweep_start",
+            set_cmd=self._set_sweep_start,
+            get_cmd=self._get_sweep_start,
+            unit="V",
+            vals=vals.Numbers(-25, 25),
+            snapshot_get=False,
+            docstring=textwrap.dedent(
+                """
         Start value of the stair case sweep (in V). For the log sweep,
         start and stop must have the same polarity.
-                                """))
+                                """
+            ),
+        )
+        """
+        Start value of the stair case sweep (in V). For the log sweep,
+        start and stop must have the same polarity.
+        """
 
-        self.add_parameter(name='sweep_end',
-                           set_cmd=self._set_sweep_end,
-                           get_cmd=self._get_sweep_end,
-                           unit='V',
-                           vals=vals.Numbers(-25, 25),
-                           snapshot_get=False,
-                           docstring=textwrap.dedent("""
+        self.sweep_end: Parameter = self.add_parameter(
+            name="sweep_end",
+            set_cmd=self._set_sweep_end,
+            get_cmd=self._get_sweep_end,
+            unit="V",
+            vals=vals.Numbers(-25, 25),
+            snapshot_get=False,
+            docstring=textwrap.dedent(
+                """
         Stop value of the DC bias sweep (in V). For the log sweep,start and
         stop must have the same polarity.
-                                """))
+                                """
+            ),
+        )
+        """
+        Stop value of the DC bias sweep (in V). For the log sweep,start and
+        stop must have the same polarity.
+        """
 
-        self.add_parameter(name='sweep_steps',
-                           set_cmd=self._set_sweep_steps,
-                           get_cmd=self._get_sweep_steps,
-                           vals=vals.Ints(1, 1001),
-                           snapshot_get=False,
-                           docstring=textwrap.dedent("""
+        self.sweep_steps: Parameter = self.add_parameter(
+            name="sweep_steps",
+            set_cmd=self._set_sweep_steps,
+            get_cmd=self._get_sweep_steps,
+            vals=vals.Ints(1, 1001),
+            snapshot_get=False,
+            docstring=textwrap.dedent(
+                """
         Number of steps for staircase sweep. Possible  values from 1 to
-        1001"""))
+        1001"""
+            ),
+        )
+        """
+        Number of steps for staircase sweep. Possible  values from 1 to
+        1001
+        """
 
-        self.add_parameter(name='current_compliance',
-                           set_cmd=self._set_current_compliance,
-                           get_cmd=self._get_current_compliance,
-                           unit='A',
-                           vals=vals.Numbers(-40, 40),
-                           snapshot_get=False,
-                           docstring=textwrap.dedent("""
+        self.current_compliance: Parameter = self.add_parameter(
+            name="current_compliance",
+            set_cmd=self._set_current_compliance,
+            get_cmd=self._get_current_compliance,
+            unit="A",
+            vals=vals.Numbers(-40, 40),
+            snapshot_get=False,
+            docstring=textwrap.dedent(
+                """
         Current compliance (in A). Refer to Manual 2016. See Table 4-7 on
         page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15
         on page 28 for each measurement resource type. If you do not set
@@ -270,21 +415,45 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         If the output value is 0, the compliance polarity is positive. If
         you set Pcomp, the maximum Icomp value for the measurement resource
         is allowed, regardless of the output range setting.
-                           """))
+                           """
+            ),
+        )
+        """
+        Current compliance (in A). Refer to Manual 2016. See Table 4-7 on
+        page 24, Table 4-9 on page 26, Table 4-12 on page 27, or Table 4-15
+        on page 28 for each measurement resource type. If you do not set
+        current_compliance, the previous value is used.
+        Compliance polarity is automatically set to the same polarity as the
+        output value, regardless of the specified Icomp.
+        If the output value is 0, the compliance polarity is positive. If
+        you set Pcomp, the maximum Icomp value for the measurement resource
+        is allowed, regardless of the output range setting.
+        """
 
-        self.add_parameter(name='power_compliance',
-                           set_cmd=self._set_power_compliance,
-                           get_cmd=self._get_power_compliance,
-                           unit='W',
-                           vals=vals.Numbers(0.001, 80),
-                           snapshot_get=False,
-                           docstring=textwrap.dedent("""
+        self.power_compliance: Parameter = self.add_parameter(
+            name="power_compliance",
+            set_cmd=self._set_power_compliance,
+            get_cmd=self._get_power_compliance,
+            unit="W",
+            vals=vals.Numbers(0.001, 80),
+            snapshot_get=False,
+            docstring=textwrap.dedent(
+                """
         Power compliance (in W). Resolution: 0.001 W. If it is not entered,
         the power compliance is not set. This parameter is not available for
         HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to
         40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU,
         0.001 to 100 for UHVU
-                           """))
+                           """
+            ),
+        )
+        """
+        Power compliance (in W). Resolution: 0.001 W. If it is not entered,
+        the power compliance is not set. This parameter is not available for
+        HVSMU. 0.001 to 2 for MPSMU/HRSMU, 0.001 to 20 for HPSMU, 0.001 to
+        40 for HCSMU, 0.001 to 80 for dual HCSMU, 0.001 to 3 for MCSMU,
+        0.001 to 100 for UHVU
+        """
 
     def _set_sweep_mode(self, value: constants.SweepMode) -> None:
         self._sweep_step_parameters["sweep_mode"] = value
@@ -727,101 +896,141 @@ class KeysightB1517A(KeysightB1500Module):
             IOutputRange.MIN_10uA, IOutputRange.MIN_100uA,
             IOutputRange.MIN_1mA, IOutputRange.MIN_10mA, IOutputRange.MIN_100mA]
 
-        self.add_parameter(
+        self.measurement_mode: Parameter = self.add_parameter(
             name="measurement_mode",
             get_cmd=None,
             set_cmd=self._set_measurement_mode,
             set_parser=MM.Mode,
             vals=vals.Enum(*list(MM.Mode)),
             initial_cache_value=MM.Mode.SPOT,
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
                 Set measurement mode for this module.
 
                 It is recommended for this parameter to use values from
                 :class:`.constants.MM.Mode` enumeration.
 
                 Refer to the documentation of ``MM`` command in the
-                programming guide for more information.""")
+                programming guide for more information."""
+            ),
         )
+        """
+        Set measurement mode for this module.
+
+        It is recommended for this parameter to use values from
+        :class:`.constants.MM.Mode` enumeration.
+
+        Refer to the documentation of ``MM`` command in the
+        programming guide for more information.
+        """
         # Instrument is initialized with this setting having value of
         # `1`, spot measurement mode, hence let's set the parameter's cache to
         # this value since it is not possible to request this value from the
         # instrument.
 
-        self.add_parameter(
+        self.measurement_operation_mode: Parameter = self.add_parameter(
             name="measurement_operation_mode",
             set_cmd=self._set_measurement_operation_mode,
             get_cmd=self._get_measurement_operation_mode,
             set_parser=constants.CMM.Mode,
             vals=vals.Enum(*list(constants.CMM.Mode)),
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
             The methods sets the SMU measurement operation mode. This
             is not available for the high speed spot measurement.
             mode : SMU measurement operation mode. `constants.CMM.Mode`
-            """)
-
+            """
+            ),
         )
-        self.add_parameter(
+        """
+        The methods sets the SMU measurement operation mode. This
+        is not available for the high speed spot measurement.
+        mode : SMU measurement operation mode. `constants.CMM.Mode`
+        """
+        self.voltage: _SpotMeasurementVoltageParameter = self.add_parameter(
             name="voltage",
             parameter_class=_SpotMeasurementVoltageParameter,
             unit="V",
-            snapshot_get=False
+            snapshot_get=False,
         )
+        """Parameter voltage"""
 
-        self.add_parameter(
+        self.current: _SpotMeasurementCurrentParameter = self.add_parameter(
             name="current",
             parameter_class=_SpotMeasurementCurrentParameter,
             unit="A",
-            snapshot_get=False
+            snapshot_get=False,
         )
+        """Parameter current"""
 
-        self.add_parameter(
+        self.time_axis: Parameter = self.add_parameter(
             name="time_axis",
             get_cmd=self._get_time_axis,
             vals=vals.Arrays(shape=(self._get_number_of_samples,)),
             snapshot_value=False,
-            label='Time',
-            unit='s'
+            label="Time",
+            unit="s",
         )
+        """Parameter time_axis"""
 
-        self.add_parameter(
+        self.sampling_measurement_trace: SamplingMeasurement = self.add_parameter(
             name="sampling_measurement_trace",
             parameter_class=SamplingMeasurement,
             vals=vals.Arrays(shape=(self._get_number_of_samples,)),
-            setpoints=(self.time_axis,)
+            setpoints=(self.time_axis,),
         )
+        """Parameter sampling_measurement_trace"""
 
-        self.add_parameter(
+        self.current_measurement_range: Parameter = self.add_parameter(
             name="current_measurement_range",
             set_cmd=self._set_current_measurement_range,
             get_cmd=self._get_current_measurement_range,
             vals=vals.Enum(*list(constants.IMeasRange)),
             set_parser=constants.IMeasRange,
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
             This method specifies the current measurement range or ranging
             type.In the initial setting, the auto ranging is set. The range
             changing occurs immediately after the trigger (that is, during
             the measurements). Current measurement channel can be decided by
              the `measurement_operation_mode` method setting and the channel
             output mode (voltage or current).
-        """))
+        """
+            ),
+        )
+        """
+        This method specifies the current measurement range or ranging
+        type.In the initial setting, the auto ranging is set. The range
+        changing occurs immediately after the trigger (that is, during
+        the measurements). Current measurement channel can be decided by
+        the `measurement_operation_mode` method setting and the channel
+        output mode (voltage or current).
+        """
 
-        self.add_parameter(
+        self.enable_filter: Parameter = self.add_parameter(
             name="enable_filter",
             set_cmd=self._set_enable_filter,
             get_cmd=None,
             snapshot_get=False,
             vals=vals.Bool(),
             initial_cache_value=False,
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
             This methods sets the connection mode of a SMU filter for each
             channel. A filter is mounted on the SMU. It assures clean source
             output with no spikes or overshooting.
             ``False``, meaning "disconnect" is the initial setting. Set to
             ``True`` to connect.
-            """)
-
+            """
+            ),
         )
+        """
+        This methods sets the connection mode of a SMU filter for each
+        channel. A filter is mounted on the SMU. It assures clean source
+        output with no spikes or overshooting.
+        ``False``, meaning "disconnect" is the initial setting. Set to
+        ``True`` to connect.
+        """
 
     def _get_number_of_samples(self) -> int:
         if self._timing_parameters['number'] is not None:

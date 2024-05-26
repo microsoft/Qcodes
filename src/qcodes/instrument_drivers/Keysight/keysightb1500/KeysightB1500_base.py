@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.parameters import MultiParameter, create_on_off_val_mapping
+from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
 
 from . import constants
 from .KeysightB1500_module import (
@@ -49,25 +49,38 @@ class KeysightB1500(VisaInstrument):
 
         self._find_modules()
 
-        self.add_parameter('autozero_enabled',
-                           unit='',
-                           label='Autozero enabled of the high-resolution ADC',
-                           set_cmd=self._set_autozero,
-                           get_cmd=None,
-                           val_mapping=create_on_off_val_mapping(
-                               on_val=True, off_val=False),
-                           initial_cache_value=False,
-                           docstring=textwrap.dedent("""
+        self.autozero_enabled: Parameter = self.add_parameter(
+            "autozero_enabled",
+            unit="",
+            label="Autozero enabled of the high-resolution ADC",
+            set_cmd=self._set_autozero,
+            get_cmd=None,
+            val_mapping=create_on_off_val_mapping(on_val=True, off_val=False),
+            initial_cache_value=False,
+            docstring=textwrap.dedent(
+                """
             Enable or disable cancelling of the offset of the
             high-resolution A/D converter (ADC).
 
             Set the function to OFF in cases that the measurement speed is
             more important than the measurement accuracy. This roughly halves
-            the integration time."""))
+            the integration time."""
+            ),
+        )
+        """
+        Enable or disable cancelling of the offset of the
+        high-resolution A/D converter (ADC).
 
-        self.add_parameter(name='run_iv_staircase_sweep',
-                           parameter_class=IVSweepMeasurement,
-                           docstring=textwrap.dedent("""
+        Set the function to OFF in cases that the measurement speed is
+        more important than the measurement accuracy. This roughly halves
+        the integration time.
+        """
+
+        self.run_iv_staircase_sweep: IVSweepMeasurement = self.add_parameter(
+            name="run_iv_staircase_sweep",
+            parameter_class=IVSweepMeasurement,
+            docstring=textwrap.dedent(
+                """
                This is MultiParameter. Running the sweep runs the measurement
                on the list of source values defined using
                `setup_staircase_sweep` method. The output is a
@@ -78,7 +91,21 @@ class KeysightB1500(VisaInstrument):
                channel (SMU) must be the channel on which you set the sweep (
                WV) and second channel(SMU) must be the one which remains at
                constants voltage.
-                              """))
+                              """
+            ),
+        )
+        """
+        This is MultiParameter. Running the sweep runs the measurement
+        on the list of source values defined using
+        `setup_staircase_sweep` method. The output is a
+        primary parameter (e.g. Gate current)  and a secondary
+        parameter (e.g. Source/Drain current) both of which use the same
+        setpoints. Note you must `set_measurement_mode` and specify
+        2 channels as the argument before running the sweep. First
+        channel (SMU) must be the channel on which you set the sweep (
+        WV) and second channel(SMU) must be the one which remains at
+        constants voltage.
+        """
 
         self.connect_message()
 

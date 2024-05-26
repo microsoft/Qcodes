@@ -6,7 +6,7 @@ import numpy as np
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.parameters import Group, GroupParameter, MultiParameter
+from qcodes.parameters import Group, GroupParameter, MultiParameter, Parameter
 
 from . import constants
 from .constants import MM, ChNr, ModuleKind
@@ -45,14 +45,16 @@ class KeysightB1500CVSweeper(InstrumentChannel):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter(name='sweep_auto_abort',
-                           set_cmd=self._set_sweep_auto_abort,
-                           get_cmd=self._get_sweep_auto_abort,
-                           set_parser=constants.Abort,
-                           get_parser=constants.Abort,
-                           vals=vals.Enum(*list(constants.Abort)),
-                           initial_cache_value=constants.Abort.ENABLED,
-                           docstring=textwrap.dedent("""
+        self.sweep_auto_abort: Parameter = self.add_parameter(
+            name="sweep_auto_abort",
+            set_cmd=self._set_sweep_auto_abort,
+            get_cmd=self._get_sweep_auto_abort,
+            set_parser=constants.Abort,
+            get_parser=constants.Abort,
+            vals=vals.Enum(*list(constants.Abort)),
+            initial_cache_value=constants.Abort.ENABLED,
+            docstring=textwrap.dedent(
+                """
                            enables or disables the automatic abort function
                            for the CV (DC bias) sweep measurement (MM18) and
                            the pulsed bias sweep measurement (MM20). The
@@ -61,16 +63,31 @@ class KeysightB1500CVSweeper(InstrumentChannel):
                                - NULL loop unbalance condition
                                - IV amplifier saturation condition
                                - Overflow on the AD converter
-                           """))
+                           """
+            ),
+        )
+        """
+        enables or disables the automatic abort function
+        for the CV (DC bias) sweep measurement (MM18) and
+        the pulsed bias sweep measurement (MM20). The
+        automatic abort function stops the measurement
+        when one of the following conditions occurs:
 
-        self.add_parameter(name='post_sweep_voltage_condition',
-                           set_cmd=self._set_post_sweep_voltage_condition,
-                           get_cmd=self._get_post_sweep_voltage_condition,
-                           set_parser=constants.WMDCV.Post,
-                           get_parser=constants.WMDCV.Post,
-                           vals=vals.Enum(*list(constants.WMDCV.Post)),
-                           initial_cache_value=constants.WMDCV.Post.START,
-                           docstring=textwrap.dedent("""
+        - NULL loop unbalance condition
+        - IV amplifier saturation condition
+        - Overflow on the AD converter
+        """
+
+        self.post_sweep_voltage_condition: Parameter = self.add_parameter(
+            name="post_sweep_voltage_condition",
+            set_cmd=self._set_post_sweep_voltage_condition,
+            get_cmd=self._get_post_sweep_voltage_condition,
+            set_parser=constants.WMDCV.Post,
+            get_parser=constants.WMDCV.Post,
+            vals=vals.Enum(*list(constants.WMDCV.Post)),
+            initial_cache_value=constants.WMDCV.Post.START,
+            docstring=textwrap.dedent(
+                """
                            This command also sets the post measurement
                            condition of the MFCMU. After the measurement is
                            normally completed, the DC bias sweep source
@@ -81,39 +98,76 @@ class KeysightB1500CVSweeper(InstrumentChannel):
                            abort function, the DC bias sweep source forces
                            the start value, and the pulsed bias sweep source
                            forces the pulse base value after sweep.
-                           """))
+                           """
+            ),
+        )
+        """
+        This command also sets the post measurement
+        condition of the MFCMU. After the measurement is
+        normally completed, the DC bias sweep source
+        forces the value specified by the post parameter,
+        and the pulsed bias sweep source forces
+        the pulse base value.
+        If the measurement is stopped by the automatic
+        abort function, the DC bias sweep source forces
+        the start value, and the pulsed bias sweep source
+        forces the pulse base value after sweep.
+        """
 
-        self.add_parameter(name='hold_time',
-                           initial_value=0.0,
-                           vals=vals.Numbers(0, 655.35),
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.hold_time: GroupParameter = self.add_parameter(
+            name="hold_time",
+            initial_value=0.0,
+            vals=vals.Numbers(0, 655.35),
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                            Hold time (in seconds) that is the
                            wait time after starting measurement
                            and before starting delay time for
                            the first step 0 to 655.35, with 10
                            ms resolution. Numeric expression.
-                          """))
+                          """
+            ),
+        )
+        """
+        Hold time (in seconds) that is the
+        wait time after starting measurement
+        and before starting delay time for
+        the first step 0 to 655.35, with 10
+        ms resolution. Numeric expression.
+        """
 
-        self.add_parameter(name='delay',
-                           initial_value=0.0,
-                           vals=vals.Numbers(0, 65.535),
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.delay: GroupParameter = self.add_parameter(
+            name="delay",
+            initial_value=0.0,
+            vals=vals.Numbers(0, 65.535),
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                            Delay time (in seconds) that is the wait time after
                            starting to force a step output and before
                             starting a step measurement. 0 to 65.535,
                             with 0.1 ms resolution. Numeric expression.
-                            """))
+                            """
+            ),
+        )
+        """
+        Delay time (in seconds) that is the wait time after
+        starting to force a step output and before
+        starting a step measurement. 0 to 65.535,
+        with 0.1 ms resolution. Numeric expression.
+        """
 
-        self.add_parameter(name='step_delay',
-                           initial_value=0.0,
-                           vals=vals.Numbers(0, 1),
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.step_delay: GroupParameter = self.add_parameter(
+            name="step_delay",
+            initial_value=0.0,
+            vals=vals.Numbers(0, 1),
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                             Step delay time (in seconds) that is the wait time
                             after starting a step measurement and before
                             starting to force the next step output. 0 to 1,
@@ -122,34 +176,70 @@ class KeysightB1500CVSweeper(InstrumentChannel):
                             step delay is shorter than the measurement time,
                             the B1500 waits until the measurement completes,
                             then forces the next step output.
-                            """))
+                            """
+            ),
+        )
+        """
+        Step delay time (in seconds) that is the wait time
+        after starting a step measurement and before
+        starting to force the next step output. 0 to 1,
+        with 0.1 ms resolution. Numeric expression. If
+        this parameter is not set, step delay will be 0. If
+        step delay is shorter than the measurement time,
+        the B1500 waits until the measurement completes,
+        then forces the next step output.
+        """
 
-        self.add_parameter(name='trigger_delay',
-                           initial_value=0.0,
-                           unit='s',
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.trigger_delay: GroupParameter = self.add_parameter(
+            name="trigger_delay",
+            initial_value=0.0,
+            unit="s",
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                             Step source trigger delay time (in seconds) that
                             is the wait time after completing a step output
                             setup and before sending a step output setup
                             completion trigger. 0 to the value of ``delay``,
                             with 0.1 ms resolution. Numeric expression. If this
                             parameter is not set, trigger delay will be 0.
-                            """))
+                            """
+            ),
+        )
+        """
+        Step source trigger delay time (in seconds) that
+        is the wait time after completing a step output
+        setup and before sending a step output setup
+        completion trigger. 0 to the value of ``delay``,
+        with 0.1 ms resolution. Numeric expression. If this
+        parameter is not set, trigger delay will be 0.
+        """
 
-        self.add_parameter(name='measure_delay',
-                           initial_value=0.0,
-                           unit='s',
-                           vals=vals.Numbers(0, 65.535),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.measure_delay: GroupParameter = self.add_parameter(
+            name="measure_delay",
+            initial_value=0.0,
+            unit="s",
+            vals=vals.Numbers(0, 65.535),
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                            Step measurement trigger delay time (in seconds)
                            that is the wait time after receiving a start step
                            measurement trigger and before starting a step
                            measurement. 0 to 65.535, with 0.1 ms resolution.
                            Numeric expression. If this parameter is not set,
                            measure delay will be 0.
-                           """))
+                           """
+            ),
+        )
+        """
+        Step measurement trigger delay time (in seconds)
+        that is the wait time after receiving a start step
+        measurement trigger and before starting a step
+        measurement. 0 to 65.535, with 0.1 ms resolution.
+        Numeric expression. If this parameter is not set,
+        measure delay will be 0.
+        """
 
         self._set_sweep_delays_group = Group([self.hold_time,
                                        self.delay,
@@ -165,50 +255,88 @@ class KeysightB1500CVSweeper(InstrumentChannel):
                                       get_cmd=self._get_sweep_delays(),
                                       get_parser=self._get_sweep_delays_parser)
 
-        self.add_parameter(name='sweep_mode',
-                           initial_value=constants.SweepMode.LINEAR,
-                           vals=vals.Enum(*list(constants.SweepMode)),
-                           set_parser=constants.SweepMode,
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.sweep_mode: GroupParameter = self.add_parameter(
+            name="sweep_mode",
+            initial_value=constants.SweepMode.LINEAR,
+            vals=vals.Enum(*list(constants.SweepMode)),
+            set_parser=constants.SweepMode,
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                    Sweep mode.
                        1: Linear sweep (single stair, start to stop.)
                        2: Log sweep (single stair, start to stop.)
                        3: Linear sweep (double stair, start to stop to start.)
                        4: Log sweep (double stair, start to stop to start.)
-                                  """))
+                                  """
+            ),
+        )
+        """
+        Sweep mode.
+        1: Linear sweep (single stair, start to stop.)
+        2: Log sweep (single stair, start to stop.)
+        3: Linear sweep (double stair, start to stop to start.)
+        4: Log sweep (double stair, start to stop to start.)
+        """
 
-        self.add_parameter(name='sweep_start',
-                           initial_value=0.0,
-                           unit='V',
-                           vals=vals.Numbers(-25, 25),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.sweep_start: GroupParameter = self.add_parameter(
+            name="sweep_start",
+            initial_value=0.0,
+            unit="V",
+            vals=vals.Numbers(-25, 25),
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                    Start value of the DC bias sweep (in V). For the log  sweep,
                    start and stop must have the same polarity.
-                                  """))
+                                  """
+            ),
+        )
+        """
+        Start value of the DC bias sweep (in V). For the log  sweep,
+        start and stop must have the same polarity.
+        """
 
-        self.add_parameter(name='sweep_end',
-                           initial_value=0.0,
-                           unit='V',
-                           vals=vals.Numbers(-25, 25),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.sweep_end: GroupParameter = self.add_parameter(
+            name="sweep_end",
+            initial_value=0.0,
+            unit="V",
+            vals=vals.Numbers(-25, 25),
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                    Stop value of the DC bias sweep (in V). For the log sweep,
                    start and stop must have the same polarity.
-                                  """))
+                                  """
+            ),
+        )
+        """
+        Stop value of the DC bias sweep (in V). For the log sweep,
+        start and stop must have the same polarity.
+        """
 
-        self.add_parameter(name='sweep_steps',
-                           initial_value=1,
-                           vals=vals.Ints(1, 1001),
-                           parameter_class=GroupParameter,
-                           docstring=textwrap.dedent("""
+        self.sweep_steps: GroupParameter = self.add_parameter(
+            name="sweep_steps",
+            initial_value=1,
+            vals=vals.Ints(1, 1001),
+            parameter_class=GroupParameter,
+            docstring=textwrap.dedent(
+                """
                    Number of steps for staircase sweep. Possible  values from 1 to
-                   1001"""))
+                   1001"""
+            ),
+        )
+        """
+        Number of steps for staircase sweep. Possible  values from 1 to
+        1001
+        """
 
-        self.add_parameter(name='_chan',
-                           initial_value=self.parent.channels[0],
-                           parameter_class=GroupParameter)
+        self._chan: GroupParameter = self.add_parameter(
+            name="_chan",
+            initial_value=self.parent.channels[0],
+            parameter_class=GroupParameter,
+        )
+        """Parameter _chan"""
 
         self._set_sweep_steps_group = Group(
             [self._chan,
@@ -347,38 +475,47 @@ class KeysightB1520A(KeysightB1500Module):
         self._ranging_mode: constants.RangingMode = constants.RangingMode.AUTO
         self._measurement_range_for_non_auto: Optional[int] = None
 
-        self.add_parameter(name="voltage_dc",
-                           unit="V",
-                           set_cmd=self._set_voltage_dc,
-                           get_cmd=self._get_voltage_dc,
-                           snapshot_get=False
-                           )
+        self.voltage_dc: Parameter = self.add_parameter(
+            name="voltage_dc",
+            unit="V",
+            set_cmd=self._set_voltage_dc,
+            get_cmd=self._get_voltage_dc,
+            snapshot_get=False,
+        )
+        """Parameter voltage_dc"""
 
-        self.add_parameter(name="voltage_ac",
-                           unit="V",
-                           set_cmd=self._set_voltage_ac,
-                           get_cmd=self._get_voltage_ac,
-                           snapshot_get=False
-                           )
+        self.voltage_ac: Parameter = self.add_parameter(
+            name="voltage_ac",
+            unit="V",
+            set_cmd=self._set_voltage_ac,
+            get_cmd=self._get_voltage_ac,
+            snapshot_get=False,
+        )
+        """Parameter voltage_ac"""
 
-        self.add_parameter(name="frequency",
-                           unit="Hz",
-                           set_cmd=self._set_frequency,
-                           get_cmd=self._get_frequency,
-                           snapshot_get=False
-                           )
+        self.frequency: Parameter = self.add_parameter(
+            name="frequency",
+            unit="Hz",
+            set_cmd=self._set_frequency,
+            get_cmd=self._get_frequency,
+            snapshot_get=False,
+        )
+        """Parameter frequency"""
 
-        self.add_parameter(name="capacitance",
-                           get_cmd=self._get_capacitance,
-                           snapshot_value=False)
+        self.capacitance: Parameter = self.add_parameter(
+            name="capacitance", get_cmd=self._get_capacitance, snapshot_value=False
+        )
+        """Parameter capacitance"""
 
         self.add_submodule("correction", KeysightB1500Correction(self, "correction"))
 
-        self.add_parameter(name="phase_compensation_mode",
-                           set_cmd=self._set_phase_compensation_mode,
-                           get_cmd=None,
-                           set_parser=constants.ADJ.Mode,
-                           docstring=textwrap.dedent("""
+        self.phase_compensation_mode: Parameter = self.add_parameter(
+            name="phase_compensation_mode",
+            set_cmd=self._set_phase_compensation_mode,
+            get_cmd=None,
+            set_parser=constants.ADJ.Mode,
+            docstring=textwrap.dedent(
+                """
             This parameter selects the MFCMU phase compensation mode. This
             command initializes the MFCMU. The available modes are captured
             in :class:`constants.ADJ.Mode`:
@@ -393,27 +530,58 @@ class KeysightB1520A(KeysightB1500Module):
             perform the phase compensation and set the compensation data.
             For mode=2, the KeysightB1500 performs the phase compensation
             before every measurement. It is useful when there are wide load
-            fluctuations by changing the bias and so on."""))
+            fluctuations by changing the bias and so on."""
+            ),
+        )
+        """
+        This parameter selects the MFCMU phase compensation mode. This
+        command initializes the MFCMU. The available modes are captured
+        in :class:`constants.ADJ.Mode`:
+
+            - 0: Auto mode. Initial setting.
+            - 1: Manual mode.
+            - 2: Load adaptive mode.
+
+        For mode=0, the KeysightB1500 sets the compensation data
+        automatically. For mode=1, execute the
+        :meth:`phase_compensation` method ( the ``ADJ?`` command) to
+        perform the phase compensation and set the compensation data.
+        For mode=2, the KeysightB1500 performs the phase compensation
+        before every measurement. It is useful when there are wide load
+        fluctuations by changing the bias and so on.
+        """
 
         self.add_submodule("cv_sweep", KeysightB1500CVSweeper(self, "cv_sweep"))
 
-        self.add_parameter(name='adc_coef',
-                           initial_value=1,
-                           parameter_class=GroupParameter,
-                           vals=vals.Ints(1, 1023),
-                           docstring=textwrap.dedent("""
+        self.adc_coef: GroupParameter = self.add_parameter(
+            name="adc_coef",
+            initial_value=1,
+            parameter_class=GroupParameter,
+            vals=vals.Ints(1, 1023),
+            docstring=textwrap.dedent(
+                """
             Coefficient used to define the number of averaging samples or
             the averaging time. Integer expression.
                 - For mode=0: 1 to 1023. Initial setting/default setting is 2.
                 - For mode=2: 1 to 100. Initial setting/default setting is 1.
-            """))
+            """
+            ),
+        )
+        """
+        Coefficient used to define the number of averaging samples or
+        the averaging time. Integer expression.
+            - For mode=0: 1 to 1023. Initial setting/default setting is 2.
+            - For mode=2: 1 to 100. Initial setting/default setting is 1.
+        """
 
-        self.add_parameter(name='adc_mode',
-                           initial_value=constants.ACT.Mode.PLC,
-                           parameter_class=GroupParameter,
-                           vals=vals.Enum(*list(constants.ACT.Mode)),
-                           set_parser=constants.ACT.Mode,
-                           docstring=textwrap.dedent("""
+        self.adc_mode: GroupParameter = self.add_parameter(
+            name="adc_mode",
+            initial_value=constants.ACT.Mode.PLC,
+            parameter_class=GroupParameter,
+            vals=vals.Enum(*list(constants.ACT.Mode)),
+            set_parser=constants.ACT.Mode,
+            docstring=textwrap.dedent(
+                """
             Sets the number of averaging samples or the averaging time set
             to the A/D converter of the MFCMU
 
@@ -428,43 +596,86 @@ class KeysightB1520A(KeysightB1500Module):
                 Defines the averaging time given by the following formula.
 
                 Averaging time = N / power line frequency
-                                       """))
+                                       """
+            ),
+        )
+        """
+        Sets the number of averaging samples or the averaging time set
+        to the A/D converter of the MFCMU
+
+            ``constants.ACT.Mode.AUTO``: Auto mode. Defines the number
+            of averaging samples given by the following formula. Then
+            initial averaging is the number of averaging samples
+            automatically set by the B1500 and you cannot change.
+
+            Number of averaging samples = N x initial averaging
+
+            ``constants.ACT.Mode.PLC``: Power line cycle (PLC) mode.
+            Defines the averaging time given by the following formula.
+
+            Averaging time = N / power line frequency
+            """
 
         self._adc_group = Group([self.adc_mode, self.adc_coef],
                                 set_cmd='ACT {adc_mode},{adc_coef}',
                                 get_cmd=self._get_adc_mode(),
                                 get_parser=self._get_adc_mode_parser)
 
-        self.add_parameter(name='ranging_mode',
-                           set_cmd=self._set_ranging_mode,
-                           vals=vals.Enum(*list(constants.RangingMode)),
-                           set_parser=constants.RangingMode,
-                           get_cmd=None,
-                           docstring=textwrap.dedent("""
+        self.ranging_mode: Parameter = self.add_parameter(
+            name="ranging_mode",
+            set_cmd=self._set_ranging_mode,
+            vals=vals.Enum(*list(constants.RangingMode)),
+            set_parser=constants.RangingMode,
+            get_cmd=None,
+            docstring=textwrap.dedent(
+                """
             Specifies the measurement range or the measurement ranging type
             of the MFCMU. In the initial setting, the auto ranging is set.
             The range changing occurs immediately after the trigger
             (that is, during the measurements).
             Possible ranging modes are autorange and fixed range.
-                           """))
+                           """
+            ),
+        )
+        """
+        Specifies the measurement range or the measurement ranging type
+        of the MFCMU. In the initial setting, the auto ranging is set.
+        The range changing occurs immediately after the trigger
+        (that is, during the measurements).
+        Possible ranging modes are autorange and fixed range.
+        """
 
-        self.add_parameter(name='measurement_range_for_non_auto',
-                           set_cmd=self._set_measurement_range_for_non_auto,
-                           get_cmd=None,
-                           docstring=textwrap.dedent("""
+        self.measurement_range_for_non_auto: Parameter = self.add_parameter(
+            name="measurement_range_for_non_auto",
+            set_cmd=self._set_measurement_range_for_non_auto,
+            get_cmd=None,
+            docstring=textwrap.dedent(
+                """
             Measurement range. Needs to set when ``ranging_mode`` is set to
             PLC. The value should be integer 0 or more. 50 ohm, 100 ohm,
             300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm,
             100 kilo ohm, and 300 kilo ohm are selectable. Available
             measurement ranges depend on the output signal frequency set by
-            the FC command."""))
+            the FC command."""
+            ),
+        )
+        """
+        Measurement range. Needs to set when ``ranging_mode`` is set to
+        PLC. The value should be integer 0 or more. 50 ohm, 100 ohm,
+        300 ohm, 1 kilo ohm, 3 kilo ohm, 10 kilo ohm, 30 kilo ohm,
+        100 kilo ohm, and 300 kilo ohm are selectable. Available
+        measurement ranges depend on the output signal frequency set by
+        the FC command.
+        """
 
-        self.add_parameter(name="measurement_mode",
-                           get_cmd=None,
-                           set_cmd=self._set_measurement_mode,
-                           set_parser=MM.Mode,
-                           vals=vals.Enum(*list(MM.Mode)),
-                           docstring=textwrap.dedent("""
+        self.measurement_mode: Parameter = self.add_parameter(
+            name="measurement_mode",
+            get_cmd=None,
+            set_cmd=self._set_measurement_mode,
+            set_parser=MM.Mode,
+            vals=vals.Enum(*list(MM.Mode)),
+            docstring=textwrap.dedent(
+                """
             Set measurement mode for this module.
 
             It is recommended for this parameter to use values from
@@ -472,45 +683,84 @@ class KeysightB1520A(KeysightB1500Module):
 
             Refer to the documentation of ``MM`` command in the programming
             guide for more information.
-                            """))
+                            """
+            ),
+        )
+        """
+        Set measurement mode for this module.
 
-        self.add_parameter(name='impedance_model',
-                           set_cmd=self._set_impedance_model,
-                           get_cmd=None,
-                           vals=vals.Enum(
-                               *list(constants.IMP.MeasurementMode)),
-                           set_parser=constants.IMP.MeasurementMode,
-                           initial_value=constants.IMP.MeasurementMode.Cp_D,
-                           docstring=textwrap.dedent("""
+        It is recommended for this parameter to use values from
+        :class:`.constants.MM.Mode` enumeration.
+
+        Refer to the documentation of ``MM`` command in the programming
+        guide for more information.
+        """
+
+        self.impedance_model: Parameter = self.add_parameter(
+            name="impedance_model",
+            set_cmd=self._set_impedance_model,
+            get_cmd=None,
+            vals=vals.Enum(*list(constants.IMP.MeasurementMode)),
+            set_parser=constants.IMP.MeasurementMode,
+            initial_value=constants.IMP.MeasurementMode.Cp_D,
+            docstring=textwrap.dedent(
+                """
             The IMP command specifies the parameter measured by the MFCMU.
             Look at the ``constants.IMP.MeasurementMode`` for all the modes.
-                           """))
+                           """
+            ),
+        )
+        """
+        The IMP command specifies the parameter measured by the MFCMU.
+        Look at the ``constants.IMP.MeasurementMode`` for all the modes.
+        """
 
-        self.add_parameter(name='ac_dc_volt_monitor',
-                           set_cmd=self._set_ac_dc_volt_monitor,
-                           get_cmd=None,
-                           vals=vals.Ints(0, 1),
-                           initial_value=False,
-                           docstring=textwrap.dedent("""
+        self.ac_dc_volt_monitor: Parameter = self.add_parameter(
+            name="ac_dc_volt_monitor",
+            set_cmd=self._set_ac_dc_volt_monitor,
+            get_cmd=None,
+            vals=vals.Ints(0, 1),
+            initial_value=False,
+            docstring=textwrap.dedent(
+                """
             This command enables or disables the data monitor and data
             output of the MFCMU AC voltage and DC voltage.
                 0: Disables the data monitor and output. Initial setting.
                 1: Enables the data monitor and output.
-                           """))
+                           """
+            ),
+        )
+        """
+        This command enables or disables the data monitor and data
+        output of the MFCMU AC voltage and DC voltage.
+        0: Disables the data monitor and output. Initial setting.
+        1: Enables the data monitor and output.
+        """
 
-        self.add_parameter(name='cv_sweep_voltages',
-                           get_cmd=self._cv_sweep_voltages,
-                           unit='V',
-                           label='Voltage',
-                           docstring=textwrap.dedent("""
+        self.cv_sweep_voltages: Parameter = self.add_parameter(
+            name="cv_sweep_voltages",
+            get_cmd=self._cv_sweep_voltages,
+            unit="V",
+            label="Voltage",
+            docstring=textwrap.dedent(
+                """
             Outputs the tuple of voltages to sweep.  sweep_start, sweep_end
             and sweep_step functions are used to define the values of
             voltages. There are possible modes; linear sweep, log sweep,
             linear 2 way sweep and log 2 way sweep. The  output of
             sweep_mode method is used to decide which mode to use.
-                           """))
+                           """
+            ),
+        )
+        """
+        Outputs the tuple of voltages to sweep.  sweep_start, sweep_end
+        and sweep_step functions are used to define the values of
+        voltages. There are possible modes; linear sweep, log sweep,
+        linear 2 way sweep and log 2 way sweep. The  output of
+        sweep_mode method is used to decide which mode to use.
+        """
 
-        self.add_parameter(
+        self.run_sweep: KeysightB1500CVSweepMeasurement = self.add_parameter(
             name="run_sweep",
             parameter_class=KeysightB1500CVSweepMeasurement,
             docstring=textwrap.dedent(
@@ -525,6 +775,15 @@ class KeysightB1520A(KeysightB1500Module):
                            """
             ),
         )
+        """
+        This is MultiParameter. Running the sweep runs the measurement
+        on the list of values of cv_sweep_voltages. The output is a
+        primary parameter (for ex Capacitance) and a secondary
+        parameter (for ex Dissipation) both of whom use the same
+        setpoint cv_sweep_voltages. The impedance_model defines exactly
+        what will be the primary and secondary parameter. The default
+        case is Capacitance and Dissipation.
+        """
 
     def _cv_sweep_voltages(self) -> tuple[float, ...]:
         def sign(s: float) -> float:
@@ -706,8 +965,7 @@ class KeysightB1520A(KeysightB1500Module):
         self.root_instrument.set_measurement_mode(mode=mode,
                                                   channels=(self.channels[0],))
 
-    def _set_impedance_model(self, val: Union[constants.IMP.MeasurementMode,
-                                              int]) -> None:
+    def _set_impedance_model(self, val: constants.IMP.MeasurementMode) -> None:
         msg = MessageBuilder().imp(mode=val)
         self.write(msg.message)
         if hasattr(self, 'run_sweep'):
