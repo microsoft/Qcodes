@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 
     from typing_extensions import Concatenate, Unpack
 
+    from qcodes.parameters import Parameter
+
 
 S = TypeVar("S", bound="KeysightB220X")
 P = ParamSpec("P")
@@ -71,131 +73,173 @@ class KeysightB220X(VisaInstrument):
 
         self._card = 0
 
-        self.add_parameter(name='get_status',
-                           get_cmd='*ESR?',
-                           get_parser=int,
-                           docstring='Queries status register.')
+        self.get_status: Parameter = self.add_parameter(
+            name="get_status",
+            get_cmd="*ESR?",
+            get_parser=int,
+            docstring="Queries status register.",
+        )
+        """Queries status register."""
 
-        self.add_parameter(name='get_error',
-                           get_cmd=':SYST:ERR?',
-                           docstring='Queries error queue')
+        self.get_error: Parameter = self.add_parameter(
+            name="get_error", get_cmd=":SYST:ERR?", docstring="Queries error queue"
+        )
+        """Queries error queue"""
 
-        self.add_parameter(name='connections',
-                           get_cmd=f':CLOS:CARD? {self._card}',
-                           get_parser=KeysightB220X.parse_channel_list,
-                           docstring='queries currently active connections '
-                                     'and returns a set of tuples {(input, '
-                                     'output), ...}'
-                           )
+        self.connections: Parameter = self.add_parameter(
+            name="connections",
+            get_cmd=f":CLOS:CARD? {self._card}",
+            get_parser=KeysightB220X.parse_channel_list,
+            docstring="queries currently active connections "
+            "and returns a set of tuples {(input, "
+            "output), ...}",
+        )
+        """
+        queries currently active connections and returns a
+        set of tuples {(input, output), ...}
+        """
 
-        self.add_parameter(name='connection_rule',
-                           get_cmd=self._get_connection_rule,
-                           set_cmd=self._set_connection_rule,
-                           val_mapping={'free': 'FREE',
-                                        'single': 'SROU'},
-                           docstring=("specifies connection rule. Parameter "
-                                      "one of 'free' (default) or 'single'.\n\n"
-                                      "In 'free' mode\n"
-                                      " - each input port can be connected to "
-                                      "multiple output ports\n"
-                                      " - and each output port can be "
-                                      "connected to multiple input ports.\n"
-                                      " - Caution: If the Free connection rule "
-                                      "has been specified, ensure multiple "
-                                      "input ports are not connected to the "
-                                      "same output port. Such configurations "
-                                      "can cause damage\n\n"
-                                      "In single route mode:\n"
-                                      " - each input port can be connected to "
-                                      "only one output port\n"
-                                      " - and each output port can be "
-                                      "connected to only one input port.\n"
-                                      " - existing connection to a port will "
-                                      "be disconnected when a new connection "
-                                      "is made.\n"
-                                      )
-                           )
+        self.connection_rule: Parameter = self.add_parameter(
+            name="connection_rule",
+            get_cmd=self._get_connection_rule,
+            set_cmd=self._set_connection_rule,
+            val_mapping={"free": "FREE", "single": "SROU"},
+            docstring=(
+                "specifies connection rule. Parameter "
+                "one of 'free' (default) or 'single'.\n\n"
+                "In 'free' mode\n"
+                " - each input port can be connected to "
+                "multiple output ports\n"
+                " - and each output port can be "
+                "connected to multiple input ports.\n"
+                " - Caution: If the Free connection rule "
+                "has been specified, ensure multiple "
+                "input ports are not connected to the "
+                "same output port. Such configurations "
+                "can cause damage\n\n"
+                "In single route mode:\n"
+                " - each input port can be connected to "
+                "only one output port\n"
+                " - and each output port can be "
+                "connected to only one input port.\n"
+                " - existing connection to a port will "
+                "be disconnected when a new connection "
+                "is made.\n"
+            ),
+        )
+        """
+        specifies connection rule. Parameter one of 'free' (default) or 'single'.
 
-        self.add_parameter(name='connection_sequence',
-                           get_cmd=f':CONN:SEQ? {self._card}',
-                           set_cmd=f':CONN:SEQ {self._card},{{}}',
-                           val_mapping={'none': 'NSEQ',
-                                        'bbm': 'BBM',
-                                        'mbb': 'MBBR'},
-                           docstring="One of 'none', 'bbm' (Break before "
-                                     "make) or 'mbb' (make before break)"
-                           )
+        In 'free' mode
+        - each input port can be connected to multiple output ports
+        - and each output port can be connected to multiple input ports.
+        - Caution: If the Free connection rule has been specified, ensure multiple input ports are not connected to the same output port. Such configurations can cause damage
 
-        self.add_parameter(name='bias_input_port',
-                           get_cmd=f':BIAS:PORT? {self._card}',
-                           set_cmd=f':BIAS:PORT {self._card},{{}}',
-                           vals=MultiType(KeysightB220X._available_input_ports,
-                                          Enum(-1)),
-                           get_parser=int,
-                           docstring="Selects the input that will be used as "
-                                     "bias input port (default 10). The Bias "
-                                     "input port cannot be used on subsequent "
-                                     "`connect` or `disconnect` commands if "
-                                     "Bias mode is ON"
-                           )
+        In single route mode:
+        - each input port can be connected to only one output port
+        - and each output port can be connected to only one input port.
+        - existing connection to a port will be disconnected when a new connection is made.
+        """
 
-        self.add_parameter(name='bias_mode',
-                           get_cmd=f':BIAS? {self._card}',
-                           set_cmd=f':BIAS {self._card},{{}}',
-                           val_mapping={True: 1,
-                                        False: 0},
-                           docstring="Param: True for ON, False for OFF"
-                           )
+        self.connection_sequence: Parameter = self.add_parameter(
+            name="connection_sequence",
+            get_cmd=f":CONN:SEQ? {self._card}",
+            set_cmd=f":CONN:SEQ {self._card},{{}}",
+            val_mapping={"none": "NSEQ", "bbm": "BBM", "mbb": "MBBR"},
+            docstring="One of 'none', 'bbm' (Break before "
+            "make) or 'mbb' (make before break)",
+        )
+        """
+        One of 'none', 'bbm' (Break before make) or
+        'mbb' (make before break)
+        """
 
-        self.add_parameter(name='gnd_input_port',
-                           get_cmd=f':AGND:PORT? {self._card}',
-                           set_cmd=f':AGND:PORT {self._card},{{}}',
-                           vals=MultiType(KeysightB220X._available_input_ports,
-                                          Enum(-1)),
-                           get_parser=int,
-                           docstring="Selects the input that will be used as "
-                                     "GND input port (default 12). The GND "
-                                     "input port cannot be used on subsequent "
-                                     "`connect` or `disconnect` commands if "
-                                     "GND mode is ON"
-                           )
+        self.bias_input_port: Parameter = self.add_parameter(
+            name="bias_input_port",
+            get_cmd=f":BIAS:PORT? {self._card}",
+            set_cmd=f":BIAS:PORT {self._card},{{}}",
+            vals=MultiType(KeysightB220X._available_input_ports, Enum(-1)),
+            get_parser=int,
+            docstring="Selects the input that will be used as "
+            "bias input port (default 10). The Bias "
+            "input port cannot be used on subsequent "
+            "`connect` or `disconnect` commands if "
+            "Bias mode is ON",
+        )
+        """
+        Selects the input that will be used as bias input port
+        (default 10). The Bias input port cannot be used on
+        subsequent `connect` or `disconnect` commands if Bias
+        mode is ON
+        """
 
-        self.add_parameter(name='gnd_mode',
-                           get_cmd=f':AGND? {self._card}',
-                           set_cmd=f':AGND {self._card},{{}}',
-                           val_mapping={True: 1,
-                                        False: 0}
-                           )
+        self.bias_mode: Parameter = self.add_parameter(
+            name="bias_mode",
+            get_cmd=f":BIAS? {self._card}",
+            set_cmd=f":BIAS {self._card},{{}}",
+            val_mapping={True: 1, False: 0},
+            docstring="Param: True for ON, False for OFF",
+        )
+        """Param: True for ON, False for OFF"""
 
-        self.add_parameter(name='unused_inputs',
-                           get_cmd=f':AGND:UNUSED? {self._card}',
-                           set_cmd=f":AGND:UNUSED {self._card},'{{}}'",
-                           get_parser=lambda response: [int(x) for x in
-                                                        response.strip(
-                                                            "'").split(',') if
-                                                        x.strip().isdigit()],
-                           set_parser=lambda value: str(value).strip('[]'),
-                           vals=Lists(KeysightB220X._available_input_ports)
-                           )
+        self.gnd_input_port: Parameter = self.add_parameter(
+            name="gnd_input_port",
+            get_cmd=f":AGND:PORT? {self._card}",
+            set_cmd=f":AGND:PORT {self._card},{{}}",
+            vals=MultiType(KeysightB220X._available_input_ports, Enum(-1)),
+            get_parser=int,
+            docstring="Selects the input that will be used as "
+            "GND input port (default 12). The GND "
+            "input port cannot be used on subsequent "
+            "`connect` or `disconnect` commands if "
+            "GND mode is ON",
+        )
+        """
+        Selects the input that will be used as GND input port
+        (default 12). The GND input port cannot be used on subsequent
+        `connect` or `disconnect` commands if GND mode is ON
+        """
 
-        self.add_parameter(name='couple_ports',
-                           get_cmd=f':COUP:PORT? {self._card}',
-                           set_cmd=f":COUP:PORT {self._card},'{{}}'",
-                           set_parser=lambda value: str(value).strip('[]()'),
-                           get_parser=lambda response: [int(x) for x in
-                                                        response.strip(
-                                                            "'").split(',') if
-                                                        x.strip().isdigit()],
-                           vals=Lists(Enum(1, 3, 5, 7, 9, 11, 13))
-                           )
+        self.gnd_mode: Parameter = self.add_parameter(
+            name="gnd_mode",
+            get_cmd=f":AGND? {self._card}",
+            set_cmd=f":AGND {self._card},{{}}",
+            val_mapping={True: 1, False: 0},
+        )
+        """Parameter gnd_mode"""
 
-        self.add_parameter(name='couple_mode',
-                           get_cmd=f':COUP? {self._card}',
-                           set_cmd=f':COUP {self._card},{{}}',
-                           val_mapping={True: 1,
-                                        False: 0},
-                           docstring="Param: True for ON, False for OFF"
-                           )
+        self.unused_inputs: Parameter = self.add_parameter(
+            name="unused_inputs",
+            get_cmd=f":AGND:UNUSED? {self._card}",
+            set_cmd=f":AGND:UNUSED {self._card},'{{}}'",
+            get_parser=lambda response: [
+                int(x) for x in response.strip("'").split(",") if x.strip().isdigit()
+            ],
+            set_parser=lambda value: str(value).strip("[]"),
+            vals=Lists(KeysightB220X._available_input_ports),
+        )
+        """Parameter unused_inputs"""
+
+        self.couple_ports: Parameter = self.add_parameter(
+            name="couple_ports",
+            get_cmd=f":COUP:PORT? {self._card}",
+            set_cmd=f":COUP:PORT {self._card},'{{}}'",
+            set_parser=lambda value: str(value).strip("[]()"),
+            get_parser=lambda response: [
+                int(x) for x in response.strip("'").split(",") if x.strip().isdigit()
+            ],
+            vals=Lists(Enum(1, 3, 5, 7, 9, 11, 13)),
+        )
+        """Parameter couple_ports"""
+
+        self.couple_mode: Parameter = self.add_parameter(
+            name="couple_mode",
+            get_cmd=f":COUP? {self._card}",
+            set_cmd=f":COUP {self._card},{{}}",
+            val_mapping={True: 1, False: 0},
+            docstring="Param: True for ON, False for OFF",
+        )
+        """Param: True for ON, False for OFF"""
 
         self.connect_message()
 
@@ -203,8 +247,9 @@ class KeysightB220X(VisaInstrument):
     def connect(self, input_ch: int, output_ch: int) -> None:
         """Connect given input/output pair.
 
-        :param input_ch: Input channel number 1-14
-        :param output_ch: Output channel number 1-48
+        Args:
+            input_ch: Input channel number 1-14
+            output_ch: Output channel number 1-48
         """
         KeysightB220X._available_input_ports.validate(input_ch)
         KeysightB220X._available_output_ports.validate(output_ch)
@@ -225,8 +270,9 @@ class KeysightB220X(VisaInstrument):
     def disconnect(self, input_ch: int, output_ch: int) -> None:
         """Disconnect given Input/Output pair.
 
-        :param input_ch: Input channel number 1-14
-        :param output_ch: Output channel number 1-48
+        Args:
+            input_ch: Input channel number 1-14
+            output_ch: Output channel number 1-48
         """
         KeysightB220X._available_input_ports.validate(input_ch)
         KeysightB220X._available_output_ports.validate(output_ch)
@@ -265,7 +311,8 @@ class KeysightB220X(VisaInstrument):
         Adds `output` to list of ports that will be connected to bias input
         if port is unused and bias mode is enabled.
 
-        :param output: int 1-48
+        Args:
+            output: int 1-48
         """
         KeysightB220X._available_output_ports.validate(output)
 
@@ -278,7 +325,8 @@ class KeysightB220X(VisaInstrument):
         Removes `output` from list of ports that will be connected to bias
         input if port is unused and bias mode is enabled.
 
-        :param output: int 1-48
+        Args:
+            output: int 1-48
         """
         KeysightB220X._available_output_ports.validate(output)
 
@@ -290,7 +338,8 @@ class KeysightB220X(VisaInstrument):
         Adds `output` to list of ports that will be connected to GND input
         if port is unused and bias mode is enabled.
 
-        :param output: int 1-48
+        Args:
+            output: int 1-48
         """
         KeysightB220X._available_output_ports.validate(output)
 
@@ -302,7 +351,8 @@ class KeysightB220X(VisaInstrument):
         Removes `output` from list of ports that will be connected to GND
         input if port is unused and bias mode is enabled.
 
-        :param output: int 1-48
+        Args:
+            output: int 1-48
         """
         KeysightB220X._available_output_ports.validate(output)
 
