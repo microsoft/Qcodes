@@ -28,7 +28,7 @@ class Measure(MultiParameter):
             labels="Measurement Data",
             docstring="param that returns measurement values",
         )
-        self.instrument: "KeysightM960x"
+        self.instrument: KeysightM960x
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
         return self.instrument._measure()

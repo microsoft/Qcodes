@@ -892,8 +892,8 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
             instrument=instrument,
             **kwargs,
         )
-        self.instrument: "KeysightB1520A"
-        self.root_instrument: "KeysightB1500"
+        self.instrument: KeysightB1520A
+        self.root_instrument: KeysightB1500
 
         self.update_name_label_unit_from_impedance_model()
 

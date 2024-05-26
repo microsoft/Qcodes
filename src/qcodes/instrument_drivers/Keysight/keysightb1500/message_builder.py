@@ -20,7 +20,7 @@ MessageBuilderMethodT = TypeVar('MessageBuilderMethodT',
 def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> "MessageBuilder":
-        res: 'MessageBuilder' = f(*args, **kwargs)
+        res: MessageBuilder = f(*args, **kwargs)
         res._msg.set_final()
 
         return res
