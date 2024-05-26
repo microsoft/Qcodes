@@ -570,6 +570,7 @@ class KeysightB1520A(KeysightB1500Module):
         """
         Coefficient used to define the number of averaging samples or
         the averaging time. Integer expression.
+
             - For mode=0: 1 to 1023. Initial setting/default setting is 2.
             - For mode=2: 1 to 100. Initial setting/default setting is 1.
         """

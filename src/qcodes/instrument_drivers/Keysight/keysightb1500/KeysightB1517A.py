@@ -289,16 +289,18 @@ class KeysightB1500IVSweeper(InstrumentChannel):
                 """
                  Sweep mode. Note that Only linear sweep (mode=1 or 3) is
                  available for the staircase sweep with pulsed bias.
+
                      1: Linear sweep (single stair, start to stop.)
                      2: Log sweep (single stair, start to stop.)
                      3: Linear sweep (double stair, start to stop to start.)
                      4: Log sweep (double stair, start to stop to start.)
-                                """
+                     """
             ),
         )
         """
         Sweep mode. Note that Only linear sweep (mode=1 or 3) is
         available for the staircase sweep with pulsed bias.
+
             1: Linear sweep (single stair, start to stop.)
             2: Log sweep (single stair, start to stop.)
             3: Linear sweep (double stair, start to stop to start.)
