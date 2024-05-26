@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from typing_extensions import deprecated
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.parameters import create_on_off_val_mapping
+from qcodes.parameters import Parameter, create_on_off_val_mapping
 from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Numbers
 
@@ -50,15 +50,18 @@ class KeysightN51x1(VisaInstrument):
 
         max_freq = freq_dict[frequency_option]
 
-        self.add_parameter('power',
-                           label='Power',
-                           get_cmd='SOUR:POW?',
-                           get_parser=float,
-                           set_cmd='SOUR:POW {:.2f}',
-                           unit='dBm',
-                           vals=Numbers(min_value=min_power,max_value=max_power))
+        self.power: Parameter = self.add_parameter(
+            "power",
+            label="Power",
+            get_cmd="SOUR:POW?",
+            get_parser=float,
+            set_cmd="SOUR:POW {:.2f}",
+            unit="dBm",
+            vals=Numbers(min_value=min_power, max_value=max_power),
+        )
+        """Parameter power"""
 
-        self.add_parameter(
+        self.frequency: Parameter = self.add_parameter(
             "frequency",
             label="Frequency",
             get_cmd="SOUR:FREQ?",
@@ -67,43 +70,50 @@ class KeysightN51x1(VisaInstrument):
             unit="Hz",
             vals=Numbers(min_value=9e3, max_value=max_freq),
         )
+        """Parameter frequency"""
 
-        self.add_parameter('phase_offset',
-                           label='Phase Offset',
-                           get_cmd='SOUR:PHAS?',
-                           get_parser=float,
-                           set_cmd='SOUR:PHAS {:.2f}',
-                           unit='rad'
-                           )
+        self.phase_offset: Parameter = self.add_parameter(
+            "phase_offset",
+            label="Phase Offset",
+            get_cmd="SOUR:PHAS?",
+            get_parser=float,
+            set_cmd="SOUR:PHAS {:.2f}",
+            unit="rad",
+        )
+        """Parameter phase_offset"""
 
-        self.add_parameter(
+        self.auto_freq_ref: Parameter = self.add_parameter(
             "auto_freq_ref",
             get_cmd=":ROSC:SOUR:AUTO?",
             set_cmd=":ROSC:SOUR:AUTO {}",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Parameter auto_freq_ref"""
 
-        self.add_parameter(
+        self.rf_output: Parameter = self.add_parameter(
             "rf_output",
             get_cmd="OUTP:STAT?",
             set_cmd="OUTP:STAT {}",
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Parameter rf_output"""
 
         if "UNW" in self._options:
-            self.add_parameter(
+            self.pulse_modulation: Parameter = self.add_parameter(
                 "pulse_modulation",
                 get_cmd="PULM:STAT?",
                 set_cmd="PULM:STAT {}",
                 val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
             )
+            """Parameter pulse_modulation"""
 
-            self.add_parameter(
+            self.pulse_modulation_source: Parameter = self.add_parameter(
                 "pulse_modulation_source",
                 get_cmd="PULM:SOUR?",
                 set_cmd="PULM:SOUR {}",
                 val_mapping={"internal": "INT", "external": "EXT"},
             )
+            """Parameter pulse_modulation_source"""
 
         self.connect_message()
 
