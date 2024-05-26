@@ -161,14 +161,16 @@ class KeysightPNAPort(InstrumentChannel):
             raise ValueError("Port must be between 1 and 4.")
 
         pow_cmd = f"SOUR:POW{self.port}"
-        self.add_parameter("source_power",
-                           label="power",
-                           unit="dBm",
-                           get_cmd=f"{pow_cmd}?",
-                           set_cmd=f"{pow_cmd} {{}}",
-                           get_parser=float,
-                           vals=Numbers(min_value=min_power,
-                                        max_value=max_power))
+        self.source_power: Parameter = self.add_parameter(
+            "source_power",
+            label="power",
+            unit="dBm",
+            get_cmd=f"{pow_cmd}?",
+            set_cmd=f"{pow_cmd} {{}}",
+            get_parser=float,
+            vals=Numbers(min_value=min_power, max_value=max_power),
+        )
+        """Parameter source_power"""
 
     def _set_power_limits(self, min_power: float, max_power: float) -> None:
         """
@@ -200,24 +202,25 @@ class KeysightPNATrace(InstrumentChannel):
         self.trace_num = trace_num
 
         # Name of parameter (i.e. S11, S21 ...)
-        self.add_parameter('trace',
-                           label='Trace',
-                           get_cmd=self._Sparam,
-                           set_cmd=self._set_Sparam)
+        self.trace: Parameter = self.add_parameter(
+            "trace", label="Trace", get_cmd=self._Sparam, set_cmd=self._set_Sparam
+        )
+        """Parameter trace"""
         # Format
         # Note: Currently parameters that return complex values are not
         # supported as there isn't really a good way of saving them into the
         # dataset
-        self.add_parameter(
+        self.format: Parameter = self.add_parameter(
             "format",
             label="Format",
             get_cmd="CALC:FORM?",
             set_cmd="CALC:FORM {}",
             vals=Enum("MLIN", "MLOG", "PHAS", "UPH", "IMAG", "REAL", "POLAR"),
         )
+        """Parameter format"""
 
         # And a list of individual formats
-        self.add_parameter(
+        self.magnitude: FormattedSweep = self.add_parameter(
             "magnitude",
             sweep_format="MLOG",
             label="Magnitude",
@@ -225,7 +228,8 @@ class KeysightPNATrace(InstrumentChannel):
             parameter_class=FormattedSweep,
             vals=Arrays(shape=(self.parent.points,)),
         )
-        self.add_parameter(
+        """Parameter magnitude"""
+        self.linear_magnitude: FormattedSweep = self.add_parameter(
             "linear_magnitude",
             sweep_format="MLIN",
             label="Magnitude",
@@ -233,7 +237,8 @@ class KeysightPNATrace(InstrumentChannel):
             parameter_class=FormattedSweep,
             vals=Arrays(shape=(self.parent.points,)),
         )
-        self.add_parameter(
+        """Parameter linear_magnitude"""
+        self.phase: FormattedSweep = self.add_parameter(
             "phase",
             sweep_format="PHAS",
             label="Phase",
@@ -241,7 +246,8 @@ class KeysightPNATrace(InstrumentChannel):
             parameter_class=FormattedSweep,
             vals=Arrays(shape=(self.parent.points,)),
         )
-        self.add_parameter(
+        """Parameter phase"""
+        self.unwrapped_phase: FormattedSweep = self.add_parameter(
             "unwrapped_phase",
             sweep_format="UPH",
             label="Phase",
@@ -249,7 +255,8 @@ class KeysightPNATrace(InstrumentChannel):
             parameter_class=FormattedSweep,
             vals=Arrays(shape=(self.parent.points,)),
         )
-        self.add_parameter(
+        """Parameter unwrapped_phase"""
+        self.group_delay: FormattedSweep = self.add_parameter(
             "group_delay",
             sweep_format="GDEL",
             label="Group Delay",
@@ -257,7 +264,8 @@ class KeysightPNATrace(InstrumentChannel):
             parameter_class=FormattedSweep,
             vals=Arrays(shape=(self.parent.points,)),
         )
-        self.add_parameter(
+        """Parameter group_delay"""
+        self.real: FormattedSweep = self.add_parameter(
             "real",
             sweep_format="REAL",
             label="Real",
@@ -265,7 +273,8 @@ class KeysightPNATrace(InstrumentChannel):
             parameter_class=FormattedSweep,
             vals=Arrays(shape=(self.parent.points,)),
         )
-        self.add_parameter(
+        """Parameter real"""
+        self.imaginary: FormattedSweep = self.add_parameter(
             "imaginary",
             sweep_format="IMAG",
             label="Imaginary",
@@ -273,7 +282,8 @@ class KeysightPNATrace(InstrumentChannel):
             parameter_class=FormattedSweep,
             vals=Arrays(shape=(self.parent.points,)),
         )
-        self.add_parameter(
+        """Parameter imaginary"""
+        self.polar: FormattedSweep = self.add_parameter(
             "polar",
             sweep_format="POLAR",
             label="Polar",
@@ -282,6 +292,7 @@ class KeysightPNATrace(InstrumentChannel):
             get_parser=self._parse_polar_data,
             vals=Arrays(shape=(self.parent.points,), valid_types=(complex,)),
         )
+        """Parameter polar"""
 
     def disable(self) -> None:
         """
@@ -427,172 +438,227 @@ class KeysightPNABase(VisaInstrument):
         self.add_submodule("ports", ports.to_channel_tuple())
 
         # RF output
-        self.add_parameter(
+        self.output: Parameter = self.add_parameter(
             "output",
             label="RF Output",
             get_cmd=":OUTPut?",
             set_cmd=":OUTPut {}",
             val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
         )
+        """Parameter output"""
 
         # Drive power
-        self.add_parameter('power',
-                           label='Power',
-                           get_cmd='SOUR:POW?',
-                           get_parser=float,
-                           set_cmd='SOUR:POW {:.2f}',
-                           unit='dBm',
-                           vals=Numbers(min_value=min_power,
-                                        max_value=max_power))
+        self.power: Parameter = self.add_parameter(
+            "power",
+            label="Power",
+            get_cmd="SOUR:POW?",
+            get_parser=float,
+            set_cmd="SOUR:POW {:.2f}",
+            unit="dBm",
+            vals=Numbers(min_value=min_power, max_value=max_power),
+        )
+        """Parameter power"""
 
         # IF bandwidth
-        self.add_parameter('if_bandwidth',
-                           label='IF Bandwidth',
-                           get_cmd='SENS:BAND?',
-                           get_parser=float,
-                           set_cmd='SENS:BAND {:.2f}',
-                           unit='Hz',
-                           vals=Numbers(min_value=1, max_value=15e6))
+        self.if_bandwidth: Parameter = self.add_parameter(
+            "if_bandwidth",
+            label="IF Bandwidth",
+            get_cmd="SENS:BAND?",
+            get_parser=float,
+            set_cmd="SENS:BAND {:.2f}",
+            unit="Hz",
+            vals=Numbers(min_value=1, max_value=15e6),
+        )
+        """Parameter if_bandwidth"""
 
         # Number of averages (also resets averages)
-        self.add_parameter('averages_enabled',
-                           label='Averages Enabled',
-                           get_cmd="SENS:AVER?",
-                           set_cmd="SENS:AVER {}",
-                           val_mapping={True: '1', False: '0'})
-        self.add_parameter('averages',
-                           label='Averages',
-                           get_cmd='SENS:AVER:COUN?',
-                           get_parser=int,
-                           set_cmd='SENS:AVER:COUN {:d}',
-                           unit='',
-                           vals=Numbers(min_value=1, max_value=65536))
+        self.averages_enabled: Parameter = self.add_parameter(
+            "averages_enabled",
+            label="Averages Enabled",
+            get_cmd="SENS:AVER?",
+            set_cmd="SENS:AVER {}",
+            val_mapping={True: "1", False: "0"},
+        )
+        """Parameter averages_enabled"""
+        self.averages: Parameter = self.add_parameter(
+            "averages",
+            label="Averages",
+            get_cmd="SENS:AVER:COUN?",
+            get_parser=int,
+            set_cmd="SENS:AVER:COUN {:d}",
+            unit="",
+            vals=Numbers(min_value=1, max_value=65536),
+        )
+        """Parameter averages"""
 
         # Setting frequency range
-        self.add_parameter('start',
-                           label='Start Frequency',
-                           get_cmd='SENS:FREQ:STAR?',
-                           get_parser=float,
-                           set_cmd='SENS:FREQ:STAR {}',
-                           unit='Hz',
-                           vals=Numbers(min_value=min_freq,
-                                        max_value=max_freq))
-        self.add_parameter('stop',
-                           label='Stop Frequency',
-                           get_cmd='SENS:FREQ:STOP?',
-                           get_parser=float,
-                           set_cmd='SENS:FREQ:STOP {}',
-                           unit='Hz',
-                           vals=Numbers(min_value=min_freq,
-                                        max_value=max_freq))
-        self.add_parameter('center',
-                           label='Center Frequency',
-                           get_cmd='SENS:FREQ:CENT?',
-                           get_parser=float,
-                           set_cmd='SENS:FREQ:CENT {}',
-                           unit='Hz',
-                           vals=Numbers(min_value=min_freq,
-                                        max_value=max_freq))
-        self.add_parameter('span',
-                           label='Frequency Span',
-                           get_cmd='SENS:FREQ:SPAN?',
-                           get_parser=float,
-                           set_cmd='SENS:FREQ:SPAN {}',
-                           unit='Hz',
-                           vals=Numbers(min_value=min_freq,
-                                        max_value=max_freq))
-        self.add_parameter('cw',
-                           label='CW Frequency',
-                           get_cmd='SENS:FREQ:CW?',
-                           get_parser=float,
-                           set_cmd='SENS:FREQ:CW {}',
-                           unit='Hz',
-                           vals=Numbers(min_value=min_freq,
-                                        max_value=max_freq))
+        self.start: Parameter = self.add_parameter(
+            "start",
+            label="Start Frequency",
+            get_cmd="SENS:FREQ:STAR?",
+            get_parser=float,
+            set_cmd="SENS:FREQ:STAR {}",
+            unit="Hz",
+            vals=Numbers(min_value=min_freq, max_value=max_freq),
+        )
+        """Parameter start"""
+        self.stop: Parameter = self.add_parameter(
+            "stop",
+            label="Stop Frequency",
+            get_cmd="SENS:FREQ:STOP?",
+            get_parser=float,
+            set_cmd="SENS:FREQ:STOP {}",
+            unit="Hz",
+            vals=Numbers(min_value=min_freq, max_value=max_freq),
+        )
+        """Parameter stop"""
+        self.center: Parameter = self.add_parameter(
+            "center",
+            label="Center Frequency",
+            get_cmd="SENS:FREQ:CENT?",
+            get_parser=float,
+            set_cmd="SENS:FREQ:CENT {}",
+            unit="Hz",
+            vals=Numbers(min_value=min_freq, max_value=max_freq),
+        )
+        """Parameter center"""
+        self.span: Parameter = self.add_parameter(
+            "span",
+            label="Frequency Span",
+            get_cmd="SENS:FREQ:SPAN?",
+            get_parser=float,
+            set_cmd="SENS:FREQ:SPAN {}",
+            unit="Hz",
+            vals=Numbers(min_value=min_freq, max_value=max_freq),
+        )
+        """Parameter span"""
+        self.cw: Parameter = self.add_parameter(
+            "cw",
+            label="CW Frequency",
+            get_cmd="SENS:FREQ:CW?",
+            get_parser=float,
+            set_cmd="SENS:FREQ:CW {}",
+            unit="Hz",
+            vals=Numbers(min_value=min_freq, max_value=max_freq),
+        )
+        """Parameter cw"""
 
         # Number of points in a sweep
-        self.add_parameter('points',
-                           label='Points',
-                           get_cmd='SENS:SWE:POIN?',
-                           get_parser=int,
-                           set_cmd='SENS:SWE:POIN {}',
-                           unit='',
-                           vals=Numbers(min_value=1, max_value=100001))
+        self.points: Parameter = self.add_parameter(
+            "points",
+            label="Points",
+            get_cmd="SENS:SWE:POIN?",
+            get_parser=int,
+            set_cmd="SENS:SWE:POIN {}",
+            unit="",
+            vals=Numbers(min_value=1, max_value=100001),
+        )
+        """Parameter points"""
 
         # Electrical delay
-        self.add_parameter('electrical_delay',
-                           label='Electrical Delay',
-                           get_cmd='CALC:CORR:EDEL:TIME?',
-                           get_parser=float,
-                           set_cmd='CALC:CORR:EDEL:TIME {:.6e}',
-                           unit='s',
-                           vals=Numbers(min_value=0, max_value=100000))
+        self.electrical_delay: Parameter = self.add_parameter(
+            "electrical_delay",
+            label="Electrical Delay",
+            get_cmd="CALC:CORR:EDEL:TIME?",
+            get_parser=float,
+            set_cmd="CALC:CORR:EDEL:TIME {:.6e}",
+            unit="s",
+            vals=Numbers(min_value=0, max_value=100000),
+        )
+        """Parameter electrical_delay"""
 
         # Sweep Time
-        self.add_parameter('sweep_time',
-                           label='Time',
-                           get_cmd='SENS:SWE:TIME?',
-                           get_parser=float,
-                           unit='s',
-                           vals=Numbers(0, 1e6))
+        self.sweep_time: Parameter = self.add_parameter(
+            "sweep_time",
+            label="Time",
+            get_cmd="SENS:SWE:TIME?",
+            get_parser=float,
+            unit="s",
+            vals=Numbers(0, 1e6),
+        )
+        """Parameter sweep_time"""
         # Sweep Mode
-        self.add_parameter('sweep_mode',
-                           label='Mode',
-                           get_cmd='SENS:SWE:MODE?',
-                           set_cmd='SENS:SWE:MODE {}',
-                           vals=Enum("HOLD", "CONT", "GRO", "SING"))
+        self.sweep_mode: Parameter = self.add_parameter(
+            "sweep_mode",
+            label="Mode",
+            get_cmd="SENS:SWE:MODE?",
+            set_cmd="SENS:SWE:MODE {}",
+            vals=Enum("HOLD", "CONT", "GRO", "SING"),
+        )
+        """Parameter sweep_mode"""
         # Sweep Type
-        self.add_parameter('sweep_type',
-                           label='Type',
-                           get_cmd='SENS:SWE:TYPE?',
-                           set_cmd='SENS:SWE:TYPE {}',
-                           vals=Enum('LIN', 'LOG', 'POW', 'CW', 'SEGM', 'PHAS'))
+        self.sweep_type: Parameter = self.add_parameter(
+            "sweep_type",
+            label="Type",
+            get_cmd="SENS:SWE:TYPE?",
+            set_cmd="SENS:SWE:TYPE {}",
+            vals=Enum("LIN", "LOG", "POW", "CW", "SEGM", "PHAS"),
+        )
+        """Parameter sweep_type"""
 
         # Group trigger count
-        self.add_parameter('group_trigger_count',
-                           get_cmd="SENS:SWE:GRO:COUN?",
-                           get_parser=int,
-                           set_cmd="SENS:SWE:GRO:COUN {}",
-                           vals=Ints(1, 2000000))
+        self.group_trigger_count: Parameter = self.add_parameter(
+            "group_trigger_count",
+            get_cmd="SENS:SWE:GRO:COUN?",
+            get_parser=int,
+            set_cmd="SENS:SWE:GRO:COUN {}",
+            vals=Ints(1, 2000000),
+        )
+        """Parameter group_trigger_count"""
         # Trigger Source
-        self.add_parameter('trigger_source',
-                           get_cmd="TRIG:SOUR?",
-                           set_cmd="TRIG:SOUR {}",
-                           vals=Enum("EXT", "IMM", "MAN"))
+        self.trigger_source: Parameter = self.add_parameter(
+            "trigger_source",
+            get_cmd="TRIG:SOUR?",
+            set_cmd="TRIG:SOUR {}",
+            vals=Enum("EXT", "IMM", "MAN"),
+        )
+        """Parameter trigger_source"""
 
         # Axis Parameters
-        self.add_parameter('frequency_axis',
-                           unit='Hz',
-                           label="Frequency",
-                           parameter_class=PNAAxisParameter,
-                           startparam=self.start,
-                           stopparam=self.stop,
-                           pointsparam=self.points,
-                           vals=Arrays(shape=(self.points,)))
-        self.add_parameter('frequency_log_axis',
-                           unit='Hz',
-                           label="Frequency",
-                           parameter_class=PNALogAxisParamter,
-                           startparam=self.start,
-                           stopparam=self.stop,
-                           pointsparam=self.points,
-                           vals=Arrays(shape=(self.points,)))
-        self.add_parameter('time_axis',
-                           unit='s',
-                           label="Time",
-                           parameter_class=PNATimeAxisParameter,
-                           startparam=None,
-                           stopparam=self.sweep_time,
-                           pointsparam=self.points,
-                           vals=Arrays(shape=(self.points,)))
+        self.frequency_axis: PNAAxisParameter = self.add_parameter(
+            "frequency_axis",
+            unit="Hz",
+            label="Frequency",
+            parameter_class=PNAAxisParameter,
+            startparam=self.start,
+            stopparam=self.stop,
+            pointsparam=self.points,
+            vals=Arrays(shape=(self.points,)),
+        )
+        """Parameter frequency_axis"""
+        self.frequency_log_axis: PNALogAxisParamter = self.add_parameter(
+            "frequency_log_axis",
+            unit="Hz",
+            label="Frequency",
+            parameter_class=PNALogAxisParamter,
+            startparam=self.start,
+            stopparam=self.stop,
+            pointsparam=self.points,
+            vals=Arrays(shape=(self.points,)),
+        )
+        """Parameter frequency_log_axis"""
+        self.time_axis: PNATimeAxisParameter = self.add_parameter(
+            "time_axis",
+            unit="s",
+            label="Time",
+            parameter_class=PNATimeAxisParameter,
+            startparam=None,
+            stopparam=self.sweep_time,
+            pointsparam=self.points,
+            vals=Arrays(shape=(self.points,)),
+        )
+        """Parameter time_axis"""
 
         # Traces
-        self.add_parameter('active_trace',
-                           label='Active Trace',
-                           get_cmd="CALC:PAR:MNUM?",
-                           get_parser=int,
-                           set_cmd="CALC:PAR:MNUM {}",
-                           vals=Numbers(min_value=1, max_value=24))
+        self.active_trace: Parameter = self.add_parameter(
+            "active_trace",
+            label="Active Trace",
+            get_cmd="CALC:PAR:MNUM?",
+            get_parser=int,
+            set_cmd="CALC:PAR:MNUM {}",
+            vals=Numbers(min_value=1, max_value=24),
+        )
+        """Parameter active_trace"""
         # Note: Traces will be accessed through the traces property which
         # updates the channellist to include only active trace numbers
         self._traces = ChannelList(self, "PNATraces", KeysightPNATrace)
@@ -615,12 +681,15 @@ class KeysightPNABase(VisaInstrument):
         # Set auto_sweep parameter
         # If we want to return multiple traces per setpoint without sweeping
         # multiple times, we should set this to false
-        self.add_parameter('auto_sweep',
-                           label='Auto Sweep',
-                           set_cmd=None,
-                           get_cmd=None,
-                           vals=Bool(),
-                           initial_value=True)
+        self.auto_sweep: Parameter = self.add_parameter(
+            "auto_sweep",
+            label="Auto Sweep",
+            set_cmd=None,
+            get_cmd=None,
+            vals=Bool(),
+            initial_value=True,
+        )
+        """Parameter auto_sweep"""
 
         # A default output format on initialisation
         self.write('FORM REAL,32')
@@ -743,14 +812,16 @@ class KeysightPNAxBase(KeysightPNABase):
         configurations. In practice, most of this will be set up manually on
         the unit, with power and frequency varied in a sweep.
         """
-        self.add_parameter('aux_frequency',
-                           label='Aux Frequency',
-                           get_cmd='SENS:FOM:RANG4:FREQ:CW?',
-                           get_parser=float,
-                           set_cmd='SENS:FOM:RANG4:FREQ:CW {:.2f}',
-                           unit='Hz',
-                           vals=Numbers(min_value=self.min_freq,
-                                        max_value=self.max_freq))
+        self.aux_frequency: Parameter = self.add_parameter(
+            "aux_frequency",
+            label="Aux Frequency",
+            get_cmd="SENS:FOM:RANG4:FREQ:CW?",
+            get_parser=float,
+            set_cmd="SENS:FOM:RANG4:FREQ:CW {:.2f}",
+            unit="Hz",
+            vals=Numbers(min_value=self.min_freq, max_value=self.max_freq),
+        )
+        """Parameter aux_frequency"""
 
 
 @deprecated("Use KeysightPNABase", category=QCoDeSDeprecationWarning)
