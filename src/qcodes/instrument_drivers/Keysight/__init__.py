@@ -59,7 +59,7 @@ from .keysightb1500.KeysightB1520A import (
 from .keysightb1500.KeysightB1530A import KeysightB1530A
 from .KtM960x import KeysightM960x
 from .KtMAwg import KeysightM9336A, KeysightM9336AAWGChannel
-from .N52xx import KeysightPNAPort, KeysightPNATrace
+from .N52xx import KeysightPNABase, KeysightPNAPort, KeysightPNATrace, KeysightPNAxBase
 from .private.error_handling import KeysightErrorQueueMixin
 from .private.Keysight_344xxA_submodules import (
     Keysight344xxA,
@@ -130,6 +130,8 @@ __all__ = [
     "KeysightN9030BPhaseNoiseMode",
     "KeysightN9030BSpectrumAnalyzerMode",
     "KeysightP9374A",
+    "KeysightPNABase",
+    "KeysightPNAxBase",
     "KeysightPNAPort",
     "KeysightPNATrace",
 ]

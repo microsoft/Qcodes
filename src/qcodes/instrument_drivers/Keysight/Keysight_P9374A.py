@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 #  This is not the same class of Keysight devices but seems to work well...
 
 
-class KeysightP9374A(N52xx.PNAxBase):
+class KeysightP9374A(N52xx.KeysightPNAxBase):
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ):

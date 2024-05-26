@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from qcodes.instrument import VisaInstrumentKWArgs
 
 
-class KeysightN5245A(N52xx.PNAxBase):
+class KeysightN5245A(N52xx.KeysightPNAxBase):
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ):

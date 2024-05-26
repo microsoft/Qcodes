@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from pyvisa import constants, errors
+from typing_extensions import deprecated
 
 from qcodes.instrument import (
     ChannelList,
@@ -18,6 +19,7 @@ from qcodes.parameters import (
     ParameterWithSetpoints,
     create_on_off_val_mapping,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -77,7 +79,7 @@ class FormattedSweep(ParameterWithSetpoints):
     def __init__(
         self,
         name: str,
-        instrument: "PNABase",
+        instrument: "KeysightPNABase",
         sweep_format: str,
         label: str,
         unit: str,
@@ -145,7 +147,7 @@ class KeysightPNAPort(InstrumentChannel):
 
     def __init__(
         self,
-        parent: "PNABase",
+        parent: "KeysightPNABase",
         name: str,
         port: int,
         min_power: float,
@@ -187,7 +189,7 @@ class KeysightPNATrace(InstrumentChannel):
 
     def __init__(
         self,
-        parent: "PNABase",
+        parent: "KeysightPNABase",
         name: str,
         trace_name: str,
         trace_num: int,
@@ -380,9 +382,11 @@ PNATrace = KeysightPNATrace
 "Alias for backwards compatiblitly"
 
 
-class PNABase(VisaInstrument):
+class KeysightPNABase(VisaInstrument):
     """
-    Base qcodes driver for Agilent/Keysight series PNAs
+    Base class for qcodes drivers for Agilent/Keysight series PNAs
+
+    Not to be instantiated directly. Use model specific subclass.
     http://na.support.keysight.com/pna/help/latest/Programming/GP-IB_Command_Finder/SCPI_Command_Tree.htm
 
     Note: Currently this driver only expects a single channel on the PNA. We
@@ -732,7 +736,7 @@ class PNABase(VisaInstrument):
             port._set_power_limits(min_power, max_power)
 
 
-class PNAxBase(PNABase):
+class KeysightPNAxBase(KeysightPNABase):
     def _enable_fom(self) -> None:
         """
         PNA-x units with two sources have an enormous list of functions &
@@ -747,3 +751,13 @@ class PNAxBase(PNABase):
                            unit='Hz',
                            vals=Numbers(min_value=self.min_freq,
                                         max_value=self.max_freq))
+
+
+@deprecated("Use KeysightPNABase", category=QCoDeSDeprecationWarning)
+class PNABase(KeysightPNABase):
+    pass
+
+
+@deprecated("Use KeysightPNAxBase", category=QCoDeSDeprecationWarning)
+class PNAxBase(KeysightPNAxBase):
+    pass
