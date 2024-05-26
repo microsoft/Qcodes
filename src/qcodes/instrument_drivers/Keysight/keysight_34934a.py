@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
     """
-    Create an instance for module 34933A.
+    InstrumentModule that represents the Keysight34934A module
 
     Args:
         parent: the system which the module is installed on

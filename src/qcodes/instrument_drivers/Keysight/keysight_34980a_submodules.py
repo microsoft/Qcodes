@@ -1,11 +1,15 @@
 from typing import TYPE_CHECKING, Optional, Union
 
+from typing_extensions import deprecated
+
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel, VisaInstrument
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
+@deprecated("Unused module", category=QCoDeSDeprecationWarning)
 class KeysightSubModule(InstrumentChannel):
     """
     A base class for submodules for the 34980A systems.
@@ -27,10 +31,27 @@ class KeysightSubModule(InstrumentChannel):
         self.slot = slot
 
 
-class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
-    """
-    A base class for **Switch Matrix** submodules for the 34980A systems.
-    """
+class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
+    def __init__(
+        self,
+        parent: Union[VisaInstrument, InstrumentChannel],
+        name: str,
+        slot: int,
+        **kwargs: "Unpack[InstrumentBaseKWArgs]",
+    ) -> None:
+        """
+        A base class for **Switch Matrix** submodules for the 34980A systems.
+
+        Args:
+            parent: the system which the module is installed on
+            name: user defined name for the module
+            slot: the slot the module is installed
+            **kwargs: Forwarded to base class.
+        """
+        super().__init__(parent, name, **kwargs)
+
+        self.slot = slot
+
     def validate_value(self, row: int, column: int) -> None:
         """
         to check if the row and column number is within the range of the module
@@ -180,5 +201,8 @@ class Keysight34980ASwitchMatrixSubModule(KeysightSubModule):
         messages = self.ask(f"ROUTe:OPEN? {channel_list_str}")
         return [bool(int(message)) for message in messages.split(',')]
 
-
-KeysightSwitchMatrixSubModule = Keysight34980ASwitchMatrixSubModule
+@deprecated(
+    "Use Keysight34980ASwitchMatrixSubModule", category=QCoDeSDeprecationWarning
+)
+class KeysightSwitchMatrixSubModule(Keysight34980ASwitchMatrixSubModule):
+    pass
