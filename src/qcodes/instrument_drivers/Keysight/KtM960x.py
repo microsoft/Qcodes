@@ -6,6 +6,7 @@ import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import (
     MultiParameter,
+    Parameter,
     ParamRawDataType,
     create_on_off_val_mapping,
 )
@@ -59,61 +60,67 @@ class KeysightM960x(Instrument):
         self._dll_loc = dll_path
         self._dll = ctypes.cdll.LoadLibrary(self._dll_loc)
 
-        self.add_parameter('output',
-                           label="Source Output Enable",
-                           get_cmd=partial(self._get_vi_bool,
-                                           KTM960X_ATTR_OUTPUT_ENABLED),
-                           set_cmd=partial(self._set_vi_bool,
-                                           KTM960X_ATTR_OUTPUT_ENABLED),
-                           val_mapping=create_on_off_val_mapping(on_val=True,
-                                                                 off_val=False)
-                           )
+        self.output: Parameter = self.add_parameter(
+            "output",
+            label="Source Output Enable",
+            get_cmd=partial(self._get_vi_bool, KTM960X_ATTR_OUTPUT_ENABLED),
+            set_cmd=partial(self._set_vi_bool, KTM960X_ATTR_OUTPUT_ENABLED),
+            val_mapping=create_on_off_val_mapping(on_val=True, off_val=False),
+        )
+        """Parameter output"""
 
-        self.add_parameter('voltage_level',
-                           label="Source Voltage Level",
-                           unit="Volt",
-                           get_cmd=partial(self._get_vi_real64,
-                                           KTM960X_ATTR_OUTPUT_VOLTAGE_LEVEL),
-                           set_cmd=partial(self._set_vi_real64,
-                                           KTM960X_ATTR_OUTPUT_VOLTAGE_LEVEL),
-                           vals=vals.Numbers(-210, 210))
+        self.voltage_level: Parameter = self.add_parameter(
+            "voltage_level",
+            label="Source Voltage Level",
+            unit="Volt",
+            get_cmd=partial(self._get_vi_real64, KTM960X_ATTR_OUTPUT_VOLTAGE_LEVEL),
+            set_cmd=partial(self._set_vi_real64, KTM960X_ATTR_OUTPUT_VOLTAGE_LEVEL),
+            vals=vals.Numbers(-210, 210),
+        )
+        """Parameter voltage_level"""
 
-        self.add_parameter("current_range",
-                           label="Output Current Range",
-                           unit="Amp",
-                           vals=vals.Numbers(1e-9, 300e-3),
-                           get_cmd=partial(self._get_vi_real64,
-                                           KTM960X_ATTR_OUTPUT_CURRENT_RANGE),
-                           set_cmd=partial(self._set_vi_real64,
-                                           KTM960X_ATTR_OUTPUT_CURRENT_RANGE)
-                           )
+        self.current_range: Parameter = self.add_parameter(
+            "current_range",
+            label="Output Current Range",
+            unit="Amp",
+            vals=vals.Numbers(1e-9, 300e-3),
+            get_cmd=partial(self._get_vi_real64, KTM960X_ATTR_OUTPUT_CURRENT_RANGE),
+            set_cmd=partial(self._set_vi_real64, KTM960X_ATTR_OUTPUT_CURRENT_RANGE),
+        )
+        """Parameter current_range"""
 
-        self.add_parameter("measure_current_range",
-                           label="Current Measurement Range",
-                           unit="Amp",
-                           get_cmd=partial(
-                               self._get_vi_real64,
-                               KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
-                           set_cmd=partial(
-                               self._set_vi_real64,
-                               KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE),
-                           vals=vals.Numbers(1e-9, 300e-3),
-                           )
+        self.measure_current_range: Parameter = self.add_parameter(
+            "measure_current_range",
+            label="Current Measurement Range",
+            unit="Amp",
+            get_cmd=partial(
+                self._get_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE
+            ),
+            set_cmd=partial(
+                self._set_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_RANGE
+            ),
+            vals=vals.Numbers(1e-9, 300e-3),
+        )
+        """Parameter measure_current_range"""
 
-        self.add_parameter("measure_current_time",
-                           label="Current Measurement Integration Time",
-                           unit="Seconds",
-                           get_cmd=partial(
-                               self._get_vi_real64,
-                               KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
-                           set_cmd=partial(
-                               self._set_vi_real64,
-                               KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE),
-                           vals=vals.Numbers(800e-9, 2)
-                           )
+        self.measure_current_time: Parameter = self.add_parameter(
+            "measure_current_time",
+            label="Current Measurement Integration Time",
+            unit="Seconds",
+            get_cmd=partial(
+                self._get_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE
+            ),
+            set_cmd=partial(
+                self._set_vi_real64, KTM960X_ATTR_MEASUREMENT_CURRENT_APERTURE
+            ),
+            vals=vals.Numbers(800e-9, 2),
+        )
+        """Parameter measure_current_time"""
 
-        self.add_parameter("measure_data",
-                           parameter_class=Measure)
+        self.measure_data: Measure = self.add_parameter(
+            "measure_data", parameter_class=Measure
+        )
+        """Parameter measure_data"""
 
         self._get_driver_desc = partial(
             self._get_vi_string, KTM960X_ATTR_SPECIFIC_DRIVER_DESCRIPTION)
