@@ -193,10 +193,8 @@ class Monitor(Thread):
                 self.handler, "127.0.0.1", WEBSOCKET_PORT, close_timeout=1
             ):
                 self.server_is_started.set()
-                try:
-                    await self._stop_loop_future
-                except asyncio.CancelledError:
-                    log.debug("Websocket server thread shutting down")
+                await self._stop_loop_future
+                log.debug("Websocket server thread shutting down")
 
         try:
             asyncio.run(run_loop())
@@ -234,7 +232,7 @@ class Monitor(Thread):
         try:
             if self.loop is not None and self._stop_loop_future is not None:
                 log.debug("Instructing server to stop event loop.")
-                self.loop.call_soon_threadsafe(self._stop_loop_future.cancel)
+                self.loop.call_soon_threadsafe(self._stop_loop_future.set_result, True)
             else:
                 log.debug("No event loop found. Cannot stop event loop.")
         except RuntimeError:
