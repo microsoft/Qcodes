@@ -8,7 +8,7 @@ from typing import Any, TypedDict
 
 import numpy as np
 import pytest
-from hypothesis import HealthCheck, given, settings
+from hypothesis import HealthCheck, example, given, settings
 from hypothesis.strategies import floats, tuples
 from pytest import FixtureRequest, LogCaptureFixture
 
@@ -374,6 +374,10 @@ def test_cylindrical_sanity(current_driver, set_target) -> None:
     assert np.allclose(set_target, [rho, phi, z])
 
 
+# add some examples where floating point math results
+# in z > r due to round off errors and ensure
+# we handle them correctly
+@example((0, 0, 3.729170476738041e-155))
 @given(set_target=random_coordinates["cartesian"])
 @settings(
     max_examples=10,
@@ -424,7 +428,10 @@ def test_spherical_setpoints(current_driver, set_target) -> None:
     get_vector = FieldVector(**get_target)
     assert set_vector.is_equal(get_vector)
 
-
+# add some examples where floating point math results
+# in z > r due to round off errors and ensure
+# we handle them correctly
+@example((0, 0, 3.729170476738041e-155))
 @given(set_target=random_coordinates["cylindrical"])
 @settings(
     max_examples=10,

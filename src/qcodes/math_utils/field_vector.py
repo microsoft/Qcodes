@@ -101,7 +101,14 @@ class FieldVector:
         r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
         if r != 0:
             z_r_frac = z / r
-            assert abs(z_r_frac) <= 1
+            # it it possible that z_r_frac is slightly larger than 1 or
+            # slightly smaller than -1 due to floating point errors.
+            # an example that triggers this is:
+            # x=0, y=0, z=3.729170476738041e-155
+            if z_r_frac > 1:
+                z_r_frac = 1
+            elif z_r_frac < -1:
+                z_r_frac = -1
             theta = np.arccos(z_r_frac)
         else:
             theta = 0
@@ -133,7 +140,16 @@ class FieldVector:
         y = rho * np.sin(phi)
         r = np.sqrt(rho ** 2 + z ** 2)
         if r != 0:
-            theta = np.arccos(z / r)
+            z_r_frac = z / r
+            # it it possible that z_r_frac is slightly larger than 1 or
+            # slightly smaller than -1 due to floating point errors.
+            # an example that triggers this is:
+            # phi=0, rho=0, z=3.729170476738041e-155
+            if z_r_frac > 1:
+                z_r_frac = 1
+            elif z_r_frac < -1:
+                z_r_frac = -1
+            theta = np.arccos(z_r_frac)
         else:
             theta = 0
 
