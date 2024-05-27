@@ -447,5 +447,5 @@ zhinst-toolkit==0.6.3
     # via zhinst-qcodes
 zhinst-utils==0.4.1
     # via zhinst-toolkit
-zipp==3.18.2
+zipp==3.19.0
     # via importlib-metadata
