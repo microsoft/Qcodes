@@ -58,21 +58,23 @@ class LakeshoreModel372Output(LakeshoreBaseOutput):
 
         # Add more parameters for OUTMODE command
         # and redefine the corresponding group
-        self.add_parameter(
+        self.polarity: GroupParameter = self.add_parameter(
             "polarity",
             label="Output polarity",
             docstring="Specifies output polarity (not applicable to warm-up heater)",
             val_mapping=self.POLARITIES,
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Specifies output polarity (not applicable to warm-up heater)"""
+        self.use_filter: GroupParameter = self.add_parameter(
             "use_filter",
             label="Use filter for readings",
             docstring="Specifies controlling on unfiltered or filtered readings",
             val_mapping={True: 1, False: 0},
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Specifies controlling on unfiltered or filtered readings"""
+        self.delay: GroupParameter = self.add_parameter(
             "delay",
             label="Delay",
             unit="s",
@@ -81,6 +83,7 @@ class LakeshoreModel372Output(LakeshoreBaseOutput):
             get_parser=int,
             parameter_class=GroupParameter,
         )
+        """Delay in seconds for setpoint change during Autoscanning"""
         self.output_group = Group(
             [
                 self.mode,
@@ -130,7 +133,7 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
         super().__init__(parent, name, channel, **kwargs)
 
         # Parameters related to Input Channel Parameter Command (INSET)
-        self.add_parameter(
+        self.enabled: GroupParameter = self.add_parameter(
             "enabled",
             label="Enabled",
             docstring="Specifies whether the input/channel is "
@@ -142,7 +145,12 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             val_mapping={True: 1, False: 0},
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """
+        Specifies whether the input/channel is enabled or disabled. At least one measurement
+        input channel must be enabled. If all are configured to disabled, channel 1
+        will change to enabled.
+        """
+        self.dwell: GroupParameter = self.add_parameter(
             "dwell",
             label="Dwell",
             docstring="Specifies a value for the autoscanning dwell time.",
@@ -151,7 +159,8 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             vals=vals.Numbers(1, 200),
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Specifies a value for the autoscanning dwell time."""
+        self.pause: GroupParameter = self.add_parameter(
             "pause",
             label="Change pause time",
             docstring="Specifies a value for the change pause time",
@@ -160,7 +169,8 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             vals=vals.Numbers(3, 200),
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Specifies a value for the change pause time"""
+        self.curve_number: GroupParameter = self.add_parameter(
             "curve_number",
             label="Curve",
             docstring="Specifies which curve the channel uses: "
@@ -171,7 +181,11 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             vals=vals.Numbers(0, 59),
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """
+        Specifies which curve the channel uses: 0 = no curve, 1 to 59 = standard/user curves.
+        Do not change this parameter unless you know what you are doing.
+        """
+        self.temperature_coefficient: GroupParameter = self.add_parameter(
             "temperature_coefficient",
             label="Change pause time",
             docstring="Sets the temperature coefficient that "
@@ -182,6 +196,11 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             val_mapping={"negative": 1, "positive": 2},
             parameter_class=GroupParameter,
         )
+        """
+        Sets the temperature coefficient that will be used for temperature control if no curve is
+        selected (negative or positive). Do not change this parameter unless you know what
+        you are doing.
+        """
         self.output_group = Group(
             [
                 self.enabled,
@@ -198,13 +217,14 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
         )
 
         # Parameters related to Input Setup Command (INTYPE)
-        self.add_parameter(
+        self.excitation_mode: GroupParameter = self.add_parameter(
             "excitation_mode",
             label="Excitation mode",
             docstring="Specifies excitation mode",
             val_mapping={"voltage": 0, "current": 1},
             parameter_class=GroupParameter,
         )
+        """Specifies excitation mode"""
         # The allowed values for this parameter change based on the value of
         # the 'excitation_mode' parameter. Moreover, there is a table in the
         # manual that assigns the numbers to particular voltage/current ranges.
@@ -212,7 +232,7 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
         # (i.e. using val_mapping, and that val_mapping is updated based on the
         # value of 'excitation_mode'). At the moment, this parameter is added
         # only because it is a part of a group.
-        self.add_parameter(
+        self.excitation_range_number: GroupParameter = self.add_parameter(
             "excitation_range_number",
             label="Excitation range number",
             docstring="Specifies excitation range number "
@@ -223,14 +243,19 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             vals=vals.Numbers(1, 22),
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """
+        Specifies excitation range number (1-12 for voltage excitation, 1-22 for current excitation);
+        refer to the manual for the table of ranges
+        """
+        self.auto_range: GroupParameter = self.add_parameter(
             "auto_range",
             label="Auto range",
             docstring="Specifies auto range setting",
             val_mapping={"off": 0, "current": 1},
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Specifies auto range setting"""
+        self.range: GroupParameter = self.add_parameter(
             "range",
             label="Range",
             val_mapping={
@@ -259,7 +284,8 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             },
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Parameter range"""
+        self.current_source_shunted: GroupParameter = self.add_parameter(
             "current_source_shunted",
             label="Current source shunt",
             docstring="Current source either not shunted "
@@ -268,7 +294,8 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             val_mapping={False: 0, True: 1},
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Current source either not shunted (excitation on), or shunted (excitation off)"""
+        self.units: GroupParameter = self.add_parameter(
             "units",
             label="Preferred units",
             docstring="Specifies the preferred units parameter "
@@ -277,6 +304,10 @@ class LakeshoreModel372Channel(LakeshoreBaseSensorChannel):
             val_mapping={"kelvin": 1, "ohms": 2},
             parameter_class=GroupParameter,
         )
+        """
+        Specifies the preferred units parameter for sensor readings and for the control setpoint
+        (kelvin or ohms)
+        """
         self.output_group = Group(
             [
                 self.excitation_mode,
