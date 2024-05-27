@@ -71,16 +71,18 @@ class Keysight344xxATrigger(InstrumentChannel):
             the trigger count returns to the previous value you selected."""
             ),
         )
-        """Selects the number of triggers that are accepted by the
-instrument before returning to the "idle" trigger state.
+        """
+        Selects the number of triggers that are accepted by the
+        instrument before returning to the "idle" trigger state.
 
-You can use the specified trigger count in conjunction with
-`sample_count`. In this case, the number of measurements
-returned is the sample count multiplied by the trigger count.
+        You can use the specified trigger count in conjunction with
+        `sample_count`. In this case, the number of measurements
+        returned is the sample count multiplied by the trigger count.
 
-A variable trigger count is not available from the front panel.
-However, when you return to remote control of the instrument,
-the trigger count returns to the previous value you selected."""
+        A variable trigger count is not available from the front panel.
+        However, when you return to remote control of the instrument,
+        the trigger count returns to the previous value you selected.
+        """
 
         self.delay: Parameter = self.add_parameter(
             "delay",
@@ -104,16 +106,18 @@ the trigger count returns to the previous value you selected."""
             trigger delay."""
             ),
         )
-        """Sets the delay between the trigger signal and the first
-measurement. This may be useful in applications where you want
-to allow the input to settle before taking a measurement or for
-pacing a burst of measurements.
+        """
+        Sets the delay between the trigger signal and the first
+        measurement. This may be useful in applications where you want
+        to allow the input to settle before taking a measurement or for
+        pacing a burst of measurements.
 
-Step size for DC measurements is approximately 1 µs. For AC
-measurements, step size depends on AC bandwidth.
+        Step size for DC measurements is approximately 1 µs. For AC
+        measurements, step size depends on AC bandwidth.
 
-Selecting a specific trigger delay disables the automatic
-trigger delay."""
+        Selecting a specific trigger delay disables the automatic
+        trigger delay.
+        """
 
         self.auto_delay_enabled: Parameter = self.add_parameter(
             "auto_delay_enabled",
@@ -132,12 +136,14 @@ trigger delay."""
             the automatic trigger delay."""
             ),
         )
-        """Disables or enables automatic trigger delay. If enabled,
-the instrument determines the delay based on function, range,
-and integration time or bandwidth.
+        """
+        Disables or enables automatic trigger delay. If enabled,
+        the instrument determines the delay based on function, range,
+        and integration time or bandwidth.
 
-Selecting a specific trigger delay using `trigger.delay` disables
-the automatic trigger delay."""
+        Selecting a specific trigger delay using `trigger.delay` disables
+        the automatic trigger delay.
+        """
 
         self.slope: Parameter = self.add_parameter(
             "slope",
@@ -169,12 +175,14 @@ the automatic trigger delay."""
                 range."""
                 ),
             )
-            """Sets the level on which a trigger occurs when level
-triggering is enabled (`trigger.source` set to "INT").
+            """
+            Sets the level on which a trigger occurs when level
+            triggering is enabled (`trigger.source` set to "INT").
 
-Note that for 100 mV to 100 V ranges and autorange is off,
-the trigger level can only be set within ±120% of the
-range."""
+            Note that for 100 mV to 100 V ranges and autorange is off,
+            the trigger level can only be set within ±120% of the
+            range.
+            """
 
         _trigger_source_docstring = textwrap.dedent("""\
             Selects the trigger source for measurements.
@@ -836,7 +844,7 @@ the resolution values."""
             ON:   the DMM internally measures the offset following each
                   measurement. It then subtracts that measurement from the
                   preceding reading. This prevents offset voltages present on
-                  the DMM’s input circuitry from affecting measurement
+                  the DMM's input circuitry from affecting measurement
                   accuracy.
             OFF:  the instrument uses the last measured zero measurement and
                   subtracts it from each measurement. It takes a new zero
@@ -852,26 +860,31 @@ the resolution values."""
                   integration time."""
             ),
         )
-        """Disables or enables the autozero mode for DC voltage and ratio
-measurements.
+        """
+        Disables or enables the autozero mode for DC voltage and ratio
+        measurements.
 
-ON:   the DMM internally measures the offset following each
-      measurement. It then subtracts that measurement from the
-      preceding reading. This prevents offset voltages present on
-      the DMM’s input circuitry from affecting measurement
-      accuracy.
-OFF:  the instrument uses the last measured zero measurement and
-      subtracts it from each measurement. It takes a new zero
-      measurement each time you change the function, range or
-      integration time.
-ONCE: the instrument takes one zero measurement and sets
-      autozero OFF. The zero measurement taken is used for all
-      subsequent measurements until the next change to the
-      function, range or integration time. If the specified
-      integration time is less than 1 PLC, the zero measurement
-      is taken at 1 PLC to optimize noise rejection. Subsequent
-      measurements are taken at the specified fast (< 1 PLC)
-      integration time."""
+        ON:
+            the DMM internally measures the offset following each
+            measurement. It then subtracts that measurement from the
+            preceding reading. This prevents offset voltages present on
+            the DMM's input circuitry from affecting measurement
+            accuracy.
+        OFF:
+            the instrument uses the last measured zero measurement and
+            subtracts it from each measurement. It takes a new zero
+            measurement each time you change the function, range or
+            integration time.
+        ONCE:
+            the instrument takes one zero measurement and sets
+            autozero OFF. The zero measurement taken is used for all
+            subsequent measurements until the next change to the
+            function, range or integration time. If the specified
+            integration time is less than 1 PLC, the zero measurement
+            is taken at 1 PLC to optimize noise rejection. Subsequent
+            measurements are taken at the specified fast (< 1 PLC)
+            integration time.
+        """
 
         ####################################
         # Aperture parameters
