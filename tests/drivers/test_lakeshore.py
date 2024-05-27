@@ -11,7 +11,9 @@ import pytest
 from typing_extensions import ParamSpec
 
 from qcodes.instrument import InstrumentBase
-from qcodes.instrument_drivers.Lakeshore.lakeshore_base import BaseSensorChannel
+from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
+    LakeshoreBaseSensorChannel,
+)
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 from qcodes.logger import get_instrument_logger
 from qcodes.utils import QCoDeSDeprecationWarning
@@ -417,39 +419,43 @@ def test_blocking_t(lakeshore_372) -> None:
 def test_get_term_sum() -> None:
     available_terms = [0, 1, 2, 4, 8, 16, 32]
 
-    assert [32, 8, 2, 1] == BaseSensorChannel._get_sum_terms(
+    assert [32, 8, 2, 1] == LakeshoreBaseSensorChannel._get_sum_terms(
         available_terms, 1 + 2 + 8 + 32
     )
 
-    assert [32] == BaseSensorChannel._get_sum_terms(available_terms, 32)
+    assert [32] == LakeshoreBaseSensorChannel._get_sum_terms(available_terms, 32)
 
-    assert [16, 4, 1] == BaseSensorChannel._get_sum_terms(available_terms, 1 + 4 + 16)
+    assert [16, 4, 1] == LakeshoreBaseSensorChannel._get_sum_terms(
+        available_terms, 1 + 4 + 16
+    )
 
-    assert [0] == BaseSensorChannel._get_sum_terms(available_terms, 0)
+    assert [0] == LakeshoreBaseSensorChannel._get_sum_terms(available_terms, 0)
 
 
 def test_get_term_sum_with_some_powers_of_2_omitted() -> None:
     available_terms = [0, 16, 32]
 
-    assert [32, 16] == BaseSensorChannel._get_sum_terms(available_terms, 16 + 32)
+    assert [32, 16] == LakeshoreBaseSensorChannel._get_sum_terms(
+        available_terms, 16 + 32
+    )
 
-    assert [32] == BaseSensorChannel._get_sum_terms(available_terms, 32)
+    assert [32] == LakeshoreBaseSensorChannel._get_sum_terms(available_terms, 32)
 
-    assert [0] == BaseSensorChannel._get_sum_terms(available_terms, 0)
+    assert [0] == LakeshoreBaseSensorChannel._get_sum_terms(available_terms, 0)
 
 
 def test_get_term_sum_returns_empty_list() -> None:
     available_terms = [0, 16, 32]
 
-    assert [] == BaseSensorChannel._get_sum_terms(available_terms, 15)
+    assert [] == LakeshoreBaseSensorChannel._get_sum_terms(available_terms, 15)
 
 
 def test_get_term_sum_when_zero_is_not_in_available_terms() -> None:
     available_terms = [16, 32]
 
-    assert [] == BaseSensorChannel._get_sum_terms(available_terms, 3)
+    assert [] == LakeshoreBaseSensorChannel._get_sum_terms(available_terms, 3)
 
     # Note that `_get_sum_terms` expects '0' to be in the available_terms,
     # hence for this particular case it will still return a list with '0' in
     # it although that '0' is not part of the available_terms
-    assert [0] == BaseSensorChannel._get_sum_terms(available_terms, 0)
+    assert [0] == LakeshoreBaseSensorChannel._get_sum_terms(available_terms, 0)

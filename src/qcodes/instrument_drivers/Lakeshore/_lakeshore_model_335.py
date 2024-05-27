@@ -6,7 +6,11 @@ import pyvisa.resources
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
 
-from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
+from .lakeshore_base import (
+    LakeshoreBase,
+    LakeshoreBaseOutput,
+    LakeshoreBaseSensorChannel,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -29,7 +33,7 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
 _channel_name_to_outmode_command_map.update({"None": 0})
 
 
-class LakeshoreModel335Channel(BaseSensorChannel):
+class LakeshoreModel335Channel(LakeshoreBaseSensorChannel):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 335.
 
@@ -143,7 +147,7 @@ class LakeshoreModel335Channel(BaseSensorChannel):
         )
 
 
-class LakeshoreModel335CurrentSource(BaseOutput):
+class LakeshoreModel335CurrentSource(LakeshoreBaseOutput):
     """
     InstrumentChannel for current sources on Lakeshore Model 335.
 

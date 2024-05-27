@@ -72,7 +72,10 @@ class LakeshoreBaseOutput(InstrumentChannel):
             parameter_class=GroupParameter,
             **self._input_channel_parameter_kwargs,
         )
-        """Specifies which measurement input to control from (note that only measurement inputs are available)"""
+        """
+        Specifies which measurement input to control from
+        (note that only measurement inputs are available)
+        """
         self.powerup_enable: GroupParameter = self.add_parameter(
             "powerup_enable",
             label="Power-up enable on/off",
@@ -136,7 +139,11 @@ class LakeshoreBaseOutput(InstrumentChannel):
             set_cmd=f"RANGE {output_index}, {{}}",
             get_cmd=f"RANGE? {output_index}",
         )
-        """Specifies heater output range. The range setting has no effect if an output is in the `Off` mode, and does not apply to an output in `Monitor Out` mode. An output in `Monitor Out` mode is always on."""
+        """
+        Specifies heater output range. The range setting has no effect if an
+        output is in the `Off` mode, and does not apply to an output in `Monitor Out` mode.
+        An output in `Monitor Out` mode is always on.
+        """
 
         self.output: Parameter = self.add_parameter(
             "output",
@@ -151,8 +158,10 @@ class LakeshoreBaseOutput(InstrumentChannel):
             get_cmd=f"HTR? {output_index}",
             set_cmd=False,
         )
-        """Specifies heater output in percent of the current heater output range.
-Note that when the heater is off, this parameter will return the value of 0.005."""
+        """
+        Specifies heater output in percent of the current heater output range.
+        Note that when the heater is off, this parameter will return the value of 0.005.
+        """
 
         self.setpoint: Parameter = self.add_parameter(
             "setpoint",
@@ -168,7 +177,10 @@ Note that when the heater is off, this parameter will return the value of 0.005.
             set_cmd=f"SETP {output_index}, {{}}",
             get_cmd=f"SETP? {output_index}",
         )
-        """The value of the setpoint in the preferred units of the control loop sensor (which is set via `input_channel` parameter)"""
+        """
+        The value of the setpoint in the preferred units of the control loop sensor
+        (which is set via `input_channel` parameter)
+        """
 
         # Additional non-Visa parameters
 
@@ -188,7 +200,11 @@ Note that when the heater is off, this parameter will return the value of 0.005.
             "set the output range via temperature "
             "instead of doing it directly",
         )
-        """Use this parameter to define which temperature corresponds to which output range; then use the `set_range_from_temperature` method to set the output range via temperature instead of doing it directly"""
+        """
+        Use this parameter to define which temperature corresponds to which output range;
+        then use the `set_range_from_temperature` method to set the output range via temperature
+        instead of doing it directly
+        """
 
         self.wait_cycle_time: Parameter = self.add_parameter(
             "wait_cycle_time",
@@ -243,7 +259,12 @@ Note that when the heater is off, this parameter will return the value of 0.005.
             set_cmd=self._set_blocking_t,
             snapshot_exclude=True,
         )
-        """Sets the setpoint value, and input range, and waits until it is reached. Added for compatibility with Loop. Note that if the setpoint value is in a different range, this function may wait forever because that setpoint cannot be reached within the current range."""
+        """
+        Sets the setpoint value, and input range, and waits until it is reached.
+        Added for compatibility with Loop. Note that if the setpoint value is in a
+        different range, this function may wait forever because that setpoint cannot
+        be reached within the current range.
+        """
 
     def _set_blocking_t(self, temperature: float) -> None:
         self.set_range_from_temperature(temperature)
@@ -430,7 +451,11 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
             "feature off for the given sensor input.",
             unit="K",
         )
-        """The temperature limit in kelvin for which to shut down all control outputs when exceeded. A temperature limit of zero turns the temperature limit feature off for the given sensor input."""
+        """
+        The temperature limit in kelvin for which to shut down all control outputs when
+        exceeded. A temperature limit of zero turns the temperature limit feature off
+        for the given sensor input.
+        """
 
         self.sensor_raw: Parameter = self.add_parameter(
             "sensor_raw",
