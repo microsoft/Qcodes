@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 import qcodes.validators as vals
 from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
-    BaseOutput,
-    BaseSensorChannel,
+    BaseOutput,  # pyright: ignore
+    BaseSensorChannel,  # pyright: ignore
     LakeshoreBase,
 )
 from qcodes.parameters import Group, GroupParameter

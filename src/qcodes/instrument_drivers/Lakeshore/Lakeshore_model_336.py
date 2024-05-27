@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING, ClassVar
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
 
-from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
+from .lakeshore_base import (
+    LakeshoreBase,
+    LakeshoreBaseOutput,
+    LakeshoreBaseSensorChannel,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -25,7 +29,7 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
 }
 
 
-class LakeshoreModel336CurrentSource(BaseOutput):
+class LakeshoreModel336CurrentSource(LakeshoreBaseOutput):
     """
     InstrumentChannel for current sources on Lakeshore Model 336.
 
@@ -60,7 +64,7 @@ class LakeshoreModel336CurrentSource(BaseOutput):
         self.D.vals = vals.Numbers(0, 200)
 
 
-class LakeshoreModel336VoltageSource(BaseOutput):
+class LakeshoreModel336VoltageSource(LakeshoreBaseOutput):
     """
     InstrumentChannel for voltage sources on Lakeshore Model 336.
 
@@ -89,7 +93,7 @@ class LakeshoreModel336VoltageSource(BaseOutput):
         super().__init__(parent, output_name, output_index, has_pid=False, **kwargs)
 
 
-class LakeshoreModel336Channel(BaseSensorChannel):
+class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 336.
 

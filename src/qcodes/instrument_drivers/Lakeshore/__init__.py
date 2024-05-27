@@ -3,6 +3,11 @@ from ._lakeshore_model_335 import (
     LakeshoreModel335Channel,
     LakeshoreModel335CurrentSource,
 )
+from .lakeshore_base import (
+    LakeshoreBase,
+    LakeshoreBaseOutput,
+    LakeshoreBaseSensorChannel,
+)
 from .Lakeshore_model_325 import (
     LakeshoreModel325,
     LakeshoreModel325Curve,
@@ -23,6 +28,9 @@ from .Lakeshore_model_372 import (
 )
 
 __all__ = [
+    "LakeshoreBaseOutput",
+    "LakeshoreBase",
+    "LakeshoreBaseSensorChannel",
     "LakeshoreModel325",
     "LakeshoreModel325Curve",
     "LakeshoreModel325Heater",

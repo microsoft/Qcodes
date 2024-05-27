@@ -3,6 +3,7 @@ from bisect import bisect
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 import numpy as np
+from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -13,6 +14,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import Group, GroupParameter
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class BaseOutput(InstrumentChannel):
+class LakeshoreBaseOutput(InstrumentChannel):
     MODES: ClassVar[dict[str, int]] = {}
     RANGES: ClassVar[dict[str, int]] = {}
 
@@ -334,8 +336,14 @@ class BaseOutput(InstrumentChannel):
 
             time.sleep(wait_cycle_time)
 
+@deprecated(
+    "Base class renamed to LakeshoreBaseOutput", category=QCoDeSDeprecationWarning
+)
+class BaseOutput(LakeshoreBaseOutput):
+    pass
 
-class BaseSensorChannel(InstrumentChannel):
+
+class LakeshoreBaseSensorChannel(InstrumentChannel):
     # A dictionary of sensor statuses that assigns a string representation of
     # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
     SENSOR_STATUSES: ClassVar[dict[int, str]] = {}
@@ -464,6 +472,13 @@ class BaseSensorChannel(InstrumentChannel):
 
         return terms_in_number
 
+@deprecated(
+    "Base class renamed to LakeshoreBaseSensorChannel",
+    category=QCoDeSDeprecationWarning,
+)
+class BaseSensorChannel(LakeshoreBaseSensorChannel):
+    pass
+
 
 class LakeshoreBase(VisaInstrument):
     """
@@ -482,7 +497,7 @@ class LakeshoreBase(VisaInstrument):
     """
     # Redefine this in the model-specific class in case you want to use a
     # different class for sensor channels
-    CHANNEL_CLASS = BaseSensorChannel
+    CHANNEL_CLASS = LakeshoreBaseSensorChannel
 
     # This dict has channel name in the driver as keys, and channel "name" that
     # is used in instrument commands as values. For example, if channel called
