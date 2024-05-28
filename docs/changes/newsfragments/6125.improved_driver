@@ -1,4 +1,4 @@
-The Keithley drivers shipping with QCoDeS
+The Keysight drivers shipping with QCoDeS
 have been updated to ensure all Parameters are set as static
 attributes that are documented and can be type checked. The docs for the same drivers have been
 updated to not document inherited members. This makes the documentation significantly more readable
