@@ -3,6 +3,7 @@ from bisect import bisect
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
 import numpy as np
+from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -12,7 +13,8 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import Group, GroupParameter
+from qcodes.parameters import Group, GroupParameter, Parameter
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -20,7 +22,7 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-class BaseOutput(InstrumentChannel):
+class LakeshoreBaseOutput(InstrumentChannel):
     MODES: ClassVar[dict[str, int]] = {}
     RANGES: ClassVar[dict[str, int]] = {}
 
@@ -53,24 +55,36 @@ class BaseOutput(InstrumentChannel):
         self._has_pid = has_pid
         self._output_index = output_index
 
-        self.add_parameter('mode',
-                           label='Control mode',
-                           docstring='Specifies the control mode',
-                           val_mapping=self.MODES,
-                           parameter_class=GroupParameter)
-        self.add_parameter('input_channel',
-                           label='Input channel',
-                           docstring='Specifies which measurement input to '
-                                     'control from (note that only '
-                                     'measurement inputs are available)',
-                           parameter_class=GroupParameter,
-                           **self._input_channel_parameter_kwargs)
-        self.add_parameter('powerup_enable',
-                           label='Power-up enable on/off',
-                           docstring='Specifies whether the output remains on '
-                                     'or shuts off after power cycle.',
-                           val_mapping={True: 1, False: 0},
-                           parameter_class=GroupParameter)
+        self.mode: GroupParameter = self.add_parameter(
+            "mode",
+            label="Control mode",
+            docstring="Specifies the control mode",
+            val_mapping=self.MODES,
+            parameter_class=GroupParameter,
+        )
+        """Specifies the control mode"""
+        self.input_channel: GroupParameter = self.add_parameter(
+            "input_channel",
+            label="Input channel",
+            docstring="Specifies which measurement input to "
+            "control from (note that only "
+            "measurement inputs are available)",
+            parameter_class=GroupParameter,
+            **self._input_channel_parameter_kwargs,
+        )
+        """
+        Specifies which measurement input to control from
+        (note that only measurement inputs are available)
+        """
+        self.powerup_enable: GroupParameter = self.add_parameter(
+            "powerup_enable",
+            label="Power-up enable on/off",
+            docstring="Specifies whether the output remains on "
+            "or shuts off after power cycle.",
+            val_mapping={True: 1, False: 0},
+            parameter_class=GroupParameter,
+        )
+        """Specifies whether the output remains on or shuts off after power cycle."""
         self.output_group = Group([self.mode, self.input_channel,
                                    self.powerup_enable],
                                   set_cmd=f'OUTMODE {output_index}, {{mode}}, '
@@ -80,57 +94,76 @@ class BaseOutput(InstrumentChannel):
 
         # Parameters for Closed Loop PID Parameter Command
         if self._has_pid:
-            self.add_parameter('P',
-                               label='Proportional (closed-loop)',
-                               docstring='The value for closed control loop '
-                                         'Proportional (gain)',
-                               vals=vals.Numbers(0, 1000),
-                               get_parser=float,
-                               parameter_class=GroupParameter)
-            self.add_parameter('I',
-                               label='Integral (closed-loop)',
-                               docstring='The value for closed control loop '
-                                         'Integral (reset)',
-                               vals=vals.Numbers(0, 1000),
-                               get_parser=float,
-                               parameter_class=GroupParameter)
-            self.add_parameter('D',
-                               label='Derivative (closed-loop)',
-                               docstring='The value for closed control loop '
-                                         'Derivative (rate)',
-                               vals=vals.Numbers(0, 1000),
-                               get_parser=float,
-                               parameter_class=GroupParameter)
+            self.P: GroupParameter = self.add_parameter(
+                "P",
+                label="Proportional (closed-loop)",
+                docstring="The value for closed control loop Proportional (gain)",
+                vals=vals.Numbers(0, 1000),
+                get_parser=float,
+                parameter_class=GroupParameter,
+            )
+            """The value for closed control loop Proportional (gain)"""
+            self.I: GroupParameter = self.add_parameter(
+                "I",
+                label="Integral (closed-loop)",
+                docstring="The value for closed control loop Integral (reset)",
+                vals=vals.Numbers(0, 1000),
+                get_parser=float,
+                parameter_class=GroupParameter,
+            )
+            """The value for closed control loop Integral (reset)"""
+            self.D: GroupParameter = self.add_parameter(
+                "D",
+                label="Derivative (closed-loop)",
+                docstring="The value for closed control loop Derivative (rate)",
+                vals=vals.Numbers(0, 1000),
+                get_parser=float,
+                parameter_class=GroupParameter,
+            )
+            """The value for closed control loop Derivative (rate)"""
             self.pid_group = Group([self.P, self.I, self.D],
                                    set_cmd=f'PID {output_index}, '
                                            f'{{P}}, {{I}}, {{D}}',
                                    get_cmd=f'PID? {output_index}')
 
-        self.add_parameter('output_range',
-                           label='Heater range',
-                           docstring='Specifies heater output range. The range '
-                                     'setting has no effect if an output is in '
-                                     'the `Off` mode, and does not apply to '
-                                     'an output in `Monitor Out` mode. '
-                                     'An output in `Monitor Out` mode is '
-                                     'always on.',
-                           val_mapping=self.RANGES,
-                           set_cmd=f'RANGE {output_index}, {{}}',
-                           get_cmd=f'RANGE? {output_index}')
+        self.output_range: Parameter = self.add_parameter(
+            "output_range",
+            label="Heater range",
+            docstring="Specifies heater output range. The range "
+            "setting has no effect if an output is in "
+            "the `Off` mode, and does not apply to "
+            "an output in `Monitor Out` mode. "
+            "An output in `Monitor Out` mode is "
+            "always on.",
+            val_mapping=self.RANGES,
+            set_cmd=f"RANGE {output_index}, {{}}",
+            get_cmd=f"RANGE? {output_index}",
+        )
+        """
+        Specifies heater output range. The range setting has no effect if an
+        output is in the `Off` mode, and does not apply to an output in `Monitor Out` mode.
+        An output in `Monitor Out` mode is always on.
+        """
 
-        self.add_parameter('output',
-                           label='Output',
-                           unit='% of heater range',
-                           docstring='Specifies heater output in percent of '
-                                     'the current heater output range.\n'
-                                     'Note that when the heater is off, '
-                                     'this parameter will return the value '
-                                     'of 0.005.',
-                           get_parser=float,
-                           get_cmd=f'HTR? {output_index}',
-                           set_cmd=False)
+        self.output: Parameter = self.add_parameter(
+            "output",
+            label="Output",
+            unit="% of heater range",
+            docstring="Specifies heater output in percent of "
+            "the current heater output range.\n"
+            "Note that when the heater is off, "
+            "this parameter will return the value "
+            "of 0.005.",
+            get_parser=float,
+            get_cmd=f"HTR? {output_index}",
+            set_cmd=False,
+        )
+        """
+        Specifies heater output in percent of the current heater output range.
+        Note that when the heater is off, this parameter will return the value of 0.005.
+        """
 
-        self.add_parameter(
+        self.setpoint: Parameter = self.add_parameter(
             "setpoint",
             label="Setpoint value (in sensor units)",
             docstring="The value of the setpoint in the "
@@ -144,68 +177,94 @@ class BaseOutput(InstrumentChannel):
             set_cmd=f"SETP {output_index}, {{}}",
             get_cmd=f"SETP? {output_index}",
         )
+        """
+        The value of the setpoint in the preferred units of the control loop sensor
+        (which is set via `input_channel` parameter)
+        """
 
         # Additional non-Visa parameters
 
-        self.add_parameter('range_limits',
-                           set_cmd=None,
-                           get_cmd=None,
-                           vals=vals.Sequence(vals.Numbers(0, 400),
-                                              require_sorted=True,
-                                              length=len(self.RANGES)-1),
-                           label='Temperature limits for output ranges',
-                           unit='K',
-                           docstring='Use this parameter to define which '
-                                     'temperature corresponds to which output '
-                                     'range; then use the '
-                                     '`set_range_from_temperature` method to '
-                                     'set the output range via temperature '
-                                     'instead of doing it directly')
+        self.range_limits: Parameter = self.add_parameter(
+            "range_limits",
+            set_cmd=None,
+            get_cmd=None,
+            vals=vals.Sequence(
+                vals.Numbers(0, 400), require_sorted=True, length=len(self.RANGES) - 1
+            ),
+            label="Temperature limits for output ranges",
+            unit="K",
+            docstring="Use this parameter to define which "
+            "temperature corresponds to which output "
+            "range; then use the "
+            "`set_range_from_temperature` method to "
+            "set the output range via temperature "
+            "instead of doing it directly",
+        )
+        """
+        Use this parameter to define which temperature corresponds to which output range;
+        then use the `set_range_from_temperature` method to set the output range via temperature
+        instead of doing it directly
+        """
 
-        self.add_parameter('wait_cycle_time',
-                           set_cmd=None,
-                           get_cmd=None,
-                           vals=vals.Numbers(0, 100),
-                           label='Waiting cycle time',
-                           docstring='Time between two readings when waiting '
-                                     'for temperature to equilibrate',
-                           unit='s')
+        self.wait_cycle_time: Parameter = self.add_parameter(
+            "wait_cycle_time",
+            set_cmd=None,
+            get_cmd=None,
+            vals=vals.Numbers(0, 100),
+            label="Waiting cycle time",
+            docstring="Time between two readings when waiting "
+            "for temperature to equilibrate",
+            unit="s",
+        )
+        """Time between two readings when waiting for temperature to equilibrate"""
         self.wait_cycle_time(0.1)
 
-        self.add_parameter('wait_tolerance',
-                           set_cmd=None,
-                           get_cmd=None,
-                           vals=vals.Numbers(0, 100),
-                           label='Waiting tolerance',
-                           docstring='Acceptable tolerance when waiting for '
-                                     'temperature to equilibrate',
-                           unit='')
+        self.wait_tolerance: Parameter = self.add_parameter(
+            "wait_tolerance",
+            set_cmd=None,
+            get_cmd=None,
+            vals=vals.Numbers(0, 100),
+            label="Waiting tolerance",
+            docstring="Acceptable tolerance when waiting for "
+            "temperature to equilibrate",
+            unit="",
+        )
+        """Acceptable tolerance when waiting for temperature to equilibrate"""
         self.wait_tolerance(0.1)
 
-        self.add_parameter('wait_equilibration_time',
-                           set_cmd=None,
-                           get_cmd=None,
-                           vals=vals.Numbers(0, 100),
-                           label='Waiting equilibration time',
-                           docstring='Duration during which temperature has to '
-                                     'be within tolerance',
-                           unit='s')
+        self.wait_equilibration_time: Parameter = self.add_parameter(
+            "wait_equilibration_time",
+            set_cmd=None,
+            get_cmd=None,
+            vals=vals.Numbers(0, 100),
+            label="Waiting equilibration time",
+            docstring="Duration during which temperature has to be within tolerance",
+            unit="s",
+        )
+        """Duration during which temperature has to be within tolerance"""
         self.wait_equilibration_time(0.5)
 
-        self.add_parameter('blocking_t',
-                           label='Setpoint value with blocking until it is '
-                                 'reached',
-                           docstring='Sets the setpoint value, and input '
-                                     'range, and waits until it is reached. '
-                                     'Added for compatibility with Loop. Note '
-                                     'that if the setpoint value is in '
-                                     'a different range, this function may '
-                                     'wait forever because that setpoint '
-                                     'cannot be reached within the current '
-                                     'range.',
-                           vals=vals.Numbers(0, 400),
-                           set_cmd=self._set_blocking_t,
-                           snapshot_exclude=True)
+        self.blocking_t: Parameter = self.add_parameter(
+            "blocking_t",
+            label="Setpoint value with blocking until it is reached",
+            docstring="Sets the setpoint value, and input "
+            "range, and waits until it is reached. "
+            "Added for compatibility with Loop. Note "
+            "that if the setpoint value is in "
+            "a different range, this function may "
+            "wait forever because that setpoint "
+            "cannot be reached within the current "
+            "range.",
+            vals=vals.Numbers(0, 400),
+            set_cmd=self._set_blocking_t,
+            snapshot_exclude=True,
+        )
+        """
+        Sets the setpoint value, and input range, and waits until it is reached.
+        Added for compatibility with Loop. Note that if the setpoint value is in a
+        different range, this function may wait forever because that setpoint cannot
+        be reached within the current range.
+        """
 
     def _set_blocking_t(self, temperature: float) -> None:
         self.set_range_from_temperature(temperature)
@@ -334,8 +393,14 @@ class BaseOutput(InstrumentChannel):
 
             time.sleep(wait_cycle_time)
 
+@deprecated(
+    "Base class renamed to LakeshoreBaseOutput", category=QCoDeSDeprecationWarning
+)
+class BaseOutput(LakeshoreBaseOutput):
+    pass
 
-class BaseSensorChannel(InstrumentChannel):
+
+class LakeshoreBaseSensorChannel(InstrumentChannel):
     # A dictionary of sensor statuses that assigns a string representation of
     # the status to a status bit weighting (e.g. {4: 'VMIX OVL'})
     SENSOR_STATUSES: ClassVar[dict[int, str]] = {}
@@ -364,41 +429,60 @@ class BaseSensorChannel(InstrumentChannel):
 
         # Add the various channel parameters
 
-        self.add_parameter('temperature',
-                           get_cmd=f'KRDG? {self._channel}',
-                           get_parser=float,
-                           label='Temperature',
-                           unit='K')
+        self.temperature: Parameter = self.add_parameter(
+            "temperature",
+            get_cmd=f"KRDG? {self._channel}",
+            get_parser=float,
+            label="Temperature",
+            unit="K",
+        )
+        """Parameter temperature"""
 
-        self.add_parameter('t_limit',
-                           get_cmd=f'TLIMIT? {self._channel}',
-                           set_cmd=f'TLIMIT {self._channel}, {{}}',
-                           get_parser=float,
-                           label='Temperature limit',
-                           docstring='The temperature limit in kelvin for '
-                                     'which to shut down all control outputs '
-                                     'when exceeded. A temperature limit of '
-                                     'zero turns the temperature limit '
-                                     'feature off for the given sensor input.',
-                           unit='K')
+        self.t_limit: Parameter = self.add_parameter(
+            "t_limit",
+            get_cmd=f"TLIMIT? {self._channel}",
+            set_cmd=f"TLIMIT {self._channel}, {{}}",
+            get_parser=float,
+            label="Temperature limit",
+            docstring="The temperature limit in kelvin for "
+            "which to shut down all control outputs "
+            "when exceeded. A temperature limit of "
+            "zero turns the temperature limit "
+            "feature off for the given sensor input.",
+            unit="K",
+        )
+        """
+        The temperature limit in kelvin for which to shut down all control outputs when
+        exceeded. A temperature limit of zero turns the temperature limit feature off
+        for the given sensor input.
+        """
 
-        self.add_parameter('sensor_raw',
-                           get_cmd=f'SRDG? {self._channel}',
-                           get_parser=float,
-                           label='Raw reading',
-                           unit='Ohms')
+        self.sensor_raw: Parameter = self.add_parameter(
+            "sensor_raw",
+            get_cmd=f"SRDG? {self._channel}",
+            get_parser=float,
+            label="Raw reading",
+            unit="Ohms",
+        )
+        """Parameter sensor_raw"""
 
-        self.add_parameter('sensor_status',
-                           get_cmd=f'RDGST? {self._channel}',
-                           get_parser=self._decode_sensor_status,
-                           label='Sensor status')
+        self.sensor_status: Parameter = self.add_parameter(
+            "sensor_status",
+            get_cmd=f"RDGST? {self._channel}",
+            get_parser=self._decode_sensor_status,
+            label="Sensor status",
+        )
+        """Parameter sensor_status"""
 
-        self.add_parameter('sensor_name',
-                           get_cmd=f'INNAME? {self._channel}',
-                           get_parser=str,
-                           set_cmd=f'INNAME {self._channel},\"{{}}\"',
-                           vals=vals.Strings(15),
-                           label='Sensor name')
+        self.sensor_name: Parameter = self.add_parameter(
+            "sensor_name",
+            get_cmd=f"INNAME? {self._channel}",
+            get_parser=str,
+            set_cmd=f'INNAME {self._channel},"{{}}"',
+            vals=vals.Strings(15),
+            label="Sensor name",
+        )
+        """Parameter sensor_name"""
 
     def _decode_sensor_status(self, sum_of_codes: str) -> str:
         """
@@ -464,6 +548,13 @@ class BaseSensorChannel(InstrumentChannel):
 
         return terms_in_number
 
+@deprecated(
+    "Base class renamed to LakeshoreBaseSensorChannel",
+    category=QCoDeSDeprecationWarning,
+)
+class BaseSensorChannel(LakeshoreBaseSensorChannel):
+    pass
+
 
 class LakeshoreBase(VisaInstrument):
     """
@@ -482,7 +573,7 @@ class LakeshoreBase(VisaInstrument):
     """
     # Redefine this in the model-specific class in case you want to use a
     # different class for sensor channels
-    CHANNEL_CLASS = BaseSensorChannel
+    CHANNEL_CLASS = LakeshoreBaseSensorChannel
 
     # This dict has channel name in the driver as keys, and channel "name" that
     # is used in instrument commands as values. For example, if channel called

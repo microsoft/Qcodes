@@ -6,7 +6,11 @@ import pyvisa.resources
 import qcodes.validators as vals
 from qcodes.parameters import Group, GroupParameter
 
-from .lakeshore_base import BaseOutput, BaseSensorChannel, LakeshoreBase
+from .lakeshore_base import (
+    LakeshoreBase,
+    LakeshoreBaseOutput,
+    LakeshoreBaseSensorChannel,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -29,7 +33,7 @@ _channel_name_to_outmode_command_map: dict[str, int] = {
 _channel_name_to_outmode_command_map.update({"None": 0})
 
 
-class LakeshoreModel335Channel(BaseSensorChannel):
+class LakeshoreModel335Channel(LakeshoreBaseSensorChannel):
     """
     An InstrumentChannel representing a single sensor on a Lakeshore Model 335.
 
@@ -54,7 +58,7 @@ class LakeshoreModel335Channel(BaseSensorChannel):
         super().__init__(parent, name, channel, **kwargs)
 
         # Parameters related to Input Type Parameter Command (INTYPE)
-        self.add_parameter(
+        self.sensor_type: GroupParameter = self.add_parameter(
             "sensor_type",
             label="Input sensor type",
             docstring="Specifies input sensor type",
@@ -67,7 +71,8 @@ class LakeshoreModel335Channel(BaseSensorChannel):
             },
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Specifies input sensor type"""
+        self.auto_range_enabled: GroupParameter = self.add_parameter(
             "auto_range_enabled",
             label="Autoranging",
             docstring="Specifies if autoranging is enabled. "
@@ -75,7 +80,8 @@ class LakeshoreModel335Channel(BaseSensorChannel):
             val_mapping={False: 0, True: 1},
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """Specifies if autoranging is enabled. Does not apply for diode sensor type"""
+        self.range: GroupParameter = self.add_parameter(
             "range",
             label="Range",
             docstring="Specifies input range when autorange is "
@@ -89,7 +95,13 @@ class LakeshoreModel335Channel(BaseSensorChannel):
             vals=vals.Numbers(0, 8),
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """
+        Specifies input range when autorange is not enabled. If autorange is on,
+        the returned value corresponds to the currently auto-selected range.
+        The list of available ranges depends on the chosen sensor type: diode 0-1,
+        platinum RTD 0-6, NTC RTD 0-8. Refer to the page 136 of the manual for the lookup table
+        """
+        self.compensation_enabled: GroupParameter = self.add_parameter(
             "compensation_enabled",
             label="Compensation enabled",
             docstring="Specifies input compensation. Reversal "
@@ -100,7 +112,12 @@ class LakeshoreModel335Channel(BaseSensorChannel):
             val_mapping={False: 0, True: 1},
             parameter_class=GroupParameter,
         )
-        self.add_parameter(
+        """
+        Specifies input compensation. Reversal for thermal EMF compensation if input
+        is resistive, room compensation if input is thermocouple.
+        Always 0 if input is a diode
+        """
+        self.units: GroupParameter = self.add_parameter(
             "units",
             label="Preferred units",
             docstring="Specifies the preferred units parameter "
@@ -109,6 +126,10 @@ class LakeshoreModel335Channel(BaseSensorChannel):
             val_mapping={"kelvin": 1, "celsius": 2, "sensor": 3},
             parameter_class=GroupParameter,
         )
+        """
+        Specifies the preferred units parameter for sensor readings and for the control
+        setpoint (kelvin, celsius, or sensor)
+        """
         self.output_group = Group(
             [
                 self.sensor_type,
@@ -126,7 +147,7 @@ class LakeshoreModel335Channel(BaseSensorChannel):
         )
 
 
-class LakeshoreModel335CurrentSource(BaseOutput):
+class LakeshoreModel335CurrentSource(LakeshoreBaseOutput):
     """
     InstrumentChannel for current sources on Lakeshore Model 335.
 
