@@ -4,11 +4,11 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Optional, Union
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
-from qcodes.parameters import MultiParameter, create_on_off_val_mapping
+from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
 
 from . import constants
 from .KeysightB1500_module import (
-    B1500Module,
+    KeysightB1500Module,
     StatusMixin,
     _FMTResponse,
     convert_dummy_val_to_nan,
@@ -41,31 +41,46 @@ class KeysightB1500(VisaInstrument):
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ):
         super().__init__(name, address, **kwargs)
-        self.by_slot: dict[constants.SlotNr, B1500Module] = {}
-        self.by_channel: dict[constants.ChNr, B1500Module] = {}
-        self.by_kind: dict[constants.ModuleKind, list[B1500Module]] = defaultdict(list)
+        self.by_slot: dict[constants.SlotNr, KeysightB1500Module] = {}
+        self.by_channel: dict[constants.ChNr, KeysightB1500Module] = {}
+        self.by_kind: dict[constants.ModuleKind, list[KeysightB1500Module]] = (
+            defaultdict(list)
+        )
 
         self._find_modules()
 
-        self.add_parameter('autozero_enabled',
-                           unit='',
-                           label='Autozero enabled of the high-resolution ADC',
-                           set_cmd=self._set_autozero,
-                           get_cmd=None,
-                           val_mapping=create_on_off_val_mapping(
-                               on_val=True, off_val=False),
-                           initial_cache_value=False,
-                           docstring=textwrap.dedent("""
+        self.autozero_enabled: Parameter = self.add_parameter(
+            "autozero_enabled",
+            unit="",
+            label="Autozero enabled of the high-resolution ADC",
+            set_cmd=self._set_autozero,
+            get_cmd=None,
+            val_mapping=create_on_off_val_mapping(on_val=True, off_val=False),
+            initial_cache_value=False,
+            docstring=textwrap.dedent(
+                """
             Enable or disable cancelling of the offset of the
             high-resolution A/D converter (ADC).
 
             Set the function to OFF in cases that the measurement speed is
             more important than the measurement accuracy. This roughly halves
-            the integration time."""))
+            the integration time."""
+            ),
+        )
+        """
+        Enable or disable cancelling of the offset of the
+        high-resolution A/D converter (ADC).
 
-        self.add_parameter(name='run_iv_staircase_sweep',
-                           parameter_class=IVSweepMeasurement,
-                           docstring=textwrap.dedent("""
+        Set the function to OFF in cases that the measurement speed is
+        more important than the measurement accuracy. This roughly halves
+        the integration time.
+        """
+
+        self.run_iv_staircase_sweep: IVSweepMeasurement = self.add_parameter(
+            name="run_iv_staircase_sweep",
+            parameter_class=IVSweepMeasurement,
+            docstring=textwrap.dedent(
+                """
                This is MultiParameter. Running the sweep runs the measurement
                on the list of source values defined using
                `setup_staircase_sweep` method. The output is a
@@ -76,7 +91,21 @@ class KeysightB1500(VisaInstrument):
                channel (SMU) must be the channel on which you set the sweep (
                WV) and second channel(SMU) must be the one which remains at
                constants voltage.
-                              """))
+                              """
+            ),
+        )
+        """
+        This is MultiParameter. Running the sweep runs the measurement
+        on the list of source values defined using
+        `setup_staircase_sweep` method. The output is a
+        primary parameter (e.g. Gate current)  and a secondary
+        parameter (e.g. Source/Drain current) both of which use the same
+        setpoints. Note you must `set_measurement_mode` and specify
+        2 channels as the argument before running the sweep. First
+        channel (SMU) must be the channel on which you set the sweep (
+        WV) and second channel(SMU) must be the one which remains at
+        constants voltage.
+        """
 
         self.connect_message()
 
@@ -91,7 +120,7 @@ class KeysightB1500(VisaInstrument):
             raise RuntimeError(f"While setting this parameter received "
                                f"error: {error_message}")
 
-    def add_module(self, name: str, module: B1500Module) -> None:
+    def add_module(self, name: str, module: KeysightB1500Module) -> None:
         super().add_submodule(name, module)
 
         self.by_kind[module.MODULE_KIND].append(module)
@@ -130,8 +159,9 @@ class KeysightB1500(VisaInstrument):
             self.add_module(name=module.short_name, module=module)
 
     @staticmethod
-    def from_model_name(model: str, slot_nr: int, parent: 'KeysightB1500',
-                        name: Optional[str] = None) -> 'B1500Module':
+    def from_model_name(
+        model: str, slot_nr: int, parent: "KeysightB1500", name: Optional[str] = None
+    ) -> "KeysightB1500Module":
         """Creates the correct instance of instrument module by model name.
 
         Args:

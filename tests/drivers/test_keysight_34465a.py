@@ -1,14 +1,14 @@
 import numpy as np
 import pytest
 
-from qcodes.instrument_drivers.Keysight.Keysight_34465A_submodules import (
-    Keysight_34465A,
+from qcodes.instrument_drivers.Keysight import (
+    Keysight34465A,
 )
 
 
 @pytest.fixture(scope='function')
 def driver():
-    keysight_sim = Keysight_34465A(
+    keysight_sim = Keysight34465A(
         "keysight_34465A_sim",
         address="GPIB::1::INSTR",
         pyvisa_sim_file="Keysight_34465A.yaml",
@@ -17,12 +17,12 @@ def driver():
     try:
         yield keysight_sim
     finally:
-        Keysight_34465A.close_all()
+        Keysight34465A.close_all()
 
 
 @pytest.fixture(scope='function')
 def driver_with_read_and_fetch_mocked(val_volt):
-    keysight_sim = Keysight_34465A(
+    keysight_sim = Keysight34465A(
         "keysight_34465A_sim",
         address="GPIB::1::INSTR",
         pyvisa_sim_file="Keysight_34465A.yaml",
@@ -40,7 +40,7 @@ def driver_with_read_and_fetch_mocked(val_volt):
     try:
         yield keysight_sim
     finally:
-        Keysight_34465A.close_all()
+        Keysight34465A.close_all()
 
 
 def test_init(driver) -> None:

@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Optional
 
 from .constants import ChNr, ModuleKind
-from .KeysightB1500_module import B1500Module
+from .KeysightB1500_module import KeysightB1500Module
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     )
 
 
-class KeysightB1530A(B1500Module):
+class KeysightB1530A(KeysightB1500Module):
     """
     Driver for Keysight B1530A Waveform Generator/Fast Measurement Unit
     module for B1500 Semiconductor Parameter Analyzer.

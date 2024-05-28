@@ -3,7 +3,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Optional
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChannel
-from qcodes.parameters import create_on_off_val_mapping
+from qcodes.parameters import Parameter, create_on_off_val_mapping
 from qcodes.validators import Numbers
 
 from .KtMAwgDefs import *  # noqa F403
@@ -42,7 +42,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
 
         self._catch_error = self.root_instrument._catch_error
 
-        self.add_parameter(
+        self.output_term_config: Parameter = self.add_parameter(
             "output_term_config",
             label="Output Terminal Configuration",
             get_cmd=partial(
@@ -60,8 +60,9 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
                 "single": KTMAWG_VAL_TERMINAL_CONFIGURATION_SINGLE_ENDED,
             },
         )
+        """Parameter output_term_config"""
 
-        self.add_parameter(
+        self.operation: Parameter = self.add_parameter(
             "operation",
             label="Operating Mode",
             get_cmd=partial(
@@ -79,8 +80,9 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
                 "burst": KTMAWG_VAL_OPERATE_BURST,
             },
         )
+        """Parameter operation"""
 
-        self.add_parameter(
+        self.output: Parameter = self.add_parameter(
             "output",
             label="Output Enable",
             get_cmd=partial(
@@ -95,8 +97,9 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             ),
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
+        """Parameter output"""
 
-        self.add_parameter(
+        self.gain_config: Parameter = self.add_parameter(
             "gain_config",
             label="AWG Gain Control Mode",
             set_cmd=self._set_gain_control,
@@ -106,27 +109,33 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
                 "component": KTMAWG_VAL_GAIN_CONTROL_COMPONENT,
             },
         )
-        self.add_parameter("gain",
-                           label="Composite Output Gain",
-                           set_cmd=self._set_gain,
-                           vals=Numbers(0, 0.7999),
-                           get_cmd=None)
+        """Parameter gain_config"""
+        self.gain: Parameter = self.add_parameter(
+            "gain",
+            label="Composite Output Gain",
+            set_cmd=self._set_gain,
+            vals=Numbers(0, 0.7999),
+            get_cmd=None,
+        )
+        """Parameter gain"""
 
-        self.add_parameter(
+        self.analog_gain: Parameter = self.add_parameter(
             "analog_gain",
             label="Analog Output Gain",
             vals=Numbers(0, 1.32),
             set_cmd=self._set_analog_gain,
             get_cmd=self._get_analog_gain,
         )
+        """Parameter analog_gain"""
 
-        self.add_parameter(
+        self.digital_gain: Parameter = self.add_parameter(
             "digital_gain",
             label="Digital Output Gain",
             vals=Numbers(0, 1.0),
             set_cmd=self._set_digital_gain,
             get_cmd=self._get_digital_gain,
         )
+        """Parameter digital_gain"""
 
     def load_waveform(self, filename: str) -> None:
         path = ctypes.create_string_buffer(filename.encode("ascii"))

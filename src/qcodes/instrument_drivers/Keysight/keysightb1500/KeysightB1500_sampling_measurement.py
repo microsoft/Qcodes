@@ -36,8 +36,8 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
     def __init__(self, name: str, **kwargs: Any):
         super().__init__(name, **kwargs)
-        self.instrument: "KeysightB1517A"
-        self.root_instrument: "KeysightB1500"
+        self.instrument: KeysightB1517A
+        self.root_instrument: KeysightB1500
 
         self.data = _FMTResponse(None, None, None, None)
 

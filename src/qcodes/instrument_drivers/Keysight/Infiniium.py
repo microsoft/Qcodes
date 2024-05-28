@@ -125,7 +125,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         instrument = self.instrument
         if isinstance(instrument, KeysightInfiniiumChannel):
-            root_instrument: "KeysightInfiniium"
+            root_instrument: KeysightInfiniium
             root_instrument = self.root_instrument  # type: ignore[assignment]
             cache_setpoints = root_instrument.cache_setpoints()
             if not cache_setpoints:
@@ -206,7 +206,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
-        root_instr: "KeysightInfiniium" = self.root_instrument  # type: ignore[assignment]
+        root_instr: KeysightInfiniium = self.root_instrument  # type: ignore[assignment]
         # Check if we can use cached trace parameters
         if not root_instr.cache_setpoints():
             self.update_setpoints()

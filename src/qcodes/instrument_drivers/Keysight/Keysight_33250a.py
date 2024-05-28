@@ -1,7 +1,7 @@
-from .KeysightAgilent_33XXX import WaveformGenerator_33XXX
+from .KeysightAgilent_33XXX import Keysight33xxx
 
 
-class Keysight33250A(WaveformGenerator_33XXX):
+class Keysight33250A(Keysight33xxx):
     """
     QCoDeS driver for the Keysight 33250A waveform generator.
     """

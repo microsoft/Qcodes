@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from qcodes.instrument_drivers.Keysight.N51x1 import N51x1
+from qcodes.instrument_drivers.Keysight.N51x1 import KeysightN51x1
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from qcodes.instrument import VisaInstrumentKWArgs
 
 
-class KeysightN5183B(N51x1):
+class KeysightN5183B(KeysightN51x1):
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"
     ):

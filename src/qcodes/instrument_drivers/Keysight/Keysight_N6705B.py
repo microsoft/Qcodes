@@ -11,6 +11,8 @@ from qcodes.instrument import (
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 
 class KeysightN6705BChannel(InstrumentChannel):
     def __init__(
@@ -25,48 +27,69 @@ class KeysightN6705BChannel(InstrumentChannel):
 
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter('source_voltage',
-                           label=f"Channel {chan} Voltage",
-                           get_cmd=f'SOURCE:VOLT? (@{chan})',
-                           get_parser=float,
-                           set_cmd=f'SOURCE:VOLT {{:.8G}}, (@{chan})',
-                           unit='V')
+        self.source_voltage: Parameter = self.add_parameter(
+            "source_voltage",
+            label=f"Channel {chan} Voltage",
+            get_cmd=f"SOURCE:VOLT? (@{chan})",
+            get_parser=float,
+            set_cmd=f"SOURCE:VOLT {{:.8G}}, (@{chan})",
+            unit="V",
+        )
+        """Parameter source_voltage"""
 
-        self.add_parameter('source_current',
-                           label=f"Channel {chan} Current",
-                           get_cmd=f'SOURCE:CURR? (@{chan})',
-                           get_parser=float,
-                           set_cmd=f'SOURCE:CURR {{:.8G}}, (@{chan})',
-                           unit='A')
+        self.source_current: Parameter = self.add_parameter(
+            "source_current",
+            label=f"Channel {chan} Current",
+            get_cmd=f"SOURCE:CURR? (@{chan})",
+            get_parser=float,
+            set_cmd=f"SOURCE:CURR {{:.8G}}, (@{chan})",
+            unit="A",
+        )
+        """Parameter source_current"""
 
-        self.add_parameter('voltage_limit',
-                           get_cmd=f'SOUR:VOLT:PROT? (@{chan})',
-                           get_parser=float,
-                           set_cmd=f'SOUR:VOLT:PROT {{:.8G}}, @({chan})',
-                           label=f'Channel {chan} Voltage Limit',
-                           unit='V')
+        self.voltage_limit: Parameter = self.add_parameter(
+            "voltage_limit",
+            get_cmd=f"SOUR:VOLT:PROT? (@{chan})",
+            get_parser=float,
+            set_cmd=f"SOUR:VOLT:PROT {{:.8G}}, @({chan})",
+            label=f"Channel {chan} Voltage Limit",
+            unit="V",
+        )
+        """Parameter voltage_limit"""
 
-        self.add_parameter('voltage',
-                           get_cmd=f'MEAS:VOLT? (@{chan})',
-                           get_parser=float,
-                           label=f'Channel {chan} Voltage',
-                           unit='V')
+        self.voltage: Parameter = self.add_parameter(
+            "voltage",
+            get_cmd=f"MEAS:VOLT? (@{chan})",
+            get_parser=float,
+            label=f"Channel {chan} Voltage",
+            unit="V",
+        )
+        """Parameter voltage"""
 
-        self.add_parameter('current',
-                           get_cmd=f'MEAS:CURR? (@{chan})',
-                           get_parser=float,
-                           label=f'Channel {chan} Current',
-                           unit='A')
+        self.current: Parameter = self.add_parameter(
+            "current",
+            get_cmd=f"MEAS:CURR? (@{chan})",
+            get_parser=float,
+            label=f"Channel {chan} Current",
+            unit="A",
+        )
+        """Parameter current"""
 
-        self.add_parameter('enable',
-                           get_cmd=f'OUTP:STAT? (@{chan})',
-                           set_cmd=f'OUTP:STAT {{:d}}, (@{chan})',
-                           val_mapping={'on':  1, 'off': 0})
+        self.enable: Parameter = self.add_parameter(
+            "enable",
+            get_cmd=f"OUTP:STAT? (@{chan})",
+            set_cmd=f"OUTP:STAT {{:d}}, (@{chan})",
+            val_mapping={"on": 1, "off": 0},
+        )
+        """Parameter enable"""
 
-        self.add_parameter('source_mode',
-                           get_cmd=f':OUTP:PMOD? (@{chan})',
-                           set_cmd=f':OUTP:PMOD {{:s}}, (@{chan})',
-                           val_mapping={'current': 'CURR', 'voltage': 'VOLT'})
+        self.source_mode: Parameter = self.add_parameter(
+            "source_mode",
+            get_cmd=f":OUTP:PMOD? (@{chan})",
+            set_cmd=f":OUTP:PMOD {{:s}}, (@{chan})",
+            val_mapping={"current": "CURR", "voltage": "VOLT"},
+        )
+        """Parameter source_mode"""
 
         self.channel = chan
         self.ch_name = name

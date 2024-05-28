@@ -21,7 +21,7 @@ from .Keysight_34470A_submodules import Keysight34470A
 from .keysight_34934a import Keysight34934A
 from .keysight_34980a import Keysight34980A
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
-from .keysight_b220x import KeysightB2200, KeysightB2201
+from .keysight_b220x import KeysightB220X, KeysightB2200, KeysightB2201
 from .Keysight_B2962A import KeysightB2962A, KeysightB2962AChannel
 from .keysight_e4980a import (
     KeysightE4980A,
@@ -41,8 +41,13 @@ from .Keysight_N9030B import (
     KeysightN9030BSpectrumAnalyzerMode,
 )
 from .Keysight_P9374A import KeysightP9374A
-from .KeysightAgilent_33XXX import Keysight33xxxOutputChannel, Keysight33xxxSyncChannel
+from .KeysightAgilent_33XXX import (
+    Keysight33xxx,
+    Keysight33xxxOutputChannel,
+    Keysight33xxxSyncChannel,
+)
 from .keysightb1500.KeysightB1500_base import KeysightB1500
+from .keysightb1500.KeysightB1500_module import KeysightB1500Module
 from .keysightb1500.KeysightB1511B import KeysightB1511B
 from .keysightb1500.KeysightB1517A import KeysightB1500IVSweeper, KeysightB1517A
 from .keysightb1500.KeysightB1520A import (
@@ -55,7 +60,14 @@ from .keysightb1500.KeysightB1520A import (
 from .keysightb1500.KeysightB1530A import KeysightB1530A
 from .KtM960x import KeysightM960x
 from .KtMAwg import KeysightM9336A, KeysightM9336AAWGChannel
-from .N52xx import KeysightPNAPort, KeysightPNATrace
+from .N52xx import KeysightPNABase, KeysightPNAPort, KeysightPNATrace, KeysightPNAxBase
+from .private.error_handling import KeysightErrorQueueMixin
+from .private.Keysight_344xxA_submodules import (
+    Keysight344xxA,
+    Keysight344xxADisplay,
+    Keysight344xxASample,
+    Keysight344xxATrigger,
+)
 
 __all__ = [
     "Keysight33210A",
@@ -64,6 +76,7 @@ __all__ = [
     "Keysight33512B",
     "Keysight33522B",
     "Keysight33622A",
+    "Keysight33xxx",
     "Keysight33xxxOutputChannel",
     "Keysight33xxxSyncChannel",
     "Keysight34410A",
@@ -72,10 +85,15 @@ __all__ = [
     "Keysight34461A",
     "Keysight34465A",
     "Keysight34470A",
+    "Keysight344xxA",
+    "Keysight344xxADisplay",
+    "Keysight344xxASample",
+    "Keysight344xxATrigger",
     "Keysight34934A",
     "Keysight34980A",
     "Keysight34980ASwitchMatrixSubModule",
     "KeysightB1500",
+    "KeysightB1500Module",
     "KeysightB1500CVSweepMeasurement",
     "KeysightB1500CVSweeper",
     "KeysightB1500Correction",
@@ -85,6 +103,7 @@ __all__ = [
     "KeysightB1517A",
     "KeysightB1520A",
     "KeysightB1530A",
+    "KeysightB220X",
     "KeysightB2200",
     "KeysightB2201",
     "KeysightB2962A",
@@ -93,6 +112,7 @@ __all__ = [
     "KeysightE4980ACorrection",
     "KeysightE4980AMeasurementPair",
     "KeysightE4980AMeasurements",
+    "KeysightErrorQueueMixin",
     "KeysightInfiniium",
     "KeysightInfiniiumBoundMeasurement",
     "KeysightInfiniiumChannel",
@@ -113,6 +133,8 @@ __all__ = [
     "KeysightN9030BPhaseNoiseMode",
     "KeysightN9030BSpectrumAnalyzerMode",
     "KeysightP9374A",
+    "KeysightPNABase",
+    "KeysightPNAxBase",
     "KeysightPNAPort",
     "KeysightPNATrace",
 ]

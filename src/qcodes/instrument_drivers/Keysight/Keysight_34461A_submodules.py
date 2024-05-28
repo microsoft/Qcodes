@@ -1,6 +1,10 @@
 from typing import TYPE_CHECKING
 
-from .private.Keysight_344xxA_submodules import _Keysight_344xxA
+from typing_extensions import deprecated
+
+from qcodes.utils import QCoDeSDeprecationWarning
+
+from .private.Keysight_344xxA_submodules import Keysight344xxA
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -8,7 +12,7 @@ if TYPE_CHECKING:
     from qcodes.instrument import VisaInstrumentKWArgs
 
 
-class Keysight34461A(_Keysight_344xxA):
+class Keysight34461A(Keysight344xxA):
     """
     This is the qcodes driver for the Keysight 34461A Multimeter
     """
@@ -23,7 +27,8 @@ class Keysight34461A(_Keysight_344xxA):
         super().__init__(name, address, silent, **kwargs)
 
 
-class Keysight_34461A(_Keysight_344xxA):
+@deprecated("Use Keysight34461A", category=QCoDeSDeprecationWarning)
+class Keysight_34461A(Keysight344xxA):
     """
     Alias for backwards compatibility.
     """
