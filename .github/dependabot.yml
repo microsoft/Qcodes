@@ -11,6 +11,12 @@ updates:
     zhinst:
       patterns:
         - "zhinst*"
+    ipywidgets:
+      patterns:
+        - "ipywidgets"
+        - "widgetsnbextension"
+        - "jupyterlab-widgets"
+
 - package-ecosystem: github-actions
   directory: "/"
   rebase-strategy: "disabled"
