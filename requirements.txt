@@ -142,7 +142,7 @@ jupyter-core==5.7.2
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupyterlab-widgets==3.0.10
+jupyterlab-widgets==3.0.11
     # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
