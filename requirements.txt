@@ -425,7 +425,7 @@ webencodings==0.5.1
     #   tinycss2
 websockets==12.0
     # via qcodes
-widgetsnbextension==4.0.10
+widgetsnbextension==4.0.11
     # via ipywidgets
 wrapt==1.16.0
     # via
