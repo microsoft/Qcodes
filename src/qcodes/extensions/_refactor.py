@@ -68,14 +68,9 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
                 self.annotations.docstring = literal_eval(e_value)
             case cst.Arg(
                 keyword=cst.Name("docstring"),
-                value=cst.ConcatenatedString(e_value),
-            ):
-                self.annotations.docstring = str(
-                    cst.ensure_type(
-                        node.value,
-                        cst.ConcatenatedString,
-                    ).evaluated_value
-                )
+                value=e_value,
+            ) if isinstance(e_value, cst.ConcatenatedString):
+                self.annotations.docstring = str(e_value.evaluated_value)
             case cst.Arg(
                 keyword=cst.Name("docstring"),
                 value=cst.Call(args=[cst.Arg(cst.SimpleString(e_value))]),
