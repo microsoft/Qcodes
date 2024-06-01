@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import argparse
 import os
+from ast import literal_eval
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
 from textwrap import dedent
-from typing import Union, cast
 
 try:
     import libcst as cst
@@ -53,69 +53,38 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
         if self._call_stack[-1] != "self.add_parameter":
             return
 
-        first_positional_arg_is_str = self._arg_num[
-            self._call_stack[-1]
-        ] == 1 and m.matches(
-            node,
-            matcher=m.Arg(value=m.SimpleString(), keyword=None),
-        )
-        arg_is_name = m.matches(
-            node, m.Arg(keyword=m.Name(value="name"), value=m.SimpleString())
-        )
-
-        arg_is_docstring = m.matches(
-            node,
-            matcher=m.Arg(
-                keyword=m.Name(value="docstring"),
-                value=m.OneOf(m.SimpleString(), m.ConcatenatedString()),
-            ),
-        )
-
-        arg_is_docstring_dedent = m.matches(
-            node,
-            m.Arg(
-                keyword=m.Name(value="docstring"),
-                value=m.Call(args=[m.Arg(m.SimpleString())]),
-            ),
-        )
-
-        arg_is_parameter_class = m.matches(
-            node,
-            matcher=m.Arg(keyword=m.Name(value="parameter_class"), value=m.Name()),
-        )
-
-        second_positional_arg_is_str = self._arg_num[
-            self._call_stack[-1]
-        ] == 2 and m.matches(
-            node,
-            matcher=m.Arg(value=m.Name(), keyword=None),
-        )
-
-        if first_positional_arg_is_str or arg_is_name:
-            self.annotations.name = cst.ensure_type(
-                node.value, cst.SimpleString
-            ).raw_value
-
-        if arg_is_docstring:
-            self.annotations.docstring = str(
-                cast(
-                    Union[cst.SimpleString, cst.ConcatenatedString], node.value
-                ).evaluated_value
-            )
-        if arg_is_docstring_dedent:
-            self.annotations.docstring = dedent(
-                str(
+        match node:
+            case cst.Arg(value=cst.SimpleString(e_value), keyword=None):
+                if self._arg_num[self._call_stack[-1]]:
+                    self.annotations.name = e_value.strip("\"'")
+            case cst.Arg(
+                keyword=cst.Name(value="name"), value=cst.SimpleString(e_value)
+            ):
+                self.annotations.name = e_value.strip("\"'")
+            case cst.Arg(
+                keyword=cst.Name("docstring"), value=cst.SimpleString(e_value)
+            ):
+                self.annotations.docstring = literal_eval(e_value)
+            case cst.Arg(
+                keyword=cst.Name("docstring"),
+                value=cst.ConcatenatedString(e_value),
+            ):
+                self.annotations.docstring = str(
                     cst.ensure_type(
-                        cst.ensure_type(node.value, cst.Call).args[0].value,
-                        cst.SimpleString,
+                        node.value,
+                        cst.ConcatenatedString,
                     ).evaluated_value
                 )
-            ).strip()
-
-        if arg_is_parameter_class or second_positional_arg_is_str:
-            self.annotations.parameter_class = cst.ensure_type(
-                node.value, cst.Name
-            ).value
+            case cst.Arg(
+                keyword=cst.Name("docstring"),
+                value=cst.Call(args=[cst.Arg(cst.SimpleString(e_value))]),
+            ):
+                self.annotations.docstring = dedent(literal_eval(e_value)).strip()
+            case cst.Arg(value=cst.Name(e_value), keyword=None):
+                if self._arg_num[self._call_stack[-1]] == 2:
+                    self.annotations.parameter_class = e_value
+            case cst.Arg(keyword=cst.Name("parameter_class"), value=cst.Name(e_value)):
+                self.annotations.parameter_class = e_value
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         call_name = _get_call_name(updated_node)
