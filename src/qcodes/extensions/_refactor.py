@@ -54,9 +54,10 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
             return
 
         match node:
-            case cst.Arg(value=cst.SimpleString(e_value), keyword=None):
-                if self._arg_num[self._call_stack[-1]]:
-                    self.annotations.name = e_value.strip("\"'")
+            case cst.Arg(
+                value=cst.SimpleString(e_value), keyword=None
+            ) if self._arg_num[self._call_stack[-1]]:
+                self.annotations.name = e_value.strip("\"'")
             case cst.Arg(
                 keyword=cst.Name(value="name"), value=cst.SimpleString(e_value)
             ):
@@ -80,9 +81,10 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
                 value=cst.Call(args=[cst.Arg(cst.SimpleString(e_value))]),
             ):
                 self.annotations.docstring = dedent(literal_eval(e_value)).strip()
-            case cst.Arg(value=cst.Name(e_value), keyword=None):
-                if self._arg_num[self._call_stack[-1]] == 2:
-                    self.annotations.parameter_class = e_value
+            case cst.Arg(value=cst.Name(e_value), keyword=None) if self._arg_num[
+                self._call_stack[-1]
+            ] == 2:
+                self.annotations.parameter_class = e_value
             case cst.Arg(keyword=cst.Name("parameter_class"), value=cst.Name(e_value)):
                 self.annotations.parameter_class = e_value
 
