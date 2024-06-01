@@ -10,7 +10,6 @@ from textwrap import dedent
 
 try:
     import libcst as cst
-    from libcst import matchers as m
     from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 except ImportError as er:
     raise ImportError(
@@ -97,16 +96,24 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
         annotations = self.annotations
         self.annotations = Extracted()
 
-        if not m.matches(
-            updated_node.body[0],
-            m.Expr(value=m.Call(func=m.Attribute(attr=m.Name("add_parameter")))),
-        ):
-            return updated_node
+        match updated_node.body[0]:
+            case cst.Expr(
+                value=cst.Call(func=cst.Attribute(attr=cst.Name("add_parameter")))
+            ):
+                return self._create_updated_node(annotations, updated_node)
+            case _:
+                return updated_node
 
+    @staticmethod
+    def _create_updated_node(
+        annotations: Extracted, updated_node: cst.SimpleStatementLine
+    ) -> (
+        cst.SimpleStatementLine
+        | cst.FlattenSentinel[cst.SimpleStatementLine | cst.BaseCompoundStatement]
+    ):
         call_node = cst.ensure_type(
             cst.ensure_type(updated_node.body[0], cst.Expr).value, cst.Call
         )
-
         if annotations.name is None:
             return updated_node
 
@@ -176,18 +183,13 @@ def main() -> None:
 
 
 def _get_call_name(node: cst.Call) -> str | None:
-    if m.matches(node.func, m.Attribute(value=m.Name(), attr=m.Name())):
-        my_class = cst.ensure_type(
-            cst.ensure_type(node.func, cst.Attribute).value, cst.Name
-        ).value
-        my_attr = cst.ensure_type(
-            cst.ensure_type(node.func, cst.Attribute).attr, cst.Name
-        ).value
-
-        func_name = f"{my_class}.{my_attr}"
-    elif m.matches(node.func, m.Name()):
-        func_name = cst.ensure_type(node.func, cst.Name).value
-    else:
-        return None
-
+    match node:
+        case cst.Call(
+            func=cst.Attribute(value=cst.Name(my_class), attr=cst.Name(my_attr))
+        ):
+            func_name = f"{my_class}.{my_attr}"
+        case cst.Call(cst.Name(e_value)):
+            func_name = e_value
+        case _:
+            func_name = None
     return func_name
