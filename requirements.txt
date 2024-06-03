@@ -49,7 +49,7 @@ coverage==7.5.3
     # via pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.5.1
+dask==2024.5.2
     # via qcodes
 debugpy==1.8.1
     # via ipykernel
