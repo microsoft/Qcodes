@@ -183,6 +183,7 @@ def main() -> None:
 
 
 def _get_call_name(node: cst.Call) -> str | None:
+    func_name: str | None
     match node:
         case cst.Call(
             func=cst.Attribute(value=cst.Name(my_class), attr=cst.Name(my_attr))
