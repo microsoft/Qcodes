@@ -193,7 +193,9 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
     """
     _CHANNEL_VAL = vals.Ints(0, 3)
 
-    def __init__(self, parent, name, channel, min_val=-5, max_val=5):
+    def __init__(
+        self, parent: "HarvardDecadacSlot", name: str, channel, min_val=-5, max_val=5
+    ):
         super().__init__(parent, name)
 
         # Validate slot and channel values
@@ -403,7 +405,9 @@ class HarvardDecadacSlot(InstrumentChannel, DacReader):
     _SLOT_VAL = vals.Ints(0, 4)
     SLOT_MODE_DEFAULT = "Coarse"
 
-    def __init__(self, parent, name, slot, min_val=-5, max_val=5):
+    def __init__(
+        self, parent: "HarvardDecadac", name: str, slot, min_val=-5, max_val=5
+    ):
         super().__init__(parent, name)
 
         # Validate slot and channel values
