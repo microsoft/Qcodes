@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class RigolDP8xxChannel(InstrumentChannel):
     def __init__(
         self,
-        parent: "_RigelDP8xx",
+        parent: "RigolDP8xxBase",
         name: str,
         channel: int,
         ch_range: tuple[float, float],
@@ -136,12 +136,13 @@ class RigolDP8xxChannel(InstrumentChannel):
         )
 
 
-class _RigelDP8xx(VisaInstrument):
+class RigolDP8xxBase(VisaInstrument):
     """
     This is the general DP8xx Power Supply driver class that implements shared parameters and functionality
-    among all similar power supply from Rigole.
+    among all similar power supply from Rigol.
 
-    This driver was written to be inherited from by a specific driver (e.g. DP832).
+    This driver was written to be inherited from by a specific driver (e.g. RigolDP832). This baseClass should not
+    be instantiated directly.
     """
 
     def __init__(
