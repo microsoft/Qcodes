@@ -3,6 +3,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, Optional
 
 import numpy as np
+from typing_extensions import deprecated
 
 import qcodes.validators as vals
 from qcodes.instrument import (
@@ -20,6 +21,7 @@ from qcodes.parameters import (
     ParamRawDataType,
     create_on_off_val_mapping,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -354,7 +356,7 @@ class FrequencySweep(ArrayParameter):
 class RohdeSchwarzZNBChannel(InstrumentChannel):
     def __init__(
         self,
-        parent: "ZNB",
+        parent: "RohdeSchwarzZNBBase",
         name: str,
         channel: int,
         vna_parameter: Optional[str] = None,
@@ -943,11 +945,12 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
 ZNBChannel = RohdeSchwarzZNBChannel
 
 
-class ZNB(VisaInstrument):
+class RohdeSchwarzZNBBase(VisaInstrument):
     """
-    QCoDeS driver for the Rohde & Schwarz ZNB8 and ZNB20
+    Base class for QCoDeS driver for the Rohde & Schwarz ZNB8 and ZNB20
     virtual network analyser. It can probably be extended to ZNB4 and 40
-    without too much work.
+    without too much work. This class should not be instantiated directly
+    the RohdeSchwarzZNB8 and RohdeSchwarzZNB20 should be used instead.
 
     Requires FrequencySweep parameter for taking a trace
 
@@ -1083,3 +1086,11 @@ class ZNB(VisaInstrument):
         for submodule in self.submodules.values():
             if isinstance(submodule, ChannelList):
                 submodule.clear()
+
+
+@deprecated(
+    "The ZNB base class has been renamed RohdeSchwarzZNBBase",
+    category=QCoDeSDeprecationWarning,
+)
+class ZNB(RohdeSchwarzZNBBase):
+    pass
