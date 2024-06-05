@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 class MiniCircuitsRudat13G90Base(Instrument):
     def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]") -> None:
         """
+        Base class for drivers for MiniCircuits RUDAT-13G-90
+        Should not be instantiated directly.
+
         Args:
             name: Name of the instrument
             **kwargs: Forwarded to base class.
