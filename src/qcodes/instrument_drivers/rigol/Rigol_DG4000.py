@@ -10,6 +10,8 @@ if TYPE_CHECKING:
     import numpy as np
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 
 def is_number(s: str) -> bool:
     """Test whether a given string can be parsed as a float"""
@@ -102,23 +104,25 @@ class RigolDG4000(VisaInstrument):
         on_off_map = {True: "ON", False: "OFF"}
 
         # Counter
-        self.add_parameter(
+        self.counter_attenuation: Parameter = self.add_parameter(
             "counter_attenuation",
             get_cmd="COUN:ATT?",
             set_cmd="COUN:ATT {}",
             val_mapping={1: "1X", 10: "10X"},
         )
+        """Parameter counter_attenuation"""
 
         self.add_function("auto_counter", call_cmd="COUN:AUTO")
 
-        self.add_parameter(
+        self.counter_coupling: Parameter = self.add_parameter(
             "counter_coupling",
             get_cmd="COUN:COUP?",
             set_cmd="COUN:COUP {}",
             vals=Enum("AC", "DC"),
         )
+        """Parameter counter_coupling"""
 
-        self.add_parameter(
+        self.counter_gate_time: Parameter = self.add_parameter(
             "counter_gate_time",
             get_cmd="COUN:GATE?",
             set_cmd="COUN:GATE {}",
@@ -133,23 +137,26 @@ class RigolDG4000(VisaInstrument):
                 ">10": "USER6",
             },
         )
+        """Parameter counter_gate_time"""
 
-        self.add_parameter(
+        self.counter_hf_reject_enabled: Parameter = self.add_parameter(
             "counter_hf_reject_enabled",
             get_cmd="COUN:HF?",
             set_cmd="COUN:HF {}",
             val_mapping=on_off_map,
         )
+        """Parameter counter_hf_reject_enabled"""
 
-        self.add_parameter(
+        self.counter_impedance: Parameter = self.add_parameter(
             "counter_impedance",
             get_cmd="COUN:IMP?",
             set_cmd="COUN:IMP {}",
             unit="Ohm",
             val_mapping={50: "50", 1e6: "1M"},
         )
+        """Parameter counter_impedance"""
 
-        self.add_parameter(
+        self.counter_trigger_level: Parameter = self.add_parameter(
             "counter_trigger_level",
             get_cmd="COUN:LEVE?",
             get_parser=float,
@@ -157,13 +164,15 @@ class RigolDG4000(VisaInstrument):
             unit="V",
             vals=Numbers(min_value=-2.5, max_value=2.5),
         )
+        """Parameter counter_trigger_level"""
 
-        self.add_parameter(
+        self.counter_enabled: Parameter = self.add_parameter(
             "counter_enabled",
             get_cmd="COUN:STAT?",
             set_cmd="COUN:STAT {}",
             val_mapping=on_off_map,
         )
+        """Parameter counter_enabled"""
 
         measure_params = [
             "frequency",
@@ -181,7 +190,7 @@ class RigolDG4000(VisaInstrument):
                 get_parser=partial(parse_single_output, i),
             )
 
-        self.add_parameter(
+        self.counter_trigger_sensitivity: Parameter = self.add_parameter(
             "counter_trigger_sensitivity",
             get_cmd="COUN:SENS?",
             get_parser=float,
@@ -189,6 +198,7 @@ class RigolDG4000(VisaInstrument):
             unit="%",
             vals=Numbers(min_value=0, max_value=100),
         )
+        """Parameter counter_trigger_sensitivity"""
 
         # Output and Source parameters for both channel 1 and 2
         for i in [1, 2]:
@@ -652,12 +662,13 @@ class RigolDG4000(VisaInstrument):
         # System
         self.add_function("beep", call_cmd="SYST:BEEP")
 
-        self.add_parameter(
+        self.beeper_enabled: Parameter = self.add_parameter(
             "beeper_enabled",
             get_cmd="SYST:BEEP:STAT?",
             set_cmd="SYST:BEEP:STAT {}",
             val_mapping=on_off_map,
         )
+        """Parameter beeper_enabled"""
 
         self.add_function("copy_config_to_ch1", call_cmd="SYST:CSC CH2,CH1")
         self.add_function("copy_config_to_ch2", call_cmd="SYST:CSC CH1,CH2")
@@ -667,20 +678,22 @@ class RigolDG4000(VisaInstrument):
 
         self.add_function("get_error", call_cmd="SYST:ERR?", return_parser=str)
 
-        self.add_parameter(
+        self.keyboard_locked: Parameter = self.add_parameter(
             "keyboard_locked",
             get_cmd="SYST:KLOCK?",
             set_cmd="SYST:KLOCK {}",
             val_mapping=on_off_map,
         )
+        """Parameter keyboard_locked"""
 
-        self.add_parameter(
+        self.startup_mode: Parameter = self.add_parameter(
             "startup_mode",
             get_cmd="SYST:POWS?",
             get_parser=str.lower,
             set_cmd="SYST:POWS {}",
             vals=Enum("user", "auto"),
         )
+        """Parameter startup_mode"""
 
         system_states = Enum(
             "default",
@@ -700,16 +713,20 @@ class RigolDG4000(VisaInstrument):
 
         self.add_function("restart", call_cmd="SYST:RESTART")
 
-        self.add_parameter(
+        self.reference_clock_source: Parameter = self.add_parameter(
             "reference_clock_source",
             get_cmd="SYST:ROSC:SOUR?",
             set_cmd="SYST:ROSC:SOUR {}",
             val_mapping={"internal": "INT", "external": "EXT"},
         )
+        """Parameter reference_clock_source"""
 
         self.add_function("shutdown", call_cmd="SYST:SHUTDOWN")
 
-        self.add_parameter("scpi_version", get_cmd="SYST:VERS?")
+        self.scpi_version: Parameter = self.add_parameter(
+            "scpi_version", get_cmd="SYST:VERS?"
+        )
+        """Parameter scpi_version"""
 
         # Trace
         self.add_function("upload_data", call_cmd=self._upload_data, args=[Anything()])
