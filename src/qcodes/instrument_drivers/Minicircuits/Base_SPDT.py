@@ -16,6 +16,8 @@ from qcodes.validators import Ints
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 log = logging.getLogger(__name__)
 
 
@@ -40,12 +42,13 @@ class SwitchChannelBase(InstrumentChannel):
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self.channel_number = _chanlist.index(channel_letter)
 
-        self.add_parameter(
+        self.switch: Parameter = self.add_parameter(
             'switch',
             label=f'switch {self.channel_letter}',
             set_cmd=self._set_switch,
             get_cmd=self._get_switch,
             vals=Ints(1, 2))
+        """Parameter switch"""
 
     def __call__(self, *args: int) -> int | None:
         if len(args) == 1:

@@ -12,6 +12,8 @@ from qcodes.instrument import (
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 
 class MiniCircuitsRCSP4TChannel(InstrumentChannel):
     def __init__(
@@ -34,13 +36,14 @@ class MiniCircuitsRCSP4TChannel(InstrumentChannel):
         chanlist = ["a", "b"]
         self.channel_number = chanlist.index(channel_letter)
 
-        self.add_parameter(
+        self.switch: Parameter = self.add_parameter(
             "switch",
             label="switch",
             set_cmd=self._set_switch,
             get_cmd=self._get_switch,
             vals=vals.Ints(0, 4),
         )
+        """Parameter switch"""
 
     def _set_switch(self, switch: int) -> None:
         if len(self._parent.channels) > 1:
