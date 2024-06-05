@@ -5,12 +5,15 @@ import re
 import warnings
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import deprecated
+
 from qcodes.instrument import (
     ChannelList,
     Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Ints
 
 if TYPE_CHECKING:
@@ -21,7 +24,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class SwitchChannelBase(InstrumentChannel):
+class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel):
     def __init__(
         self,
         parent: Instrument,
@@ -30,6 +33,9 @@ class SwitchChannelBase(InstrumentChannel):
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """
+        Base class for MiniCircuits SPDT Switch channels.
+        Should not be instantiated directly.
+
         Args:
             parent: The instrument the channel is a part of
             name: the name of the channel
@@ -66,10 +72,21 @@ class SwitchChannelBase(InstrumentChannel):
     def _get_switch(self) -> int:
         raise NotImplementedError()
 
+@deprecated(
+    "Deprecated alias, use MiniCircuitsSPDTSwitchChannelBase.",
+    category=QCoDeSDeprecationWarning,
+)
+class SwitchChannelBase(MiniCircuitsSPDTSwitchChannelBase):
+    pass
 
-class SPDT_Base(Instrument):
 
-    CHANNEL_CLASS: type[SwitchChannelBase]
+class MiniCircuitsSPDTBase(Instrument):
+    """
+    Base class for MiniCircuits SPDT Switch instruments.
+    Should not be instantiated directly.
+    """
+
+    CHANNEL_CLASS: type[MiniCircuitsSPDTSwitchChannelBase]
 
     def add_channels(self) -> None:
         channels = ChannelList(
@@ -139,3 +156,11 @@ class SPDT_Base(Instrument):
                 f" the model '{model}', it might not be supported"
             )
         return int(channels)
+
+
+@deprecated(
+    "Deprecated alias, use MiniCircuitsSPDTBase.",
+    category=QCoDeSDeprecationWarning,
+)
+class SPDT_Base(MiniCircuitsSPDTBase):
+    pass

@@ -8,6 +8,7 @@ from ._minicircuits_usb_spdt import (
     MiniCircuitsUsbSPDT,
     MiniCircuitsUsbSPDTSwitchChannel,
 )
+from .Base_SPDT import MiniCircuitsSPDTBase, MiniCircuitsSPDTSwitchChannelBase
 from .USBHIDMixin import MiniCircuitsHIDMixin
 
 __all__ = [
@@ -19,5 +20,7 @@ __all__ = [
     "MiniCircuitsRudat13G90Base",
     "MiniCircuitsHIDMixin",
     "MiniCircuitsUsbSPDT",
+    "MiniCircuitsSPDTBase",
     "MiniCircuitsUsbSPDTSwitchChannel",
+    "MiniCircuitsSPDTSwitchChannelBase",
 ]
