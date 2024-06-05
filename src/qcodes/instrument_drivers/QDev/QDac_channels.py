@@ -54,7 +54,7 @@ class QDevQDacChannel(InstrumentChannel):
             channum: The number of the channel in question (1-48)
             **kwargs: Forwarded to base class.
         """
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         # Validate the channel
         self._CHANNEL_VALIDATION.validate(channum)
