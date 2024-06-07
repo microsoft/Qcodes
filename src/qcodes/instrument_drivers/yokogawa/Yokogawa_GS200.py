@@ -13,6 +13,8 @@ from qcodes.validators import Bool, Enum, Ints, Numbers
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 ModeType = Literal["CURR", "VOLT"]
 
 
@@ -71,7 +73,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
 
         # Set up monitoring parameters
         if present:
-            self.add_parameter(
+            self.enabled: Parameter = self.add_parameter(
                 "enabled",
                 label="Measurement Enabled",
                 get_cmd=self.state,
@@ -81,18 +83,20 @@ class YokogawaGS200Monitor(InstrumentChannel):
                     "on": 1,
                 },
             )
+            """Parameter enabled"""
 
             # Note: Measurement will only run if source and
             # measurement is enabled.
-            self.add_parameter(
+            self.measure: Parameter = self.add_parameter(
                 "measure",
                 label="<unset>",
                 unit="V/I",
                 get_cmd=self._get_measurement,
                 snapshot_get=False,
             )
+            """Parameter measure"""
 
-            self.add_parameter(
+            self.NPLC: Parameter = self.add_parameter(
                 "NPLC",
                 label="NPLC",
                 unit="1/LineFreq",
@@ -102,7 +106,8 @@ class YokogawaGS200Monitor(InstrumentChannel):
                 get_cmd=":SENS:NPLC?",
                 get_parser=_float_round,
             )
-            self.add_parameter(
+            """Parameter NPLC"""
+            self.delay: Parameter = self.add_parameter(
                 "delay",
                 label="Measurement Delay",
                 unit="ms",
@@ -112,7 +117,8 @@ class YokogawaGS200Monitor(InstrumentChannel):
                 get_cmd=":SENS:DEL?",
                 get_parser=_float_round,
             )
-            self.add_parameter(
+            """Parameter delay"""
+            self.trigger: Parameter = self.add_parameter(
                 "trigger",
                 label="Trigger Source",
                 set_cmd=":SENS:TRIG {}",
@@ -127,7 +133,8 @@ class YokogawaGS200Monitor(InstrumentChannel):
                     "IMM": "IMM",
                 },
             )
-            self.add_parameter(
+            """Parameter trigger"""
+            self.interval: Parameter = self.add_parameter(
                 "interval",
                 label="Measurement Interval",
                 unit="s",
@@ -137,6 +144,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
                 get_cmd=":SENS:INT?",
                 get_parser=float,
             )
+            """Parameter interval"""
 
     def off(self) -> None:
         """Turn measurement off"""
@@ -205,7 +213,7 @@ class YokogawaGS200Program(InstrumentChannel):
         self._repeat = 1
         self._file_name = None
 
-        self.add_parameter(
+        self.interval: Parameter = self.add_parameter(
             "interval",
             label="the program interval time",
             unit="s",
@@ -213,8 +221,9 @@ class YokogawaGS200Program(InstrumentChannel):
             get_cmd=":PROG:INT?",
             set_cmd=":PROG:INT {}",
         )
+        """Parameter interval"""
 
-        self.add_parameter(
+        self.slope: Parameter = self.add_parameter(
             "slope",
             label="the program slope time",
             unit="s",
@@ -222,42 +231,48 @@ class YokogawaGS200Program(InstrumentChannel):
             get_cmd=":PROG:SLOP?",
             set_cmd=":PROG:SLOP {}",
         )
+        """Parameter slope"""
 
-        self.add_parameter(
+        self.trigger: Parameter = self.add_parameter(
             "trigger",
             label="the program trigger",
             get_cmd=":PROG:TRIG?",
             set_cmd=":PROG:TRIG {}",
             vals=Enum("normal", "mend"),
         )
+        """Parameter trigger"""
 
-        self.add_parameter(
+        self.save: Parameter = self.add_parameter(
             "save",
             set_cmd=":PROG:SAVE '{}'",
             docstring="save the program to the system memory (.csv file)",
         )
+        """save the program to the system memory (.csv file)"""
 
-        self.add_parameter(
+        self.load: Parameter = self.add_parameter(
             "load",
             get_cmd=":PROG:LOAD?",
             set_cmd=":PROG:LOAD '{}'",
             docstring="load the program (.csv file) from the system memory",
         )
+        """load the program (.csv file) from the system memory"""
 
-        self.add_parameter(
+        self.repeat: Parameter = self.add_parameter(
             "repeat",
             label="program execution repetition",
             get_cmd=":PROG:REP?",
             set_cmd=":PROG:REP {}",
             val_mapping={"OFF": 0, "ON": 1},
         )
-        self.add_parameter(
+        """Parameter repeat"""
+        self.count: Parameter = self.add_parameter(
             "count",
             label="step of the current program",
             get_cmd=":PROG:COUN?",
             set_cmd=":PROG:COUN {}",
             vals=Ints(1, 10000),
         )
+        """Parameter count"""
 
         self.add_function(
             "start", call_cmd=":PROG:EDIT:STAR", docstring="start program editing"
@@ -292,7 +307,7 @@ class YokogawaGS200(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.add_parameter(
+        self.output: Parameter = self.add_parameter(
             "output",
             label="Output State",
             get_cmd=self.state,
@@ -302,21 +317,23 @@ class YokogawaGS200(VisaInstrument):
                 "on": 1,
             },
         )
+        """Parameter output"""
 
-        self.add_parameter(
+        self.source_mode: Parameter = self.add_parameter(
             "source_mode",
             label="Source Mode",
             get_cmd=":SOUR:FUNC?",
             set_cmd=self._set_source_mode,
             vals=Enum("VOLT", "CURR"),
         )
+        """Parameter source_mode"""
 
         # We need to get the source_mode value here as we cannot rely on the
         # default value that may have been changed before we connect to the
         # instrument (in a previous session or via the frontpanel).
         self.source_mode()
 
-        self.add_parameter(
+        self.voltage_range: Parameter = self.add_parameter(
             "voltage_range",
             label="Voltage Source Range",
             unit="V",
@@ -325,8 +342,9 @@ class YokogawaGS200(VisaInstrument):
             vals=Enum(10e-3, 100e-3, 1e0, 10e0, 30e0),
             snapshot_exclude=self.source_mode() == "CURR",
         )
+        """Parameter voltage_range"""
 
-        self.add_parameter(
+        self.current_range: Parameter = self.add_parameter(
             "current_range",
             label="Current Source Range",
             unit="I",
@@ -335,13 +353,17 @@ class YokogawaGS200(VisaInstrument):
             vals=Enum(1e-3, 10e-3, 100e-3, 200e-3),
             snapshot_exclude=self.source_mode() == "VOLT",
         )
+        """Parameter current_range"""
 
-        self.add_parameter("range", parameter_class=DelegateParameter, source=None)
+        self.range: DelegateParameter = self.add_parameter(
+            "range", parameter_class=DelegateParameter, source=None
+        )
+        """Parameter range"""
 
         # The instrument does not support auto range. The parameter
         # auto_range is introduced to add this capability with
         # setting the initial state at False mode.
-        self.add_parameter(
+        self.auto_range: Parameter = self.add_parameter(
             "auto_range",
             label="Auto Range",
             set_cmd=self._set_auto_range,
@@ -349,8 +371,9 @@ class YokogawaGS200(VisaInstrument):
             initial_cache_value=False,
             vals=Bool(),
         )
+        """Parameter auto_range"""
 
-        self.add_parameter(
+        self.voltage: Parameter = self.add_parameter(
             "voltage",
             label="Voltage",
             unit="V",
@@ -358,8 +381,9 @@ class YokogawaGS200(VisaInstrument):
             get_cmd=partial(self._get_set_output, "VOLT"),
             snapshot_exclude=self.source_mode() == "CURR",
         )
+        """Parameter voltage"""
 
-        self.add_parameter(
+        self.current: Parameter = self.add_parameter(
             "current",
             label="Current",
             unit="I",
@@ -367,10 +391,12 @@ class YokogawaGS200(VisaInstrument):
             get_cmd=partial(self._get_set_output, "CURR"),
             snapshot_exclude=self.source_mode() == "VOLT",
         )
+        """Parameter current"""
 
-        self.add_parameter(
+        self.output_level: DelegateParameter = self.add_parameter(
             "output_level", parameter_class=DelegateParameter, source=None
         )
+        """Parameter output_level"""
 
         # We need to pass the source parameter for delegate parameters
         # (range and output_level) here according to the present
@@ -382,7 +408,7 @@ class YokogawaGS200(VisaInstrument):
             self.range.source = self.current_range
             self.output_level.source = self.current
 
-        self.add_parameter(
+        self.voltage_limit: Parameter = self.add_parameter(
             "voltage_limit",
             label="Voltage Protection Limit",
             unit="V",
@@ -392,8 +418,9 @@ class YokogawaGS200(VisaInstrument):
             get_parser=_float_round,
             set_parser=int,
         )
+        """Parameter voltage_limit"""
 
-        self.add_parameter(
+        self.current_limit: Parameter = self.add_parameter(
             "current_limit",
             label="Current Protection Limit",
             unit="I",
@@ -403,8 +430,9 @@ class YokogawaGS200(VisaInstrument):
             get_parser=float,
             set_parser=float,
         )
+        """Parameter current_limit"""
 
-        self.add_parameter(
+        self.four_wire: Parameter = self.add_parameter(
             "four_wire",
             label="Four Wire Sensing",
             get_cmd=":SENS:REM?",
@@ -414,25 +442,28 @@ class YokogawaGS200(VisaInstrument):
                 "on": 1,
             },
         )
+        """Parameter four_wire"""
 
         # Note: The guard feature can be used to remove common mode noise.
         # Read the manual to see if you would like to use it
-        self.add_parameter(
+        self.guard: Parameter = self.add_parameter(
             "guard",
             label="Guard Terminal",
             get_cmd=":SENS:GUAR?",
             set_cmd=":SENS:GUAR {}",
             val_mapping={"off": 0, "on": 1},
         )
+        """Parameter guard"""
 
         # Return measured line frequency
-        self.add_parameter(
+        self.line_freq: Parameter = self.add_parameter(
             "line_freq",
             label="Line Frequency",
             unit="Hz",
             get_cmd="SYST:LFR?",
             get_parser=int,
         )
+        """Parameter line_freq"""
 
         # Check if monitor is present, and if so enable measurement
         monitor_present = "/MON" in self.ask("*OPT?")
@@ -444,7 +475,7 @@ class YokogawaGS200(VisaInstrument):
 
         self.add_submodule("program", YokogawaGS200Program(self, "program"))
 
-        self.add_parameter(
+        self.BNC_out: Parameter = self.add_parameter(
             "BNC_out",
             label="BNC trigger out",
             get_cmd=":ROUT:BNCO?",
@@ -452,8 +483,9 @@ class YokogawaGS200(VisaInstrument):
             vals=Enum("trigger", "output", "ready"),
             docstring="Sets or queries the output BNC signal",
         )
+        """Sets or queries the output BNC signal"""
 
-        self.add_parameter(
+        self.BNC_in: Parameter = self.add_parameter(
             "BNC_in",
             label="BNC trigger in",
             get_cmd=":ROUT:BNCI?",
@@ -461,13 +493,15 @@ class YokogawaGS200(VisaInstrument):
             vals=Enum("trigger", "output"),
             docstring="Sets or queries the input BNC signal",
         )
+        """Sets or queries the input BNC signal"""
 
-        self.add_parameter(
+        self.system_errors: Parameter = self.add_parameter(
             "system_errors",
             get_cmd=":SYSTem:ERRor?",
             docstring="returns the oldest unread error message from the event "
             "log and removes it from the log.",
         )
+        """returns the oldest unread error message from the event log and removes it from the log."""
 
         self.connect_message()
 
