@@ -26,6 +26,8 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 log = logging.getLogger(__name__)
 
 
@@ -178,44 +180,56 @@ class TektronixAWG5014(VisaInstrument):
 
         self.add_function('reset', call_cmd='*RST')
 
-        self.add_parameter('state',
-                           get_cmd=self.get_state)
-        self.add_parameter('run_mode',
-                           get_cmd='AWGControl:RMODe?',
-                           set_cmd='AWGControl:RMODe ' + '{}',
-                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
-                           get_parser=self.newlinestripper
-                           )
-        self.add_parameter('clock_source',
-                           label='Clock source',
-                           get_cmd='AWGControl:CLOCk:SOURce?',
-                           set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
-                           vals=vals.Enum('INT', 'EXT'),
-                           get_parser=self.newlinestripper)
+        self.state: Parameter = self.add_parameter("state", get_cmd=self.get_state)
+        """Parameter state"""
+        self.run_mode: Parameter = self.add_parameter(
+            "run_mode",
+            get_cmd="AWGControl:RMODe?",
+            set_cmd="AWGControl:RMODe " + "{}",
+            vals=vals.Enum("CONT", "TRIG", "SEQ", "GAT"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter run_mode"""
+        self.clock_source: Parameter = self.add_parameter(
+            "clock_source",
+            label="Clock source",
+            get_cmd="AWGControl:CLOCk:SOURce?",
+            set_cmd="AWGControl:CLOCk:SOURce " + "{}",
+            vals=vals.Enum("INT", "EXT"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter clock_source"""
 
-        self.add_parameter('ref_source',
-                           label='Reference source',
-                           get_cmd='SOURce1:ROSCillator:SOURce?',
-                           set_cmd='SOURce1:ROSCillator:SOURce ' + '{}',
-                           vals=vals.Enum('INT', 'EXT'),
-                           get_parser=self.newlinestripper)
+        self.ref_source: Parameter = self.add_parameter(
+            "ref_source",
+            label="Reference source",
+            get_cmd="SOURce1:ROSCillator:SOURce?",
+            set_cmd="SOURce1:ROSCillator:SOURce " + "{}",
+            vals=vals.Enum("INT", "EXT"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter ref_source"""
 
-        self.add_parameter('DC_output',
-                           label='DC Output (ON/OFF)',
-                           get_cmd='AWGControl:DC:STATe?',
-                           set_cmd='AWGControl:DC:STATe {}',
-                           vals=vals.Ints(0, 1),
-                           get_parser=int)
+        self.DC_output: Parameter = self.add_parameter(
+            "DC_output",
+            label="DC Output (ON/OFF)",
+            get_cmd="AWGControl:DC:STATe?",
+            set_cmd="AWGControl:DC:STATe {}",
+            vals=vals.Ints(0, 1),
+            get_parser=int,
+        )
+        """Parameter DC_output"""
 
         # sequence parameter(s)
-        self.add_parameter('sequence_length',
-                           label='Sequence length',
-                           get_cmd='SEQuence:LENGth?',
-                           set_cmd='SEQuence:LENGth ' + '{}',
-                           get_parser=int,
-                           vals=vals.Ints(0, 8000),
-                           docstring=(
-                               """
+        self.sequence_length: Parameter = self.add_parameter(
+            "sequence_length",
+            label="Sequence length",
+            get_cmd="SEQuence:LENGth?",
+            set_cmd="SEQuence:LENGth " + "{}",
+            get_parser=int,
+            vals=vals.Ints(0, 8000),
+            docstring=(
+                """
                                This command sets the sequence length.
                                Use this command to create an
                                uninitialized sequence. You can also
@@ -232,87 +246,140 @@ class TektronixAWG5014(VisaInstrument):
                                subsequently set sequence_length to 21,
                                all sequence elements except the first
                                20 will be deleted.
-                               """)
-                           )
+                               """
+            ),
+        )
+        """
+                               This command sets the sequence length.
+                               Use this command to create an
+                               uninitialized sequence. You can also
+                               use the command to clear all sequence
+                               elements in a single action by passing
+                               0 as the parameter. However, this
+                               action cannot be undone so exercise
+                               necessary caution. Also note that
+                               passing a value less than the
+                               sequence’s current length will cause
+                               some sequence elements to be deleted at
+                               the end of the sequence. For example if
+                               self.get_sq_length returns 200 and you
+                               subsequently set sequence_length to 21,
+                               all sequence elements except the first
+                               20 will be deleted.
+                               """
 
-        self.add_parameter('sequence_pos',
-                           label='Sequence position',
-                           get_cmd='AWGControl:SEQuencer:POSition?',
-                           set_cmd='SEQuence:JUMP:IMMediate {}',
-                           vals=vals.PermissiveInts(1),
-                           set_parser=lambda x: int(round(x))
-                           )
+        self.sequence_pos: Parameter = self.add_parameter(
+            "sequence_pos",
+            label="Sequence position",
+            get_cmd="AWGControl:SEQuencer:POSition?",
+            set_cmd="SEQuence:JUMP:IMMediate {}",
+            vals=vals.PermissiveInts(1),
+            set_parser=lambda x: int(round(x)),
+        )
+        """Parameter sequence_pos"""
 
         # Trigger parameters #
         # Warning: `trigger_mode` is the same as `run_mode`, do not use! exists
         # solely for legacy purposes
-        self.add_parameter('trigger_mode',
-                           get_cmd='AWGControl:RMODe?',
-                           set_cmd='AWGControl:RMODe ' + '{}',
-                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
-                           get_parser=self.newlinestripper)
-        self.add_parameter('trigger_impedance',
-                           label='Trigger impedance',
-                           unit='Ohm',
-                           get_cmd='TRIGger:IMPedance?',
-                           set_cmd='TRIGger:IMPedance ' + '{}',
-                           vals=vals.Enum(50, 1000),
-                           get_parser=float)
-        self.add_parameter('trigger_level',
-                           unit='V',
-                           label='Trigger level',
-                           get_cmd='TRIGger:LEVel?',
-                           set_cmd='TRIGger:LEVel ' + '{:.3f}',
-                           vals=vals.Numbers(-5, 5),
-                           get_parser=float)
-        self.add_parameter('trigger_slope',
-                           get_cmd='TRIGger:SLOPe?',
-                           set_cmd='TRIGger:SLOPe ' + '{}',
-                           vals=vals.Enum('POS', 'NEG'),
-                           get_parser=self.newlinestripper)
+        self.trigger_mode: Parameter = self.add_parameter(
+            "trigger_mode",
+            get_cmd="AWGControl:RMODe?",
+            set_cmd="AWGControl:RMODe " + "{}",
+            vals=vals.Enum("CONT", "TRIG", "SEQ", "GAT"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter trigger_mode"""
+        self.trigger_impedance: Parameter = self.add_parameter(
+            "trigger_impedance",
+            label="Trigger impedance",
+            unit="Ohm",
+            get_cmd="TRIGger:IMPedance?",
+            set_cmd="TRIGger:IMPedance " + "{}",
+            vals=vals.Enum(50, 1000),
+            get_parser=float,
+        )
+        """Parameter trigger_impedance"""
+        self.trigger_level: Parameter = self.add_parameter(
+            "trigger_level",
+            unit="V",
+            label="Trigger level",
+            get_cmd="TRIGger:LEVel?",
+            set_cmd="TRIGger:LEVel " + "{:.3f}",
+            vals=vals.Numbers(-5, 5),
+            get_parser=float,
+        )
+        """Parameter trigger_level"""
+        self.trigger_slope: Parameter = self.add_parameter(
+            "trigger_slope",
+            get_cmd="TRIGger:SLOPe?",
+            set_cmd="TRIGger:SLOPe " + "{}",
+            vals=vals.Enum("POS", "NEG"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter trigger_slope"""
 
-        self.add_parameter('trigger_source',
-                           get_cmd='TRIGger:SOURce?',
-                           set_cmd='TRIGger:SOURce ' + '{}',
-                           vals=vals.Enum('INT', 'EXT'),
-                           get_parser=self.newlinestripper)
+        self.trigger_source: Parameter = self.add_parameter(
+            "trigger_source",
+            get_cmd="TRIGger:SOURce?",
+            set_cmd="TRIGger:SOURce " + "{}",
+            vals=vals.Enum("INT", "EXT"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter trigger_source"""
 
         # Event parameters
-        self.add_parameter('event_polarity',
-                           get_cmd='EVENt:POL?',
-                           set_cmd='EVENt:POL ' + '{}',
-                           vals=vals.Enum('POS', 'NEG'),
-                           get_parser=self.newlinestripper)
-        self.add_parameter('event_impedance',
-                           label='Event impedance',
-                           unit='Ohm',
-                           get_cmd='EVENt:IMPedance?',
-                           set_cmd='EVENt:IMPedance ' + '{}',
-                           vals=vals.Enum(50, 1000),
-                           get_parser=float)
-        self.add_parameter('event_level',
-                           label='Event level',
-                           unit='V',
-                           get_cmd='EVENt:LEVel?',
-                           set_cmd='EVENt:LEVel ' + '{:.3f}',
-                           vals=vals.Numbers(-5, 5),
-                           get_parser=float)
-        self.add_parameter('event_jump_timing',
-                           get_cmd='EVENt:JTIMing?',
-                           set_cmd='EVENt:JTIMing {}',
-                           vals=vals.Enum('SYNC', 'ASYNC'),
-                           get_parser=self.newlinestripper)
+        self.event_polarity: Parameter = self.add_parameter(
+            "event_polarity",
+            get_cmd="EVENt:POL?",
+            set_cmd="EVENt:POL " + "{}",
+            vals=vals.Enum("POS", "NEG"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter event_polarity"""
+        self.event_impedance: Parameter = self.add_parameter(
+            "event_impedance",
+            label="Event impedance",
+            unit="Ohm",
+            get_cmd="EVENt:IMPedance?",
+            set_cmd="EVENt:IMPedance " + "{}",
+            vals=vals.Enum(50, 1000),
+            get_parser=float,
+        )
+        """Parameter event_impedance"""
+        self.event_level: Parameter = self.add_parameter(
+            "event_level",
+            label="Event level",
+            unit="V",
+            get_cmd="EVENt:LEVel?",
+            set_cmd="EVENt:LEVel " + "{:.3f}",
+            vals=vals.Numbers(-5, 5),
+            get_parser=float,
+        )
+        """Parameter event_level"""
+        self.event_jump_timing: Parameter = self.add_parameter(
+            "event_jump_timing",
+            get_cmd="EVENt:JTIMing?",
+            set_cmd="EVENt:JTIMing {}",
+            vals=vals.Enum("SYNC", "ASYNC"),
+            get_parser=self.newlinestripper,
+        )
+        """Parameter event_jump_timing"""
 
-        self.add_parameter('clock_freq',
-                           label='Clock frequency',
-                           unit='Hz',
-                           get_cmd='SOURce:FREQuency?',
-                           set_cmd='SOURce:FREQuency ' + '{}',
-                           vals=vals.Numbers(1e6, 1.2e9),
-                           get_parser=float)
+        self.clock_freq: Parameter = self.add_parameter(
+            "clock_freq",
+            label="Clock frequency",
+            unit="Hz",
+            get_cmd="SOURce:FREQuency?",
+            set_cmd="SOURce:FREQuency " + "{}",
+            vals=vals.Numbers(1e6, 1.2e9),
+            get_parser=float,
+        )
+        """Parameter clock_freq"""
 
-        self.add_parameter('setup_filename',
-                           get_cmd='AWGControl:SNAMe?')
+        self.setup_filename: Parameter = self.add_parameter(
+            "setup_filename", get_cmd="AWGControl:SNAMe?"
+        )
+        """Parameter setup_filename"""
 
         # Channel parameters #
         for i in range(1, self.num_channels+1):
