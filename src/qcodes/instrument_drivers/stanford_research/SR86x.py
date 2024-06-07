@@ -626,7 +626,8 @@ class SR86xDataChannel(InstrumentChannel):
 
 class SR86x(VisaInstrument):
     """
-    This is the code for Stanford_SR865 Lock-in Amplifier
+    Base class for Stanford SR86x Lock-in Amplifier drivers. This class should not
+    be instantiated directly instead one of the model specific sub classes should be used.
     """
 
     _VOLT_TO_N: ClassVar[dict[int | float, int]] = {
