@@ -280,152 +280,206 @@ class SR830(VisaInstrument):
         super().__init__(name, address, **kwargs)
 
         # Reference and phase
-        self.add_parameter('phase',
-                           label='Phase',
-                           get_cmd='PHAS?',
-                           get_parser=float,
-                           set_cmd='PHAS {:.2f}',
-                           unit='deg',
-                           vals=Numbers(min_value=-360, max_value=729.99))
+        self.phase: Parameter = self.add_parameter(
+            "phase",
+            label="Phase",
+            get_cmd="PHAS?",
+            get_parser=float,
+            set_cmd="PHAS {:.2f}",
+            unit="deg",
+            vals=Numbers(min_value=-360, max_value=729.99),
+        )
+        """Parameter phase"""
 
-        self.add_parameter('reference_source',
-                           label='Reference source',
-                           get_cmd='FMOD?',
-                           set_cmd='FMOD {}',
-                           val_mapping={
-                               'external': 0,
-                               'internal': 1,
-                           },
-                           vals=Enum('external', 'internal'))
+        self.reference_source: Parameter = self.add_parameter(
+            "reference_source",
+            label="Reference source",
+            get_cmd="FMOD?",
+            set_cmd="FMOD {}",
+            val_mapping={
+                "external": 0,
+                "internal": 1,
+            },
+            vals=Enum("external", "internal"),
+        )
+        """Parameter reference_source"""
 
-        self.add_parameter('frequency',
-                           label='Frequency',
-                           get_cmd='FREQ?',
-                           get_parser=float,
-                           set_cmd='FREQ {:.4f}',
-                           unit='Hz',
-                           vals=Numbers(min_value=1e-3, max_value=102e3))
+        self.frequency: Parameter = self.add_parameter(
+            "frequency",
+            label="Frequency",
+            get_cmd="FREQ?",
+            get_parser=float,
+            set_cmd="FREQ {:.4f}",
+            unit="Hz",
+            vals=Numbers(min_value=1e-3, max_value=102e3),
+        )
+        """Parameter frequency"""
 
-        self.add_parameter('ext_trigger',
-                           label='External trigger',
-                           get_cmd='RSLP?',
-                           set_cmd='RSLP {}',
-                           val_mapping={
-                               'sine': 0,
-                               'TTL rising': 1,
-                               'TTL falling': 2,
-                           })
+        self.ext_trigger: Parameter = self.add_parameter(
+            "ext_trigger",
+            label="External trigger",
+            get_cmd="RSLP?",
+            set_cmd="RSLP {}",
+            val_mapping={
+                "sine": 0,
+                "TTL rising": 1,
+                "TTL falling": 2,
+            },
+        )
+        """Parameter ext_trigger"""
 
-        self.add_parameter('harmonic',
-                           label='Harmonic',
-                           get_cmd='HARM?',
-                           get_parser=int,
-                           set_cmd='HARM {:d}',
-                           vals=Ints(min_value=1, max_value=19999))
+        self.harmonic: Parameter = self.add_parameter(
+            "harmonic",
+            label="Harmonic",
+            get_cmd="HARM?",
+            get_parser=int,
+            set_cmd="HARM {:d}",
+            vals=Ints(min_value=1, max_value=19999),
+        )
+        """Parameter harmonic"""
 
-        self.add_parameter('amplitude',
-                           label='Amplitude',
-                           get_cmd='SLVL?',
-                           get_parser=float,
-                           set_cmd='SLVL {:.3f}',
-                           unit='V',
-                           vals=Numbers(min_value=0.004, max_value=5.000))
+        self.amplitude: Parameter = self.add_parameter(
+            "amplitude",
+            label="Amplitude",
+            get_cmd="SLVL?",
+            get_parser=float,
+            set_cmd="SLVL {:.3f}",
+            unit="V",
+            vals=Numbers(min_value=0.004, max_value=5.000),
+        )
+        """Parameter amplitude"""
 
         # Input and filter
-        self.add_parameter('input_config',
-                           label='Input configuration',
-                           get_cmd='ISRC?',
-                           get_parser=self._get_input_config,
-                           set_cmd='ISRC {}',
-                           set_parser=self._set_input_config,
-                           vals=Enum(*self._INPUT_CONFIG_TO_N.keys()))
+        self.input_config: Parameter = self.add_parameter(
+            "input_config",
+            label="Input configuration",
+            get_cmd="ISRC?",
+            get_parser=self._get_input_config,
+            set_cmd="ISRC {}",
+            set_parser=self._set_input_config,
+            vals=Enum(*self._INPUT_CONFIG_TO_N.keys()),
+        )
+        """Parameter input_config"""
 
-        self.add_parameter('input_shield',
-                           label='Input shield',
-                           get_cmd='IGND?',
-                           set_cmd='IGND {}',
-                           val_mapping={
-                               'float': 0,
-                               'ground': 1,
-                           })
+        self.input_shield: Parameter = self.add_parameter(
+            "input_shield",
+            label="Input shield",
+            get_cmd="IGND?",
+            set_cmd="IGND {}",
+            val_mapping={
+                "float": 0,
+                "ground": 1,
+            },
+        )
+        """Parameter input_shield"""
 
-        self.add_parameter('input_coupling',
-                           label='Input coupling',
-                           get_cmd='ICPL?',
-                           set_cmd='ICPL {}',
-                           val_mapping={
-                               'AC': 0,
-                               'DC': 1,
-                           })
+        self.input_coupling: Parameter = self.add_parameter(
+            "input_coupling",
+            label="Input coupling",
+            get_cmd="ICPL?",
+            set_cmd="ICPL {}",
+            val_mapping={
+                "AC": 0,
+                "DC": 1,
+            },
+        )
+        """Parameter input_coupling"""
 
-        self.add_parameter('notch_filter',
-                           label='Notch filter',
-                           get_cmd='ILIN?',
-                           set_cmd='ILIN {}',
-                           val_mapping={
-                               'off': 0,
-                               'line in': 1,
-                               '2x line in': 2,
-                               'both': 3,
-                           })
+        self.notch_filter: Parameter = self.add_parameter(
+            "notch_filter",
+            label="Notch filter",
+            get_cmd="ILIN?",
+            set_cmd="ILIN {}",
+            val_mapping={
+                "off": 0,
+                "line in": 1,
+                "2x line in": 2,
+                "both": 3,
+            },
+        )
+        """Parameter notch_filter"""
 
         # Gain and time constant
-        self.add_parameter(name='sensitivity',
-                           label='Sensitivity',
-                           get_cmd='SENS?',
-                           set_cmd='SENS {:d}',
-                           get_parser=self._get_sensitivity,
-                           set_parser=self._set_sensitivity
-                           )
+        self.sensitivity: Parameter = self.add_parameter(
+            name="sensitivity",
+            label="Sensitivity",
+            get_cmd="SENS?",
+            set_cmd="SENS {:d}",
+            get_parser=self._get_sensitivity,
+            set_parser=self._set_sensitivity,
+        )
+        """Parameter sensitivity"""
 
-        self.add_parameter('reserve',
-                           label='Reserve',
-                           get_cmd='RMOD?',
-                           set_cmd='RMOD {}',
-                           val_mapping={
-                               'high': 0,
-                               'normal': 1,
-                               'low noise': 2,
-                           })
+        self.reserve: Parameter = self.add_parameter(
+            "reserve",
+            label="Reserve",
+            get_cmd="RMOD?",
+            set_cmd="RMOD {}",
+            val_mapping={
+                "high": 0,
+                "normal": 1,
+                "low noise": 2,
+            },
+        )
+        """Parameter reserve"""
 
-        self.add_parameter('time_constant',
-                           label='Time constant',
-                           get_cmd='OFLT?',
-                           set_cmd='OFLT {}',
-                           unit='s',
-                           val_mapping={
-                               10e-6:  0, 30e-6:  1,
-                               100e-6: 2, 300e-6: 3,
-                               1e-3:   4, 3e-3:   5,
-                               10e-3:  6, 30e-3:  7,
-                               100e-3: 8, 300e-3: 9,
-                               1:     10, 3:     11,
-                               10:    12, 30:    13,
-                               100:   14, 300:   15,
-                               1e3:   16, 3e3:   17,
-                               10e3:  18, 30e3:  19,
-                           })
+        self.time_constant: Parameter = self.add_parameter(
+            "time_constant",
+            label="Time constant",
+            get_cmd="OFLT?",
+            set_cmd="OFLT {}",
+            unit="s",
+            val_mapping={
+                10e-6: 0,
+                30e-6: 1,
+                100e-6: 2,
+                300e-6: 3,
+                1e-3: 4,
+                3e-3: 5,
+                10e-3: 6,
+                30e-3: 7,
+                100e-3: 8,
+                300e-3: 9,
+                1: 10,
+                3: 11,
+                10: 12,
+                30: 13,
+                100: 14,
+                300: 15,
+                1e3: 16,
+                3e3: 17,
+                10e3: 18,
+                30e3: 19,
+            },
+        )
+        """Parameter time_constant"""
 
-        self.add_parameter('filter_slope',
-                           label='Filter slope',
-                           get_cmd='OFSL?',
-                           set_cmd='OFSL {}',
-                           unit='dB/oct',
-                           val_mapping={
-                               6: 0,
-                               12: 1,
-                               18: 2,
-                               24: 3,
-                           })
+        self.filter_slope: Parameter = self.add_parameter(
+            "filter_slope",
+            label="Filter slope",
+            get_cmd="OFSL?",
+            set_cmd="OFSL {}",
+            unit="dB/oct",
+            val_mapping={
+                6: 0,
+                12: 1,
+                18: 2,
+                24: 3,
+            },
+        )
+        """Parameter filter_slope"""
 
-        self.add_parameter('sync_filter',
-                           label='Sync filter',
-                           get_cmd='SYNC?',
-                           set_cmd='SYNC {}',
-                           val_mapping={
-                               'off': 0,
-                               'on': 1,
-                           })
+        self.sync_filter: Parameter = self.add_parameter(
+            "sync_filter",
+            label="Sync filter",
+            get_cmd="SYNC?",
+            set_cmd="SYNC {}",
+            val_mapping={
+                "off": 0,
+                "on": 1,
+            },
+        )
+        """Parameter sync_filter"""
 
         def parse_offset_get(s: str) -> tuple[float, int]:
             parts = s.split(',')
@@ -434,17 +488,20 @@ class SR830(VisaInstrument):
 
         # TODO: Parameters that can be set with multiple arguments
         # For the OEXP command for example two arguments are needed
-        self.add_parameter('X_offset',
-                           get_cmd='OEXP? 1',
-                           get_parser=parse_offset_get)
+        self.X_offset: Parameter = self.add_parameter(
+            "X_offset", get_cmd="OEXP? 1", get_parser=parse_offset_get
+        )
+        """Parameter X_offset"""
 
-        self.add_parameter('Y_offset',
-                           get_cmd='OEXP? 2',
-                           get_parser=parse_offset_get)
+        self.Y_offset: Parameter = self.add_parameter(
+            "Y_offset", get_cmd="OEXP? 2", get_parser=parse_offset_get
+        )
+        """Parameter Y_offset"""
 
-        self.add_parameter('R_offset',
-                           get_cmd='OEXP? 3',
-                           get_parser=parse_offset_get)
+        self.R_offset: Parameter = self.add_parameter(
+            "R_offset", get_cmd="OEXP? 3", get_parser=parse_offset_get
+        )
+        """Parameter R_offset"""
 
         # Aux input/output
         for i in [1, 2, 3, 4]:
@@ -462,37 +519,40 @@ class SR830(VisaInstrument):
                                unit='V')
 
         # Setup
-        self.add_parameter('output_interface',
-                           label='Output interface',
-                           get_cmd='OUTX?',
-                           set_cmd='OUTX {}',
-                           val_mapping={
-                               'RS232': '0\n',
-                               'GPIB': '1\n',
-                           })
+        self.output_interface: Parameter = self.add_parameter(
+            "output_interface",
+            label="Output interface",
+            get_cmd="OUTX?",
+            set_cmd="OUTX {}",
+            val_mapping={
+                "RS232": "0\n",
+                "GPIB": "1\n",
+            },
+        )
+        """Parameter output_interface"""
 
         # Data transfer
-        self.add_parameter('X',
-                           get_cmd='OUTP? 1',
-                           get_parser=float,
-                           unit='V')
+        self.X: Parameter = self.add_parameter(
+            "X", get_cmd="OUTP? 1", get_parser=float, unit="V"
+        )
+        """Parameter X"""
 
-        self.add_parameter('Y',
-                           get_cmd='OUTP? 2',
-                           get_parser=float,
-                           unit='V')
+        self.Y: Parameter = self.add_parameter(
+            "Y", get_cmd="OUTP? 2", get_parser=float, unit="V"
+        )
+        """Parameter Y"""
 
-        self.add_parameter('R',
-                           get_cmd='OUTP? 3',
-                           get_parser=float,
-                           unit='V')
+        self.R: Parameter = self.add_parameter(
+            "R", get_cmd="OUTP? 3", get_parser=float, unit="V"
+        )
+        """Parameter R"""
 
-        self.add_parameter('P',
-                           get_cmd='OUTP? 4',
-                           get_parser=float,
-                           unit='deg')
+        self.P: Parameter = self.add_parameter(
+            "P", get_cmd="OUTP? 4", get_parser=float, unit="deg"
+        )
+        """Parameter P"""
 
-        self.add_parameter(
+        self.complex_voltage: Parameter = self.add_parameter(
             "complex_voltage",
             label="Voltage",
             get_cmd=self._get_complex_voltage,
@@ -502,49 +562,70 @@ class SR830(VisaInstrument):
             "Z = X +j*Y",
             vals=ComplexNumbers(),
         )
+        """Complex voltage parameter calculated from X, Y phase using Z = X +j*Y"""
 
         # Data buffer settings
-        self.add_parameter('buffer_SR',
-                           label='Buffer sample rate',
-                           get_cmd='SRAT ?',
-                           set_cmd=self._set_buffer_SR,
-                           unit='Hz',
-                           val_mapping={62.5e-3: 0,
-                                        0.125: 1,
-                                        0.250: 2,
-                                        0.5: 3,
-                                        1: 4, 2: 5,
-                                        4: 6, 8: 7,
-                                        16: 8, 32: 9,
-                                        64: 10, 128: 11,
-                                        256: 12, 512: 13,
-                                        'Trigger': 14},
-                           get_parser=int
-                           )
+        self.buffer_SR: Parameter = self.add_parameter(
+            "buffer_SR",
+            label="Buffer sample rate",
+            get_cmd="SRAT ?",
+            set_cmd=self._set_buffer_SR,
+            unit="Hz",
+            val_mapping={
+                62.5e-3: 0,
+                0.125: 1,
+                0.250: 2,
+                0.5: 3,
+                1: 4,
+                2: 5,
+                4: 6,
+                8: 7,
+                16: 8,
+                32: 9,
+                64: 10,
+                128: 11,
+                256: 12,
+                512: 13,
+                "Trigger": 14,
+            },
+            get_parser=int,
+        )
+        """Parameter buffer_SR"""
 
-        self.add_parameter('buffer_acq_mode',
-                           label='Buffer acquistion mode',
-                           get_cmd='SEND ?',
-                           set_cmd='SEND {}',
-                           val_mapping={'single shot': 0,
-                                        'loop': 1},
-                           get_parser=int)
+        self.buffer_acq_mode: Parameter = self.add_parameter(
+            "buffer_acq_mode",
+            label="Buffer acquistion mode",
+            get_cmd="SEND ?",
+            set_cmd="SEND {}",
+            val_mapping={"single shot": 0, "loop": 1},
+            get_parser=int,
+        )
+        """Parameter buffer_acq_mode"""
 
-        self.add_parameter('buffer_trig_mode',
-                           label='Buffer trigger start mode',
-                           get_cmd='TSTR ?',
-                           set_cmd='TSTR {}',
-                           val_mapping={'ON': 1, 'OFF': 0},
-                           get_parser=int)
+        self.buffer_trig_mode: Parameter = self.add_parameter(
+            "buffer_trig_mode",
+            label="Buffer trigger start mode",
+            get_cmd="TSTR ?",
+            set_cmd="TSTR {}",
+            val_mapping={"ON": 1, "OFF": 0},
+            get_parser=int,
+        )
+        """Parameter buffer_trig_mode"""
 
-        self.add_parameter('buffer_npts',
-                           label='Buffer number of stored points',
-                           get_cmd='SPTS ?',
-                           get_parser=int)
+        self.buffer_npts: Parameter = self.add_parameter(
+            "buffer_npts",
+            label="Buffer number of stored points",
+            get_cmd="SPTS ?",
+            get_parser=int,
+        )
+        """Parameter buffer_npts"""
 
-        self.add_parameter('sweep_setpoints',
-                           parameter_class=GeneratedSetPoints,
-                           vals=Arrays(shape=(self.buffer_npts.get,)))
+        self.sweep_setpoints: GeneratedSetPoints = self.add_parameter(
+            "sweep_setpoints",
+            parameter_class=GeneratedSetPoints,
+            vals=Arrays(shape=(self.buffer_npts.get,)),
+        )
+        """Parameter sweep_setpoints"""
 
         # Channel setup
         for ch in range(1, 3):
