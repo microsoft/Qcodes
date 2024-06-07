@@ -1,3 +1,4 @@
+from .private.DP8xx import RigolDP8xxBase
 from .Rigol_DG1062 import RigolDG1062, RigolDG1062Burst, RigolDG1062Channel
 from .Rigol_DG4000 import RigolDG4000
 from .Rigol_DP821 import RigolDP821
@@ -11,6 +12,7 @@ __all__ = [
     "RigolDG1062Burst",
     "RigolDG1062Channel",
     "RigolDG4000",
+    "RigolDP8xxBase",
     "RigolDP821",
     "RigolDP831",
     "RigolDP832",

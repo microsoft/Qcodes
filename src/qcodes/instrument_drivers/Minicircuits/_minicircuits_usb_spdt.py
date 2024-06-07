@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Optional
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
-    SPDT_Base,
-    SwitchChannelBase,
+    MiniCircuitsSPDTBase,
+    MiniCircuitsSPDTSwitchChannelBase,
 )
 
 if TYPE_CHECKING:
@@ -22,7 +22,7 @@ except ImportError:
     )
 
 
-class MiniCircuitsUsbSPDTSwitchChannel(SwitchChannelBase):
+class MiniCircuitsUsbSPDTSwitchChannel(MiniCircuitsSPDTSwitchChannelBase):
     def _set_switch(self, switch: int) -> None:
         self._parent.switch.Set_Switch(self.channel_letter, switch - 1)
 
@@ -31,7 +31,7 @@ class MiniCircuitsUsbSPDTSwitchChannel(SwitchChannelBase):
         return int(f"{status:04b}"[-1 - self.channel_number]) + 1
 
 
-class MiniCircuitsUsbSPDT(SPDT_Base):
+class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
     CHANNEL_CLASS = MiniCircuitsUsbSPDTSwitchChannel
     PATH_TO_DRIVER = r"mcl_RF_Switch_Controller64"
     PATH_TO_DRIVER_45 = r"mcl_RF_Switch_Controller_NET45"

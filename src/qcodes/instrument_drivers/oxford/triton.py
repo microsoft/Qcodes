@@ -11,6 +11,8 @@ from qcodes.validators import Enum, Ints, Numbers
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 
 class OxfordTriton(IPInstrument):
     r"""
@@ -61,92 +63,103 @@ class OxfordTriton(IPInstrument):
         self._control_channel = 5
         self.pump_label_dict = {"TURB1": "Turbo 1", "COMP": "Compressor"}
 
-        self.add_parameter(
+        self.time: Parameter = self.add_parameter(
             name="time",
             label="System Time",
             get_cmd="READ:SYS:TIME",
             get_parser=self._parse_time,
         )
+        """Parameter time"""
 
-        self.add_parameter(
+        self.action: Parameter = self.add_parameter(
             name="action",
             label="Current action",
             get_cmd="READ:SYS:DR:ACTN",
             get_parser=self._parse_action,
         )
+        """Parameter action"""
 
-        self.add_parameter(
+        self.status: Parameter = self.add_parameter(
             name="status",
             label="Status",
             get_cmd="READ:SYS:DR:STATUS",
             get_parser=self._parse_status,
         )
+        """Parameter status"""
 
-        self.add_parameter(
+        self.pid_control_channel: Parameter = self.add_parameter(
             name="pid_control_channel",
             label="PID control channel",
             get_cmd=self._get_control_channel,
             set_cmd=self._set_control_channel,
             vals=Ints(1, 16),
         )
+        """Parameter pid_control_channel"""
 
-        self.add_parameter(
+        self.pid_mode: Parameter = self.add_parameter(
             name="pid_mode",
             label="PID Mode",
             get_cmd=partial(self._get_control_param, "MODE"),
             set_cmd=partial(self._set_control_param, "MODE"),
             val_mapping={"on": "ON", "off": "OFF"},
         )
+        """Parameter pid_mode"""
 
-        self.add_parameter(
+        self.pid_ramp: Parameter = self.add_parameter(
             name="pid_ramp",
             label="PID ramp enabled",
             get_cmd=partial(self._get_control_param, "RAMP:ENAB"),
             set_cmd=partial(self._set_control_param, "RAMP:ENAB"),
             val_mapping={"on": "ON", "off": "OFF"},
         )
+        """Parameter pid_ramp"""
 
-        self.add_parameter(
+        self.pid_setpoint: Parameter = self.add_parameter(
             name="pid_setpoint",
             label="PID temperature setpoint",
             unit="K",
             get_cmd=partial(self._get_control_param, "TSET"),
             set_cmd=partial(self._set_control_param, "TSET"),
         )
+        """Parameter pid_setpoint"""
 
-        self.add_parameter(
+        self.pid_p: Parameter = self.add_parameter(
             name="pid_p",
             label="PID proportionality",
             get_cmd=partial(self._get_control_param, "P"),
             set_cmd=partial(self._set_control_param, "P"),
             vals=Numbers(0, 1e3),
         )
+        """Parameter pid_p"""
 
-        self.add_parameter(
+        self.pid_i: Parameter = self.add_parameter(
             name="pid_i",
             label="PID intergral",
             get_cmd=partial(self._get_control_param, "I"),
             set_cmd=partial(self._set_control_param, "I"),
             vals=Numbers(0, 1e3),
         )
+        """Parameter pid_i"""
 
-        self.add_parameter(
+        self.pid_d: Parameter = self.add_parameter(
             name="pid_d",
             label="PID derivative",
             get_cmd=partial(self._get_control_param, "D"),
             set_cmd=partial(self._set_control_param, "D"),
             vals=Numbers(0, 1e3),
         )
+        """Parameter pid_d"""
 
-        self.add_parameter(
+        self.pid_rate: Parameter = self.add_parameter(
             name="pid_rate",
             label="PID ramp rate",
             unit="K/min",
             get_cmd=partial(self._get_control_param, "RAMP:RATE"),
             set_cmd=partial(self._set_control_param, "RAMP:RATE"),
         )
+        """Parameter pid_rate"""
 
-        self.add_parameter(
+        self.pid_range: Parameter = self.add_parameter(
             name="pid_range",
             label="PID heater range",
             # TODO: The units in the software are mA, how to
@@ -156,74 +169,84 @@ class OxfordTriton(IPInstrument):
             set_cmd=partial(self._set_control_param, "RANGE"),
             vals=Enum(*self._heater_range_curr),
         )
+        """Parameter pid_range"""
 
-        self.add_parameter(
+        self.magnet_status: Parameter = self.add_parameter(
             name="magnet_status",
             label="Magnet status",
             unit="",
             get_cmd=partial(self._get_control_B_param, "ACTN"),
         )
+        """Parameter magnet_status"""
 
-        self.add_parameter(
+        self.magnet_sweeprate: Parameter = self.add_parameter(
             name="magnet_sweeprate",
             label="Magnet sweep rate",
             unit="T/min",
             get_cmd=partial(self._get_control_B_param, "RVST:RATE"),
             set_cmd=partial(self._set_control_magnet_sweeprate_param),
         )
+        """Parameter magnet_sweeprate"""
 
-        self.add_parameter(
+        self.magnet_sweeprate_insta: Parameter = self.add_parameter(
             name="magnet_sweeprate_insta",
             label="Instantaneous magnet sweep rate",
             unit="T/min",
             get_cmd=partial(self._get_control_B_param, "RFST"),
         )
+        """Parameter magnet_sweeprate_insta"""
 
-        self.add_parameter(
+        self.B: Parameter = self.add_parameter(
             name="B",
             label="Magnetic field",
             unit="T",
             get_cmd=partial(self._get_control_B_param, "VECT"),
         )
+        """Parameter B"""
 
-        self.add_parameter(
+        self.Bx: Parameter = self.add_parameter(
             name="Bx",
             label="Magnetic field x-component",
             unit="T",
             get_cmd=partial(self._get_control_Bcomp_param, "VECTBx"),
             set_cmd=partial(self._set_control_Bx_param),
         )
+        """Parameter Bx"""
 
-        self.add_parameter(
+        self.By: Parameter = self.add_parameter(
             name="By",
             label="Magnetic field y-component",
             unit="T",
             get_cmd=partial(self._get_control_Bcomp_param, "VECTBy"),
             set_cmd=partial(self._set_control_By_param),
         )
+        """Parameter By"""
 
-        self.add_parameter(
+        self.Bz: Parameter = self.add_parameter(
             name="Bz",
             label="Magnetic field z-component",
             unit="T",
             get_cmd=partial(self._get_control_Bcomp_param, "VECTBz"),
             set_cmd=partial(self._set_control_Bz_param),
         )
+        """Parameter Bz"""
 
-        self.add_parameter(
+        self.magnet_sweep_time: Parameter = self.add_parameter(
             name="magnet_sweep_time",
             label="Magnet sweep time",
             unit="T/min",
             get_cmd=partial(self._get_control_B_param, "RVST:TIME"),
         )
+        """Parameter magnet_sweep_time"""
 
-        self.add_parameter(
+        self.turb1_speed: Parameter = self.add_parameter(
             name="turb1_speed",
             label=self.pump_label_dict["TURB1"] + " speed",
             unit="Hz",
             get_cmd="READ:DEV:TURB1:PUMP:SIG:SPD",
             get_parser=self._get_parser_pump_speed,
         )
+        """Parameter turb1_speed"""
 
         self._add_pump_state()
         self._add_temp_state()

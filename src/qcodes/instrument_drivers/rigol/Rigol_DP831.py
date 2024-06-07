@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .private.DP8xx import _RigelDP8xx
+from .private.DP8xx import RigolDP8xxBase
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from qcodes.instrument import VisaInstrumentKWArgs
 
 
-class RigolDP831(_RigelDP8xx):
+class RigolDP831(RigolDP8xxBase):
     """
     This is the qcodes driver for the Rigol DP831(A) Power Supply
     """

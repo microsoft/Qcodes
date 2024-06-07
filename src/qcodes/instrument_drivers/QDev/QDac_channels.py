@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 log = logging.getLogger(__name__)
 
 
@@ -52,72 +54,89 @@ class QDevQDacChannel(InstrumentChannel):
             channum: The number of the channel in question (1-48)
             **kwargs: Forwarded to base class.
         """
-        super().__init__(parent, name)
+        super().__init__(parent, name, **kwargs)
 
         # Validate the channel
         self._CHANNEL_VALIDATION.validate(channum)
 
         # Add the parameters
 
-        self.add_parameter('v',
-                           label=f'Channel {channum} voltage',
-                           unit='V',
-                           set_cmd=partial(self._parent._set_voltage, channum),
-                           get_cmd=partial(self._parent._get_voltage, channum),
-                           get_parser=float,
-                           vals=vals.Numbers(-10, 10)
-                           )
+        self.v: Parameter = self.add_parameter(
+            "v",
+            label=f"Channel {channum} voltage",
+            unit="V",
+            set_cmd=partial(self._parent._set_voltage, channum),
+            get_cmd=partial(self._parent._get_voltage, channum),
+            get_parser=float,
+            vals=vals.Numbers(-10, 10),
+        )
+        """Parameter v"""
 
-        self.add_parameter('vrange',
-                           label=f'Channel {channum} atten.',
-                           set_cmd=partial(self._parent._set_vrange, channum),
-                           get_cmd=partial(self._parent._get_vrange, channum),
-                           vals=vals.Enum(0, 1)
-                           )
+        self.vrange: Parameter = self.add_parameter(
+            "vrange",
+            label=f"Channel {channum} atten.",
+            set_cmd=partial(self._parent._set_vrange, channum),
+            get_cmd=partial(self._parent._get_vrange, channum),
+            vals=vals.Enum(0, 1),
+        )
+        """Parameter vrange"""
 
-        self.add_parameter('i',
-                           label=f'Channel {channum} current',
-                           get_cmd=f'get {channum}',
-                           unit='A',
-                           get_parser=self._parent._current_parser
-                           )
+        self.i: Parameter = self.add_parameter(
+            "i",
+            label=f"Channel {channum} current",
+            get_cmd=f"get {channum}",
+            unit="A",
+            get_parser=self._parent._current_parser,
+        )
+        """Parameter i"""
 
-        self.add_parameter('irange',
-                           label=f'Channel {channum} irange',
-                           set_cmd=f'cur {channum} {{}}',
-                           get_cmd=f'cur {channum}',
-                           get_parser=int
-                           )
+        self.irange: Parameter = self.add_parameter(
+            "irange",
+            label=f"Channel {channum} irange",
+            set_cmd=f"cur {channum} {{}}",
+            get_cmd=f"cur {channum}",
+            get_parser=int,
+        )
+        """Parameter irange"""
 
-        self.add_parameter('slope',
-                           label=f'Channel {channum} slope',
-                           unit='V/s',
-                           set_cmd=partial(self._parent._setslope, channum),
-                           get_cmd=partial(self._parent._getslope, channum),
-                           vals=vals.MultiType(vals.Enum('Inf'),
-                                               vals.Numbers(1e-3, 100))
-                           )
+        self.slope: Parameter = self.add_parameter(
+            "slope",
+            label=f"Channel {channum} slope",
+            unit="V/s",
+            set_cmd=partial(self._parent._setslope, channum),
+            get_cmd=partial(self._parent._getslope, channum),
+            vals=vals.MultiType(vals.Enum("Inf"), vals.Numbers(1e-3, 100)),
+        )
+        """Parameter slope"""
 
-        self.add_parameter('sync',
-                           label=f'Channel {channum} sync output',
-                           set_cmd=partial(self._parent._setsync, channum),
-                           get_cmd=partial(self._parent._getsync, channum),
-                           vals=vals.Ints(0, 5)
-                           )
+        self.sync: Parameter = self.add_parameter(
+            "sync",
+            label=f"Channel {channum} sync output",
+            set_cmd=partial(self._parent._setsync, channum),
+            get_cmd=partial(self._parent._getsync, channum),
+            vals=vals.Ints(0, 5),
+        )
+        """Parameter sync"""
 
-        self.add_parameter(name='sync_delay',
-                           label=f'Channel {channum} sync pulse delay',
-                           unit='s',
-                           get_cmd=None, set_cmd=None,
-                           initial_value=0
-                           )
+        self.sync_delay: Parameter = self.add_parameter(
+            name="sync_delay",
+            label=f"Channel {channum} sync pulse delay",
+            unit="s",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value=0,
+        )
+        """Parameter sync_delay"""
 
-        self.add_parameter(name='sync_duration',
-                           label=f'Channel {channum} sync pulse duration',
-                           unit='s',
-                           get_cmd=None, set_cmd=None,
-                           initial_value=0.01
-                           )
+        self.sync_duration: Parameter = self.add_parameter(
+            name="sync_duration",
+            label=f"Channel {channum} sync pulse duration",
+            unit="s",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value=0.01,
+        )
+        """Parameter sync_duration"""
 
     def snapshot_base(
         self,
@@ -274,14 +293,16 @@ class QDevQDac(VisaInstrument):
                                    get_cmd=f'tem {board} {sensor}',
                                    get_parser=self._num_verbose)
 
-        self.add_parameter(name='cal',
-                           set_cmd='cal {}',
-                           vals=self.channel_validator)
+        self.cal: Parameter = self.add_parameter(
+            name="cal", set_cmd="cal {}", vals=self.channel_validator
+        )
+        """Parameter cal"""
         # TO-DO: maybe it's too dangerous to have this settable.
         # And perhaps ON is a better verbose mode default?
-        self.add_parameter(name='verbose',
-                           set_cmd='ver {}',
-                           val_mapping={True: 1, False: 0})
+        self.verbose: Parameter = self.add_parameter(
+            name="verbose", set_cmd="ver {}", val_mapping={True: 1, False: 0}
+        )
+        """Parameter verbose"""
 
         # Initialise the instrument, all channels DC (unbind func. generators)
         for chan in self.chan_range:

@@ -1,9 +1,9 @@
 # Ensuring backwards compatibility
 
-from .ZNB import ZNB
+from .ZNB import RohdeSchwarzZNBBase
 
 
-class RohdeSchwarzZNB8(ZNB):
+class RohdeSchwarzZNB8(RohdeSchwarzZNBBase):
     """
     QCoDeS driver for Rohde & Schwarz ZNB8
 
