@@ -51,8 +51,6 @@ if TYPE_CHECKING:
 # twice here convert to set to ensure no duplication.
 _EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
 
-# even with from __future__ import annotations
-# type aliases must use the old format until we drop 3.8/3.9
 array_like_types = (tuple, list, np.ndarray)
 scalar_res_types: TypeAlias = (
     str | complex | np.integer | np.floating | np.complexfloating
