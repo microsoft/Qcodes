@@ -509,6 +509,8 @@ class LogCapture:
         self.string_handler = logging.StreamHandler(self.log_capture)
         self.string_handler.setLevel(self.level)
         self.logger.addHandler(self.string_handler)
+        self._stashed_logger_level = self.logger.getEffectiveLevel()
+        self.logger.setLevel(logging.NOTSET)
         return self
 
     def __exit__(
@@ -523,3 +525,4 @@ class LogCapture:
 
         for h in self.stashed_handlers:
             self.logger.addHandler(h)
+        self.logger.setLevel(self._stashed_logger_level)
