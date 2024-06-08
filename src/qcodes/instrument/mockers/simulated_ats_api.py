@@ -8,8 +8,7 @@ any functionality whatsoever.
 
 
 import ctypes
-from collections.abc import Callable
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 
@@ -20,6 +19,9 @@ from qcodes.instrument_drivers.AlazarTech.constants import (
     ReturnCode,
 )
 from qcodes.instrument_drivers.AlazarTech.dll_wrapper import _mark_params_as_updated
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class SimulatedATS9360API(AlazarATSAPI):
@@ -32,7 +34,7 @@ class SimulatedATS9360API(AlazarATSAPI):
     def __init__(
         self,
         dll_path: str | None = None,  # Need this for meta super class
-        buffer_generator: Callable[[np.ndarray], None] | None = None,
+        buffer_generator: "Callable[[np.ndarray], None] | None" = None,
     ):
         def _default_buffer_generator(buffer: np.ndarray) -> None:
             upper = buffer.size // 2

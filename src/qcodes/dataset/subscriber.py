@@ -3,7 +3,6 @@ from __future__ import annotations
 import functools
 import logging
 import time
-from collections.abc import Callable
 from queue import Empty, Queue
 from threading import Thread
 from typing import TYPE_CHECKING, Any
@@ -11,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from qcodes.dataset.sqlite.connection import atomic_transaction
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Callable, Mapping
 
     from qcodes.dataset.data_set import DataSet
 

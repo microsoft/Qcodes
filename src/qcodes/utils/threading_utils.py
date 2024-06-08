@@ -1,10 +1,9 @@
 import logging
 import threading
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
 _LOG = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class RespondingThread(threading.Thread, Generic[T]):
 
     def __init__(
         self,
-        target: Callable[..., T],
+        target: "Callable[..., T]",
         args: "Sequence[Any]" = (),
         kwargs: dict[str, Any] | None = None,
         *args2: Any,

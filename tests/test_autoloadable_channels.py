@@ -6,8 +6,7 @@ mean a physical instrument channel, but rather an instrument sub-module.
 """
 
 import re
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -16,6 +15,9 @@ from qcodes.instrument.channel import (
     AutoLoadableChannelList,
     AutoLoadableInstrumentChannel,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class MockBackendBase:

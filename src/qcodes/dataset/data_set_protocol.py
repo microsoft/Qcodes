@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import logging
 import os
-import sys
 import warnings
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
+from importlib.metadata import entry_points
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -32,13 +32,6 @@ from .descriptions.versioning.converters import new_to_old
 from .exporters.export_to_csv import dataframe_to_csv
 from .exporters.export_to_xarray import xarray_to_h5netcdf_with_complex_numbers
 from .sqlite.queries import raw_time_to_str_time
-
-if sys.version_info >= (3, 10):
-    # new entrypoints api was added in 3.10
-    from importlib.metadata import entry_points
-else:
-    # 3.9 and earlier
-    from importlib_metadata import entry_points
 
 if TYPE_CHECKING:
     from typing import TypeAlias

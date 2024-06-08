@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import pytest
@@ -10,6 +9,9 @@ import pytest
 from qcodes.validators import Ints
 
 from .conftest import AClass, a_func
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 ints: tuple[int | bool | np.int64, ...] = (
     0,

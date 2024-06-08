@@ -1,6 +1,5 @@
 import logging
 import re
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Union
 
 from qcodes import validators
@@ -8,6 +7,8 @@ from qcodes import validators
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import Unpack
 
     from qcodes.instrument import (
@@ -133,7 +134,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
     @staticmethod
     def get_numbering_function(
         rows: int, columns: int, wiring_config: str | None = ""
-    ) -> Callable[[int, int], str]:
+    ) -> "Callable[[int, int], str]":
         """
         to select the correct numbering function based on the matrix layout.
         On P168 of the user's guide for Agilent 34934A High Density Matrix

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 
@@ -13,6 +12,9 @@ from .conftest import (
     OverwriteSetParam,
     ParameterMemory,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def test_parameter_with_overwritten_get_raises() -> None:

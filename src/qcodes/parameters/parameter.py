@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import logging
 import os
-from collections.abc import Callable
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -14,6 +13,8 @@ from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from qcodes.instrument.base import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
     from qcodes.validators import Validator

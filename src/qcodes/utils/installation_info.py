@@ -6,16 +6,7 @@ QCoDeS
 import json
 import logging
 import subprocess
-import sys
-
-if sys.version_info >= (3, 10):
-    # distribution.name used below became part of the
-    # official api in 3.10
-    from importlib.metadata import distributions
-else:
-    # 3.9 and earlier
-    from importlib_metadata import distributions
-
+from importlib.metadata import distributions
 
 log = logging.getLogger(__name__)
 

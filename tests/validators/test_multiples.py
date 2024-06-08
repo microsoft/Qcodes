@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 import pytest
@@ -10,6 +9,9 @@ import pytest
 from qcodes.validators import Multiples
 
 from .conftest import AClass, a_func
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 divisors = (3, 7, 11, 13)
 not_divisors: tuple[

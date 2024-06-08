@@ -1,9 +1,11 @@
 import logging
 import signal
 import threading
-from collections.abc import Callable
 from types import FrameType, TracebackType
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +23,7 @@ class DelayedKeyboardInterrupt:
     signal_received: tuple[int, FrameType | None] | None = None
     # the handler type is seemingly only defined in typesheeed so copy it here
     # manually https://github.com/python/typeshed/blob/main/stdlib/signal.pyi
-    old_handler: Callable[[int, FrameType | None], Any] | int | None = None
+    old_handler: "Callable[[int, FrameType | None], Any] | int | None" = None
 
     def __enter__(self) -> None:
         is_main_thread = threading.current_thread() is threading.main_thread()

@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING, TypeVar
 
@@ -6,6 +5,8 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
@@ -255,7 +256,7 @@ class Keithley6500(VisaInstrument):
     def _read_next_value(self) -> float:
         return float(self.ask("READ?"))
 
-    def _get_mode_param(self, parameter: str, parser: Callable[[str], T]) -> T:
+    def _get_mode_param(self, parameter: str, parser: "Callable[[str], T]") -> T:
         """Reads the current mode of the multimeter and ask for the given parameter.
 
         Args:

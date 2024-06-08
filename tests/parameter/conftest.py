@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import pytest
@@ -11,7 +10,7 @@ from qcodes.instrument_drivers.mock_instruments import DummyChannelInstrument
 from qcodes.parameters import ParamDataType, Parameter, ParamRawDataType
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
     from qcodes.instrument import InstrumentBase
 
