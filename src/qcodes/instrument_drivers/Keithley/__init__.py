@@ -1,5 +1,3 @@
-from typing import Union
-
 from ._Keithley_2600 import (
     Keithley2600,
     Keithley2600Channel,
@@ -41,18 +39,19 @@ from .Keithley_s46 import (
     KeithleyS46RelayLock,
 )
 
-Keithley26xx = Union[
-    Keithley2601B,
-    Keithley2602A,
-    Keithley2602B,
-    Keithley2604B,
-    Keithley2611B,
-    Keithley2612B,
-    Keithley2614B,
-    Keithley2634B,
-    Keithley2635B,
-    Keithley2636B,
-]
+Keithley26xx = (
+    Keithley2601B
+    | Keithley2602A
+    | Keithley2602B
+    | Keithley2604B
+    | Keithley2611B
+    | Keithley2612B
+    | Keithley2614B
+    | Keithley2634B
+    | Keithley2635B
+    | Keithley2636B
+)
+
 """
 Type alias for all Keithley 26xx SMUs supported by QCoDeS.
 """

@@ -1,7 +1,6 @@
 import logging
 import re
 import warnings
-from collections.abc import Callable
 from functools import wraps
 from typing import TYPE_CHECKING, TypeVar
 
@@ -14,6 +13,7 @@ from .keysight_34934a import Keysight34934A
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from typing import Concatenate
 
     from typing_extensions import Unpack
@@ -26,8 +26,8 @@ T = TypeVar('T')
 
 
 def post_execution_status_poll(
-    func: Callable["Concatenate[S, P]", T],
-) -> Callable["Concatenate[S, P]", T]:
+    func: "Callable[Concatenate[S, P], T]",
+) -> "Callable[Concatenate[S, P], T]":
     """
     Generates a decorator that clears the instrument's status registers
     before executing the actual call and reads the status register after the

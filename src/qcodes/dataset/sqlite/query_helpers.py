@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from numpy import ndarray
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     import sqlite3
 
 # represent the type of  data we can/want map to sqlite column
-VALUE = Union[str, complex, list, ndarray, bool, None]
+VALUE = str | complex | list | ndarray | bool | None
 VALUES = Sequence[VALUE]
 
 

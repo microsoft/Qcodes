@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 ActionsT = Sequence[Callable[[], None]]
 BreakConditionT = Callable[[], bool]
 
-ParamMeasT = Union[ParameterBase, Callable[[], None]]
+ParamMeasT = ParameterBase | Callable[[], None]
 
 AxesTuple = tuple["matplotlib.axes.Axes", "matplotlib.colorbar.Colorbar"]
 AxesTupleList = tuple[
@@ -45,7 +45,7 @@ class BreakConditionInterrupt(Exception):
     pass
 
 
-MeasInterruptT = Union[KeyboardInterrupt, BreakConditionInterrupt, None]
+MeasInterruptT = KeyboardInterrupt | BreakConditionInterrupt | None
 
 
 def _register_parameters(

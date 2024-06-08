@@ -1,7 +1,6 @@
 import sys
 from collections.abc import Sequence
 from enum import Enum, IntEnum, IntFlag
-from typing import Union
 
 if sys.version_info >= (3, 11):
     from enum import StrEnum
@@ -296,9 +295,9 @@ class IMeasRange(IntEnum):
     FIX_2000A = -28
 
 
-OutputRange = Union[VOutputRange, IOutputRange]
+OutputRange = VOutputRange | IOutputRange
 
-MeasureRange = Union[VMeasRange, IMeasRange]
+MeasureRange = VMeasRange | IMeasRange
 
 
 class RangingMode(IntEnum):

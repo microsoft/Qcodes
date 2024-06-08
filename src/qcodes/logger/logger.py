@@ -37,7 +37,7 @@ Envelope = Any
 
 log: logging.Logger = logging.getLogger(__name__)
 
-LevelType = Union[int, str]
+LevelType = int | str
 
 LOGGING_DIR = "logs"
 LOGGING_SEPARATOR = ' ¦ '
