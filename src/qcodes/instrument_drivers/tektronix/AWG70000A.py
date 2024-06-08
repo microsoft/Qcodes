@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from broadbean.sequence import InvalidForgedSequenceError, fs_schema
+from typing_extensions import deprecated
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -23,6 +24,7 @@ from qcodes.instrument import (
     VisaInstrumentKWArgs,
 )
 from qcodes.parameters import create_on_off_val_mapping
+from qcodes.utils import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -134,7 +136,7 @@ class SRValidator(vals.Validator[float]):
     Validator to validate the AWG clock sample rate
     """
 
-    def __init__(self, awg: AWG70000A) -> None:
+    def __init__(self, awg: TektronixAWG70000Base) -> None:
         """
         Args:
             awg: The parent instrument instance. We need this since sample
@@ -449,7 +451,7 @@ class Tektronix70000AWGChannel(InstrumentChannel):
 
     def clear_asset(self) -> None:
         """
-        Clear asssinged assets on this channel
+        Clear assigned assets on this channel
         """
 
         self.root_instrument.write(f"SOURce{self.channel}:CASSet:CLEAR")
@@ -461,9 +463,9 @@ Alias for Tektronix70000AWGChannel for backwards compatibility.
 """
 
 
-class AWG70000A(VisaInstrument):
+class TektronixAWG70000Base(VisaInstrument):
     """
-    The QCoDeS driver for Tektronix AWG70000A series AWG's.
+    Base class for QCoDeS drivers for Tektronix AWG70000 series AWG's.
 
     The drivers for AWG70001A/AWG70001B and AWG70002A/AWG70002B should be
     subclasses of this general class.
@@ -735,10 +737,11 @@ class AWG70000A(VisaInstrument):
         else:
             raise ValueError('Input data has too many dimensions!')
 
-        wfmx_hdr_str = AWG70000A._makeWFMXFileHeader(num_samples=N,
-                                                     markers_included=markers_included)
+        wfmx_hdr_str = TektronixAWG70000Base._makeWFMXFileHeader(
+            num_samples=N, markers_included=markers_included
+        )
         wfmx_hdr = bytes(wfmx_hdr_str, 'ascii')
-        wfmx_data = AWG70000A._makeWFMXFileBinaryData(data, amplitude)
+        wfmx_data = TektronixAWG70000Base._makeWFMXFileBinaryData(data, amplitude)
 
         wfmx = wfmx_hdr
 
@@ -1087,8 +1090,9 @@ class AWG70000A(VisaInstrument):
                     wfm_data = np.stack((wfm, *markerdata))
 
                     awgchan = channel_mapping[ch]
-                    wfmx = AWG70000A.makeWFMXFile(wfm_data,
-                                                  amplitudes[awgchan-1])
+                    wfmx = TektronixAWG70000Base.makeWFMXFile(
+                        wfm_data, amplitudes[awgchan - 1]
+                    )
                     wfmx_files.append(wfmx)
                     wfmx_filenames.append(f'wfm_{pos1}_{pos2}_{awgchan}')
 
@@ -1130,14 +1134,16 @@ class AWG70000A(VisaInstrument):
 
                 log.debug(f'Subsequence waveform names: {ss_wfm_names}')
 
-                subseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
-                                                   nreps=seqing['nrep'],
-                                                   event_jumps=seqing['jump_input'],
-                                                   event_jump_to=seqing['jump_target'],
-                                                   go_to=seqing['goto'],
-                                                   elem_names=ss_wfm_names,
-                                                   seqname=subseqname,
-                                                   chans=len(channel_mapping))
+                subseqsml = TektronixAWG70000Base._makeSMLFile(
+                    trig_waits=seqing["twait"],
+                    nreps=seqing["nrep"],
+                    event_jumps=seqing["jump_input"],
+                    event_jump_to=seqing["jump_target"],
+                    go_to=seqing["goto"],
+                    elem_names=ss_wfm_names,
+                    seqname=subseqname,
+                    chans=len(channel_mapping),
+                )
 
                 subseqsml_files.append(subseqsml)
                 subseqsml_filenames.append(f'{subseqname}')
@@ -1170,22 +1176,24 @@ class AWG70000A(VisaInstrument):
         log.debug(f'Assets for SML file: {asset_names}')
 
         mainseqname = seqname
-        mainseqsml = AWG70000A._makeSMLFile(trig_waits=seqing['twait'],
-                                            nreps=seqing['nrep'],
-                                            event_jumps=seqing['jump_input'],
-                                            event_jump_to=seqing['jump_target'],
-                                            go_to=seqing['goto'],
-                                            elem_names=asset_names,
-                                            seqname=mainseqname,
-                                            chans=len(channel_mapping),
-                                            subseq_positions=subseq_positions)
+        mainseqsml = TektronixAWG70000Base._makeSMLFile(
+            trig_waits=seqing["twait"],
+            nreps=seqing["nrep"],
+            event_jumps=seqing["jump_input"],
+            event_jump_to=seqing["jump_target"],
+            go_to=seqing["goto"],
+            elem_names=asset_names,
+            seqname=mainseqname,
+            chans=len(channel_mapping),
+            subseq_positions=subseq_positions,
+        )
 
         ##########
         # STEP 4:
         # Build the .seqx file
 
         user_file = b''
-        setup_file = AWG70000A._makeSetupFile(mainseqname)
+        setup_file = TektronixAWG70000Base._makeSetupFile(mainseqname)
 
         buffer = io.BytesIO()
 
@@ -1277,21 +1285,28 @@ class AWG70000A(VisaInstrument):
         # generate wfmx files for the waveforms
         flat_wfmxs = []
         for amplitude, wfm_lst in zip(amplitudes, wfms):
-            flat_wfmxs += [AWG70000A.makeWFMXFile(wfm, amplitude)
-                           for wfm in wfm_lst]
+            flat_wfmxs += [
+                TektronixAWG70000Base.makeWFMXFile(wfm, amplitude) for wfm in wfm_lst
+            ]
 
         # This unfortunately assumes no subsequences
         flat_wfm_names = list(np.reshape(np.array(wfm_names).transpose(),
                                          (chans*elms,)))
 
-        sml_file = AWG70000A._makeSMLFile(trig_waits, nreps,
-                                          event_jumps, event_jump_to,
-                                          go_to, wfm_names,
-                                          seqname,
-                                          chans, flags=flags)
+        sml_file = TektronixAWG70000Base._makeSMLFile(
+            trig_waits,
+            nreps,
+            event_jumps,
+            event_jump_to,
+            go_to,
+            wfm_names,
+            seqname,
+            chans,
+            flags=flags,
+        )
 
         user_file = b''
-        setup_file = AWG70000A._makeSetupFile(seqname)
+        setup_file = TektronixAWG70000Base._makeSetupFile(seqname)
 
         buffer = io.BytesIO()
 
@@ -1542,3 +1557,10 @@ class AWG70000A(VisaInstrument):
                                                        pad=offsetdigits))
 
         return xmlstr
+
+
+@deprecated(
+    "Base class renamed TektronixAWG70000Base", category=QCoDeSDeprecationWarning
+)
+class AWG70000A(TektronixAWG70000Base):
+    pass

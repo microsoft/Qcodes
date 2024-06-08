@@ -13,8 +13,10 @@ from lxml import etree
 from pytest import LogCaptureFixture
 
 import tests.drivers.auxiliary_files as auxfiles
-from qcodes.instrument_drivers.tektronix.AWG70000A import AWG70000A
-from qcodes.instrument_drivers.tektronix.AWG70002A import AWG70002A
+from qcodes.instrument_drivers.tektronix import (
+    TektronixAWG70000Base,
+    TektronixAWG70002A,
+)
 
 
 def strip_outer_tags(sml: str) -> str:
@@ -35,7 +37,7 @@ def strip_outer_tags(sml: str) -> str:
 
 @pytest.fixture(scope="function")
 def awg2():
-    awg2_sim = AWG70002A(
+    awg2_sim = TektronixAWG70002A(
         "awg2_sim",
         address="GPIB0::2::INSTR",
         pyvisa_sim_file="Tektronix_AWG70000A.yaml",
@@ -123,7 +125,7 @@ def test_SML_successful_generation_vary_length(N) -> None:
 
     seqname = "seq"
 
-    smlstring = AWG70000A._makeSMLFile(
+    smlstring = TektronixAWG70000Base._makeSMLFile(
         tw, nreps, ejs, ejt, goto, wfm_names, seqname, chans=3
     )
 
@@ -133,19 +135,19 @@ def test_SML_successful_generation_vary_length(N) -> None:
 
 @given(num_samples=hst.integers(min_value=2400), markers_included=hst.booleans())
 def test_WFMXHeader_succesful(num_samples, markers_included) -> None:
-    xmlstr = AWG70000A._makeWFMXFileHeader(num_samples, markers_included)
+    xmlstr = TektronixAWG70000Base._makeWFMXFileHeader(num_samples, markers_included)
     etree.parse(StringIO(xmlstr))
 
 
 @given(num_samples=hst.integers(max_value=2399), markers_included=hst.booleans())
 def test_WFMXHeader_failing(num_samples, markers_included) -> None:
     with pytest.raises(ValueError):
-        AWG70000A._makeWFMXFileHeader(num_samples, markers_included)
+        TektronixAWG70000Base._makeWFMXFileHeader(num_samples, markers_included)
 
 
 def test_seqxfilefromfs_failing(forged_sequence) -> None:
     # typing convenience
-    make_seqx = AWG70000A.make_SEQX_from_forged_sequence
+    make_seqx = TektronixAWG70000Base.make_SEQX_from_forged_sequence
 
     # TODO: the number of channels is defined in the
     # forged_sequence fixture but used here
@@ -188,7 +190,7 @@ def test_seqxfilefromfs_warns(forged_sequence, caplog: LogCaptureFixture) -> Non
     """
     Test that a warning is logged when waveform is clipped
     """
-    make_seqx = AWG70000A.make_SEQX_from_forged_sequence
+    make_seqx = TektronixAWG70000Base.make_SEQX_from_forged_sequence
 
     max_elem = forged_sequence[1]["content"][1]["data"][1]["wfm"].max()
     amplitude = max_elem / 2
@@ -201,7 +203,7 @@ def test_seqxfilefromfs_warns(forged_sequence, caplog: LogCaptureFixture) -> Non
 
 def test_seqxfile_from_fs(forged_sequence) -> None:
     # typing convenience
-    make_seqx = AWG70000A.make_SEQX_from_forged_sequence
+    make_seqx = TektronixAWG70000Base.make_SEQX_from_forged_sequence
 
     path_to_schema = auxfiles.__file__.replace("__init__.py", "awgSeqDataSets.xsd")
 
