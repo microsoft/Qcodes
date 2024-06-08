@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Any, Callable, Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 from typing_extensions import ParamSpec
 

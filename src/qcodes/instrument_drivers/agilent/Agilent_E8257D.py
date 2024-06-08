@@ -1,5 +1,5 @@
 import warnings
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -24,7 +24,7 @@ class AgilentE8257D(VisaInstrument):
         self,
         name: str,
         address: str,
-        step_attenuator: Optional[bool] = None,
+        step_attenuator: bool | None = None,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         super().__init__(name, address, **kwargs)
@@ -146,12 +146,12 @@ class AgilentE8257D(VisaInstrument):
     # functions to convert between rad and deg
     @staticmethod
     def deg_to_rad(
-        angle_deg: Union[float, str, np.floating, np.integer]
+        angle_deg: float | str | np.floating | np.integer,
     ) -> "np.floating[Any]":
         return np.deg2rad(float(angle_deg))
 
     @staticmethod
     def rad_to_deg(
-        angle_rad: Union[float, str, np.floating, np.integer]
+        angle_rad: float | str | np.floating | np.integer,
     ) -> "np.floating[Any]":
         return np.rad2deg(float(angle_rad))

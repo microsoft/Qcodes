@@ -7,7 +7,6 @@ import json
 import logging
 import subprocess
 import sys
-from typing import Optional
 
 if sys.version_info >= (3, 10):
     # distribution.name used below became part of the
@@ -21,14 +20,14 @@ else:
 log = logging.getLogger(__name__)
 
 
-def is_qcodes_installed_editably() -> Optional[bool]:
+def is_qcodes_installed_editably() -> bool | None:
     """
     Try to ask pip whether QCoDeS is installed in editable mode and return
     the answer a boolean. Returns None if pip somehow did not respond as
     expected.
     """
 
-    answer: Optional[bool]
+    answer: bool | None
 
     try:
         pipproc = subprocess.run(['python', '-m', 'pip', 'list', '-e', '--no-index',

@@ -135,7 +135,7 @@ class ChNr(IntEnum):
     SLOT_10_CH2 = 1002
 
 
-ChannelList = Sequence[Union[ChNr, int]]
+ChannelList = Sequence[ChNr | int]
 
 
 class Abort(IntEnum):

@@ -8,7 +8,8 @@ any functionality whatsoever.
 
 
 import ctypes
-from typing import Any, Callable, ClassVar, Optional
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 import numpy as np
 
@@ -29,9 +30,9 @@ class SimulatedATS9360API(AlazarATSAPI):
     }
 
     def __init__(
-            self,
-            dll_path: Optional[str] = None,  # Need this for meta super class
-            buffer_generator: Optional[Callable[[np.ndarray], None]] = None,
+        self,
+        dll_path: str | None = None,  # Need this for meta super class
+        buffer_generator: Callable[[np.ndarray], None] | None = None,
     ):
         def _default_buffer_generator(buffer: np.ndarray) -> None:
             upper = buffer.size // 2

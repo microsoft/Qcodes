@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 import numpy as np
 from typing_extensions import NotRequired, TypedDict, Unpack
@@ -39,14 +39,14 @@ class SweepSteps(TypedDict):
     sweep (WV).
     """
 
-    chan: NotRequired[Union[int, constants.ChNr]]
-    sweep_mode: Union[constants.SweepMode, int]
-    sweep_range: Union[constants.VOutputRange, int]
+    chan: NotRequired[int | constants.ChNr]
+    sweep_mode: constants.SweepMode | int
+    sweep_range: constants.VOutputRange | int
     sweep_start: float
     sweep_end: float
     sweep_steps: int
-    current_compliance: Optional[float]
-    power_compliance: Optional[float]
+    current_compliance: float | None
+    power_compliance: float | None
 
 
 class KeysightB1500IVSweeper(InstrumentChannel):
@@ -497,23 +497,23 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         sweep_steps = self._get_sweep_steps_parameters('sweep_steps')
         return sweep_steps
 
-    def _set_current_compliance(self, value: Optional[float]) -> None:
+    def _set_current_compliance(self, value: float | None) -> None:
         self._sweep_step_parameters["current_compliance"] = value
         self._set_from_sweep_step_parameters()
 
-    def _get_current_compliance(self) -> Optional[float]:
+    def _get_current_compliance(self) -> float | None:
         current_compliance = self._get_sweep_steps_parameters(
             'current_compliance')
         return current_compliance
 
-    def _set_power_compliance(self, value: Optional[float]) -> None:
+    def _set_power_compliance(self, value: float | None) -> None:
         if self._sweep_step_parameters['current_compliance'] is None:
             raise ValueError('Current compliance must be set before setting '
                              'power compliance')
         self._sweep_step_parameters["power_compliance"] = value
         self._set_from_sweep_step_parameters()
 
-    def _get_power_compliance(self) -> Optional[float]:
+    def _get_power_compliance(self) -> float | None:
         power_compliance = self._get_sweep_steps_parameters('power_compliance')
         return power_compliance
 
@@ -551,12 +551,11 @@ class KeysightB1500IVSweeper(InstrumentChannel):
         out_dict = {key: float(value) for key, value in resp_dict.items()}
         return out_dict
 
-    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]) -> None:
+    def _set_sweep_auto_abort(self, val: bool | constants.Abort) -> None:
         msg = MessageBuilder().wm(abort=val)
         self.write(msg.message)
 
-    def _set_post_sweep_voltage_condition(
-            self, val: Union[constants.WM.Post, int]) -> None:
+    def _set_post_sweep_voltage_condition(self, val: constants.WM.Post | int) -> None:
         msg = MessageBuilder().wm(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
@@ -587,19 +586,19 @@ class KeysightB1500IVSweeper(InstrumentChannel):
     def _get_sweep_steps_parameters(
             self,
             name: Literal['chan']
-    ) -> Union[int, constants.ChNr]: ...
+    ) -> int | constants.ChNr: ...
 
     @overload
     def _get_sweep_steps_parameters(
             self,
             name: Literal['sweep_mode']
-    ) -> Union[constants.SweepMode, int]: ...
+    ) -> constants.SweepMode | int: ...
 
     @overload
     def _get_sweep_steps_parameters(
             self,
             name: Literal['sweep_range']
-    ) -> Union[constants.VOutputRange, int]: ...
+    ) -> constants.VOutputRange | int: ...
 
     @overload
     def _get_sweep_steps_parameters(
@@ -619,20 +618,28 @@ class KeysightB1500IVSweeper(InstrumentChannel):
             self,
             name: Literal['current_compliance',
                           'power_compliance']
-    ) -> Optional[float]: ...
+    ) -> float | None: ...
 
     def _get_sweep_steps_parameters(
-            self,
-            name: Literal['chan',
-                          'sweep_mode',
-                          'sweep_range',
-                          'sweep_start',
-                          'sweep_end',
-                          'sweep_steps',
-                          'current_compliance',
-                          'power_compliance']
-    ) -> Union[constants.ChNr, constants.SweepMode,
-               constants.VOutputRange, int, float, None]:
+        self,
+        name: Literal[
+            "chan",
+            "sweep_mode",
+            "sweep_range",
+            "sweep_start",
+            "sweep_end",
+            "sweep_steps",
+            "current_compliance",
+            "power_compliance",
+        ],
+    ) -> (
+        constants.ChNr
+        | constants.SweepMode
+        | constants.VOutputRange
+        | int
+        | float
+        | None
+    ):
         msg = MessageBuilder().lrn_query(
             type_id=constants.LRN.Type.STAIRCASE_SWEEP_MEASUREMENT_SETTINGS
         )
@@ -698,15 +705,15 @@ class _ParameterWithStatus(Parameter):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        self._measurement_status: Optional[MeasurementStatus] = None
+        self._measurement_status: MeasurementStatus | None = None
 
     @property
-    def measurement_status(self) -> Optional[MeasurementStatus]:
+    def measurement_status(self) -> MeasurementStatus | None:
         return self._measurement_status
 
     def snapshot_base(
         self,
-        update: Optional[bool] = True,
+        update: bool | None = True,
         params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
@@ -823,18 +830,18 @@ class KeysightB1517A(KeysightB1500Module):
     def __init__(
         self,
         parent: "KeysightB1500",
-        name: Optional[str],
+        name: str | None,
         slot_nr: int,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self.channels = (ChNr(slot_nr),)
-        self._measure_config: dict[str, Optional[Any]] = {
+        self._measure_config: dict[str, Any | None] = {
             k: None for k in ("v_measure_range", "i_measure_range",)}
-        self._source_config: dict[str, Optional[Any]] = {
+        self._source_config: dict[str, Any | None] = {
             k: None for k in ("output_range", "compliance",
                               "compl_polarity", "min_compliance_range")}
-        self._timing_parameters: dict[str, Optional[Any]] = {
+        self._timing_parameters: dict[str, Any | None] = {
             k: None for k in ("h_bias", "interval", "number", "h_base")}
 
         # We want to snapshot these configuration dictionaries
@@ -1058,11 +1065,9 @@ class KeysightB1517A(KeysightB1500Module):
         return total_time
 
     def _set_current_measurement_range(
-            self,
-            i_range: Union[constants.IMeasRange, int]
-        ) -> None:
-        msg = MessageBuilder().ri(chnum=self.channels[0],
-                                  i_range=i_range)
+        self, i_range: constants.IMeasRange | int
+    ) -> None:
+        msg = MessageBuilder().ri(chnum=self.channels[0], i_range=i_range)
         self.write(msg.message)
 
     def _get_current_measurement_range(
@@ -1079,19 +1084,14 @@ class KeysightB1517A(KeysightB1500Module):
         ]
         return response_list
 
-    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
+    def _set_measurement_mode(self, mode: MM.Mode | int) -> None:
         self.write(MessageBuilder()
                    .mm(mode=mode,
                        channels=[self.channels[0]])
                    .message)
 
-    def _set_measurement_operation_mode(self,
-                                        mode: Union[constants.CMM.Mode, int]
-                                        ) -> None:
-        self.write(MessageBuilder()
-                   .cmm(mode=mode,
-                        chnum=self.channels[0])
-                   .message)
+    def _set_measurement_operation_mode(self, mode: constants.CMM.Mode | int) -> None:
+        self.write(MessageBuilder().cmm(mode=mode, chnum=self.channels[0]).message)
 
     def _get_measurement_operation_mode(
         self,
@@ -1127,11 +1127,11 @@ class KeysightB1517A(KeysightB1500Module):
         )
 
     def source_config(
-            self,
-            output_range: constants.OutputRange,
-            compliance: Optional[Union[float, int]] = None,
-            compl_polarity: Optional[constants.CompliancePolarityMode] = None,
-            min_compliance_range: Optional[constants.MeasureRange] = None,
+        self,
+        output_range: constants.OutputRange,
+        compliance: float | int | None = None,
+        compl_polarity: constants.CompliancePolarityMode | None = None,
+        min_compliance_range: constants.MeasureRange | None = None,
     ) -> None:
         """Configure sourcing voltage/current
 
@@ -1204,12 +1204,9 @@ class KeysightB1517A(KeysightB1500Module):
 
         self._measure_config["i_measure_range"] = i_measure_range
 
-    def timing_parameters(self,
-                          h_bias: float,
-                          interval: float,
-                          number: int,
-                          h_base: Optional[float] = None
-                          ) -> None:
+    def timing_parameters(
+        self, h_bias: float, interval: float, number: int, h_base: float | None = None
+    ) -> None:
         """
         This command sets the timing parameters of the sampling measurement
         mode (:attr:`.MM.Mode.SAMPLING`, ``10``).
@@ -1300,26 +1297,22 @@ class KeysightB1517A(KeysightB1500Module):
         self._average_coefficient = number
 
     def setup_staircase_sweep(
-            self,
-            v_start: float,
-            v_end: float,
-            n_steps: int,
-            post_sweep_voltage_val: Union[constants.WMDCV.Post,
-                                          int] = constants.WMDCV.Post.STOP,
-            av_coef: int = -1,
-            enable_filter: bool = True,
-            v_src_range: constants.OutputRange = constants.VOutputRange.AUTO,
-            i_comp: float = 10e-6,
-            i_meas_range: Optional[
-                constants.MeasureRange] = constants.IMeasRange.FIX_10uA,
-            hold_time: float = 0,
-            delay: float = 0,
-            step_delay: float = 0,
-            measure_delay: float = 0,
-            abort_enabled: Union[constants.Abort,
-                                 int] = constants.Abort.ENABLED,
-            sweep_mode: Union[constants.SweepMode,
-                              int] = constants.SweepMode.LINEAR
+        self,
+        v_start: float,
+        v_end: float,
+        n_steps: int,
+        post_sweep_voltage_val: constants.WMDCV.Post | int = constants.WMDCV.Post.STOP,
+        av_coef: int = -1,
+        enable_filter: bool = True,
+        v_src_range: constants.OutputRange = constants.VOutputRange.AUTO,
+        i_comp: float = 10e-6,
+        i_meas_range: constants.MeasureRange | None = constants.IMeasRange.FIX_10uA,
+        hold_time: float = 0,
+        delay: float = 0,
+        step_delay: float = 0,
+        measure_delay: float = 0,
+        abort_enabled: constants.Abort | int = constants.Abort.ENABLED,
+        sweep_mode: constants.SweepMode | int = constants.SweepMode.LINEAR,
     ) -> None:
         """
         Setup the staircase sweep measurement using the same set of commands

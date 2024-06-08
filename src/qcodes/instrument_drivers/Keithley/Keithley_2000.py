@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
@@ -234,14 +235,14 @@ class Keithley2000(VisaInstrument):
 
     def _get_mode_param(
         self, parameter: str, parser: Callable[[str], Any]
-    ) -> Union[float, str, bool]:
+    ) -> float | str | bool:
         """Read the current Keithley mode and ask for a parameter"""
         mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = f"{mode}:{parameter}?"
 
         return parser(self.ask(cmd))
 
-    def _set_mode_param(self, parameter: str, value: Union[float, str, bool]) -> None:
+    def _set_mode_param(self, parameter: str, value: float | str | bool) -> None:
         """Read the current Keithley mode and set a parameter"""
         if isinstance(value, bool):
             value = int(value)

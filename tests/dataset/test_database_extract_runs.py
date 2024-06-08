@@ -2,10 +2,10 @@ import os
 import random
 import re
 import uuid
+from collections.abc import Callable
 from contextlib import contextmanager
 from os.path import getmtime
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import pytest

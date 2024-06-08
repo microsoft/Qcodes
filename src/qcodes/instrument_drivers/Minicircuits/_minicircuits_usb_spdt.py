@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 # QCoDeS imports
 from qcodes.instrument_drivers.Minicircuits.Base_SPDT import (
@@ -39,8 +39,8 @@ class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
     def __init__(
         self,
         name: str,
-        driver_path: Optional[str] = None,
-        serial_number: Optional[str] = None,
+        driver_path: str | None = None,
+        serial_number: str | None = None,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         """
@@ -98,7 +98,7 @@ class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
         self.connect_message()
         self.add_channels()
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         # the arguments in those functions is the serial number or none if
         # there is only one switch.
         fw = self.switch.GetFirmware()

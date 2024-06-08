@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 import time
 import warnings
+from collections.abc import Callable
 from contextlib import suppress
 from functools import wraps
-from typing import Any, Callable, Literal, TypeVar
+from typing import Any, Literal, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec

@@ -1,7 +1,8 @@
 import re
 import warnings
+from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Callable, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from typing_extensions import ParamSpec
 
@@ -10,8 +11,9 @@ from qcodes.validators import Enum, Ints, Lists, MultiType
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Concatenate
 
-    from typing_extensions import Concatenate, Unpack
+    from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
 

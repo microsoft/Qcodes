@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Callable, TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Bool, Enum, Ints, MultiType, Numbers
@@ -33,7 +34,7 @@ def _parse_output_string(string_value: str) -> str:
     return s
 
 
-def _parse_output_bool(numeric_value: Union[float, str]) -> bool:
+def _parse_output_bool(numeric_value: float | str) -> bool:
     """Parses and converts the value to boolean type. True is 1.
 
     Args:
@@ -268,7 +269,7 @@ class Keithley6500(VisaInstrument):
         cmd = f"{mode}:{parameter}?"
         return parser(self.ask(cmd))
 
-    def _set_mode_param(self, parameter: str, value: Union[str, float, bool]) -> None:
+    def _set_mode_param(self, parameter: str, value: str | float | bool) -> None:
         """Gets the current mode of the multimeter and sets the given parameter.
 
         Args:

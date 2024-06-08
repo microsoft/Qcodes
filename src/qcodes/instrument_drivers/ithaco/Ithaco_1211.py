@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -130,7 +130,7 @@ class Ithaco1211(Instrument):
         )
         """Parameter risetime"""
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = 'Ithaco (DL Instruments)'
         model = '1211'
         serial = None

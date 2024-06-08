@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt

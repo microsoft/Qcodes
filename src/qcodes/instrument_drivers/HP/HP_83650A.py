@@ -2,7 +2,7 @@
 #
 # Written by Bruno Buijtendorp (brunobuijtendorp@gmail.com)
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
@@ -31,7 +31,7 @@ class HP83650A(VisaInstrument):
         address: str,
         verbose: int = 1,
         reset: bool = False,
-        server_name: Optional[str] = None,
+        server_name: str | None = None,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
 

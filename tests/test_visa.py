@@ -2,7 +2,7 @@ import gc
 import logging
 import re
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pytest
 import pyvisa
@@ -24,7 +24,7 @@ class MockVisa(VisaInstrument):
                            vals=Numbers(-20, 20))
 
     def _open_resource(
-        self, address: str, visalib: Optional[str]
+        self, address: str, visalib: str | None
     ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
         if visalib is None:
             visalib = "MockVisaLib"
@@ -57,8 +57,8 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
     def write(
         self,
         message: str,
-        termination: Optional[str] = None,
-        encoding: Optional[str] = None,
+        termination: str | None = None,
+        encoding: str | None = None,
     ) -> int:
         if self.closed:
             raise RuntimeError("Trying to write to a closed instrument")
@@ -80,7 +80,7 @@ class MockVisaHandle(pyvisa.resources.MessageBasedResource):
             raise ValueError("I'm out of fingers")
         return self.state
 
-    def query(self, message: str, delay: Optional[float] = None) -> str:
+    def query(self, message: str, delay: float | None = None) -> str:
         if self.state > 10:
             raise ValueError("I'm out of fingers")
         return str(self.state)

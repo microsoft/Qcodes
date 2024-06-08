@@ -1,6 +1,6 @@
 import ctypes
 from functools import partial
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs, InstrumentChannel
 from qcodes.parameters import Parameter, create_on_off_val_mapping
@@ -38,7 +38,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
         )
 
         # Used to access waveforms loaded into the driver
-        self._awg_handle: Optional[ctypes.c_int32] = None
+        self._awg_handle: ctypes.c_int32 | None = None
 
         self._catch_error = self.root_instrument._catch_error
 
@@ -301,10 +301,10 @@ class KeysightM9336A(Instrument):
         if status:
             raise SystemError(f"connection to device failed! error: {status}")
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         """generates the ``*IDN`` dictionary for qcodes"""
 
-        id_dict: dict[str, Optional[str]] = {
+        id_dict: dict[str, str | None] = {
             "firmware": self._get_firmware_revision(),
             "model": self._get_model(),
             "serial": self._get_serial_number(),

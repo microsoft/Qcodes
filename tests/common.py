@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import cProfile
 import os
+from collections.abc import Callable
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec

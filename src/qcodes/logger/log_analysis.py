@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import io
 import logging
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 

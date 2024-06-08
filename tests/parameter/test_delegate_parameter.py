@@ -3,7 +3,8 @@ Test suite for DelegateParameter
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Literal, cast
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import hypothesis.strategies as hst
 import pytest

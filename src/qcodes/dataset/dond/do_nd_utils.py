@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 if TYPE_CHECKING:
     import matplotlib.axes

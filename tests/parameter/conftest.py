@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import pytest
 

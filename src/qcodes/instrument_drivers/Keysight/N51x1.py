@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import deprecated
 
@@ -117,10 +117,10 @@ class KeysightN51x1(VisaInstrument):
 
         self.connect_message()
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         IDN_str = self.ask_raw('*IDN?')
         vendor, model, serial, firmware = map(str.strip, IDN_str.split(','))
-        IDN: dict[str, Optional[str]] = {
+        IDN: dict[str, str | None] = {
             'vendor': vendor, 'model': model,
             'serial': serial, 'firmware': firmware}
         return IDN

@@ -5,8 +5,9 @@ MSO70000/C/DX Series Digital Oscilloscopes
 """
 import textwrap
 import time
+from collections.abc import Callable
 from functools import partial
-from typing import Any, Callable, ClassVar, Union, cast
+from typing import Any, ClassVar, cast
 
 import numpy as np
 from typing_extensions import Unpack, deprecated
@@ -430,7 +431,7 @@ class TektronixDPOChannel(InstrumentChannel):
     """
     def __init__(
         self,
-        parent: Union[Instrument, InstrumentChannel],
+        parent: Instrument | InstrumentChannel,
         name: str,
         channel_number: int,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -526,7 +527,7 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Union[Instrument, InstrumentChannel],
+        parent: Instrument | InstrumentChannel,
         name: str,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:

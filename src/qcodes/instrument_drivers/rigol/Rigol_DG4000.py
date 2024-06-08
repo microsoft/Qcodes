@@ -36,7 +36,7 @@ def clean_string(s: str) -> str:
     return s
 
 
-def parse_string_output(s: str) -> Union[float, str]:
+def parse_string_output(s: str) -> float | str:
     """Parse an output of the VISA instrument into either text of a number"""
     s = clean_string(s)
 
@@ -51,14 +51,14 @@ def parse_string_output(s: str) -> Union[float, str]:
     return s
 
 
-def parse_single_output(i: int, s: str) -> Union[float, str]:
+def parse_single_output(i: int, s: str) -> float | str:
     """Used as a partial function to parse output i in string s"""
     parts = clean_string(s).split(",")
 
     return parse_string_output(parts[i])
 
 
-def parse_multiple_outputs(s: str) -> list[Union[float, str]]:
+def parse_multiple_outputs(s: str) -> list[float | str]:
     """Parse an output such as 'sin,1.5,0,2' and return a parsed array"""
     parts = clean_string(s).split(",")
 

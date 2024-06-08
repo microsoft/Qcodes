@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
 from textwrap import dedent
-from typing import Union, cast
+from typing import cast
 
 try:
     import libcst as cst
@@ -99,7 +99,7 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
         if arg_is_docstring:
             self.annotations.docstring = str(
                 cast(
-                    Union[cst.SimpleString, cst.ConcatenatedString], node.value
+                    cst.SimpleString | cst.ConcatenatedString, node.value
                 ).evaluated_value
             )
         if arg_is_docstring_dedent:

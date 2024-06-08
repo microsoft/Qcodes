@@ -4,13 +4,12 @@ import logging
 import os
 import sys
 import warnings
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Protocol,
     Union,
@@ -42,9 +41,10 @@ else:
     from importlib_metadata import entry_points
 
 if TYPE_CHECKING:
+    from typing import TypeAlias
+
     import pandas as pd
     import xarray as xr
-    from typing_extensions import TypeAlias
 
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
@@ -61,17 +61,17 @@ _EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
 # even with from __future__ import annotations
 # type aliases must use the old format until we drop 3.8/3.9
 array_like_types = (tuple, list, np.ndarray)
-scalar_res_types: TypeAlias = Union[
-    str, complex, np.integer, np.floating, np.complexfloating
-]
-values_type: TypeAlias = Union[scalar_res_types, np.ndarray, Sequence[scalar_res_types]]
+scalar_res_types: TypeAlias = (
+    str | complex | np.integer | np.floating | np.complexfloating
+)
+values_type: TypeAlias = scalar_res_types | np.ndarray | Sequence[scalar_res_types]
 res_type: TypeAlias = tuple[Union["ParameterBase", str], values_type]
 setpoints_type: TypeAlias = Sequence[Union[str, "ParameterBase"]]
 SPECS: TypeAlias = list[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
 # the ParamSpec class
-SpecsOrInterDeps: TypeAlias = Union[SPECS, InterDependencies_]
+SpecsOrInterDeps: TypeAlias = SPECS | InterDependencies_
 ParameterData: TypeAlias = dict[str, dict[str, np.ndarray]]
 
 LOG = logging.getLogger(__name__)
