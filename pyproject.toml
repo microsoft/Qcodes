@@ -261,7 +261,8 @@ select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC"
 # code.
 # PLxxxx are pylint lints that generate a fair amount of warnings
 # it may be worth fixing some or these in the future
-ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901"]
+# UP038 this can result in slower code so we ignore it
+ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "UP038"]
 
 [tool.ruff.lint.isort]
 
