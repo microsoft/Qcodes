@@ -59,8 +59,9 @@ class EmptyChannel(InstrumentChannel):
     pass
 
 
-def test_instrument_channel_label() -> None:
+def test_instrument_channel_label(request) -> None:
     dci = DummyChannelInstrument(name="dci_with_labels", label="Instrument Label")
+    request.addfinalizer(dci.close)
     channel = DummyChannel(dci, "A_with_label", "A_wl", label="A with f@ncy label")
     dci.add_submodule("A_with_label", channel)
     channel_2 = EmptyChannel(dci, "B_with_label", label="B with f@ncy label")
