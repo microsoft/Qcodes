@@ -10,9 +10,6 @@
 import warnings
 from typing import TYPE_CHECKING, Any
 
-
-from typing_extensions import deprecated
-
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils import QCoDeSDeprecationWarning
@@ -99,4 +96,3 @@ if not TYPE_CHECKING:
 
             __version__ = qcodes._version.__version__
             return __version__
-        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
