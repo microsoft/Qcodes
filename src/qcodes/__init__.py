@@ -105,14 +105,15 @@ del deprecated
 test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test
 
 
+__version__: str
+
 def __getattr__(name: str) -> Any:
     """
     Getting __version__ is slow in an editable install since we have shell out to run git describe.
     Here we only do it lazily if required.
 
-    TODO this means that the type of __version__ is Any, which is not ideal.
-    __version__ is also not listed by dir(qcodes) that could be fixed by overwrting __dir__.
-    see https://peps.python.org/pep-0562/
+    TODO this means that unknown attributes are typed as Any rather than an error
+    Using Literal["__version__"] as the input type does not seem to result in other attributes being rejected
     """
     if name == "__version__":
         import qcodes._version
@@ -120,6 +121,3 @@ def __getattr__(name: str) -> Any:
         __version__ = qcodes._version.__version__
         return __version__
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-__all__ = ["__version___", "config"]
