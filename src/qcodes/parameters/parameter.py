@@ -51,7 +51,7 @@ def _set_parameter_factory(
         # cast is safe since we just checked this above using is_function
         function = cast(Callable[[str], ParamRawDataType], function)
 
-        def set_parameter_write(self: Parameter, *args) -> None:
+        def set_parameter_write(self: Parameter, *args: Any) -> None:
             # for some reason mypy does not understand
             # that cmd is a str even if this is defined inside
             # an if isinstance block
@@ -112,7 +112,7 @@ def _get_parameter_factory(
         # cast is safe since we just checked this above using is_function
         function = cast(Callable[[str], ParamRawDataType], function)
 
-        def get_parameter_ask(self: Parameter, *args) -> ParamRawDataType:
+        def get_parameter_ask(self: Parameter, *args: Any) -> ParamRawDataType:
             # for some reason mypy does not understand
             # that cmd is a str even if this is defined inside
             # an if isinstance block
