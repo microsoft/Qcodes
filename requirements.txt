@@ -234,7 +234,7 @@ opentelemetry-api==1.23.0
     #   qcodes
 ordered-set==4.1.0
     # via deepdiff
-packaging==24.0
+packaging==24.1
     # via
     #   qcodes (pyproject.toml)
     #   dask
