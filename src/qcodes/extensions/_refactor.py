@@ -56,30 +56,37 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
             case cst.Arg(
                 value=cst.SimpleString(e_value), keyword=None
             ) if self._arg_num[self._call_stack[-1]]:
+                # first positional arg is str
                 self.annotations.name = e_value.strip("\"'")
             case cst.Arg(
                 keyword=cst.Name(value="name"), value=cst.SimpleString(e_value)
             ):
+                # arg is name
                 self.annotations.name = e_value.strip("\"'")
             case cst.Arg(
                 keyword=cst.Name("docstring"), value=cst.SimpleString(e_value)
             ):
+                # arg is docstring
                 self.annotations.docstring = literal_eval(e_value)
             case cst.Arg(
                 keyword=cst.Name("docstring"),
                 value=e_value,
             ) if isinstance(e_value, cst.ConcatenatedString):
+                # arg is docstring concatenated
                 self.annotations.docstring = str(e_value.evaluated_value)
             case cst.Arg(
                 keyword=cst.Name("docstring"),
                 value=cst.Call(args=[cst.Arg(cst.SimpleString(e_value))]),
             ):
+                # arg is docstring dedent
                 self.annotations.docstring = dedent(literal_eval(e_value)).strip()
             case cst.Arg(value=cst.Name(e_value), keyword=None) if self._arg_num[
                 self._call_stack[-1]
             ] == 2:
+                # second positional arg is str
                 self.annotations.parameter_class = e_value
             case cst.Arg(keyword=cst.Name("parameter_class"), value=cst.Name(e_value)):
+                # arg is parameter class
                 self.annotations.parameter_class = e_value
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
