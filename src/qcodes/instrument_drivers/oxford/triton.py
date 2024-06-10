@@ -3,7 +3,7 @@ import logging
 import re
 from functools import partial
 from time import sleep
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import InstrumentBaseKWArgs, IPInstrument
 from qcodes.validators import Enum, Ints, Numbers
@@ -41,10 +41,10 @@ class OxfordTriton(IPInstrument):
     def __init__(
         self,
         name: str,
-        address: Optional[str] = None,
-        port: Optional[int] = None,
+        address: str | None = None,
+        port: int | None = None,
         terminator: str = "\r\n",
-        tmpfile: Optional[str] = None,
+        tmpfile: str | None = None,
         timeout: float = 20,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
@@ -251,7 +251,7 @@ class OxfordTriton(IPInstrument):
         self._add_pump_state()
         self._add_temp_state()
         self.chan_alias: dict[str, str] = {}
-        self.chan_temp_names: dict[str, dict[str, Optional[str]]] = {}
+        self.chan_temp_names: dict[str, dict[str, str | None]] = {}
         if tmpfile is not None:
             self._get_temp_channel_names(tmpfile)
         self._get_temp_channels()
@@ -284,22 +284,18 @@ class OxfordTriton(IPInstrument):
         else:
             print("Warning: set magnet sweep rate in range (0 , 0.2] T/min")
 
-    def _get_control_B_param(
-        self, param: str
-    ) -> Optional[Union[float, str, list[float]]]:
+    def _get_control_B_param(self, param: str) -> float | str | list[float] | None:
         cmd = f"READ:SYS:VRM:{param}"
         return self._get_response_value(self.ask(cmd))
 
-    def _get_control_Bcomp_param(
-        self, param: str
-    ) -> Optional[Union[float, str, list[float]]]:
+    def _get_control_Bcomp_param(self, param: str) -> float | str | list[float] | None:
         cmd = f"READ:SYS:VRM:{param}"
         return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
     def _get_response(self, msg: str) -> str:
         return msg.split(":")[-1]
 
-    def _get_response_value(self, msg: str) -> Optional[Union[float, str, list[float]]]:
+    def _get_response_value(self, msg: str) -> float | str | list[float] | None:
         msg = self._get_response(msg)
         if msg.endswith("NOT_FOUND"):
             return None
@@ -324,7 +320,7 @@ class OxfordTriton(IPInstrument):
         except Exception:
             return msg
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         """Return the Instrument Identifier Message"""
         idstr = self.ask("*IDN?")
         idparts = [p.strip() for p in idstr.split(":", 4)][1:]
@@ -350,9 +346,7 @@ class OxfordTriton(IPInstrument):
         self._control_channel = channel
         self.write(f"SET:DEV:T{self._get_control_channel()}:TEMP:LOOP:HTR:H1")
 
-    def _get_control_param(
-        self, param: str
-    ) -> Optional[Union[float, str, list[float]]]:
+    def _get_control_param(self, param: str) -> float | str | list[float] | None:
         chan = self._get_control_channel()
         cmd = f"READ:DEV:T{chan}:TEMP:LOOP:{param}"
         return self._get_response_value(self.ask(cmd))
@@ -540,12 +534,12 @@ class OxfordTriton(IPInstrument):
     def _parse_time(self, msg: str) -> str:
         return msg[14:]
 
-    def _parse_temp(self, msg: str) -> Optional[float]:
+    def _parse_temp(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
         return float(msg.split("SIG:TEMP:")[-1].strip("K"))
 
-    def _parse_pres(self, msg: str) -> Optional[float]:
+    def _parse_pres(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
         return float(msg.split("SIG:PRES:")[-1].strip("mB")) * 1e3
@@ -568,7 +562,7 @@ class OxfordTriton(IPInstrument):
     def _set_pump_state(self, pump: str, state: str) -> None:
         self.write(f"SET:DEV:{pump}:PUMP:SIG:STATE:{state}")
 
-    def _get_parser_pump_speed(self, msg: str) -> Optional[float]:
+    def _get_parser_pump_speed(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
         return float(msg.split("SPD:")[-1].strip("Hz"))
@@ -588,7 +582,7 @@ class OxfordTriton(IPInstrument):
     def _set_temp_state(self, chan: str, state: str) -> None:
         self.write(f"SET:DEV:{chan}:TEMP:MEAS:ENAB:{state}")
 
-    def _get_parser_state(self, key: str, msg: str) -> Optional[str]:
+    def _get_parser_state(self, key: str, msg: str) -> str | None:
         if "NOT_FOUND" in msg:
             return None
         return msg.split(f"{key}:")[-1]

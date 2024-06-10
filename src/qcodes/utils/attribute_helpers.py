@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, ClassVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
@@ -108,7 +108,7 @@ def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
 
 
 def checked_getattr(
-    instance: Any, attribute: str, expected_type: Union[type, tuple[type, ...]]
+    instance: Any, attribute: str, expected_type: type | tuple[type, ...]
 ) -> Any:
     """
     Like ``getattr`` but raises type error if not of expected type.
@@ -150,7 +150,7 @@ def getattr_indexed(instance: Any, attribute: str) -> Any:
 
 
 def checked_getattr_indexed(
-    instance: Any, attribute: str, expected_type: Union[type, tuple[type, ...]]
+    instance: Any, attribute: str, expected_type: type | tuple[type, ...]
 ) -> Any:
     """
     Like ``getattr_indexed`` but raises type error if not of expected type.

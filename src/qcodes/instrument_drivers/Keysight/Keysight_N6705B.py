@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import (
     Instrument,
@@ -115,10 +115,10 @@ class KeysightN6705B(VisaInstrument):
 
         self.connect_message()
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         IDNstr = self.ask_raw("*IDN?")
         vendor, model, serial, firmware = map(str.strip, IDNstr.split(","))
-        IDN: dict[str, Optional[str]] = {
+        IDN: dict[str, str | None] = {
             "vendor": vendor,
             "model": model,
             "serial": serial,

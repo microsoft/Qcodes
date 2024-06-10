@@ -8,16 +8,16 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import Any, Generic, Literal, Optional, TypeVar, Union, cast
+from typing import Any, Generic, Literal, TypeVar, Union, cast
 
 import numpy as np
 
 BIGSTRING = 1000000000
 BIGINT = int(1e18)
 
-numbertypes = Union[float, int, np.floating, np.integer]
-shape_type = Union[int, typing.Callable[[], int]]
-shape_tuple_type = Optional[tuple[shape_type, ...]]
+numbertypes = float | int | np.floating | np.integer
+shape_type = int | typing.Callable[[], int]
+shape_tuple_type = tuple[shape_type, ...] | None
 
 
 def validate_all(*args: tuple[Validator[Any], Any], context: str = "") -> None:
@@ -152,7 +152,7 @@ class Nothing(Validator[Any]):
         self._reason = reason
 
 
-class Bool(Validator[Union[bool, np.bool_]]):
+class Bool(Validator[bool | np.bool_]):
     """
     Requires a boolean.
     """
@@ -326,7 +326,7 @@ class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
     """
 
     validtypes = (int, np.integer)
-    inttypes = Union[int, np.integer]
+    inttypes = int | np.integer
 
     def __init__(
         self, min_value: inttypes = -BIGINT, max_value: inttypes = BIGINT

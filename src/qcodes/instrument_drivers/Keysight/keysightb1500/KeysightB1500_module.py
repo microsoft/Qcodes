@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from typing import TYPE_CHECKING, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 from typing_extensions import TypedDict, Unpack, deprecated
@@ -87,7 +87,7 @@ _pattern_lrn = re.compile(
 )
 
 
-def parse_dcv_measurement_response(response: str) -> dict[str, Union[str, float]]:
+def parse_dcv_measurement_response(response: str) -> dict[str, str | float]:
     """
     Extract status, channel number, value  and accompanying metadata from
     the string and return them as a dictionary.
@@ -101,7 +101,7 @@ def parse_dcv_measurement_response(response: str) -> dict[str, Union[str, float]
         raise ValueError(f"{response!r} didn't match {_pattern_lrn!r} pattern")
 
     dd = match.groupdict()
-    d = cast(dict[str, Union[str, float]], dd)
+    d = cast(dict[str, str | float], dd)
     return d
 
 
@@ -288,7 +288,7 @@ class KeysightB1500Module(InstrumentChannel):
     def __init__(
         self,
         parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
-        name: Optional[str],
+        name: str | None,
         slot_nr: int,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):

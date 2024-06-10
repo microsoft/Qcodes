@@ -142,9 +142,8 @@ def test_start_logger_twice() -> None:
     logger.start_logger()
     logger.start_logger()
     handlers = root_logger.handlers
-    # there is one or two loggers registered from pytest
-    # depending on the version
-    # and the telemetry logger is always off in the tests
+    # we expect there to be two log handlers file+console
+    # plus the existing ones from pytest
     assert len(handlers) == 2 + NUM_PYTEST_LOGGERS
 
 
@@ -156,6 +155,7 @@ def test_set_level_without_starting_raises() -> None:
 
 
 def test_handler_level() -> None:
+    logger.start_logger()
     with logger.LogCapture(level=logging.INFO) as logs:
         logging.debug(TEST_LOG_MESSAGE)
     assert logs.value == ""

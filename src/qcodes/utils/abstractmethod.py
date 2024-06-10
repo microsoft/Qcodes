@@ -1,12 +1,17 @@
-from typing import Callable, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from typing_extensions import ParamSpec
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 input = ParamSpec("input")
 output = TypeVar("output")
 
 
-def qcodes_abstractmethod(funcobj: Callable[input, output]) -> Callable[input, output]:
+def qcodes_abstractmethod(
+    funcobj: "Callable[input, output]",
+) -> "Callable[input, output]":
     """
     A decorator indicating abstract methods.
 

@@ -5,7 +5,7 @@ import uuid
 from contextlib import contextmanager
 from os.path import getmtime
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -36,6 +36,9 @@ from qcodes.dataset.sqlite.queries import get_experiments
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
 from qcodes.station import Station
 from tests.common import error_caused_by, skip_if_no_fixtures
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @contextmanager

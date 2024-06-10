@@ -1,10 +1,13 @@
 from functools import partial
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def partial_with_docstring(
-    func: Callable[..., Any], docstring: str, **kwargs: Any
-) -> Callable[..., Any]:
+    func: "Callable[..., Any]", docstring: str, **kwargs: Any
+) -> "Callable[..., Any]":
     """
     We want to have a partial function which will allow us to access the docstring
     through the python built-in help function. This is particularly important

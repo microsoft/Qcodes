@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from typing import Any, Callable, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 from typing_extensions import ParamSpec
 
 from qcodes.parameters import Parameter
 
 from .conftest import NOT_PASSED
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 T = TypeVar("T")
 P = ParamSpec("P")

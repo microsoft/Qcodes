@@ -5,9 +5,9 @@ This is a driver for the Stahl power supplies
 import logging
 import re
 from collections import OrderedDict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from pyvisa.resources.serial import SerialInstrument
@@ -274,7 +274,7 @@ class Stahl(VisaInstrument):
             for (name, converter), value in zip(converters.items(), result.groups())
         }
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         """
         The Stahl sends a uncommon IDN string which does not include a
         firmware version.

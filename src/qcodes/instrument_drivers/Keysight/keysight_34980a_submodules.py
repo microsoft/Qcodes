@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from typing_extensions import deprecated
 
@@ -21,7 +21,7 @@ class KeysightSubModule(InstrumentChannel):
     """
     def __init__(
         self,
-        parent: Union[VisaInstrument, InstrumentChannel],
+        parent: VisaInstrument | InstrumentChannel,
         name: str,
         slot: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -34,7 +34,7 @@ class KeysightSubModule(InstrumentChannel):
 class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
     def __init__(
         self,
-        parent: Union[VisaInstrument, InstrumentChannel],
+        parent: VisaInstrument | InstrumentChannel,
         name: str,
         slot: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
@@ -64,7 +64,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         raise NotImplementedError("Please subclass this")
 
     def to_channel_list(
-        self, paths: list[tuple[int, int]], wiring_config: Optional[str] = None
+        self, paths: list[tuple[int, int]], wiring_config: str | None = None
     ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
