@@ -1,0 +1,106 @@
+QCoDeS 0.46.0 (2024-06-10)
+==========================
+
+Breaking Changes:
+-----------------
+
+
+- This will be the last version of QCoDeS to support Python 3.9
+
+- The keyword arguments expected to be passed to ``InstrumentBase`` and ``VisaInstrument`` subclasses are now
+  documented as TypedDics classes that can be used to type `**kwargs` in the subclass constructors.
+  See `Creating QCoDeS instrument drivers` for usage examples.
+
+  This also means that the these arguments **must** be passed as keyword arguments, and not as positional arguments.
+  This specifically includeds passing ``label`` and ``metadata`` to direct subclasses of ``Instrument`` as well as
+  ``terminator`` to subclasses of ``VisaInstrument``.
+
+  All drivers shipping with qcodes for Vendors from A-K have been updated in this pr.
+  The remaining drivers were updated in (:pr:`6087`). (:pr:`6012`)
+
+
+Improved:
+---------
+
+- `InstrumentBase.add_parameter` now returns the created parameter.
+  This allows explicitly assigning the parameter as an attribute on
+  the instrument class. This in turn enables type checkers and
+  documentation tools to detect the existence and type of the
+  parameter statically.
+
+  QCoDeS ships with a tool to automatically refactor instruments in this way. To use
+  this tool qcodes should be installed with the refactor option e.g. ``pip install qcodes[refactor]``
+
+  See `Creating-Instrument-Drivers <../examples/writing_drivers/Creating-Instrument-Drivers.ipynb>`__
+  for more details.
+
+  It is the plan to transform all drivers shipping with QCoDeS in this way
+  as soon as possible. (:pr:`4412`)
+- Accept sequences of values for setting `MultiChannelInstrumentParameter` s. Previously, the behavior was inconsistent since `param.set(param.get())` would error. (:pr:`6073`)
+- Add update_spapshot argument to Station.load_instrument() (:pr:`6075`)
+- Measurement.register_parameter() now tests for correct types of arguments setpoints and basis. (:pr:`6084`)
+
+
+Improved Drivers:
+-----------------
+
+- The Agilent drivers shipping with QCoDeS have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the Agilent drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. It is the plan to make the same change to all drivers shipping
+  with QCoDeS in the near future. (:pr:`6089`)
+- The Aim TTi drivers shipping with QCoDeS have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the Aim TTi drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6105`)
+- Fix AlazarTech ATS drivers trying to create an instrument with invalid identifier as name (:pr:`6106`)
+- The Alazar Tech, American Magnetics, Basel, Cryomagnetics and Galil drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6113`)
+- The HP, Harvard and Ithaco drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6114`)
+- The Keithley drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6115`)
+- The Keysight drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6125`)
+- The Lakeshore drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6128`)
+- The Minicircuits, Oxford, QDev, QuantumDesign, Rigol and Rohde & Schwarz drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6160`)
+- The SignalHound, SRS, Stahl, Weinschel and Yokogawa drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6163`)
+- The Tektronix drivers shipping with QCoDeS
+  have been updated to ensure all Parameters are set as static
+  attributes that are documented and can be type checked. The docs for the same drivers have been
+  updated to not document inherited members. This makes the documentation significantly more readable
+  as it focuses on specific members for a given instrument. The documentation now also links superclasses.
+  Please consult these for inherited members. (:pr:`6164`)
