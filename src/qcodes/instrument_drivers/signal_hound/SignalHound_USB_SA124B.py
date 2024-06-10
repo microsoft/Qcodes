@@ -2,7 +2,7 @@ import ctypes as ct
 import logging
 from enum import IntEnum
 from time import sleep
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -192,7 +192,7 @@ class SignalHoundUSBSA124B(Instrument):
     def __init__(
         self,
         name: str,
-        dll_path: Optional[str] = None,
+        dll_path: str | None = None,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         """
@@ -211,38 +211,48 @@ class SignalHoundUSBSA124B(Instrument):
         self._set_ctypes_argtypes()
 
         self.hf = Constants
-        self.add_parameter(
+        self.frequency: SweepTraceParameter = self.add_parameter(
             "frequency",
             label="Frequency",
             unit="Hz",
             initial_value=5e9,
             vals=vals.Numbers(),
             parameter_class=SweepTraceParameter,
-            docstring="Center frequency for sweep."
+            docstring="Center frequency for sweep. "
             "This is the set center, the actual "
             "center may be subject to round off "
             "compared to this value",
         )
-        self.add_parameter(
+        """
+        Center frequency for sweep.
+
+        This is the set center, the actual center may be subject to round off compared to this value
+        """
+        self.span: SweepTraceParameter = self.add_parameter(
             "span",
             label="Span",
             unit="Hz",
             initial_value=0.25e6,
             vals=vals.Numbers(),
             parameter_class=SweepTraceParameter,
-            docstring="Width of frequency span"
+            docstring="Width of frequency span. "
             "This is the set span, the actual "
             "span may be subject to round off "
             "compared to this value",
         )
-        self.add_parameter(
+        """Width of frequency span.
+
+        This is the set span, the actual span may be subject to round off compared to this value
+        """
+        self.npts: Parameter = self.add_parameter(
             "npts",
             label="Number of Points",
             get_cmd=self._get_npts,
             set_cmd=False,
             docstring="Number of points in frequency sweep.",
         )
-        self.add_parameter(
+        """Number of points in frequency sweep."""
+        self.avg: Parameter = self.add_parameter(
             "avg",
             label="Averages",
             initial_value=1,
@@ -253,7 +263,11 @@ class SignalHoundUSBSA124B(Instrument):
             "Averages are performed in software by "
             "acquiring multiple sweeps",
         )
-        self.add_parameter(
+        """Number of averages to perform.
+
+
+        Averages are performed in software by acquiring multiple sweeps"""
+        self.ref_lvl: TraceParameter = self.add_parameter(
             "ref_lvl",
             label="Reference power",
             unit="dBm",
@@ -261,11 +275,15 @@ class SignalHoundUSBSA124B(Instrument):
             vals=vals.Numbers(max_value=20),
             parameter_class=TraceParameter,
             docstring="Setting reference level will "
-            "automatically select gain and attenuation"
+            "automatically select gain and attenuation "
             "optimal for measuring at and below "
             "this level",
         )
-        self.add_parameter(
+        """
+        Setting reference level will automatically select gain and attenuation
+        optimal for measuring at and below this level
+        """
+        self.external_reference: ExternalRefParameter = self.add_parameter(
             "external_reference",
             initial_value=False,
             vals=vals.Bool(),
@@ -275,37 +293,60 @@ class SignalHoundUSBSA124B(Instrument):
             "disabling external ref. To disable close "
             "the connection and restart.",
         )
-        self.add_parameter("device_type", set_cmd=False, get_cmd=self._get_device_type)
-        self.add_parameter(
+        """
+        Use an external 10 MHz reference source.
+
+        Note that Signal Hound does not support disabling external ref.
+        To disable close the connection and restart.
+        """
+        self.device_type: Parameter = self.add_parameter(
+            "device_type", set_cmd=False, get_cmd=self._get_device_type
+        )
+        """Parameter device_type"""
+        self.device_mode: Parameter = self.add_parameter(
             "device_mode",
             get_cmd=lambda: "sweeping",
             set_cmd=False,
             docstring="The driver currently only  "
             "supports sweeping mode. "
-            "It is therefor not possible"
+            "It is therefor not possible "
             "to set this parameter to anything else",
         )
-        self.add_parameter(
+        """
+        The driver currently only supports sweeping mode.
+
+        It is therefor not possible to set this parameter to anything else
+        """
+        self.acquisition_mode: Parameter = self.add_parameter(
             "acquisition_mode",
             get_cmd=lambda: "average",
             set_cmd=False,
             docstring="The driver only supports averaging "
-            "mode it is therefor not possible to set"
+            "mode it is therefor not possible to set "
             "this parameter to anything else",
         )
-        self.add_parameter(
+        """
+        The driver only supports averaging mode.
+
+        It is therefor not possible to set
+        this parameter to anything else
+        """
+        self.rbw: TraceParameter = self.add_parameter(
             "rbw",
             label="Resolution Bandwidth",
             unit="Hz",
             initial_value=1e3,
             vals=vals.Numbers(0.1, 250e3),
             parameter_class=TraceParameter,
-            docstring="Resolution Bandwidth (RBW) is"
+            docstring="Resolution Bandwidth (RBW) is "
             "the bandwidth of "
             "spectral energy represented in each "
             "frequency bin",
         )
-        self.add_parameter(
+        """Resolution Bandwidth (RBW)
+        is the bandwidth of spectral energy represented in each frequency bin
+        """
+        self.vbw: TraceParameter = self.add_parameter(
             "vbw",
             label="Video Bandwidth",
             unit="Hz",
@@ -321,8 +362,15 @@ class SignalHoundUSBSA124B(Instrument):
             "bin over several overlapping FFTs. "
             "For best performance use RBW as the VBW.",
         )
+        """
+        The video bandwidth (VBW)
+        is applied after the signal has been converted to frequency domain as power,
+        voltage, or log units. It is implemented as a simple rectangular window,
+        averaging the amplitude readings for each frequency bin over several overlapping FFTs.
+        For best performance use RBW as the VBW.
+        """
 
-        self.add_parameter(
+        self.reject_image: TraceParameter = self.add_parameter(
             "reject_image",
             label="Reject image",
             unit="",
@@ -332,7 +380,8 @@ class SignalHoundUSBSA124B(Instrument):
             docstring="Apply software filter to remove undersampling mirroring",
             vals=vals.Bool(),
         )
-        self.add_parameter(
+        """Apply software filter to remove undersampling mirroring"""
+        self.sleep_time: Parameter = self.add_parameter(
             "sleep_time",
             label="Sleep time",
             unit="s",
@@ -343,32 +392,39 @@ class SignalHoundUSBSA124B(Instrument):
             "getting data from the instrument",
             vals=vals.Numbers(0),
         )
+        """Time to sleep before and after getting data from the instrument"""
         # We don't know the correct values of
         # the sweep parameters yet so we supply
         # some defaults. The correct will be set when we call configure below
-        self.add_parameter(
+        self.trace: FrequencySweep = self.add_parameter(
             name="trace",
             sweep_len=1,
             start_freq=1,
             stepsize=1,
             parameter_class=FrequencySweep,
         )
-        self.add_parameter(
+        """Parameter trace"""
+        self.power: Parameter = self.add_parameter(
             "power",
             label="Power",
             unit="dBm",
             get_cmd=self._get_power_at_freq,
             set_cmd=False,
-            docstring="The maximum power in a window of 250 kHz"
-            "around the specified  frequency with "
+            docstring="The maximum power in a window of 250 kHz "
+            "around the specified frequency with "
             "Resolution bandwidth set to 1 kHz."
             "The integration window is specified by "
             "the VideoBandWidth (set by vbw)",
         )
+        """
+        The maximum power in a window of 250 kHz around the specified frequency with Resolution bandwidth set to 1 kHz.
+
+        The integration window is specified by the VideoBandWidth (set by vbw)
+        """
         # scale is defined after the trace and power parameter so that
         # it can change the units of those in it's set method when the
         # scale changes
-        self.add_parameter(
+        self.scale: ScaleParameter = self.add_parameter(
             "scale",
             initial_value="log-scale",
             vals=vals.Enum(
@@ -376,8 +432,9 @@ class SignalHoundUSBSA124B(Instrument):
             ),
             parameter_class=ScaleParameter,
         )
+        """Parameter scale"""
 
-        self.add_parameter(
+        self.frequency_axis: Parameter = self.add_parameter(
             "frequency_axis",
             label="Frequency",
             unit="Hz",
@@ -386,7 +443,8 @@ class SignalHoundUSBSA124B(Instrument):
             vals=vals.Arrays(shape=(self.npts,)),
             snapshot_value=False,
         )
-        self.add_parameter(
+        """Parameter frequency_axis"""
+        self.freq_sweep: ParameterWithSetpoints = self.add_parameter(
             "freq_sweep",
             label="Power",
             unit="depends on mode",
@@ -397,6 +455,7 @@ class SignalHoundUSBSA124B(Instrument):
             setpoints=(self.frequency_axis,),
             snapshot_value=False,
         )
+        """Parameter freq_sweep"""
 
         self.openDevice()
         self.configure()
@@ -531,7 +590,7 @@ class SignalHoundUSBSA124B(Instrument):
         # the third argument to saInitiate is a flag that is
         # currently not used
         err = self.dll.saInitiate(self.deviceHandle, mode, 0)
-        extrainfo: Optional[str] = None
+        extrainfo: str | None = None
         if err == saStatus.saInvalidParameterErr:
             extrainfo = """
                  In real-time mode, this value may be returned if the span
@@ -598,7 +657,7 @@ class SignalHoundUSBSA124B(Instrument):
         log.info("Stopping acquisition")
 
         err = self.dll.saAbort(self.deviceHandle)
-        extrainfo: Optional[str] = None
+        extrainfo: str | None = None
         if err == saStatus.saDeviceNotConfiguredErr:
             extrainfo = (
                 "Device was already idle! Did you call abort "
@@ -724,7 +783,7 @@ class SignalHoundUSBSA124B(Instrument):
         return max_power
 
     @staticmethod
-    def check_for_error(err: int, source: str, extrainfo: Optional[str] = None) -> None:
+    def check_for_error(err: int, source: str, extrainfo: str | None = None) -> None:
         if err != saStatus.saNoError:
             err_str = saStatus(err).name
             if err > 0:
@@ -749,8 +808,8 @@ class SignalHoundUSBSA124B(Instrument):
                 msg = msg + f"\n Extra info: {extrainfo}"
             log.info(msg)
 
-    def get_idn(self) -> dict[str, Optional[str]]:
-        output: dict[str, Optional[str]] = {}
+    def get_idn(self) -> dict[str, str | None]:
+        output: dict[str, str | None] = {}
         output["vendor"] = "Signal Hound"
         output["model"] = self._get_device_type()
         serialnumber = ct.c_int32()

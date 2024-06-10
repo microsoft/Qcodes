@@ -1,5 +1,5 @@
 # Ensuring backwards compatibility
 
-from .ZNB import ZNB
+from .ZNB import RohdeSchwarzZNBBase
 
-ZNB20 = ZNB
+ZNB20 = RohdeSchwarzZNBBase

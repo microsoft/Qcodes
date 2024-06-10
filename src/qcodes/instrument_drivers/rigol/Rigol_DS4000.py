@@ -23,6 +23,8 @@ from qcodes.parameters import ArrayParameter, ParamRawDataType
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 log = logging.getLogger(__name__)
 
 
@@ -208,25 +210,29 @@ class RigolDS4000Channel(InstrumentChannel):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter(
+        self.amplitude: Parameter = self.add_parameter(
             "amplitude", get_cmd=f":MEASure:VAMP? chan{channel}", get_parser=float
         )
-        self.add_parameter(
+        """Parameter amplitude"""
+        self.vertical_scale: Parameter = self.add_parameter(
             "vertical_scale",
             get_cmd=f":CHANnel{channel}:SCALe?",
             set_cmd=":CHANnel{}:SCALe {}".format(channel, "{}"),
             get_parser=float,
         )
+        """Parameter vertical_scale"""
 
         # Return the waveform displayed on the screen
-        self.add_parameter(
+        self.curvedata: ScopeArray = self.add_parameter(
             "curvedata", channel=channel, parameter_class=ScopeArray, raw=False
         )
+        """Parameter curvedata"""
 
         # Return the waveform in the internal memory
-        self.add_parameter(
+        self.curvedata_raw: ScopeArray = self.add_parameter(
             "curvedata_raw", channel=channel, parameter_class=ScopeArray, raw=True
         )
+        """Parameter curvedata_raw"""
 
 
 class RigolDS4000(VisaInstrument):
@@ -274,7 +280,7 @@ class RigolDS4000(VisaInstrument):
         )
 
         # general parameters
-        self.add_parameter(
+        self.trigger_type: Parameter = self.add_parameter(
             "trigger_type",
             label="Type of the trigger",
             get_cmd=":TRIGger:MODE?",
@@ -295,14 +301,16 @@ class RigolDS4000(VisaInstrument):
                 "USB",
             ),
         )
-        self.add_parameter(
+        """Parameter trigger_type"""
+        self.trigger_mode: Parameter = self.add_parameter(
             "trigger_mode",
             label="Mode of the trigger",
             get_cmd=":TRIGger:SWEep?",
             set_cmd=":TRIGger:SWEep {}",
             vals=vals.Enum("AUTO", "NORM", "SING"),
         )
-        self.add_parameter(
+        """Parameter trigger_mode"""
+        self.time_base: Parameter = self.add_parameter(
             "time_base",
             label="Horizontal time base",
             get_cmd=":TIMebase:MAIN:SCALe?",
@@ -310,7 +318,8 @@ class RigolDS4000(VisaInstrument):
             get_parser=float,
             unit="s/div",
         )
-        self.add_parameter(
+        """Parameter time_base"""
+        self.sample_point_count: Parameter = self.add_parameter(
             "sample_point_count",
             label="Number of the waveform points",
             get_cmd=":WAVeform:POINts?",
@@ -318,7 +327,8 @@ class RigolDS4000(VisaInstrument):
             get_parser=int,
             vals=vals.Ints(min_value=1),
         )
-        self.add_parameter(
+        """Parameter sample_point_count"""
+        self.enable_auto_scale: Parameter = self.add_parameter(
             "enable_auto_scale",
             label="Enable or disable autoscale",
             get_cmd=":SYSTem:AUToscale?",
@@ -326,6 +336,7 @@ class RigolDS4000(VisaInstrument):
             get_parser=bool,
             vals=vals.Bool(),
         )
+        """Parameter enable_auto_scale"""
 
         channels = ChannelList(self, "Channels", RigolDS4000Channel, snapshotable=False)
 

@@ -24,7 +24,6 @@ from typing import (
     AnyStr,
     ClassVar,
     NoReturn,
-    Union,
     cast,
     overload,
 )
@@ -85,7 +84,7 @@ def get_config_use_monitor() -> str | None:
     return qcodes.config["station"]["use_monitor"]
 
 
-ChannelOrInstrumentBase = Union[InstrumentBase, ChannelTuple]
+ChannelOrInstrumentBase = InstrumentBase | ChannelTuple
 
 
 class ValidationWarning(Warning):

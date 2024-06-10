@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -286,7 +286,7 @@ class HP8753D(VisaInstrument):
 
             self.ask(f"OPC?;NUMG{N}")
 
-    def invalidate_trace(self, cmd: str, value: Union[float, int, str]) -> None:
+    def invalidate_trace(self, cmd: str, value: float | int | str) -> None:
         """
         Wrapper for set_cmds that make the trace not ready
         """

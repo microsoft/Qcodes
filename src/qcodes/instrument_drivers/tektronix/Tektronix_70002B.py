@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from .AWG70000A import AWG70000A
+from .AWG70000A import TektronixAWG70000Base
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from qcodes.instrument import VisaInstrumentKWArgs
 
 
-class TektronixAWG70002B(AWG70000A):
+class TektronixAWG70002B(TektronixAWG70000Base):
     """
     The QCoDeS driver for Tektronix AWG70002B series AWG's.
 

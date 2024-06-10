@@ -8,9 +8,10 @@ import numbers
 import time
 import warnings
 from collections import defaultdict
+from collections.abc import Callable
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TypeVar, cast
 
 import numpy as np
 from typing_extensions import deprecated

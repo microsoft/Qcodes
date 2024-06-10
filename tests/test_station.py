@@ -5,7 +5,6 @@ import warnings
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from ruamel.yaml import YAML
@@ -449,7 +448,7 @@ def test_simple_mock_load_instrument(simple_mock_station) -> None:
 
 
 def test_enable_force_reconnect() -> None:
-    def get_instrument_config(enable_forced_reconnect: Optional[bool]) -> str:
+    def get_instrument_config(enable_forced_reconnect: bool | None) -> str:
         return f"""
 instruments:
   mock:
@@ -462,8 +461,8 @@ instruments:
 
     def assert_on_reconnect(
         *,
-        use_user_cfg: Optional[bool],
-        use_instr_cfg: Optional[bool],
+        use_user_cfg: bool | None,
+        use_instr_cfg: bool | None,
         expect_failure: bool,
     ) -> None:
         qcodes.config["station"]["enable_forced_reconnect"] = use_user_cfg

@@ -3,7 +3,7 @@ Driver for the Keithley S46 RF switch
 """
 import re
 from itertools import product
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from qcodes.instrument import (
     Instrument,
@@ -33,7 +33,7 @@ class KeithleyS46RelayLock:
 
     def __init__(self, relay_name: str):
         self.relay_name = relay_name
-        self._locked_by: Optional[int] = None
+        self._locked_by: int | None = None
 
     def acquire(self, channel_number: int) -> None:
         """
@@ -71,7 +71,7 @@ class S46Parameter(Parameter):
     def __init__(
         self,
         name: str,
-        instrument: Optional[Instrument],
+        instrument: Instrument | None,
         channel_number: int,
         lock: KeithleyS46RelayLock,
         **kwargs: Any,

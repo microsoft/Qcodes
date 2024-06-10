@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -10,6 +10,8 @@ from qcodes.instrument import (
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
+
+    from qcodes.parameters import Parameter
 
 
 class MiniCircuitsRCSPDTChannel(InstrumentChannel):
@@ -33,13 +35,14 @@ class MiniCircuitsRCSPDTChannel(InstrumentChannel):
         _chanlist = ["a", "b", "c", "d", "e", "f", "g", "h"]
         self.channel_number = _chanlist.index(channel_letter)
 
-        self.add_parameter(
+        self.switch: Parameter = self.add_parameter(
             "switch",
             label="switch",
             set_cmd=self._set_switch,
             get_cmd=self._get_switch,
             vals=vals.Ints(1, 2),
         )
+        """Parameter switch"""
 
     def _set_switch(self, switch: int) -> None:
         self.write(f"SET{self.channel_letter}={switch-1}")
@@ -95,12 +98,12 @@ class MiniCircuitsRCSPDT(IPInstrument):
         ret = ret.strip()
         return ret
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         fw = self.ask("FIRMWARE?")
         MN = self.ask("MN?")
         SN = self.ask("SN?")
 
-        id_dict: dict[str, Optional[str]] = {
+        id_dict: dict[str, str | None] = {
             "firmware": fw,
             "model": MN[3:],
             "serial": SN[3:],

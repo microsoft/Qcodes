@@ -6,7 +6,7 @@ from .RTO1000 import (
     RohdeSchwarzRTO1000ScopeMeasurement,
 )
 from .SGS100A import RohdeSchwarzSGS100A
-from .ZNB import RohdeSchwarzZNBChannel
+from .ZNB import RohdeSchwarzZNBBase, RohdeSchwarzZNBChannel
 
 __all__ = [
     "RohdeSchwarzRTO1000",
@@ -15,5 +15,6 @@ __all__ = [
     "RohdeSchwarzSGS100A",
     "RohdeSchwarzZNB20",
     "RohdeSchwarzZNB8",
+    "RohdeSchwarzZNBBase",
     "RohdeSchwarzZNBChannel",
 ]

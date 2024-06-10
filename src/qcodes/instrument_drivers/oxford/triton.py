@@ -3,13 +3,15 @@ import logging
 import re
 from functools import partial
 from time import sleep
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import InstrumentBaseKWArgs, IPInstrument
 from qcodes.validators import Enum, Ints, Numbers
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
+
+    from qcodes.parameters import Parameter
 
 
 class OxfordTriton(IPInstrument):
@@ -39,10 +41,10 @@ class OxfordTriton(IPInstrument):
     def __init__(
         self,
         name: str,
-        address: Optional[str] = None,
-        port: Optional[int] = None,
+        address: str | None = None,
+        port: int | None = None,
         terminator: str = "\r\n",
-        tmpfile: Optional[str] = None,
+        tmpfile: str | None = None,
         timeout: float = 20,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
@@ -61,92 +63,103 @@ class OxfordTriton(IPInstrument):
         self._control_channel = 5
         self.pump_label_dict = {"TURB1": "Turbo 1", "COMP": "Compressor"}
 
-        self.add_parameter(
+        self.time: Parameter = self.add_parameter(
             name="time",
             label="System Time",
             get_cmd="READ:SYS:TIME",
             get_parser=self._parse_time,
         )
+        """Parameter time"""
 
-        self.add_parameter(
+        self.action: Parameter = self.add_parameter(
             name="action",
             label="Current action",
             get_cmd="READ:SYS:DR:ACTN",
             get_parser=self._parse_action,
         )
+        """Parameter action"""
 
-        self.add_parameter(
+        self.status: Parameter = self.add_parameter(
             name="status",
             label="Status",
             get_cmd="READ:SYS:DR:STATUS",
             get_parser=self._parse_status,
         )
+        """Parameter status"""
 
-        self.add_parameter(
+        self.pid_control_channel: Parameter = self.add_parameter(
             name="pid_control_channel",
             label="PID control channel",
             get_cmd=self._get_control_channel,
             set_cmd=self._set_control_channel,
             vals=Ints(1, 16),
         )
+        """Parameter pid_control_channel"""
 
-        self.add_parameter(
+        self.pid_mode: Parameter = self.add_parameter(
             name="pid_mode",
             label="PID Mode",
             get_cmd=partial(self._get_control_param, "MODE"),
             set_cmd=partial(self._set_control_param, "MODE"),
             val_mapping={"on": "ON", "off": "OFF"},
         )
+        """Parameter pid_mode"""
 
-        self.add_parameter(
+        self.pid_ramp: Parameter = self.add_parameter(
             name="pid_ramp",
             label="PID ramp enabled",
             get_cmd=partial(self._get_control_param, "RAMP:ENAB"),
             set_cmd=partial(self._set_control_param, "RAMP:ENAB"),
             val_mapping={"on": "ON", "off": "OFF"},
         )
+        """Parameter pid_ramp"""
 
-        self.add_parameter(
+        self.pid_setpoint: Parameter = self.add_parameter(
             name="pid_setpoint",
             label="PID temperature setpoint",
             unit="K",
             get_cmd=partial(self._get_control_param, "TSET"),
             set_cmd=partial(self._set_control_param, "TSET"),
         )
+        """Parameter pid_setpoint"""
 
-        self.add_parameter(
+        self.pid_p: Parameter = self.add_parameter(
             name="pid_p",
             label="PID proportionality",
             get_cmd=partial(self._get_control_param, "P"),
             set_cmd=partial(self._set_control_param, "P"),
             vals=Numbers(0, 1e3),
         )
+        """Parameter pid_p"""
 
-        self.add_parameter(
+        self.pid_i: Parameter = self.add_parameter(
             name="pid_i",
             label="PID intergral",
             get_cmd=partial(self._get_control_param, "I"),
             set_cmd=partial(self._set_control_param, "I"),
             vals=Numbers(0, 1e3),
         )
+        """Parameter pid_i"""
 
-        self.add_parameter(
+        self.pid_d: Parameter = self.add_parameter(
             name="pid_d",
             label="PID derivative",
             get_cmd=partial(self._get_control_param, "D"),
             set_cmd=partial(self._set_control_param, "D"),
             vals=Numbers(0, 1e3),
         )
+        """Parameter pid_d"""
 
-        self.add_parameter(
+        self.pid_rate: Parameter = self.add_parameter(
             name="pid_rate",
             label="PID ramp rate",
             unit="K/min",
             get_cmd=partial(self._get_control_param, "RAMP:RATE"),
             set_cmd=partial(self._set_control_param, "RAMP:RATE"),
         )
+        """Parameter pid_rate"""
 
-        self.add_parameter(
+        self.pid_range: Parameter = self.add_parameter(
             name="pid_range",
             label="PID heater range",
             # TODO: The units in the software are mA, how to
@@ -156,79 +169,89 @@ class OxfordTriton(IPInstrument):
             set_cmd=partial(self._set_control_param, "RANGE"),
             vals=Enum(*self._heater_range_curr),
         )
+        """Parameter pid_range"""
 
-        self.add_parameter(
+        self.magnet_status: Parameter = self.add_parameter(
             name="magnet_status",
             label="Magnet status",
             unit="",
             get_cmd=partial(self._get_control_B_param, "ACTN"),
         )
+        """Parameter magnet_status"""
 
-        self.add_parameter(
+        self.magnet_sweeprate: Parameter = self.add_parameter(
             name="magnet_sweeprate",
             label="Magnet sweep rate",
             unit="T/min",
             get_cmd=partial(self._get_control_B_param, "RVST:RATE"),
             set_cmd=partial(self._set_control_magnet_sweeprate_param),
         )
+        """Parameter magnet_sweeprate"""
 
-        self.add_parameter(
+        self.magnet_sweeprate_insta: Parameter = self.add_parameter(
             name="magnet_sweeprate_insta",
             label="Instantaneous magnet sweep rate",
             unit="T/min",
             get_cmd=partial(self._get_control_B_param, "RFST"),
         )
+        """Parameter magnet_sweeprate_insta"""
 
-        self.add_parameter(
+        self.B: Parameter = self.add_parameter(
             name="B",
             label="Magnetic field",
             unit="T",
             get_cmd=partial(self._get_control_B_param, "VECT"),
         )
+        """Parameter B"""
 
-        self.add_parameter(
+        self.Bx: Parameter = self.add_parameter(
             name="Bx",
             label="Magnetic field x-component",
             unit="T",
             get_cmd=partial(self._get_control_Bcomp_param, "VECTBx"),
             set_cmd=partial(self._set_control_Bx_param),
         )
+        """Parameter Bx"""
 
-        self.add_parameter(
+        self.By: Parameter = self.add_parameter(
             name="By",
             label="Magnetic field y-component",
             unit="T",
             get_cmd=partial(self._get_control_Bcomp_param, "VECTBy"),
             set_cmd=partial(self._set_control_By_param),
         )
+        """Parameter By"""
 
-        self.add_parameter(
+        self.Bz: Parameter = self.add_parameter(
             name="Bz",
             label="Magnetic field z-component",
             unit="T",
             get_cmd=partial(self._get_control_Bcomp_param, "VECTBz"),
             set_cmd=partial(self._set_control_Bz_param),
         )
+        """Parameter Bz"""
 
-        self.add_parameter(
+        self.magnet_sweep_time: Parameter = self.add_parameter(
             name="magnet_sweep_time",
             label="Magnet sweep time",
             unit="T/min",
             get_cmd=partial(self._get_control_B_param, "RVST:TIME"),
         )
+        """Parameter magnet_sweep_time"""
 
-        self.add_parameter(
+        self.turb1_speed: Parameter = self.add_parameter(
             name="turb1_speed",
             label=self.pump_label_dict["TURB1"] + " speed",
             unit="Hz",
             get_cmd="READ:DEV:TURB1:PUMP:SIG:SPD",
             get_parser=self._get_parser_pump_speed,
         )
+        """Parameter turb1_speed"""
 
         self._add_pump_state()
         self._add_temp_state()
         self.chan_alias: dict[str, str] = {}
-        self.chan_temp_names: dict[str, dict[str, Optional[str]]] = {}
+        self.chan_temp_names: dict[str, dict[str, str | None]] = {}
         if tmpfile is not None:
             self._get_temp_channel_names(tmpfile)
         self._get_temp_channels()
@@ -261,22 +284,18 @@ class OxfordTriton(IPInstrument):
         else:
             print("Warning: set magnet sweep rate in range (0 , 0.2] T/min")
 
-    def _get_control_B_param(
-        self, param: str
-    ) -> Optional[Union[float, str, list[float]]]:
+    def _get_control_B_param(self, param: str) -> float | str | list[float] | None:
         cmd = f"READ:SYS:VRM:{param}"
         return self._get_response_value(self.ask(cmd))
 
-    def _get_control_Bcomp_param(
-        self, param: str
-    ) -> Optional[Union[float, str, list[float]]]:
+    def _get_control_Bcomp_param(self, param: str) -> float | str | list[float] | None:
         cmd = f"READ:SYS:VRM:{param}"
         return self._get_response_value(self.ask(cmd[:-2]) + cmd[-2:])
 
     def _get_response(self, msg: str) -> str:
         return msg.split(":")[-1]
 
-    def _get_response_value(self, msg: str) -> Optional[Union[float, str, list[float]]]:
+    def _get_response_value(self, msg: str) -> float | str | list[float] | None:
         msg = self._get_response(msg)
         if msg.endswith("NOT_FOUND"):
             return None
@@ -301,7 +320,7 @@ class OxfordTriton(IPInstrument):
         except Exception:
             return msg
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         """Return the Instrument Identifier Message"""
         idstr = self.ask("*IDN?")
         idparts = [p.strip() for p in idstr.split(":", 4)][1:]
@@ -327,9 +346,7 @@ class OxfordTriton(IPInstrument):
         self._control_channel = channel
         self.write(f"SET:DEV:T{self._get_control_channel()}:TEMP:LOOP:HTR:H1")
 
-    def _get_control_param(
-        self, param: str
-    ) -> Optional[Union[float, str, list[float]]]:
+    def _get_control_param(self, param: str) -> float | str | list[float] | None:
         chan = self._get_control_channel()
         cmd = f"READ:DEV:T{chan}:TEMP:LOOP:{param}"
         return self._get_response_value(self.ask(cmd))
@@ -517,12 +534,12 @@ class OxfordTriton(IPInstrument):
     def _parse_time(self, msg: str) -> str:
         return msg[14:]
 
-    def _parse_temp(self, msg: str) -> Optional[float]:
+    def _parse_temp(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
         return float(msg.split("SIG:TEMP:")[-1].strip("K"))
 
-    def _parse_pres(self, msg: str) -> Optional[float]:
+    def _parse_pres(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
         return float(msg.split("SIG:PRES:")[-1].strip("mB")) * 1e3
@@ -545,7 +562,7 @@ class OxfordTriton(IPInstrument):
     def _set_pump_state(self, pump: str, state: str) -> None:
         self.write(f"SET:DEV:{pump}:PUMP:SIG:STATE:{state}")
 
-    def _get_parser_pump_speed(self, msg: str) -> Optional[float]:
+    def _get_parser_pump_speed(self, msg: str) -> float | None:
         if "NOT_FOUND" in msg:
             return None
         return float(msg.split("SPD:")[-1].strip("Hz"))
@@ -565,7 +582,7 @@ class OxfordTriton(IPInstrument):
     def _set_temp_state(self, chan: str, state: str) -> None:
         self.write(f"SET:DEV:{chan}:TEMP:MEAS:ENAB:{state}")
 
-    def _get_parser_state(self, key: str, msg: str) -> Optional[str]:
+    def _get_parser_state(self, key: str, msg: str) -> str | None:
         if "NOT_FOUND" in msg:
             return None
         return msg.split(f"{key}:")[-1]

@@ -1,5 +1,5 @@
 import re
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -8,6 +8,9 @@ from qcodes.dataset import new_data_set
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.measurements import DataSaver
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 CALLBACK_COUNT = 0
 CALLBACK_RUN_ID = None

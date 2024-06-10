@@ -5,9 +5,9 @@ This is a driver for the Stahl power supplies
 import logging
 import re
 from collections import OrderedDict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from pyvisa.resources.serial import SerialInstrument
@@ -24,6 +24,8 @@ from qcodes.validators import Numbers
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
+
+    from qcodes.parameters import Parameter
 
 logger = logging.getLogger()
 
@@ -55,14 +57,7 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class StahlChannel(InstrumentChannel):
-    """
-    A Stahl source channel
 
-    Args:
-        parent
-        name
-        channel_number
-    """
 
     acknowledge_reply = chr(6)
 
@@ -73,6 +68,15 @@ class StahlChannel(InstrumentChannel):
         channel_number: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
+        """
+        A Stahl source channel
+
+        Args:
+            parent: Parent instrument
+            name: Name of the channel
+            channel_number: The channel number
+            **kwargs: kwargs to be passed to the base class
+        """
         super().__init__(parent, name, **kwargs)
 
         self._channel_string = f"{channel_number:02d}"
@@ -80,7 +84,7 @@ class StahlChannel(InstrumentChannel):
 
         _FLOATING_POINT_RE = r"[+\-]?(?:[.,]\d+|\d+(?:[.,]\d*)?)(?:[eE][-+]?\d+)?"
 
-        self.add_parameter(
+        self.voltage: Parameter = self.add_parameter(
             "voltage",
             get_cmd=f"{self.parent.identifier} U{self._channel_string}",
             get_parser=chain(
@@ -92,8 +96,9 @@ class StahlChannel(InstrumentChannel):
             unit="V",
             vals=Numbers(-self.parent.voltage_range, self.parent.voltage_range),
         )
+        """Parameter voltage"""
 
-        self.add_parameter(
+        self.current: Parameter = self.add_parameter(
             "current",
             get_cmd=f"{self.parent.identifier} I{self._channel_string}",
             get_parser=chain(
@@ -103,8 +108,12 @@ class StahlChannel(InstrumentChannel):
             ),
             unit="A",
         )
+        """Parameter current"""
 
-        self.add_parameter("is_locked", get_cmd=self._get_lock_status)
+        self.is_locked: Parameter = self.add_parameter(
+            "is_locked", get_cmd=self._get_lock_status
+        )
+        """Parameter is_locked"""
 
     def _set_voltage(self, voltage: float) -> None:
         """
@@ -148,29 +157,6 @@ class StahlChannel(InstrumentChannel):
 
 
 class Stahl(VisaInstrument):
-    """
-    Stahl driver.
-
-    Args:
-        name: instrument name
-        address: A serial port or TCP/IP VISA address
-        **kwargs: forwarded to base class
-    The TCP/IP scenario can be used when the Stahl is connected to
-    a different computer, for example a Raspberry Pi running Linux,
-    and exposed using something like the following script:
-
-    ::
-
-        #!/bin/sh
-        DEVICE=/dev/ttyUSB0
-        PORT=8088
-        echo Listening...
-        while socat $DEVICE,echo=0,b115200,raw tcp-listen:$PORT,reuseaddr,nodelay; do
-            echo Restarting...
-        done
-
-    In this case the VISA address would be: ``"TCPIP0::hostname::8088::SOCKET"``
-    """
 
     default_terminator = "\r"
 
@@ -180,6 +166,30 @@ class Stahl(VisaInstrument):
         address: str,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
+        """
+        Stahl driver.
+
+        Args:
+            name: instrument name
+            address: A serial port or TCP/IP VISA address
+            **kwargs: forwarded to base class
+
+        The TCP/IP scenario can be used when the Stahl is connected to
+        a different computer, for example a Raspberry Pi running Linux,
+        and exposed using something like the following script:
+
+        ::
+
+            #!/bin/sh
+            DEVICE=/dev/ttyUSB0
+            PORT=8088
+            echo Listening...
+            while socat $DEVICE,echo=0,b115200,raw tcp-listen:$PORT,reuseaddr,nodelay; do
+                echo Restarting...
+            done
+
+        In this case the VISA address would be: ``"TCPIP0::hostname::8088::SOCKET"``
+        """
         super().__init__(name, address, **kwargs)
         if isinstance(self.visa_handle, TCPIPSocket):
             pass  # allow connection to remote serial device
@@ -205,12 +215,13 @@ class Stahl(VisaInstrument):
 
         self.add_submodule("channel", channels)
 
-        self.add_parameter(
+        self.temperature: Parameter = self.add_parameter(
             "temperature",
             get_cmd=f"{self.identifier} TEMP",
             get_parser=chain(re.compile("^TEMP (.*)°C$").findall, float),
             unit="C",
         )
+        """Parameter temperature"""
 
         self.connect_message()
 
@@ -263,7 +274,7 @@ class Stahl(VisaInstrument):
             for (name, converter), value in zip(converters.items(), result.groups())
         }
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         """
         The Stahl sends a uncommon IDN string which does not include a
         firmware version.

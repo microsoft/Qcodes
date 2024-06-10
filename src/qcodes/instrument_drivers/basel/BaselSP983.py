@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import DelegateParameter, Parameter
@@ -38,7 +38,7 @@ class BaselSP983(Instrument):
     def __init__(
         self,
         name: str,
-        input_offset_voltage: Optional[Parameter] = None,
+        input_offset_voltage: Parameter | None = None,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
         super().__init__(name, **kwargs)
@@ -76,7 +76,7 @@ class BaselSP983(Instrument):
         )
         """Parameter offset_voltage"""
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = "Physics Basel"
         model = "SP 983"
         serial = None

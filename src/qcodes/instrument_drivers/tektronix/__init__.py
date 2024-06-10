@@ -1,6 +1,6 @@
 from .AWG5014 import TektronixAWG5014
 from .AWG5208 import TektronixAWG5208
-from .AWG70000A import Tektronix70000AWGChannel
+from .AWG70000A import Tektronix70000AWGChannel, TektronixAWG70000Base
 from .AWG70002A import TektronixAWG70002A
 from .DPO7200xx import (
     TekronixDPOTrigger,  # pyright: ignore[reportDeprecated]
@@ -32,6 +32,7 @@ __all__ = [
     "TekronixDPOTrigger",
     "TektronixDPOTrigger",
     "TektronixDPOWaveform",
+    "TektronixAWG70000Base",
     "Tektronix70000AWGChannel",
     "TektronixAWG5014",
     "TektronixAWG5208",

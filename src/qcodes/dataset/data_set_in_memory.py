@@ -7,7 +7,7 @@ import os
 import time
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
@@ -49,7 +49,7 @@ from .exporters.export_info import ExportInfo
 from .linked_datasets.links import str_to_links
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Callable, Mapping, Sequence
 
     import pandas as pd
     import xarray as xr

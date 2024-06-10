@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -88,34 +88,50 @@ class SR560(Instrument):
         gains = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000,
                  10000, 20000, 50000]
 
-        self.add_parameter('cutoff_lo',
-                           get_cmd=None, set_cmd=None,
-                           initial_value='DC',
-                           label='High pass',
-                           unit='Hz',
-                           vals=Enum(*cutoffs))
+        self.cutoff_lo: Parameter = self.add_parameter(
+            "cutoff_lo",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value="DC",
+            label="High pass",
+            unit="Hz",
+            vals=Enum(*cutoffs),
+        )
+        """Parameter cutoff_lo"""
 
-        self.add_parameter('cutoff_hi',
-                           get_cmd=None, set_cmd=None,
-                           initial_value=1e6,
-                           label='Low pass',
-                           unit='Hz',
-                           vals=Enum(*cutoffs))
+        self.cutoff_hi: Parameter = self.add_parameter(
+            "cutoff_hi",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value=1e6,
+            label="Low pass",
+            unit="Hz",
+            vals=Enum(*cutoffs),
+        )
+        """Parameter cutoff_hi"""
 
-        self.add_parameter('invert',
-                           get_cmd=None, set_cmd=None,
-                           initial_value=True,
-                           label='Inverted output',
-                           vals=Bool())
+        self.invert: Parameter = self.add_parameter(
+            "invert",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value=True,
+            label="Inverted output",
+            vals=Bool(),
+        )
+        """Parameter invert"""
 
-        self.add_parameter('gain',
-                           get_cmd=None, set_cmd=None,
-                           initial_value=10,
-                           label='Gain',
-                           unit=None,
-                           vals=Enum(*gains))
+        self.gain: Parameter = self.add_parameter(
+            "gain",
+            get_cmd=None,
+            set_cmd=None,
+            initial_value=10,
+            label="Gain",
+            unit=None,
+            vals=Enum(*gains),
+        )
+        """Parameter gain"""
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = 'Stanford Research Systems'
         model = 'SR560'
         serial = None

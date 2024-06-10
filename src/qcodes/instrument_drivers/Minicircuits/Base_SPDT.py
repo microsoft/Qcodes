@@ -5,21 +5,26 @@ import re
 import warnings
 from typing import TYPE_CHECKING, Any
 
+from typing_extensions import deprecated
+
 from qcodes.instrument import (
     ChannelList,
     Instrument,
     InstrumentBaseKWArgs,
     InstrumentChannel,
 )
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Ints
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+    from qcodes.parameters import Parameter
+
 log = logging.getLogger(__name__)
 
 
-class SwitchChannelBase(InstrumentChannel):
+class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel):
     def __init__(
         self,
         parent: Instrument,
@@ -28,6 +33,9 @@ class SwitchChannelBase(InstrumentChannel):
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ):
         """
+        Base class for MiniCircuits SPDT Switch channels.
+        Should not be instantiated directly.
+
         Args:
             parent: The instrument the channel is a part of
             name: the name of the channel
@@ -40,12 +48,13 @@ class SwitchChannelBase(InstrumentChannel):
         _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         self.channel_number = _chanlist.index(channel_letter)
 
-        self.add_parameter(
+        self.switch: Parameter = self.add_parameter(
             'switch',
             label=f'switch {self.channel_letter}',
             set_cmd=self._set_switch,
             get_cmd=self._get_switch,
             vals=Ints(1, 2))
+        """Parameter switch"""
 
     def __call__(self, *args: int) -> int | None:
         if len(args) == 1:
@@ -63,10 +72,21 @@ class SwitchChannelBase(InstrumentChannel):
     def _get_switch(self) -> int:
         raise NotImplementedError()
 
+@deprecated(
+    "Deprecated alias, use MiniCircuitsSPDTSwitchChannelBase.",
+    category=QCoDeSDeprecationWarning,
+)
+class SwitchChannelBase(MiniCircuitsSPDTSwitchChannelBase):
+    pass
 
-class SPDT_Base(Instrument):
 
-    CHANNEL_CLASS: type[SwitchChannelBase]
+class MiniCircuitsSPDTBase(Instrument):
+    """
+    Base class for MiniCircuits SPDT Switch instruments.
+    Should not be instantiated directly.
+    """
+
+    CHANNEL_CLASS: type[MiniCircuitsSPDTSwitchChannelBase]
 
     def add_channels(self) -> None:
         channels = ChannelList(
@@ -136,3 +156,11 @@ class SPDT_Base(Instrument):
                 f" the model '{model}', it might not be supported"
             )
         return int(channels)
+
+
+@deprecated(
+    "Deprecated alias, use MiniCircuitsSPDTBase.",
+    category=QCoDeSDeprecationWarning,
+)
+class SPDT_Base(MiniCircuitsSPDTBase):
+    pass

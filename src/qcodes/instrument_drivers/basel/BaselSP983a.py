@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -32,7 +32,7 @@ class BaselSP983a(VisaInstrument):
         self,
         name: str,
         address: str,
-        input_offset_voltage: Optional[Parameter] = None,
+        input_offset_voltage: Parameter | None = None,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
         super().__init__(name, address, **kwargs)
@@ -84,7 +84,7 @@ class BaselSP983a(VisaInstrument):
         )
         """Parameter offset_voltage"""
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = "Physics Basel"
         model = "SP 983A"
         serial = None

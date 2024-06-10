@@ -1,6 +1,6 @@
 import time
 from bisect import bisect
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 from typing_extensions import deprecated
@@ -323,10 +323,10 @@ class LakeshoreBaseOutput(InstrumentChannel):
         self.setpoint(temperature)
 
     def wait_until_set_point_reached(
-            self,
-            wait_cycle_time: Optional[float] = None,
-            wait_tolerance: Optional[float] = None,
-            wait_equilibration_time: Optional[float] = None
+        self,
+        wait_cycle_time: float | None = None,
+        wait_tolerance: float | None = None,
+        wait_equilibration_time: float | None = None,
     ) -> None:
         """
         This function runs a loop that monitors the value of the heater's

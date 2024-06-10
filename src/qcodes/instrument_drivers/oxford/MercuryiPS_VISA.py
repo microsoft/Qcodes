@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +18,11 @@ from qcodes.instrument import (
 from qcodes.math_utils import FieldVector
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import Unpack
+
+    from qcodes.parameters import Parameter
 
 log = logging.getLogger(__name__)
 visalog = logging.getLogger('qcodes.instrument.visa')
@@ -95,81 +99,116 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         else:
             self.psu_string = "PSU"
 
-        self.add_parameter('voltage',
-                           label='Output voltage',
-                           get_cmd=partial(self._param_getter, 'SIG:VOLT'),
-                           unit='V',
-                           get_parser=partial(_signal_parser, 1))
+        self.voltage: Parameter = self.add_parameter(
+            "voltage",
+            label="Output voltage",
+            get_cmd=partial(self._param_getter, "SIG:VOLT"),
+            unit="V",
+            get_parser=partial(_signal_parser, 1),
+        )
+        """Parameter voltage"""
 
-        self.add_parameter('current',
-                           label='Output current',
-                           get_cmd=partial(self._param_getter, 'SIG:CURR'),
-                           unit='A',
-                           get_parser=partial(_signal_parser, 1))
+        self.current: Parameter = self.add_parameter(
+            "current",
+            label="Output current",
+            get_cmd=partial(self._param_getter, "SIG:CURR"),
+            unit="A",
+            get_parser=partial(_signal_parser, 1),
+        )
+        """Parameter current"""
 
-        self.add_parameter('current_persistent',
-                           label='Output persistent current',
-                           get_cmd=partial(self._param_getter, 'SIG:PCUR'),
-                           unit='A',
-                           get_parser=partial(_signal_parser, 1))
+        self.current_persistent: Parameter = self.add_parameter(
+            "current_persistent",
+            label="Output persistent current",
+            get_cmd=partial(self._param_getter, "SIG:PCUR"),
+            unit="A",
+            get_parser=partial(_signal_parser, 1),
+        )
+        """Parameter current_persistent"""
 
-        self.add_parameter('current_target',
-                           label='Target current',
-                           get_cmd=partial(self._param_getter, 'SIG:CSET'),
-                           unit='A',
-                           get_parser=partial(_signal_parser, 1))
+        self.current_target: Parameter = self.add_parameter(
+            "current_target",
+            label="Target current",
+            get_cmd=partial(self._param_getter, "SIG:CSET"),
+            unit="A",
+            get_parser=partial(_signal_parser, 1),
+        )
+        """Parameter current_target"""
 
-        self.add_parameter('field_target',
-                           label='Target field',
-                           get_cmd=partial(self._param_getter, 'SIG:FSET'),
-                           set_cmd=partial(self._param_setter, 'SIG:FSET'),
-                           unit='T',
-                           get_parser=partial(_signal_parser, 1))
+        self.field_target: Parameter = self.add_parameter(
+            "field_target",
+            label="Target field",
+            get_cmd=partial(self._param_getter, "SIG:FSET"),
+            set_cmd=partial(self._param_setter, "SIG:FSET"),
+            unit="T",
+            get_parser=partial(_signal_parser, 1),
+        )
+        """Parameter field_target"""
 
         # NB: The current ramp rate follows the field ramp rate
         # (converted via the ATOB param)
-        self.add_parameter('current_ramp_rate',
-                           label='Ramp rate (current)',
-                           unit='A/s',
-                           get_cmd=partial(self._param_getter, 'SIG:RCST'),
-                           get_parser=partial(_signal_parser, 1/60))
+        self.current_ramp_rate: Parameter = self.add_parameter(
+            "current_ramp_rate",
+            label="Ramp rate (current)",
+            unit="A/s",
+            get_cmd=partial(self._param_getter, "SIG:RCST"),
+            get_parser=partial(_signal_parser, 1 / 60),
+        )
+        """Parameter current_ramp_rate"""
 
-        self.add_parameter('field_ramp_rate',
-                           label='Ramp rate (field)',
-                           unit='T/s',
-                           set_cmd=partial(self._param_setter, 'SIG:RFST'),
-                           get_cmd=partial(self._param_getter, 'SIG:RFST'),
-                           get_parser=partial(_signal_parser, 1/60),
-                           set_parser=lambda x: x*60)
+        self.field_ramp_rate: Parameter = self.add_parameter(
+            "field_ramp_rate",
+            label="Ramp rate (field)",
+            unit="T/s",
+            set_cmd=partial(self._param_setter, "SIG:RFST"),
+            get_cmd=partial(self._param_getter, "SIG:RFST"),
+            get_parser=partial(_signal_parser, 1 / 60),
+            set_parser=lambda x: x * 60,
+        )
+        """Parameter field_ramp_rate"""
 
-        self.add_parameter('field',
-                           label='Field strength',
-                           unit='T',
-                           get_cmd=partial(self._param_getter, 'SIG:FLD'),
-                           get_parser=partial(_signal_parser, 1))
+        self.field: Parameter = self.add_parameter(
+            "field",
+            label="Field strength",
+            unit="T",
+            get_cmd=partial(self._param_getter, "SIG:FLD"),
+            get_parser=partial(_signal_parser, 1),
+        )
+        """Parameter field"""
 
-        self.add_parameter('field_persistent',
-                           label='Persistent field strength',
-                           unit='T',
-                           get_cmd=partial(self._param_getter, 'SIG:PFLD'),
-                           get_parser=partial(_signal_parser, 1))
+        self.field_persistent: Parameter = self.add_parameter(
+            "field_persistent",
+            label="Persistent field strength",
+            unit="T",
+            get_cmd=partial(self._param_getter, "SIG:PFLD"),
+            get_parser=partial(_signal_parser, 1),
+        )
+        """Parameter field_persistent"""
 
-        self.add_parameter('ATOB',
-                           label='Current to field ratio',
-                           unit='A/T',
-                           get_cmd=partial(self._param_getter, 'ATOB'),
-                           get_parser=partial(_signal_parser, 1),
-                           set_cmd=partial(self._param_setter, 'ATOB'))
+        self.ATOB: Parameter = self.add_parameter(
+            "ATOB",
+            label="Current to field ratio",
+            unit="A/T",
+            get_cmd=partial(self._param_getter, "ATOB"),
+            get_parser=partial(_signal_parser, 1),
+            set_cmd=partial(self._param_setter, "ATOB"),
+        )
+        """Parameter ATOB"""
 
-        self.add_parameter('ramp_status',
-                           label='Ramp status',
-                           get_cmd=partial(self._param_getter, 'ACTN'),
-                           set_cmd=self._ramp_status_setter,
-                           get_parser=_response_preparser,
-                           val_mapping={'HOLD': 'HOLD',
-                                        'TO SET': 'RTOS',
-                                        'CLAMP': 'CLMP',
-                                        'TO ZERO': 'RTOZ'})
+        self.ramp_status: Parameter = self.add_parameter(
+            "ramp_status",
+            label="Ramp status",
+            get_cmd=partial(self._param_getter, "ACTN"),
+            set_cmd=self._ramp_status_setter,
+            get_parser=_response_preparser,
+            val_mapping={
+                "HOLD": "HOLD",
+                "TO SET": "RTOS",
+                "CLAMP": "CLMP",
+                "TO ZERO": "RTOZ",
+            },
+        )
+        """Parameter ramp_status"""
 
     def ramp_to_target(self) -> None:
         """
@@ -325,22 +364,31 @@ class OxfordMercuryiPS(VisaInstrument):
 
         # FieldVector-valued parameters #
 
-        self.add_parameter(name="field_target",
-                           label="target field",
-                           unit="T",
-                           get_cmd=self._get_target_field,
-                           set_cmd=self._set_target_field)
+        self.field_target: Parameter = self.add_parameter(
+            name="field_target",
+            label="target field",
+            unit="T",
+            get_cmd=self._get_target_field,
+            set_cmd=self._set_target_field,
+        )
+        """Parameter field_target"""
 
-        self.add_parameter(name="field_measured",
-                           label="measured field",
-                           unit="T",
-                           get_cmd=self._get_field)
+        self.field_measured: Parameter = self.add_parameter(
+            name="field_measured",
+            label="measured field",
+            unit="T",
+            get_cmd=self._get_field,
+        )
+        """Parameter field_measured"""
 
-        self.add_parameter(name="field_ramp_rate",
-                           label="ramp rate",
-                           unit="T/s",
-                           get_cmd=self._get_ramp_rate,
-                           set_cmd=self._set_ramp_rate)
+        self.field_ramp_rate: Parameter = self.add_parameter(
+            name="field_ramp_rate",
+            label="ramp rate",
+            unit="T/s",
+            get_cmd=self._get_ramp_rate,
+            set_cmd=self._set_ramp_rate,
+        )
+        """Parameter field_ramp_rate"""
 
         self.connect_message()
 

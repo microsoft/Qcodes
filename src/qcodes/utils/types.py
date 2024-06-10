@@ -3,11 +3,9 @@ Useful collections of types used around QCoDeS
 """
 from __future__ import annotations
 
-from typing import Union
-
 import numpy as np
 
-complex_type_union = Union[np.complex64, np.complex128, np.complexfloating, complex]
+complex_type_union = np.complex64 | np.complex128 | np.complexfloating | complex
 
 
 numpy_concrete_ints = (np.int8, np.int16, np.int32, np.int64,

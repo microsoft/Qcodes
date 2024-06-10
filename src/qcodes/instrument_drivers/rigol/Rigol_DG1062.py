@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 from qcodes import validators as vals
 from qcodes.instrument import (
@@ -14,6 +14,8 @@ from qcodes.utils import partial_with_docstring
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
+
+    from qcodes.parameters import Parameter
 
 log = logging.getLogger(__name__)
 
@@ -34,21 +36,23 @@ class RigolDG1062Burst(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         self.channel = channel
 
-        self.add_parameter(
+        self.on: Parameter = self.add_parameter(
             "on",
             get_cmd=f":SOUR{channel}:BURS?",
             set_cmd=f":SOUR{channel}:BURS {{}}",
             vals=vals.Enum(0, 1, "ON", "OFF"),
         )
+        """Parameter on"""
 
-        self.add_parameter(
+        self.polarity: Parameter = self.add_parameter(
             "polarity",
             get_cmd=f":SOUR{channel}:BURS:GATE:POL?",
             set_cmd=f":SOUR{channel}:BURS:GATE:POL {{}}",
             vals=vals.Enum("NORM", "INV"),
         )
+        """Parameter polarity"""
 
-        self.add_parameter(
+        self.period: Parameter = self.add_parameter(
             "period",
             get_cmd=f":SOUR{channel}:BURS:INT:PER?",
             set_cmd=f":SOUR{channel}:BURS:INT:PER {{}}",
@@ -56,50 +60,57 @@ class RigolDG1062Burst(InstrumentChannel):
                 vals.Numbers(min_value=3e-6, max_value=500), vals.Enum("MIN", "MAX")
             ),
         )
+        """Parameter period"""
 
-        self.add_parameter(
+        self.mode: Parameter = self.add_parameter(
             "mode",
             get_cmd=f":SOUR{channel}:BURS:MODE?",
             set_cmd=f":SOUR{channel}:BURS:MODE {{}}",
             vals=vals.Enum("TRIG", "INF", "GAT"),
         )
+        """Parameter mode"""
 
-        self.add_parameter(
+        self.ncycles: Parameter = self.add_parameter(
             "ncycles",
             get_cmd=f":SOUR{channel}:BURS:NCYC?",
             set_cmd=f":SOUR{channel}:BURS:NCYC {{}}",
             vals=vals.Numbers(min_value=1, max_value=500000),
         )
+        """Parameter ncycles"""
 
-        self.add_parameter(
+        self.phase: Parameter = self.add_parameter(
             "phase",
             get_cmd=f":SOUR{channel}:BURS:PHAS?",
             set_cmd=f":SOUR{channel}:BURS:PHAS {{}}",
             vals=vals.Numbers(min_value=0, max_value=360),
         )
+        """Parameter phase"""
 
-        self.add_parameter(
+        self.time_delay: Parameter = self.add_parameter(
             "time_delay",
             get_cmd=f":SOUR{channel}:BURS:TDEL?",
             set_cmd=f":SOUR{channel}:BURS:TDEL {{}}",
             vals=vals.Numbers(min_value=0),
         )
+        """Parameter time_delay"""
 
-        self.add_parameter(
+        self.trigger_slope: Parameter = self.add_parameter(
             "trigger_slope",
             get_cmd=f":SOUR{channel}:BURS:TRIG:SLOP?",
             set_cmd=f":SOUR{channel}:BURS:TRIG:SLOP {{}}",
             vals=vals.Enum("POS", "NEG"),
         )
+        """Parameter trigger_slope"""
 
-        self.add_parameter(
+        self.source: Parameter = self.add_parameter(
             "source",
             get_cmd=f":SOUR{channel}:BURS:TRIG:SOUR?",
             set_cmd=f":SOUR{channel}:BURS:TRIG:SOUR {{}}",
             vals=vals.Enum("INT", "EXT", "MAN"),
         )
+        """Parameter source"""
 
-        self.add_parameter(
+        self.idle: Parameter = self.add_parameter(
             "idle",
             get_cmd=f":SOUR{channel}:BURST:IDLE?",
             set_cmd=f":SOUR{channel}:BURST:IDLE {{}}",
@@ -107,6 +118,7 @@ class RigolDG1062Burst(InstrumentChannel):
                 vals.Enum("FPT", "TOP", "BOTTOM", "CENTER"), vals.Numbers()  # DIY
             ),
         )
+        """Parameter idle"""
 
     def trigger(self) -> None:
         """
@@ -178,11 +190,12 @@ class RigolDG1062Channel(InstrumentChannel):
                 set_cmd=partial(self._set_waveform_param, param),
             )
 
-        self.add_parameter(
+        self.waveform: Parameter = self.add_parameter(
             "waveform", get_cmd=partial(self._get_waveform_param, "waveform")
         )
+        """Parameter waveform"""
 
-        self.add_parameter(
+        self.impedance: Parameter = self.add_parameter(
             "impedance",
             get_cmd=f":OUTPUT{channel}:IMP?",
             set_cmd=f":OUTPUT{channel}:IMP {{}}",
@@ -201,29 +214,33 @@ class RigolDG1062Channel(InstrumentChannel):
             ),
             set_parser=lambda value: "INF" if value == "HighZ" else value,
         )
+        """Parameter impedance"""
 
-        self.add_parameter(
+        self.sync: Parameter = self.add_parameter(
             "sync",
             get_cmd=f":OUTPUT{channel}:SYNC?",
             set_cmd=f"OUTPUT{channel}:SYNC {{}}",
             vals=vals.Enum(0, 1, "ON", "OFF"),
         )
+        """Parameter sync"""
 
-        self.add_parameter(
+        self.polarity: Parameter = self.add_parameter(
             "polarity",
             get_cmd=f":OUTPUT{channel}:GAT:POL?",
             set_cmd=f":OUTPUT{channel}:GAT:POL {{}}",
             vals=vals.OnOff(),
             val_mapping={1: "POSITIVE", 0: "NEGATIVE"},
         )
+        """Parameter polarity"""
 
-        self.add_parameter(
+        self.state: Parameter = self.add_parameter(
             "state",
             get_cmd=f"OUTPUT{channel}:STATE?",
             set_cmd=f"OUTPUT{channel}:STATE {{}}",
         )
+        """Parameter state"""
 
-        self.add_parameter(
+        self.duty_cycle: Parameter = self.add_parameter(
             "duty_cycle",
             get_cmd=self._get_duty_cycle,
             set_cmd=self._set_duty_cycle,
@@ -237,6 +254,11 @@ class RigolDG1062Channel(InstrumentChannel):
                 "the user an error"
             ),
         )
+        """
+        This functions reads/sets the duty cycle for a square and
+        pulse wave since these inherit a duty cycle.
+        For other waveforms it will give the user an error
+        """
 
         burst = RigolDG1062Burst(cast(RigolDG1062, self.parent), "burst", self.channel)
         self.add_submodule("burst", burst)
@@ -289,7 +311,7 @@ class RigolDG1062Channel(InstrumentChannel):
         Get all the parameters of the current waveform and
         """
 
-        def to_float(string: str) -> Union[float, str]:
+        def to_float(string: str) -> float | str:
             try:
                 return float(string)
             except ValueError:
@@ -299,7 +321,7 @@ class RigolDG1062Channel(InstrumentChannel):
         parts = waveform_str.strip('"').split(",")
 
         current_waveform = self.waveform_translate[parts[0]]
-        param_vals: list[Union[str, float]] = [current_waveform]
+        param_vals: list[str | float] = [current_waveform]
         param_vals += [to_float(i) for i in parts[1:]]
         param_names = ["waveform"] + list(self.waveform_params[current_waveform])
         params_dict = dict(zip(param_names, param_vals))
@@ -320,7 +342,7 @@ class RigolDG1062Channel(InstrumentChannel):
 
         return self._set_waveform_params(**params_dict)
 
-    def _set_waveform_params(self, **params_dict: Union[int, float]) -> None:
+    def _set_waveform_params(self, **params_dict: int | float) -> None:
         """
         Apply a waveform with values given in a dictionary.
         """

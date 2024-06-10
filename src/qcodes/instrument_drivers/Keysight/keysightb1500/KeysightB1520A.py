@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -384,7 +384,7 @@ class KeysightB1500CVSweeper(InstrumentChannel):
         return cmd
 
     @staticmethod
-    def _get_sweep_steps_parser(response: str) -> dict[str, Union[int, float]]:
+    def _get_sweep_steps_parser(response: str) -> dict[str, int | float]:
         match = re.search(r'WDCV(?P<_chan>.+?),(?P<sweep_mode>.+?),'
                           r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
                           r'(?P<sweep_steps>.+?)(;|$)',
@@ -394,7 +394,7 @@ class KeysightB1500CVSweeper(InstrumentChannel):
 
         resp_dict = match.groupdict()
 
-        out_dict: dict[str, Union[int, float]] = {}
+        out_dict: dict[str, int | float] = {}
         out_dict['_chan'] = int(resp_dict['_chan'])
         out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
         out_dict['sweep_start'] = fixed_negative_float(
@@ -404,12 +404,13 @@ class KeysightB1500CVSweeper(InstrumentChannel):
 
         return out_dict
 
-    def _set_sweep_auto_abort(self, val: Union[bool, constants.Abort]) -> None:
+    def _set_sweep_auto_abort(self, val: bool | constants.Abort) -> None:
         msg = MessageBuilder().wmdcv(abort=val)
         self.write(msg.message)
 
     def _set_post_sweep_voltage_condition(
-            self, val: Union[constants.WMDCV.Post, int]) -> None:
+        self, val: constants.WMDCV.Post | int
+    ) -> None:
         msg = MessageBuilder().wmdcv(abort=self.sweep_auto_abort(), post=val)
         self.write(msg.message)
 
@@ -464,7 +465,7 @@ class KeysightB1520A(KeysightB1500Module):
     def __init__(
         self,
         parent: "KeysightB1500",
-        name: Optional[str],
+        name: str | None,
         slot_nr: int,
         **kwargs: Any,
     ):
@@ -473,7 +474,7 @@ class KeysightB1520A(KeysightB1500Module):
         self.channels = (ChNr(slot_nr),)
         self.setup_fnc_already_run = False
         self._ranging_mode: constants.RangingMode = constants.RangingMode.AUTO
-        self._measurement_range_for_non_auto: Optional[int] = None
+        self._measurement_range_for_non_auto: int | None = None
 
         self.voltage_dc: Parameter = self.add_parameter(
             name="voltage_dc",
@@ -851,7 +852,7 @@ class KeysightB1520A(KeysightB1500Module):
 
         self.write(msg.message)
 
-    def _get_dcv(self) -> dict[str, Union[str, float]]:
+    def _get_dcv(self) -> dict[str, str | float]:
         if not self.is_enabled():
             raise RuntimeError("The channels are disabled. Cannot get value.")
 
@@ -898,8 +899,7 @@ class KeysightB1520A(KeysightB1500Module):
         self.write(msg.message)
 
     def phase_compensation(
-            self,
-            mode: Optional[Union[constants.ADJQuery.Mode, int]] = None
+        self, mode: constants.ADJQuery.Mode | int | None = None
     ) -> constants.ADJQuery.Response:
         """
         Performs the MFCMU phase compensation, sets the compensation
@@ -962,7 +962,7 @@ class KeysightB1520A(KeysightB1500Module):
         msg = MessageBuilder().ab()
         self.write(msg.message)
 
-    def _set_measurement_mode(self, mode: Union[MM.Mode, int]) -> None:
+    def _set_measurement_mode(self, mode: MM.Mode | int) -> None:
         self.root_instrument.set_measurement_mode(mode=mode,
                                                   channels=(self.channels[0],))
 
@@ -977,7 +977,7 @@ class KeysightB1520A(KeysightB1500Module):
         msg = MessageBuilder().lmn(enable_data_monitor=val)
         self.write(msg.message)
 
-    def _set_ranging_mode(self, val: Union[constants.RangingMode, int]) -> None:
+    def _set_ranging_mode(self, val: constants.RangingMode | int) -> None:
         self._ranging_mode = constants.RangingMode(val)
         if val == constants.RangingMode.AUTO:
             self._measurement_range_for_non_auto = None
@@ -988,7 +988,7 @@ class KeysightB1520A(KeysightB1500Module):
         )
         self.write(msg.message)
 
-    def _set_measurement_range_for_non_auto(self, val: Optional[int]) -> None:
+    def _set_measurement_range_for_non_auto(self, val: int | None) -> None:
         self._measurement_range_for_non_auto = val
         msg = MessageBuilder().rc(
             chnum=self.channels[0],
@@ -998,31 +998,30 @@ class KeysightB1520A(KeysightB1500Module):
         self.write(msg.message)
 
     def setup_staircase_cv(
-            self,
-            v_start: float,
-            v_end: float,
-            n_steps: int,
-            freq: float,
-            ac_rms: float,
-            post_sweep_voltage_condition: Union[
-                constants.WMDCV.Post, int] = constants.WMDCV.Post.STOP,
-            adc_mode: Union[constants.ACT.Mode, int] = constants.ACT.Mode.PLC,
-            adc_coef: int = 5,
-            imp_model: Union[constants.IMP.MeasurementMode,
-                             int] = constants.IMP.MeasurementMode.Cp_D,
-            ranging_mode: Union[constants.RangingMode,
-                                int] = constants.RangingMode.AUTO,
-            fixed_range_val: Optional[int] = None,
-            hold_delay: float = 0,
-            delay: float = 0,
-            step_delay: float = 0,
-            trigger_delay: float = 0,
-            measure_delay: float = 0,
-            abort_enabled: Union[constants.Abort,
-                                 int] = constants.Abort.ENABLED,
-            sweep_mode: Union[constants.SweepMode,
-                              int] = constants.SweepMode.LINEAR,
-            volt_monitor: bool = True
+        self,
+        v_start: float,
+        v_end: float,
+        n_steps: int,
+        freq: float,
+        ac_rms: float,
+        post_sweep_voltage_condition: (
+            constants.WMDCV.Post | int
+        ) = constants.WMDCV.Post.STOP,
+        adc_mode: constants.ACT.Mode | int = constants.ACT.Mode.PLC,
+        adc_coef: int = 5,
+        imp_model: (
+            constants.IMP.MeasurementMode | int
+        ) = constants.IMP.MeasurementMode.Cp_D,
+        ranging_mode: constants.RangingMode | int = constants.RangingMode.AUTO,
+        fixed_range_val: int | None = None,
+        hold_delay: float = 0,
+        delay: float = 0,
+        step_delay: float = 0,
+        trigger_delay: float = 0,
+        measure_delay: float = 0,
+        abort_enabled: constants.Abort | int = constants.Abort.ENABLED,
+        sweep_mode: constants.SweepMode | int = constants.SweepMode.LINEAR,
+        volt_monitor: bool = True,
     ) -> None:
         """
         Convenience function which requires all inputs to properly setup a
@@ -1209,8 +1208,7 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
         return self.param1.value, self.param2.value
 
     def update_name_label_unit_from_impedance_model(
-            self,
-            model: Optional[constants.IMP.MeasurementMode] = None
+        self, model: constants.IMP.MeasurementMode | None = None
     ) -> None:
 
         if model is None:
@@ -1439,7 +1437,7 @@ class KeysightB1500FrequencyList(InstrumentChannel):
         msg = MessageBuilder().corrl(chnum=self._chnum, freq=freq)
         self.write(msg.message)
 
-    def query(self, index: Optional[int] = None) -> float:
+    def query(self, index: int | None = None) -> float:
         """
         Query the frequency list for CMU data correction.
 

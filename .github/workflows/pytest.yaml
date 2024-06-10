@@ -30,15 +30,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12"]
         min-version: [false]
         include:
           - os: ubuntu-latest
-            python-version: "3.9"
+            python-version: "3.10"
             min-version: true
         exclude:
           - os: ubuntu-latest
-            python-version: "3.9"
+            python-version: "3.10"
           - os: windows-latest
             python-version: "3.11"
           - os: windows-latest
@@ -50,7 +50,7 @@ jobs:
     steps:
 
     - name: Harden Runner
-      uses: step-security/harden-runner@f086349bfa2bd1361f7909c78558e816508cdc10 # v2.8.0
+      uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
       with:
         egress-policy: audit
 

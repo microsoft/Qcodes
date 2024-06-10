@@ -174,7 +174,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False
         """
-        instrument: Union[KeysightInfiniiumChannel, KeysightInfiniiumFunction]
+        instrument: KeysightInfiniiumChannel | KeysightInfiniiumFunction
         instrument = self.instrument  # type: ignore[assignment]
         if preamble is None:
             instrument.write(f":WAV:SOUR {self._channel}")
@@ -1122,7 +1122,7 @@ class KeysightInfiniium(VisaInstrument):
         # Sample Rate
         try:
             # Set BW to auto in order to query this
-            bw_set: Union[float, Literal["AUTO"]] = float(self.ask(":ACQ:BAND?"))
+            bw_set: float | Literal["AUTO"] = float(self.ask(":ACQ:BAND?"))
             if np.isclose(bw_set, self.max_bw):
                 # Auto returns max bandwidth
                 bw_set = "AUTO"
@@ -1199,7 +1199,7 @@ class KeysightInfiniium(VisaInstrument):
             if channel.display():
                 channel.update_setpoints()
 
-    def digitize(self, timeout: Optional[int] = None) -> None:
+    def digitize(self, timeout: int | None = None) -> None:
         """
         Digitize a full waveform and block until the acquisition is complete.
 
