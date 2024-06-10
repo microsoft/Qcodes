@@ -15,7 +15,7 @@ from qcodes.instrument import (
     VisaInstrument,
     VisaInstrumentKWArgs,
 )
-from qcodes.parameters import ArrayParameter, ParamRawDataType
+from qcodes.parameters import ArrayParameter, Parameter, ParamRawDataType
 
 log = logging.getLogger(__name__)
 
@@ -227,31 +227,39 @@ class TektronixTPS2012Channel(InstrumentChannel):
     ):
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter('scale',
-                           label=f'Channel {channel} Scale',
-                           unit='V/div',
-                           get_cmd=f'CH{channel}:SCAle?',
-                           set_cmd='CH{}:SCAle {}'.format(channel, '{}'),
-                           get_parser=float
-                           )
-        self.add_parameter('position',
-                           label=f'Channel {channel} Position',
-                           unit='div',
-                           get_cmd=f'CH{channel}:POSition?',
-                           set_cmd='CH{}:POSition {}'.format(channel, '{}'),
-                           get_parser=float
-                           )
-        self.add_parameter('curvedata',
-                           channel=channel,
-                           parameter_class=ScopeArray,
-                           )
-        self.add_parameter('state',
-                           label=f'Channel {channel} display state',
-                           set_cmd='SELect:CH{} {}'.format(channel, '{}'),
-                           get_cmd=partial(self._get_state, channel),
-                           val_mapping={'ON': 1, 'OFF': 0},
-                           vals=vals.Enum('ON', 'OFF')
-                           )
+        self.scale: Parameter = self.add_parameter(
+            "scale",
+            label=f"Channel {channel} Scale",
+            unit="V/div",
+            get_cmd=f"CH{channel}:SCAle?",
+            set_cmd="CH{}:SCAle {}".format(channel, "{}"),
+            get_parser=float,
+        )
+        """Parameter scale"""
+        self.position: Parameter = self.add_parameter(
+            "position",
+            label=f"Channel {channel} Position",
+            unit="div",
+            get_cmd=f"CH{channel}:POSition?",
+            set_cmd="CH{}:POSition {}".format(channel, "{}"),
+            get_parser=float,
+        )
+        """Parameter position"""
+        self.curvedata: ScopeArray = self.add_parameter(
+            "curvedata",
+            channel=channel,
+            parameter_class=ScopeArray,
+        )
+        """Parameter curvedata"""
+        self.state: Parameter = self.add_parameter(
+            "state",
+            label=f"Channel {channel} display state",
+            set_cmd="SELect:CH{} {}".format(channel, "{}"),
+            get_cmd=partial(self._get_state, channel),
+            val_mapping={"ON": 1, "OFF": 0},
+            vals=vals.Enum("ON", "OFF"),
+        )
+        """Parameter state"""
 
     def _get_state(self, ch: int) -> int:
         """
@@ -309,49 +317,89 @@ class TektronixTPS2012(VisaInstrument):
                           docstring='Stop acquisition')
 
         # general parameters
-        self.add_parameter('trigger_type',
-                           label='Type of the trigger',
-                           get_cmd='TRIGger:MAIn:TYPe?',
-                           set_cmd='TRIGger:MAIn:TYPe {}',
-                           vals=vals.Enum('EDGE', 'VIDEO', 'PULSE')
-                           )
-        self.add_parameter('trigger_source',
-                           label='Source for the trigger',
-                           get_cmd='TRIGger:MAIn:EDGE:SOURce?',
-                           set_cmd='TRIGger:MAIn:EDGE:SOURce {}',
-                           vals=vals.Enum('CH1', 'CH2')
-                           )
-        self.add_parameter('trigger_edge_slope',
-                           label='Slope for edge trigger',
-                           get_cmd='TRIGger:MAIn:EDGE:SLOpe?',
-                           set_cmd='TRIGger:MAIn:EDGE:SLOpe {}',
-                           vals=vals.Enum('FALL', 'RISE')
-                           )
-        self.add_parameter('trigger_level',
-                           label='Trigger level',
-                           unit='V',
-                           get_cmd='TRIGger:MAIn:LEVel?',
-                           set_cmd='TRIGger:MAIn:LEVel {}',
-                           vals=vals.Numbers()
-                           )
-        self.add_parameter('data_source',
-                           label='Data source',
-                           get_cmd='DATa:SOUrce?',
-                           set_cmd='DATa:SOURce {}',
-                           vals=vals.Enum('CH1', 'CH2')
-                           )
-        self.add_parameter('horizontal_scale',
-                           label='Horizontal scale',
-                           unit='s',
-                           get_cmd='HORizontal:SCAle?',
-                           set_cmd=self._set_timescale,
-                           get_parser=float,
-                           vals=vals.Enum(5e-9, 10e-9, 25e-9, 50e-9, 100e-9,
-                                          250e-9, 500e-9, 1e-6, 2.5e-6, 5e-6,
-                                          10e-6, 25e-6, 50e-6, 100e-6, 250e-6,
-                                          500e-6, 1e-3, 2.5e-3, 5e-3, 10e-3,
-                                          25e-3, 50e-3, 100e-3, 250e-3, 500e-3,
-                                          1, 2.5, 5, 10, 25, 50))
+        self.trigger_type: Parameter = self.add_parameter(
+            "trigger_type",
+            label="Type of the trigger",
+            get_cmd="TRIGger:MAIn:TYPe?",
+            set_cmd="TRIGger:MAIn:TYPe {}",
+            vals=vals.Enum("EDGE", "VIDEO", "PULSE"),
+        )
+        """Parameter trigger_type"""
+        self.trigger_source: Parameter = self.add_parameter(
+            "trigger_source",
+            label="Source for the trigger",
+            get_cmd="TRIGger:MAIn:EDGE:SOURce?",
+            set_cmd="TRIGger:MAIn:EDGE:SOURce {}",
+            vals=vals.Enum("CH1", "CH2"),
+        )
+        """Parameter trigger_source"""
+        self.trigger_edge_slope: Parameter = self.add_parameter(
+            "trigger_edge_slope",
+            label="Slope for edge trigger",
+            get_cmd="TRIGger:MAIn:EDGE:SLOpe?",
+            set_cmd="TRIGger:MAIn:EDGE:SLOpe {}",
+            vals=vals.Enum("FALL", "RISE"),
+        )
+        """Parameter trigger_edge_slope"""
+        self.trigger_level: Parameter = self.add_parameter(
+            "trigger_level",
+            label="Trigger level",
+            unit="V",
+            get_cmd="TRIGger:MAIn:LEVel?",
+            set_cmd="TRIGger:MAIn:LEVel {}",
+            vals=vals.Numbers(),
+        )
+        """Parameter trigger_level"""
+        self.data_source: Parameter = self.add_parameter(
+            "data_source",
+            label="Data source",
+            get_cmd="DATa:SOUrce?",
+            set_cmd="DATa:SOURce {}",
+            vals=vals.Enum("CH1", "CH2"),
+        )
+        """Parameter data_source"""
+        self.horizontal_scale: Parameter = self.add_parameter(
+            "horizontal_scale",
+            label="Horizontal scale",
+            unit="s",
+            get_cmd="HORizontal:SCAle?",
+            set_cmd=self._set_timescale,
+            get_parser=float,
+            vals=vals.Enum(
+                5e-9,
+                10e-9,
+                25e-9,
+                50e-9,
+                100e-9,
+                250e-9,
+                500e-9,
+                1e-6,
+                2.5e-6,
+                5e-6,
+                10e-6,
+                25e-6,
+                50e-6,
+                100e-6,
+                250e-6,
+                500e-6,
+                1e-3,
+                2.5e-3,
+                5e-3,
+                10e-3,
+                25e-3,
+                50e-3,
+                100e-3,
+                250e-3,
+                500e-3,
+                1,
+                2.5,
+                5,
+                10,
+                25,
+                50,
+            ),
+        )
+        """Parameter horizontal_scale"""
 
         # channel-specific parameters
         channels = ChannelList(
