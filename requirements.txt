@@ -135,7 +135,7 @@ jinja2==3.1.4
     #   nbsphinx
     #   sphinx
     #   towncrier
-jsonpointer==2.4
+jsonpointer==3.0.0
     # via sphinx-jsonschema
 jsonref==1.1.0
     # via zhinst-toolkit
