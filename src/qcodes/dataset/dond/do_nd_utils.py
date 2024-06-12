@@ -119,11 +119,13 @@ def _register_actions(
         meas.add_after_run(action, ())
 
 
-@contextmanager
-def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT]]:
-    interrupt_exception = None
 
-    def get_interrupt_exception() -> MeasInterruptT:
+
+@contextmanager
+def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT | None]]:
+    interrupt_exception: MeasInterruptT | None = None
+
+    def get_interrupt_exception() -> MeasInterruptT | None:
         nonlocal interrupt_exception
         return interrupt_exception
 
@@ -131,3 +133,4 @@ def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT]]:
         yield get_interrupt_exception
     except (KeyboardInterrupt, BreakConditionInterrupt) as e:
         interrupt_exception = e
+        raise
