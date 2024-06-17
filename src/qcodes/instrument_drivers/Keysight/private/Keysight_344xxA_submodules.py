@@ -657,7 +657,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
             "DIG" in options
             or version.parse(convert_legacy_version_to_supported_version("A.03"))
             <= version.parse(
-                convert_legacy_version_to_supported_version(idn["firmware"])
+                convert_legacy_version_to_supported_version(idn["firmware"])[:11]
             )
         )
         # Note that the firmware version check is still needed because
