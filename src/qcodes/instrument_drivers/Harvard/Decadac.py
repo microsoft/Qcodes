@@ -62,7 +62,7 @@ class DacReader:
         based on the minimum/maximum values of a given channel.
         Midrange is 32768.
         """
-        frac = code/65535.0
+        frac = code / 65535.0
         return (frac * (self.max_val - self.min_val)) + self.min_val
 
     def _set_slot(self):
