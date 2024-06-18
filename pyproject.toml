@@ -201,6 +201,7 @@ module = [
     "spyder.utils.site",
     "spyder_kernels.customize",
     "System.IO",
+    "zhinst.*"
 ]
 ignore_missing_imports = true
 
