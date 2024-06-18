@@ -209,8 +209,9 @@ ignore_missing_imports = true
 include = ["src","tests"]
 ignore = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
+    "src/qcodes/instrument_drivers/zurich_instruments/",
     ]
-reportMissingTypeStubs = true
+reportMissingTypeStubs = false
 reportDeprecated = true
 stubPath = "typings/stubs"
 
