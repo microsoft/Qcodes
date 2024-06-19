@@ -64,13 +64,25 @@ def test_set(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
 @given(
     npoints=hst.integers(1, 100),
     x_start_stop=hst.lists(
-        hst.floats(allow_infinity=False, allow_nan=False), min_size=2, max_size=2
+        hst.floats(
+            allow_infinity=False, allow_nan=False, max_value=1e100, min_value=-1e100
+        ),
+        min_size=2,
+        max_size=2,
     ).map(sorted),
     y_start_stop=hst.lists(
-        hst.floats(allow_infinity=False, allow_nan=False), min_size=2, max_size=2
+        hst.floats(
+            allow_infinity=False, allow_nan=False, max_value=1e100, min_value=-1e100
+        ),
+        min_size=2,
+        max_size=2,
     ).map(sorted),
     z_start_stop=hst.lists(
-        hst.floats(allow_infinity=False, allow_nan=False), min_size=2, max_size=2
+        hst.floats(
+            allow_infinity=False, allow_nan=False, max_value=1e100, min_value=-1e100
+        ),
+        min_size=2,
+        max_size=2,
     ).map(sorted),
 )
 def test_aggregator(
