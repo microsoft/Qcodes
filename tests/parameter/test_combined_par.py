@@ -63,9 +63,15 @@ def test_set(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     npoints=hst.integers(1, 100),
-    x_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
-    y_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
-    z_start_stop=hst.lists(hst.integers(), min_size=2, max_size=2).map(sorted),
+    x_start_stop=hst.lists(
+        hst.floats(allow_infinity=False, allow_nan=False), min_size=2, max_size=2
+    ).map(sorted),
+    y_start_stop=hst.lists(
+        hst.floats(allow_infinity=False, allow_nan=False), min_size=2, max_size=2
+    ).map(sorted),
+    z_start_stop=hst.lists(
+        hst.floats(allow_infinity=False, allow_nan=False), min_size=2, max_size=2
+    ).map(sorted),
 )
 def test_aggregator(
     parameters: list[ManualParameter],
