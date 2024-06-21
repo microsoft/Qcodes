@@ -119,44 +119,6 @@ def _register_actions(
         meas.add_after_run(action, ())
 
 
-# @contextmanager
-# def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT | None]]:
-#    interrupt_exception: MeasInterruptT | None = None
-#    interrupt_raised = False
-#
-#    def get_interrupt_exception() -> MeasInterruptT | None:
-#        nonlocal interrupt_exception
-#        return interrupt_exception
-#
-#    try:
-#        yield get_interrupt_exception
-#    except (KeyboardInterrupt, BreakConditionInterrupt) as e:
-#        interrupt_exception = e
-#        interrupt_raised = True
-#        raise  # Re-raise the exception to propagate it up
-#    finally:
-#        if interrupt_raised:
-#            # This ensures the exception is logged even if it's caught higher up
-#            log.warning(
-#                f"Measurement has been interrupted, data may be incomplete: {interrupt_exception}"
-#            )
-#
-#
-# @contextmanager
-# def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT | None]]:
-#    interrupt_exception: MeasInterruptT | None = None
-#
-#    def get_interrupt_exception() -> MeasInterruptT | None:
-#        nonlocal interrupt_exception
-#        return interrupt_exception
-#
-#    try:
-#        yield get_interrupt_exception
-#    except (KeyboardInterrupt, BreakConditionInterrupt) as e:
-#        interrupt_exception = e
-#        raise
-
-
 @contextmanager
 def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT | None]]:
     interrupt_exception: MeasInterruptT | None = None
