@@ -1,4 +1,3 @@
-import logging
 
 import hypothesis.strategies as hst
 import matplotlib
@@ -12,6 +11,7 @@ from pytest import LogCaptureFixture
 from qcodes import config, validators
 from qcodes.dataset import do1d, new_experiment
 from qcodes.dataset.data_set import DataSet
+from qcodes.dataset.dond.do_nd_utils import BreakConditionInterrupt
 from qcodes.instrument_drivers.mock_instruments import (
     ArraySetPointParam,
     Multi2DSetPointParam,
@@ -313,19 +313,15 @@ def test_do1d_break_condition(caplog: LogCaptureFixture, _param_set, _param) -> 
     def break_condition():
         return True
 
-    data = do1d(
-        _param_set,
-        start,
-        stop,
-        num_points,
-        delay,
-        _param,
-        break_condition=break_condition,
-    )
+    with pytest.raises(BreakConditionInterrupt, match="Break condition was met."):
+        do1d(
+            _param_set,
+            start,
+            stop,
+            num_points,
+            delay,
+            _param,
+            break_condition=break_condition,
+        )
 
-    assert isinstance(data[0], DataSet) is True
-    assert (
-        "qcodes.dataset.dond.do_nd_utils",
-        logging.WARNING,
-        "Measurement has been interrupted, data may be incomplete: Break condition was met.",
-    ) in caplog.record_tuples
+    assert "Measurement has been interrupted, data may be incomplete" in caplog.text
