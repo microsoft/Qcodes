@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from typing_extensions import deprecated
@@ -360,8 +360,8 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         parent: "RohdeSchwarzZNBBase",
         name: str,
         channel: int,
-        vna_parameter: Optional[str] = None,
-        existing_trace_to_bind_to: Optional[str] = None,
+        vna_parameter: str | None = None,
+        existing_trace_to_bind_to: str | None = None,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         """

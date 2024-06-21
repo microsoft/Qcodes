@@ -4,7 +4,7 @@
 import logging
 import time
 import warnings
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from packaging import version
@@ -540,7 +540,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
         name: str,
         address: str,
         *,
-        model: Optional[str] = None,
+        model: str | None = None,
         HD: bool = True,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:

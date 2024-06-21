@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
 from qcodes.parameters import MultiParameter, Parameter, ParamRawDataType
@@ -131,7 +131,7 @@ class SR560(Instrument):
         )
         """Parameter gain"""
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         vendor = 'Stanford Research Systems'
         model = 'SR560'
         serial = None

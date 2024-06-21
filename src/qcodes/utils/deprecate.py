@@ -1,7 +1,8 @@
 import types
 import warnings
+from collections.abc import Callable
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import wrapt  # type: ignore[import-untyped]
 
@@ -17,9 +18,7 @@ class QCoDeSDeprecationWarning(RuntimeWarning):
 
 
 def deprecation_message(
-    what: str,
-    reason: Optional[str] = None,
-    alternative: Optional[str] = None
+    what: str, reason: str | None = None, alternative: str | None = None
 ) -> str:
     msg = f'The {what} is deprecated'
     if reason is not None:
@@ -32,8 +31,8 @@ def deprecation_message(
 
 def issue_deprecation_warning(
     what: str,
-    reason: Optional[str] = None,
-    alternative: Optional[str] = None,
+    reason: str | None = None,
+    alternative: str | None = None,
     stacklevel: int = 3,
 ) -> None:
     """
@@ -46,8 +45,7 @@ def issue_deprecation_warning(
 
 
 def deprecate(
-        reason: Optional[str] = None,
-        alternative: Optional[str] = None
+    reason: str | None = None, alternative: str | None = None
 ) -> Callable[..., Any]:
     """
     A utility function to decorate deprecated functions and classes.

@@ -4,7 +4,7 @@ import cProfile
 import os
 from functools import wraps
 from time import sleep
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec
@@ -12,6 +12,7 @@ from typing_extensions import ParamSpec
 from qcodes.metadatable import MetadatableWithName
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
     from pytest import ExceptionInfo

@@ -5,7 +5,7 @@ import time
 import warnings
 from contextlib import suppress
 from functools import wraps
-from typing import Any, Callable, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
 import pytest
 from typing_extensions import ParamSpec
@@ -17,6 +17,9 @@ from qcodes.instrument_drivers.Lakeshore.lakeshore_base import (
 from qcodes.instrument_drivers.Lakeshore.Model_372 import Model_372
 from qcodes.logger import get_instrument_logger
 from qcodes.utils import QCoDeSDeprecationWarning
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 log = logging.getLogger(__name__)
 

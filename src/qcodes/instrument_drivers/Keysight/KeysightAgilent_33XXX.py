@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from typing_extensions import deprecated
 
@@ -51,7 +51,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
         """
         super().__init__(parent, name, **kwargs)
 
-        def val_parser(parser: type, inputstring: str) -> Union[float,int]:
+        def val_parser(parser: type, inputstring: str) -> float | int:
             """
             Parses return values from instrument. Meant to be used when a query
             can return a meaningful finite number or a numeric representation

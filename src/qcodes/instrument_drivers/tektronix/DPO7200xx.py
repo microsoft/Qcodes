@@ -6,7 +6,7 @@ MSO70000/C/DX Series Digital Oscilloscopes
 import textwrap
 import time
 from functools import partial
-from typing import Any, Callable, ClassVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np
 from typing_extensions import Unpack, deprecated
@@ -27,6 +27,9 @@ from qcodes.parameters import (
 )
 from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.validators import Arrays, Enum
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def strip_quotes(string: str) -> str:
@@ -156,28 +159,28 @@ class TektronixDPOData(InstrumentChannel):
         super().__init__(parent, name, **kwargs)
         # We can choose to retrieve data from arbitrary
         # start and stop indices of the buffer.
-        self.add_parameter(
+        self.start_index: Parameter = self.add_parameter(
             "start_index",
             get_cmd="DATa:STARt?",
             set_cmd="DATa:STARt {}",
-            get_parser=int
+            get_parser=int,
         )
+        """Parameter start_index"""
 
-        self.add_parameter(
-            "stop_index",
-            get_cmd="DATa:STOP?",
-            set_cmd="DATa:STOP {}",
-            get_parser=int
+        self.stop_index: Parameter = self.add_parameter(
+            "stop_index", get_cmd="DATa:STOP?", set_cmd="DATa:STOP {}", get_parser=int
         )
+        """Parameter stop_index"""
 
-        self.add_parameter(
+        self.source: Parameter = self.add_parameter(
             "source",
             get_cmd="DATa:SOU?",
             set_cmd="DATa:SOU {}",
             vals=Enum(*TektronixDPOWaveform.valid_identifiers),
         )
+        """Parameter source"""
 
-        self.add_parameter(
+        self.encoding: Parameter = self.add_parameter(
             "encoding",
             get_cmd="DATa:ENCdg?",
             set_cmd="DATa:ENCdg {}",
@@ -192,14 +195,25 @@ class TektronixDPOData(InstrumentChannel):
                 "SRPbinary",
                 "SFPbinary",
             ),
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
             For a detailed explanation of the
             set arguments, please consult the
             programmers manual at page 263/264.
 
             http://download.tek.com/manual/077001022.pdf
-            """)
+            """
+            ),
         )
+        """
+        Parameter encoding
+
+        For a detailed explanation of the
+        set arguments, please consult the
+        programmers manual at page 263/264.
+
+        http://download.tek.com/manual/077001022.pdf
+        """
 
 
 class TektronixDPOWaveform(InstrumentChannel):
@@ -231,82 +245,92 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         self._identifier = identifier
 
-        self.add_parameter(
+        self.raw_data_offset: Parameter = self.add_parameter(
             "raw_data_offset",
             get_cmd=self._get_cmd("WFMOutPRE:YOFF?"),
             get_parser=float,
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
                 Raw acquisition values range from min to max.
                 For instance, for unsigned binary values of one
                 byte, min=0 and max=255. The data offset specifies
                 the center of this range
-                """)
+                """
+            ),
         )
+        """
+        Raw acquisition values range from min to max.
+        For instance, for unsigned binary values of one
+        byte, min=0 and max=255. The data offset specifies
+        the center of this range
+        """
 
-        self.add_parameter(
-            "x_unit",
-            get_cmd=self._get_cmd("WFMOutpre:XUNit?"),
-            get_parser=strip_quotes
+        self.x_unit: Parameter = self.add_parameter(
+            "x_unit", get_cmd=self._get_cmd("WFMOutpre:XUNit?"), get_parser=strip_quotes
         )
+        """Parameter x_unit"""
 
-        self.add_parameter(
+        self.x_increment: Parameter = self.add_parameter(
             "x_increment",
             get_cmd=self._get_cmd("WFMOutPRE:XINCR?"),
             unit=self.x_unit(),
-            get_parser=float
+            get_parser=float,
         )
+        """Parameter x_increment"""
 
-        self.add_parameter(
-            "y_unit",
-            get_cmd=self._get_cmd("WFMOutpre:YUNit?"),
-            get_parser=strip_quotes
+        self.y_unit: Parameter = self.add_parameter(
+            "y_unit", get_cmd=self._get_cmd("WFMOutpre:YUNit?"), get_parser=strip_quotes
         )
+        """Parameter y_unit"""
 
-        self.add_parameter(
+        self.offset: Parameter = self.add_parameter(
             "offset",
             get_cmd=self._get_cmd("WFMOutPRE:YZERO?"),
             get_parser=float,
-            unit=self.y_unit()
+            unit=self.y_unit(),
         )
+        """Parameter offset"""
 
-        self.add_parameter(
+        self.scale: Parameter = self.add_parameter(
             "scale",
             get_cmd=self._get_cmd("WFMOutPRE:YMULT?"),
             get_parser=float,
-            unit=self.y_unit()
+            unit=self.y_unit(),
         )
+        """Parameter scale"""
 
-        self.add_parameter(
-            "length",
-            get_cmd=self._get_cmd("WFMOutpre:NR_Pt?"),
-            get_parser=int
+        self.length: Parameter = self.add_parameter(
+            "length", get_cmd=self._get_cmd("WFMOutpre:NR_Pt?"), get_parser=int
         )
+        """Parameter length"""
 
         hor_unit = self.x_unit()
         hor_label = "Time" if hor_unit == "s" else "Frequency"
 
-        self.add_parameter(
+        self.trace_axis: Parameter = self.add_parameter(
             "trace_axis",
             label=hor_label,
             get_cmd=self._get_trace_setpoints,
             vals=Arrays(shape=(self.length,)),
-            unit=hor_unit
+            unit=hor_unit,
         )
+        """Parameter trace_axis"""
 
         ver_unit = self.y_unit()
         ver_label = "Voltage" if ver_unit == "s" else "Amplitude"
 
-        self.add_parameter(
+        self.trace: ParameterWithSetpoints = self.add_parameter(
             "trace",
             label=ver_label,
             get_cmd=self._get_trace_data,
             vals=Arrays(shape=(self.length,)),
             unit=ver_unit,
             setpoints=(self.trace_axis,),
-            parameter_class=ParameterWithSetpoints
+            parameter_class=ParameterWithSetpoints,
         )
+        """Parameter trace"""
 
-    def _get_cmd(self, cmd_string: str) -> Callable[[], str]:
+    def _get_cmd(self, cmd_string: str) -> "Callable[[], str]":
         """
         Parameters defined in this submodule require the correct
         data source being selected first.
@@ -382,44 +406,42 @@ class TektronixDPOWaveformFormat(InstrumentChannel):
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter(
+        self.data_format: Parameter = self.add_parameter(
             "data_format",
             get_cmd="WFMOutpre:BN_Fmt?",
             set_cmd="WFMOutpre:BN_Fmt {}",
             val_mapping={
                 "signed_integer": "RI",
                 "unsigned_integer": "RP",
-                "floating_point": "FP"
-            }
+                "floating_point": "FP",
+            },
         )
+        """Parameter data_format"""
 
-        self.add_parameter(
+        self.is_big_endian: Parameter = self.add_parameter(
             "is_big_endian",
             get_cmd="WFMOutpre:BYT_Or?",
             set_cmd="WFMOutpre:BYT_Or {}",
-            val_mapping={
-                False: "LSB",
-                True: "MSB"
-            }
+            val_mapping={False: "LSB", True: "MSB"},
         )
+        """Parameter is_big_endian"""
 
-        self.add_parameter(
+        self.bytes_per_sample: Parameter = self.add_parameter(
             "bytes_per_sample",
             get_cmd="WFMOutpre:BYT_Nr?",
             set_cmd="WFMOutpre:BYT_Nr {}",
             get_parser=int,
-            vals=Enum(1, 2, 4, 8)
+            vals=Enum(1, 2, 4, 8),
         )
+        """Parameter bytes_per_sample"""
 
-        self.add_parameter(
+        self.is_binary: Parameter = self.add_parameter(
             "is_binary",
             get_cmd="WFMOutpre:ENCdg?",
             set_cmd="WFMOutpre:ENCdg {}",
-            val_mapping={
-                True: "BINARY",
-                False: "ASCII"
-            }
+            val_mapping={True: "BINARY", False: "ASCII"},
         )
+        """Parameter is_binary"""
 
 
 class TektronixDPOChannel(InstrumentChannel):
@@ -430,7 +452,7 @@ class TektronixDPOChannel(InstrumentChannel):
     """
     def __init__(
         self,
-        parent: Union[Instrument, InstrumentChannel],
+        parent: Instrument | InstrumentChannel,
         name: str,
         channel_number: int,
         **kwargs: Unpack[InstrumentBaseKWArgs],
@@ -442,54 +464,60 @@ class TektronixDPOChannel(InstrumentChannel):
             "waveform", TektronixDPOWaveform(self, "waveform", self._identifier)
         )
 
-        self.add_parameter(
+        self.scale: Parameter = self.add_parameter(
             "scale",
             get_cmd=f"{self._identifier}:SCA?",
             set_cmd=f"{self._identifier}:SCA {{}}",
             get_parser=float,
-            unit="V/div"
+            unit="V/div",
         )
+        """Parameter scale"""
 
-        self.add_parameter(
+        self.offset: Parameter = self.add_parameter(
             "offset",
             get_cmd=f"{self._identifier}:OFFS?",
             set_cmd=f"{self._identifier}:OFFS {{}}",
             get_parser=float,
-            unit="V"
+            unit="V",
         )
+        """Parameter offset"""
 
-        self.add_parameter(
+        self.position: Parameter = self.add_parameter(
             "position",
             get_cmd=f"{self._identifier}:POS?",
             set_cmd=f"{self._identifier}:POS {{}}",
             get_parser=float,
-            unit="V"
+            unit="V",
         )
+        """Parameter position"""
 
-        self.add_parameter(
+        self.termination: Parameter = self.add_parameter(
             "termination",
             get_cmd=f"{self._identifier}:TER?",
             set_cmd=f"{self._identifier}:TER {{}}",
-            vals=Enum(50, 1E6),
+            vals=Enum(50, 1e6),
             get_parser=float,
-            unit="Ohm"
+            unit="Ohm",
         )
+        """Parameter termination"""
 
-        self.add_parameter(
+        self.analog_to_digital_threshold: Parameter = self.add_parameter(
             "analog_to_digital_threshold",
             get_cmd=f"{self._identifier}:THRESH?",
             set_cmd=f"{self._identifier}:THRESH {{}}",
             get_parser=float,
             unit="V",
         )
+        """Parameter analog_to_digital_threshold"""
 
-        self.add_parameter(
+        self.termination_voltage: Parameter = self.add_parameter(
             "termination_voltage",
             get_cmd=f"{self._identifier}:VTERm:BIAS?",
             set_cmd=f"{self._identifier}:VTERm:BIAS {{}}",
             get_parser=float,
-            unit="V"
+            unit="V",
         )
+        """Parameter termination_voltage"""
 
     def set_trace_length(self, value: int) -> None:
         """
@@ -526,13 +554,13 @@ class TektronixDPOHorizontal(InstrumentChannel):
 
     def __init__(
         self,
-        parent: Union[Instrument, InstrumentChannel],
+        parent: Instrument | InstrumentChannel,
         name: str,
         **kwargs: Unpack[InstrumentBaseKWArgs],
     ) -> None:
         super().__init__(parent, name, **kwargs)
 
-        self.add_parameter(
+        self.mode: Parameter = self.add_parameter(
             "mode",
             get_cmd="HORizontal:MODE?",
             set_cmd="HORizontal:MODE {}",
@@ -550,63 +578,93 @@ class TektronixDPOHorizontal(InstrumentChannel):
             Manual mode lets you change sample mode and
             record length. Time per division or Horizontal
             scale is read only.
+            """,
+        )
+        """
+            Auto mode attempts to keep record length
+            constant as you change the time per division
+            setting. Record length is read only.
+
+            Constant mode attempts to keep sample rate
+            constant as you change the time per division
+            setting. Record length is read only.
+
+            Manual mode lets you change sample mode and
+            record length. Time per division or Horizontal
+            scale is read only.
             """
-        )
 
-        self.add_parameter(
-            "unit",
-            get_cmd="HORizontal:MAIn:UNIts?",
-            get_parser=strip_quotes
+        self.unit: Parameter = self.add_parameter(
+            "unit", get_cmd="HORizontal:MAIn:UNIts?", get_parser=strip_quotes
         )
+        """Parameter unit"""
 
-        self.add_parameter(
+        self.record_length: Parameter = self.add_parameter(
             "record_length",
             get_cmd="HORizontal:MODE:RECOrdlength?",
             set_cmd=self._set_record_length,
-            get_parser=float
+            get_parser=float,
         )
+        """Parameter record_length"""
 
-        self.add_parameter(
+        self.sample_rate: Parameter = self.add_parameter(
             "sample_rate",
             get_cmd="HORizontal:MODE:SAMPLERate?",
             set_cmd="HORizontal:MODE:SAMPLERate {}",
             get_parser=float,
-            unit=f"sample/{self.unit()}"
+            unit=f"sample/{self.unit()}",
         )
+        """Parameter sample_rate"""
 
-        self.add_parameter(
+        self.scale: Parameter = self.add_parameter(
             "scale",
             get_cmd="HORizontal:MODE:SCAle?",
             set_cmd=self._set_scale,
             get_parser=float,
-            unit=f"{self.unit()}/div"
+            unit=f"{self.unit()}/div",
         )
+        """Parameter scale"""
 
-        self.add_parameter(
+        self.position: Parameter = self.add_parameter(
             "position",
             get_cmd="HORizontal:POSition?",
             set_cmd="HORizontal:POSition {}",
             get_parser=float,
             unit="%",
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
             The horizontal position relative to a
             received trigger. E.g. a value of '10'
             sets the trigger position of the waveform
             such that 10% of the display is to the
             left of the trigger position.
-            """)
+            """
+            ),
         )
+        """
+        The horizontal position relative to a
+        received trigger. E.g. a value of '10'
+        sets the trigger position of the waveform
+        such that 10% of the display is to the
+        left of the trigger position.
+        """
 
-        self.add_parameter(
+        self.roll: Parameter = self.add_parameter(
             "roll",
             get_cmd="HORizontal:ROLL?",
             set_cmd="HORizontal:ROLL {}",
             vals=Enum("Auto", "On", "Off"),
-            docstring=textwrap.dedent("""
+            docstring=textwrap.dedent(
+                """
             Use Roll Mode when you want to view data at
             very slow sweep speeds.
-            """)
+            """
+            ),
         )
+        """
+        Use Roll Mode when you want to view data at
+        very slow sweep speeds.
+        """
 
     def _set_record_length(self, value: int) -> None:
         if self.mode() != "manual":
@@ -657,33 +715,36 @@ class TektronixDPOTrigger(InstrumentChannel):
                 "video", "i2c", "can", "spi", "communication", "serial", "rs232"
             ])
 
-        self.add_parameter(
+        self.type: Parameter = self.add_parameter(
             "type",
             get_cmd=f"TRIGger:{self._identifier}:TYPE?",
             set_cmd=self._trigger_type,
             vals=Enum(*trigger_types),
-            get_parser=str.lower
+            get_parser=str.lower,
         )
+        """Parameter type"""
 
         edge_couplings = ["ac", "dc", "hfrej", "lfrej", "noiserej"]
         if self._identifier == "B":
             edge_couplings.append("atrigger")
 
-        self.add_parameter(
+        self.edge_coupling: Parameter = self.add_parameter(
             "edge_coupling",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:COUPling?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:COUPling {{}}",
             vals=Enum(*edge_couplings),
-            get_parser=str.lower
+            get_parser=str.lower,
         )
+        """Parameter edge_coupling"""
 
-        self.add_parameter(
+        self.edge_slope: Parameter = self.add_parameter(
             "edge_slope",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:SLOpe {{}}",
             vals=Enum("rise", "fall", "either"),
-            get_parser=str.lower
+            get_parser=str.lower,
         )
+        """Parameter edge_slope"""
 
         trigger_sources = [
             f"CH{i}" for i in range(1, TektronixDPO7000xx.number_of_channels)
@@ -696,12 +757,13 @@ class TektronixDPOTrigger(InstrumentChannel):
         if self._identifier == "A":
             trigger_sources.append("line")
 
-        self.add_parameter(
+        self.source: Parameter = self.add_parameter(
             "source",
             get_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce?",
             set_cmd=f"TRIGger:{self._identifier}:EDGE:SOUrce {{}}",
-            vals=Enum(*trigger_sources)
+            vals=Enum(*trigger_sources),
         )
+        """Parameter source"""
 
     def _trigger_type(self, value: str) -> None:
         if value != "edge":
@@ -844,14 +906,15 @@ class TektronixDPOMeasurement(InstrumentChannel):
         self._measurement_number = measurement_number
         self._adjustment_time = time.perf_counter()
 
-        self.add_parameter(
+        self.state: Parameter = self.add_parameter(
             "state",
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe?",
             set_cmd=f"MEASUrement:MEAS{self._measurement_number}:STATe {{}}",
-            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0")
+            val_mapping=create_on_off_val_mapping(on_val="1", off_val="0"),
         )
+        """Parameter state"""
 
-        self.add_parameter(
+        self.type: Parameter = self.add_parameter(
             "type",
             get_cmd=f"MEASUrement:MEAS{self._measurement_number}:TYPe?",
             set_cmd=self._set_measurement_type,
@@ -861,8 +924,9 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 "Please see page 566-569 of the programmers manual "
                 "for a detailed description of these arguments. "
                 "http://download.tek.com/manual/077001022.pdf"
-            )
+            ),
         )
+        """Parameter type"""
 
         for measurement, unit in self.measurements:
             self.add_parameter(
@@ -914,14 +978,11 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
     ):
         super().__init__(parent=parent, name=name, **kwargs)
 
-        self.add_parameter(
+        self.mode: Parameter = self.add_parameter(
             "mode",
             get_cmd="MEASUrement:STATIstics:MODe?",
             set_cmd="MEASUrement:STATIstics:MODe {}",
-            vals=Enum(
-                "OFF", "ALL", "VALUEMean", "MINMax",
-                "MEANSTDdev"
-            ),
+            vals=Enum("OFF", "ALL", "VALUEMean", "MINMax", "MEANSTDdev"),
             docstring=textwrap.dedent(
                 "This command controls the operation and display of measurement "
                 "statistics. "
@@ -934,10 +995,11 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
                 "each measurement. "
                 "5. MEANSTDdev turns on statistics and displays the mean and "
                 "standard deviation of each measurement."
-            )
+            ),
         )
+        """Parameter mode"""
 
-        self.add_parameter(
+        self.time_constant: Parameter = self.add_parameter(
             "time_constant",
             get_cmd="MEASUrement:STATIstics:WEIghting?",
             set_cmd="MEASUrement:STATIstics:WEIghting {}",
@@ -947,8 +1009,9 @@ class TektronixDPOMeasurementStatistics(InstrumentChannel):
                 "standard deviation statistical accumulations, which is equivalent "
                 "to selecting Measurement Setup from the Measure menu, clicking "
                 "the Statistics button and entering the desired Weight n= value."
-            )
+            ),
         )
+        """Parameter time_constant"""
 
     def reset(self) -> None:
         self.write("MEASUrement:STATIstics:COUNt RESEt")

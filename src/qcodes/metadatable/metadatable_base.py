@@ -33,7 +33,7 @@ class Metadatable:
         deep_update(self.metadata, metadata)
 
     @final
-    def snapshot(self, update: Optional[bool] = False) -> Snapshot:
+    def snapshot(self, update: bool | None = False) -> Snapshot:
         """
         Decorate a snapshot dictionary with metadata.
         DO NOT override this method if you want metadata in the snapshot
@@ -55,7 +55,7 @@ class Metadatable:
 
     def snapshot_base(
         self,
-        update: Optional[bool] = False,
+        update: bool | None = False,
         params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> Snapshot:
         """

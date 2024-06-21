@@ -4,7 +4,7 @@ coordinate systems.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import numpy as np
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 AllCoordsType = tuple[float, float, float, float, float, float, float]
-NormOrder = Union[None, float, Literal["fro"], Literal["nuc"]]
+NormOrder = None | float | Literal["fro"] | Literal["nuc"]
 T = TypeVar("T", bound="FieldVector")
 
 

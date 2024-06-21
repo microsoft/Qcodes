@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 import numpy as np
 from typing_extensions import TypedDict, Unpack
@@ -38,9 +38,9 @@ class ParameterWithSetpointsCustomized(ParameterWithSetpoints):
     This customized class is used for the "sweep" parameter.
     """
 
-    _user_selected_data: Optional[list[Any]] = None
+    _user_selected_data: list[Any] | None = None
 
-    def get_selected(self) -> Optional[list[Any]]:
+    def get_selected(self) -> list[Any] | None:
         return self._user_selected_data
 
 
@@ -74,7 +74,7 @@ class Keithley2450Buffer(InstrumentChannel):
         self,
         parent: "Keithley2450",
         name: str,
-        size: Optional[int] = None,
+        size: int | None = None,
         style: str = "",
     ) -> None:
         super().__init__(parent, name)
@@ -136,8 +136,8 @@ class Keithley2450Buffer(InstrumentChannel):
 
     def __exit__(
         self,
-        exception_type: Optional[type[BaseException]],
-        value: Optional[BaseException],
+        exception_type: type[BaseException] | None,
+        value: BaseException | None,
         traceback: Optional["TracebackType"],
     ) -> None:
         self.delete()
@@ -330,7 +330,7 @@ class Keithley2450Sense(InstrumentChannel):
         )
         """The number of measurements to make when a measurement is requested."""
 
-    def _measure(self) -> Union[float, str]:
+    def _measure(self) -> float | str:
         if not self.parent.output_enabled():
             raise RuntimeError("Output needs to be on for a measurement")
         buffer_name = self.parent.buffer_name()
@@ -404,7 +404,7 @@ class Keithley2450Source(InstrumentChannel):
         unit = self.function_modes[self._proper_function]["unit"]
 
         self.function = self.parent.source_function
-        self._sweep_arguments: Optional[_SweepDict] = None
+        self._sweep_arguments: _SweepDict | None = None
 
         self.range: Parameter = self.add_parameter(
             "range",
@@ -767,7 +767,7 @@ class Keithley2450(VisaInstrument):
         return cast(Keithley2450Sense, submodule)
 
     def buffer(
-        self, name: str, size: Optional[int] = None, style: str = ""
+        self, name: str, size: int | None = None, style: str = ""
     ) -> Keithley2450Buffer:
         self.buffer_name(name)
         if f"_buffer_{name}" in self.submodules:

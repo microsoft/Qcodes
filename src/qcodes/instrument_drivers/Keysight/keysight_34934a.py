@@ -1,12 +1,14 @@
 import logging
 import re
-from typing import TYPE_CHECKING, Callable, Optional, Union
+from typing import TYPE_CHECKING, Union
 
 from qcodes import validators
 
 from .keysight_34980a_submodules import Keysight34980ASwitchMatrixSubModule
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import Unpack
 
     from qcodes.instrument import (
@@ -100,7 +102,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
 
     def to_channel_list(
-        self, paths: list[tuple[int, int]], wiring_config: Optional[str] = ""
+        self, paths: list[tuple[int, int]], wiring_config: str | None = ""
     ) -> str:
         """
         convert the (row, column) pair to a 4-digit channel number 'sxxx', where
@@ -131,10 +133,8 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
 
     @staticmethod
     def get_numbering_function(
-            rows: int,
-            columns: int,
-            wiring_config: Optional[str] = ''
-    ) -> Callable[[int, int], str]:
+        rows: int, columns: int, wiring_config: str | None = ""
+    ) -> "Callable[[int, int], str]":
         """
         to select the correct numbering function based on the matrix layout.
         On P168 of the user's guide for Agilent 34934A High Density Matrix

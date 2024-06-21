@@ -4,11 +4,8 @@ from time import sleep
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     Literal,
-    Optional,
-    Union,
     cast,
 )
 
@@ -19,6 +16,8 @@ import qcodes.validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
@@ -48,7 +47,7 @@ class DynaCool(VisaInstrument):
     temp_params = ("temperature_setpoint", "temperature_rate", "temperature_settling")
     field_params = ("field_target", "field_rate", "field_approach")
 
-    _errors: ClassVar[dict[int, Callable[[], None]]] = {
+    _errors: ClassVar[dict[int, "Callable[[], None]"]] = {
         -2: lambda: warnings.warn("Unknown command"),
         1: lambda: None,
         0: lambda: None,
@@ -266,7 +265,7 @@ class DynaCool(VisaInstrument):
         """
         return parser(resp.split(', ')[which_one])
 
-    def get_idn(self) -> dict[str, Optional[str]]:
+    def get_idn(self) -> dict[str, str | None]:
         response = self.ask('*IDN?')
         # just clip out the error code
         id_parts = response[2:].split(', ')
@@ -348,7 +347,7 @@ class DynaCool(VisaInstrument):
 
     def _field_getter(
         self, param_name: Literal["field_target", "field_rate", "field_approach"]
-    ) -> Union[int, float]:
+    ) -> int | float:
         """
         The combined get function for the three field parameters,
         field_setpoint, field_rate, and field_approach
@@ -371,7 +370,7 @@ class DynaCool(VisaInstrument):
         """
         temporary_values = list(self.parameters[p].raw_value
                                 for p in self.field_params)
-        values = cast(list[Union[int, float]], temporary_values)
+        values = cast(list[int | float], temporary_values)
         values[self.field_params.index(param)] = value
 
         self.write(f'FELD {values[0]}, {values[1]}, {values[2]}, 0')
@@ -381,7 +380,7 @@ class DynaCool(VisaInstrument):
         param_name: Literal[
             "temperature_setpoint", "temperature_rate", "temperature_settling"
         ],
-    ) -> Union[int, float]:
+    ) -> int | float:
         """
         This function queries the last temperature setpoint (w. rate and mode)
         from the instrument.
@@ -406,7 +405,7 @@ class DynaCool(VisaInstrument):
         """
         temp_values = list(self.parameters[par].raw_value
                            for par in self.temp_params)
-        values = cast(list[Union[int, float]], temp_values)
+        values = cast(list[int | float], temp_values)
         values[self.temp_params.index(param)] = value
 
         self.write(f'TEMP {values[0]}, {values[1]}, {values[2]}')

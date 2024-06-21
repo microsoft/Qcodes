@@ -9,8 +9,9 @@ import concurrent.futures
 import itertools
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from functools import partial
-from typing import TYPE_CHECKING, Callable, Protocol, TypeVar, Union
+from typing import TYPE_CHECKING, Protocol, TypeVar, Union
 
 from qcodes.utils import RespondingThread
 

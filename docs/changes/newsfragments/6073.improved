@@ -1,1 +1,0 @@
-Accept sequences of values for setting `MultiChannelInstrumentParameter` s. Previously, the behavior was inconsistent since `param.set(param.get())` would error.

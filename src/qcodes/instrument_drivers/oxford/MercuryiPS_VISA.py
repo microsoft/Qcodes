@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -18,6 +18,8 @@ from qcodes.instrument import (
 from qcodes.math_utils import FieldVector
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter

@@ -10,13 +10,13 @@ import io
 import logging
 import traceback as tb_module
 import warnings
-from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
+from collections.abc import Callable, Mapping, MutableMapping, MutableSequence, Sequence
 from contextlib import ExitStack
 from copy import deepcopy
 from inspect import signature
 from numbers import Number
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 import numpy as np
 from opentelemetry import trace
@@ -64,7 +64,7 @@ TRACER = trace.get_tracer(__name__)
 
 ActionType = tuple[Callable[..., Any], Sequence[Any]]
 SubscriberType = tuple[
-    Callable[..., Any], Union[MutableSequence[Any], MutableMapping[Any, Any]]
+    Callable[..., Any], MutableSequence[Any] | MutableMapping[Any, Any]
 ]
 
 
@@ -341,7 +341,7 @@ class DataSaver:
             )
         for i in range(len(parameter.shapes)):
             # if this loop runs, then 'data' is a Sequence
-            data = cast(Sequence[Union[str, int, float, Any]], data)
+            data = cast(Sequence[str | int | float | Any], data)
 
             shape = parameter.shapes[i]
 

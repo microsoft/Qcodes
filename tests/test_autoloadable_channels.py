@@ -6,7 +6,7 @@ mean a physical instrument channel, but rather an instrument sub-module.
 """
 
 import re
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -15,6 +15,9 @@ from qcodes.instrument.channel import (
     AutoLoadableChannelList,
     AutoLoadableInstrumentChannel,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class MockBackendBase:
@@ -126,7 +129,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
 
     @classmethod
     def _get_new_instance_kwargs(
-            cls, parent: Optional[Instrument] = None, **kwargs
+        cls, parent: Instrument | None = None, **kwargs
     ) -> dict[Any, Any]:
         """
         Find the smallest channel number not yet occupied. An optional keyword
@@ -150,13 +153,13 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         return new_kwargs
 
     def __init__(
-            self,
-            parent: Union[Instrument, InstrumentChannel],
-            name: str,
-            channel: int,
-            greeting: str,
-            existence: bool = False,
-            channel_list: Optional[AutoLoadableChannelList] = None,
+        self,
+        parent: Instrument | InstrumentChannel,
+        name: str,
+        channel: int,
+        greeting: str,
+        existence: bool = False,
+        channel_list: AutoLoadableChannelList | None = None,
     ) -> None:
 
         super().__init__(parent, name, existence, channel_list)

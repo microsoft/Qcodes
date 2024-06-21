@@ -4,7 +4,7 @@ Will be deprecated and eventually removed.
 """
 
 from functools import partial
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal
 
 from qcodes.instrument import (
     InstrumentBaseKWArgs,
@@ -73,8 +73,8 @@ class GS200_Monitor(InstrumentChannel):
 
         # Set up mode cache. These will be filled in once the parent
         # is fully initialized.
-        self._range: Union[None, float] = None
-        self._unit: Union[None, str] = None
+        self._range: None | float = None
+        self._unit: None | str = None
 
         # Set up monitoring parameters
         if present:
@@ -573,8 +573,8 @@ class GS200(VisaInstrument):
         self.output_level.inter_delay = saved_inter_delay
 
     def _get_set_output(
-        self, mode: ModeType, output_level: Optional[float] = None
-    ) -> Optional[float]:
+        self, mode: ModeType, output_level: float | None = None
+    ) -> float | None:
         """
         Get or set the output level.
 
@@ -638,8 +638,8 @@ class GS200(VisaInstrument):
 
     def _update_measurement_module(
         self,
-        source_mode: Optional[ModeType] = None,
-        source_range: Optional[float] = None,
+        source_mode: ModeType | None = None,
+        source_range: float | None = None,
     ) -> None:
         """
         Update validators/units as source mode/range changes.

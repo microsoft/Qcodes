@@ -3,7 +3,7 @@
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional
 
 import pyvisa
 import pyvisa.constants
@@ -140,7 +140,7 @@ class QDevQDacChannel(InstrumentChannel):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = False,
+        update: bool | None = False,
         params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> dict[Any, Any]:
         update_currents = self._parent._update_currents and update
@@ -259,7 +259,7 @@ class QDevQDac(VisaInstrument):
         self.num_chans = num_chans
 
         # Assigned slopes. Entries will eventually be [chan, slope]
-        self._slopes: list[tuple[int, Union[str, float]]] = []
+        self._slopes: list[tuple[int, str | float]] = []
         # Function generators (used in _set_voltage)
         self._fgs = set(range(1, 9))
         self._assigned_fgs: dict[int, int] = {}  # {chan: fg}
@@ -318,7 +318,7 @@ class QDevQDac(VisaInstrument):
 
     def snapshot_base(
         self,
-        update: Optional[bool] = False,
+        update: bool | None = False,
         params_to_skip_update: Optional["Sequence[str]"] = None,
     ) -> dict[Any, Any]:
         update_currents = self._update_currents and update is True
@@ -582,7 +582,7 @@ class QDevQDac(VisaInstrument):
         else:
             return 0
 
-    def _setslope(self, chan: int, slope: Union[float, str]) -> None:
+    def _setslope(self, chan: int, slope: float | str) -> None:
         """
         set_cmd for the chXX_slope parameter, the maximum slope of a channel.
 
@@ -632,7 +632,7 @@ class QDevQDac(VisaInstrument):
         self._slopes.append((chan, slope))
         return
 
-    def _getslope(self, chan: int) -> Union[str, float]:
+    def _getslope(self, chan: int) -> str | float:
         """
         get_cmd of the chXX_slope parameter
         """
@@ -732,7 +732,7 @@ class QDevQDac(VisaInstrument):
         self.visa_handle.clear()
 
     def connect_message(
-        self, idn_param: str = "IDN", begin_time: Optional[float] = None
+        self, idn_param: str = "IDN", begin_time: float | None = None
     ) -> None:
         """
         Override of the standard Instrument class connect_message.

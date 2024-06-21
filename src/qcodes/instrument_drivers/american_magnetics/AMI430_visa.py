@@ -5,14 +5,14 @@ import numbers
 import time
 import warnings
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Callable, ClassVar, TypeVar, cast
+from typing import TYPE_CHECKING, ClassVar, Concatenate, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import ParamSpec
 
 from qcodes.instrument import (
     Instrument,

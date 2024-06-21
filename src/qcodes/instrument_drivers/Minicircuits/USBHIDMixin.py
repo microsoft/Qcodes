@@ -4,7 +4,7 @@ A mixin module for USB Human Interface Device instruments
 import os
 import struct
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from typing_extensions import deprecated
 
@@ -51,7 +51,7 @@ class USBHIDMixin(Instrument):
     def __init__(
         self,
         name: str,
-        instance_id: Optional[str] = None,
+        instance_id: str | None = None,
         timeout: float = 2,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
@@ -82,7 +82,7 @@ class USBHIDMixin(Instrument):
         self._device = devs[0]
         self._device.open()
 
-        self._data_buffer: Optional[bytes] = None
+        self._data_buffer: bytes | None = None
         self._device.set_raw_data_handler(self._handler)
 
         self._timeout = timeout
@@ -93,7 +93,7 @@ class USBHIDMixin(Instrument):
     def _handler(self, data: bytes) -> None:
         self._data_buffer = data
 
-    def _get_data_buffer(self) -> Optional[bytes]:
+    def _get_data_buffer(self) -> bytes | None:
         data = self._data_buffer
         self._data_buffer = None
         return data
@@ -191,7 +191,7 @@ class MiniCircuitsHIDMixin(Instrument):
     def __init__(
         self,
         name: str,
-        instance_id: Optional[str] = None,
+        instance_id: str | None = None,
         timeout: float = 2,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):
@@ -235,7 +235,7 @@ class MiniCircuitsHIDMixin(Instrument):
         self._device = devs[0]
         self._device.open()
 
-        self._data_buffer: Optional[bytes] = None
+        self._data_buffer: bytes | None = None
         self._device.set_raw_data_handler(self._handler)
 
         self._timeout = timeout
@@ -246,7 +246,7 @@ class MiniCircuitsHIDMixin(Instrument):
     def _handler(self, data: bytes) -> None:
         self._data_buffer = data
 
-    def _get_data_buffer(self) -> Optional[bytes]:
+    def _get_data_buffer(self) -> bytes | None:
         data = self._data_buffer
         self._data_buffer = None
         return data

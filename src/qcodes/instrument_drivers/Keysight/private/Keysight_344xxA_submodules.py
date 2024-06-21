@@ -2,7 +2,7 @@ import textwrap
 from bisect import bisect_left
 from contextlib import ExitStack
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from packaging import version
@@ -657,7 +657,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
             "DIG" in options
             or version.parse(convert_legacy_version_to_supported_version("A.03"))
             <= version.parse(
-                convert_legacy_version_to_supported_version(idn["firmware"])
+                convert_legacy_version_to_supported_version(idn["firmware"])[:11]
             )
         )
         # Note that the firmware version check is still needed because
@@ -1241,9 +1241,7 @@ mode."""
         self.range.get()
 
     def increase_range(
-        self,
-        range_value: Optional[float] = None,
-        increase_by: int = 1
+        self, range_value: float | None = None, increase_by: int = 1
     ) -> None:
         """
         Increases the voltage range by a certain amount with default of 1.
@@ -1271,9 +1269,7 @@ mode."""
             self.range(self.ranges[-1])
 
     def decrease_range(
-        self,
-        range_value: Optional[float] = None,
-        decrease_by: int = -1
+        self, range_value: float | None = None, decrease_by: int = -1
     ) -> None:
         """
         Decrease the voltage range by a certain amount with default of -1.

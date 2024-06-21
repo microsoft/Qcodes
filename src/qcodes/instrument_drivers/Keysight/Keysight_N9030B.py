@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -19,6 +19,8 @@ from qcodes.parameters import (
 from qcodes.validators import Arrays, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from typing_extensions import Unpack
 
 
