@@ -357,7 +357,7 @@ ruamel-yaml-clib==0.2.8
     # via ruamel-yaml
 schema==0.7.7
     # via broadbean
-scipy==1.13.1
+scipy==1.14.0
     # via qcodes (pyproject.toml)
 six==1.16.0
     # via
