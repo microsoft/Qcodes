@@ -105,7 +105,7 @@ idna==3.7
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==7.1.0
+importlib-metadata==7.2.1
     # via opentelemetry-api
 incremental==22.10.0
     # via towncrier
