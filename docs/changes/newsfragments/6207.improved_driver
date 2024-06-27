@@ -1,0 +1,2 @@
+The long deprecated aliases to channels on MiniCircuits UsbSPDT drivers have been removed.
+This means that `channel_a` should be replaced by `a` and so on in any call to this driver.
