@@ -130,10 +130,14 @@ def catch_interrupts() -> Iterator[Callable[[], MeasInterruptT | None]]:
 
     try:
         yield get_interrupt_exception
-    except (KeyboardInterrupt, BreakConditionInterrupt) as e:
+    except KeyboardInterrupt as e:
         interrupt_exception = e
         interrupt_raised = True
-        raise  # Re-raise the exception
+        raise  # Re-raise KeyboardInterrupt
+    except BreakConditionInterrupt as e:
+        interrupt_exception = e
+        interrupt_raised = True
+        # Don't re-raise BreakConditionInterrupt
     finally:
         if interrupt_raised:
             log.warning(

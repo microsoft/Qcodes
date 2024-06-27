@@ -13,15 +13,15 @@ def test_catch_interrupts():
 
     # Test KeyboardInterrupt
     with pytest.raises(KeyboardInterrupt):
-        with catch_interrupts():
+        with catch_interrupts() as get_interrupt:
             raise KeyboardInterrupt()
 
     # Test BreakConditionInterrupt
-    with pytest.raises(BreakConditionInterrupt):
-        with catch_interrupts():
-            raise BreakConditionInterrupt()
+    with catch_interrupts() as get_interrupt:
+        raise BreakConditionInterrupt()
+    assert isinstance(get_interrupt(), BreakConditionInterrupt)
 
-    # Test that cleanup code runs before re-raising
+    # Test that cleanup code runs for KeyboardInterrupt
     cleanup_ran = False
     with pytest.raises(KeyboardInterrupt):
         with catch_interrupts():
@@ -30,6 +30,20 @@ def test_catch_interrupts():
             finally:
                 cleanup_ran = True
     assert cleanup_ran
+
+    # Test that cleanup code runs for BreakConditionInterrupt
+    cleanup_ran = False
+    with catch_interrupts():
+        try:
+            raise BreakConditionInterrupt()
+        finally:
+            cleanup_ran = True
+    assert cleanup_ran
+
+    # Test that BreakConditionInterrupt is caught and doesn't raise
+    with catch_interrupts() as get_interrupt:
+        raise BreakConditionInterrupt()
+    assert isinstance(get_interrupt(), BreakConditionInterrupt)
 
 
 def test_catch_interrupts_in_loops():
