@@ -47,16 +47,12 @@ class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
         Mini-Circuits SPDT RF switch
 
         Args:
-                name: the name of the instrument
-                driver_path: path to the dll
-                serial_number: the serial number of the device
-                   (printed on the sticker on the back side, without s/n)
-                kwargs: kwargs to be passed to Instrument class.
+            name: the name of the instrument
+            driver_path: path to the dll
+            serial_number: the serial number of the device
+                (printed on the sticker on the back side, without s/n)
+            kwargs: kwargs to be passed to Instrument class.
         """
-        # we are eventually overwriting this but since it's called
-        # in __getattr__ of `SPDT_Base` it's important that it's
-        # always set to something to avoid infinite recursion
-        self._deprecated_attributes = {}
         # import .net exception so we can catch it below
         # we keep this import local so that the module can be imported
         # without a working .net install
