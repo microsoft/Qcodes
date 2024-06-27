@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-import warnings
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from typing_extensions import deprecated
 
@@ -92,38 +91,19 @@ class MiniCircuitsSPDTBase(Instrument):
         channels = ChannelList(
             self, "Channels", self.CHANNEL_CLASS, snapshotable=False)
 
-        _chanlist = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        self._deprecated_attributes: dict[str, str] = {
-            f'channel_{k}': k
-            for k in _chanlist
-        }
-
+        _chanlist = ["a", "b", "c", "d", "e", "f", "g", "h"]
         _max_channel_number = self.get_number_of_channels()
         _chanlist = _chanlist[0:_max_channel_number]
 
         for c in _chanlist:
             channel = self.CHANNEL_CLASS(self, f'channel_{c}', c)
             channels.append(channel)
-            attribute_name = f'channel_{c}'
-            self.add_submodule(attribute_name, channel)
             self.add_submodule(c, channel)
-            self._deprecated_attributes[attribute_name] = c
         self.add_submodule("channels", channels.to_channel_tuple())
 
     def all(self, switch_to: int) -> None:
         for c in self.channels:
             c.switch(switch_to)
-
-    def __getattr__(self, key: str) -> Any:
-        if key in self._deprecated_attributes:
-            warnings.warn(
-                (
-                    f"Using '{key}' is deprecated and will be removed in future"
-                    f"releases. Use '{self._deprecated_attributes[key]}' instead"
-                ),
-                UserWarning,
-            )
-        return super().__getattr__(key)
 
     def get_number_of_channels(self) -> int:
         model = self.get_idn()['model']
