@@ -53,6 +53,7 @@ class DummyInstr(Instrument):
         super().__init__(name, **kwargs)
         self.voltage = self.add_parameter("voltage", set_cmd=None, get_cmd=None)
         self.add_parameter("current", set_cmd=None, get_cmd=None)
+        self.some_attr = 1
 
 
 def test_overriding_parameter_attribute_with_parameter_raises():
@@ -83,6 +84,11 @@ def test_removing_parameter_works(request):
     a.remove_parameter("voltage")
 
     a.remove_parameter("current")
+
+    with pytest.raises(KeyError, match="some_attr"):
+        a.remove_parameter("some_attr")
+
+    assert a.some_attr == 1
 
 
 def test_removed_parameter_from_prop_instrument_works(request):
