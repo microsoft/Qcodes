@@ -186,6 +186,29 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             self.parameters[name] = param
         return param
 
+    def remove_parameter(self, name: str) -> None:
+        """
+        Remove a Parameter from this instrument.
+
+        Unlike modifying the parameters dict directly, this method will
+        make sure that the parameter is properly unbound from the instrument
+        if the parameter is added as a real attribute to the instrument.
+        If a property of the same name exists it will not be modified.
+        If name is an attribute but not a parameter, it will not be modified.
+
+        Args:
+            name: The name of the parameter to remove.
+
+        Raises:
+            KeyError: If the parameter does not exist on the instrument.
+        """
+        self.parameters.pop(name)
+
+        is_property = isinstance(getattr(self.__class__, name, None), property)
+
+        if not is_property and hasattr(self, name):
+            delattr(self, name)
+
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
         Bind one ``Function`` to this instrument.
