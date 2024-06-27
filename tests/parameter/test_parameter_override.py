@@ -37,7 +37,7 @@ class DummyParameterIsPropertyInstr(Instrument):
         to define an interface for the instrument.
         """
         super().__init__(name, **kwargs)
-        self.voltage = self.add_parameter("voltage", set_cmd=None, get_cmd=None)  # type: ignore
+        self.add_parameter("voltage", set_cmd=None, get_cmd=None)  # type: ignore
 
     @property
     def voltage(self):
@@ -52,6 +52,7 @@ class DummyInstr(Instrument):
         """
         super().__init__(name, **kwargs)
         self.voltage = self.add_parameter("voltage", set_cmd=None, get_cmd=None)
+        self.add_parameter("current", set_cmd=None, get_cmd=None)
 
 
 def test_overriding_parameter_attribute_with_parameter_raises():
@@ -70,5 +71,23 @@ def test_overriding_attribute_with_parameter_raises():
         DummyParameterIsAttrInstr("my_instr")
 
 
-def test_overriding_property_with_parameter_works():
+def test_overriding_property_with_parameter_works(request):
+    request.addfinalizer(DummyParameterIsPropertyInstr.close_all)
     DummyParameterIsPropertyInstr("my_instr")
+
+
+def test_removing_parameter_works(request):
+    request.addfinalizer(DummyInstr.close_all)
+    a = DummyInstr("my_instr")
+
+    a.remove_parameter("voltage")
+
+    a.remove_parameter("current")
+
+
+def test_removed_parameter_from_prop_instrument_works(request):
+    request.addfinalizer(DummyParameterIsPropertyInstr.close_all)
+    a = DummyParameterIsPropertyInstr("my_instr")
+    a.remove_parameter("voltage")
+    a.add_parameter("voltage", set_cmd=None, get_cmd=None)
+    a.voltage.set(1)
