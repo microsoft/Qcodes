@@ -327,10 +327,17 @@ class ParameterBase(MetadatableWithName):
 
             if found_as_delegate or found_as_attr:
                 existing_parameter = instrument.parameters.get(name, None)
+
                 if existing_parameter is not None and not existing_parameter.abstract:
                     raise KeyError(
                         f"Duplicate parameter name {name} on instrument {instrument}"
                     )
+                if existing_parameter is None:
+                    existing_attribute = getattr(instrument, name, None)
+                    if existing_attribute is not None:
+                        raise KeyError(
+                            f"Parameter {name} overrides an attribute of the same name on instrument {instrument}"
+                        )
 
             instrument.parameters[name] = self
 
