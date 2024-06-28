@@ -59,14 +59,13 @@ class DummyInstr(Instrument):
 def test_overriding_parameter_attribute_with_parameter_raises():
     with pytest.raises(
         KeyError,
-        match="Parameter voltage overrides an attribute of the same name on instrument",
+        match="Duplicate parameter name voltage on instrument",
     ):
         DummyOverrideInstr("my_instr")
 
 
 def test_overriding_attribute_with_parameter_raises():
-    with pytest.raises(
-        KeyError,
+    with pytest.warns(
         match="Parameter voltage overrides an attribute of the same name on instrument",
     ):
         DummyParameterIsAttrInstr("my_instr")
