@@ -84,7 +84,7 @@ fastjsonschema==2.20.0
     # via nbformat
 fonttools==4.53.0
     # via matplotlib
-fsspec==2024.6.0
+fsspec==2024.6.1
     # via dask
 h5netcdf==1.3.0
     # via
