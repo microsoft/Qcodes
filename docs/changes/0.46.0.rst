@@ -21,8 +21,11 @@ Breaking Changes:
 - It is now considered unsupported to modify the `parameters` attribute of an instrument or instrument module after it has been created.
   To remove a parameter from an instrument use the `remove_parameter` method. (:pr:`6174`)
 
-- InstrumentBase.add_parameter will now error if an attribute of the same name as the parameter added already exists. This
-  is similar to how it would error if a parameter of the same name existed. (:pr:`6174`)
+- InstrumentBase.add_parameter will now error if an attribute of the same name as the parameter added already exists and
+  this attribute is an instance of `ParameterBase`. This is to prevent issues where a parameter is partially
+  overwritten by a new parameter. To remove the existing Parameter use the new `instrument.remove_parameter`` method.
+  If the attribute is not a ParameterBase this will instead warn. It is the intention that this becomes an error in the future.
+  (:pr:`6174`) (:pr:`6211`)
 
 
 Improved:
