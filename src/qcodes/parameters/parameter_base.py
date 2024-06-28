@@ -334,9 +334,14 @@ class ParameterBase(MetadatableWithName):
                     )
                 if existing_parameter is None:
                     existing_attribute = getattr(instrument, name, None)
-                    if existing_attribute is not None:
+                    if isinstance(existing_attribute, ParameterBase):
                         raise KeyError(
-                            f"Parameter {name} overrides an attribute of the same name on instrument {instrument}"
+                            f"Duplicate parameter name {name} on instrument {instrument}"
+                        )
+                    elif existing_attribute is not None:
+                        warnings.warn(
+                            f"Parameter {name} overrides an attribute of the same name on instrument {instrument} "
+                            "This will be an error in the future.",
                         )
 
             instrument.parameters[name] = self
