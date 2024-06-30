@@ -208,7 +208,6 @@ def test_new_to_old(some_paramspecbases) -> None:
 
     assert new_to_old(idps_new) == idps_old_expected
 
-    #
 
     idps_new = InterDependencies_(inferences={ps1: (ps2, ps3)}, standalones=(ps4,))
 

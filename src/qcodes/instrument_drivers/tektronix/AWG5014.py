@@ -71,14 +71,14 @@ class TektronixAWG5014(VisaInstrument):
         'REFERENCE_SOURCE': 'h',    # Internal | External
         'EXTERNAL_REFERENCE_TYPE': 'h',    # Fixed | Variable
         'REFERENCE_CLOCK_FREQUENCY_SELECTION': 'h',
-        'REFERENCE_MULTIPLIER_RATE': 'h',    #
+        'REFERENCE_MULTIPLIER_RATE': 'h',
         'DIVIDER_RATE': 'h',   # 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256
         'TRIGGER_SOURCE': 'h',    # Internal | External
-        'INTERNAL_TRIGGER_RATE': 'd',    #
+        'INTERNAL_TRIGGER_RATE': 'd',
         'TRIGGER_INPUT_IMPEDANCE': 'h',    # 50 ohm | 1 kohm
         'TRIGGER_INPUT_SLOPE': 'h',    # Positive | Negative
         'TRIGGER_INPUT_POLARITY': 'h',    # Positive | Negative
-        'TRIGGER_INPUT_THRESHOLD': 'd',    #
+        'TRIGGER_INPUT_THRESHOLD': 'd',
         'EVENT_INPUT_IMPEDANCE': 'h',    # 50 ohm | 1 kohm
         'EVENT_INPUT_POLARITY': 'h',    # Positive | Negative
         'EVENT_INPUT_THRESHOLD': 'd',
