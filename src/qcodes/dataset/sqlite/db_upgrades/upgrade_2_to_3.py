@@ -199,16 +199,16 @@ def upgrade_2_to_3(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
     # If one run fails, we want the whole upgrade to roll back, hence the
     # entire upgrade is one atomic transaction
 
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
         sql = "ALTER TABLE runs ADD COLUMN run_description TEXT"
         transaction(conn, sql)
 
-        result_tables = _2to3_get_result_tables(conn)
-        layout_ids_all = _2to3_get_layout_ids(conn)
-        indeps_all = _2to3_get_indeps(conn)
-        deps_all = _2to3_get_deps(conn)
-        layouts = _2to3_get_layouts(conn)
-        dependencies = _2to3_get_dependencies(conn)
+        result_tables = _2to3_get_result_tables(atomic_conn)
+        layout_ids_all = _2to3_get_layout_ids(atomic_conn)
+        indeps_all = _2to3_get_indeps(atomic_conn)
+        deps_all = _2to3_get_deps(atomic_conn)
+        layouts = _2to3_get_layouts(atomic_conn)
+        dependencies = _2to3_get_dependencies(atomic_conn)
 
         pbar = tqdm(
             range(1, no_of_runs + 1), file=sys.stdout, disable=not show_progress_bar
@@ -230,13 +230,15 @@ def upgrade_2_to_3(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
                 else:
                     dependents = ()
 
-                paramspecs = _2to3_get_paramspecs(conn,
-                                                  layout_ids,
-                                                  layouts,
-                                                  dependencies,
-                                                  dependents,
-                                                  independents,
-                                                  result_table_name)
+                paramspecs = _2to3_get_paramspecs(
+                    atomic_conn,
+                    layout_ids,
+                    layouts,
+                    dependencies,
+                    dependents,
+                    independents,
+                    result_table_name,
+                )
 
                 interdeps = InterDependencies(*paramspecs.values())
                 desc_dict = {'interdependencies': interdeps._to_dict()}
@@ -252,6 +254,6 @@ def upgrade_2_to_3(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
                    SET run_description = ?
                    WHERE run_id == ?
                    """
-            cur = conn.cursor()
+            cur = atomic_conn.cursor()
             cur.execute(sql, (json_str, run_id))
             log.debug(f"Upgrade in transition, run number {run_id}: OK")

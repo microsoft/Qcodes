@@ -26,7 +26,7 @@ def upgrade_5_to_6(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
     # If one run fails, we want the whole upgrade to roll back, hence the
     # entire upgrade is one atomic transaction
 
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
         pbar = tqdm(
             range(1, no_of_runs + 1), file=sys.stdout, disable=not show_progress_bar
         )
@@ -35,7 +35,7 @@ def upgrade_5_to_6(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
         empty_idps_ser = InterDependencies()._to_dict()
 
         for run_id in pbar:
-            json_str = get_run_description(conn, run_id)
+            json_str = get_run_description(atomic_conn, run_id)
             if json_str is None:
                 new_json = json.dumps({'version': 0,
                                        'interdependencies': empty_idps_ser})
@@ -44,4 +44,4 @@ def upgrade_5_to_6(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
                 new_ser = {'version': 0}  # let 'version' be the first entry
                 new_ser['interdependencies'] = ser['interdependencies']
                 new_json = json.dumps(new_ser)
-            update_run_description(conn, run_id, new_json)
+            update_run_description(atomic_conn, run_id, new_json)

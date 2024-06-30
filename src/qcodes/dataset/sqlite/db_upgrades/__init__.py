@@ -162,11 +162,11 @@ def perform_db_upgrade_0_to_1(
     n_run_tables = len(cur.fetchall())
 
     if n_run_tables == 1:
-        with atomic(conn) as conn:
+        with atomic(conn) as atomic_conn:
             sql = "ALTER TABLE runs ADD COLUMN guid TEXT"
-            transaction(conn, sql)
+            transaction(atomic_conn, sql)
             # now assign GUIDs to existing runs
-            cur = transaction(conn, 'SELECT run_id FROM runs')
+            cur = transaction(atomic_conn, "SELECT run_id FROM runs")
             run_ids = [r[0] for r in many_many(cur, 'run_id')]
 
             pbar = tqdm(
@@ -182,7 +182,7 @@ def perform_db_upgrade_0_to_1(
                         FROM runs
                         WHERE run_id == {run_id}
                         """
-                cur = transaction(conn, query)
+                cur = transaction(atomic_conn, query)
                 timestamp = one(cur, 'run_timestamp')
                 timeint = int(np.round(timestamp*1000))
                 sql = f"""
@@ -225,12 +225,12 @@ def perform_db_upgrade_1_to_2(
                         IF NOT EXISTS IX_runs_guid
                         ON runs (guid DESC)
                         """
-        with atomic(conn) as conn:
+        with atomic(conn) as atomic_conn:
             # iterate through the pbar for the sake of the side effect; it
             # prints that the database is being upgraded
             for _ in pbar:
-                transaction(conn, _IX_runs_exp_id)
-                transaction(conn, _IX_runs_guid)
+                transaction(atomic_conn, _IX_runs_exp_id)
+                transaction(atomic_conn, _IX_runs_guid)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
@@ -282,13 +282,13 @@ def perform_db_upgrade_4_to_5(
     hence the 'snapshot' column was dynamically created once there was a run
     with snapshot information.
     """
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
         pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
         pbar.set_description("Upgrading database; v4 -> v5")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
         for _ in pbar:
-            insert_column(conn, 'runs', 'snapshot', 'TEXT')
+            insert_column(atomic_conn, "runs", "snapshot", "TEXT")
 
 
 @upgrader
@@ -329,18 +329,18 @@ def perform_db_upgrade_6_to_7(
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
         for _ in pbar:
-            with atomic(conn) as conn:
+            with atomic(conn) as atomic_conn:
                 sql = "ALTER TABLE runs ADD COLUMN captured_run_id"
-                transaction(conn, sql)
+                transaction(atomic_conn, sql)
                 sql = "ALTER TABLE runs ADD COLUMN captured_counter"
-                transaction(conn, sql)
+                transaction(atomic_conn, sql)
 
                 sql = """
                         UPDATE runs
                         SET captured_run_id = run_id,
                             captured_counter = result_counter
                         """
-                transaction(conn, sql)
+                transaction(atomic_conn, sql)
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
@@ -354,13 +354,13 @@ def perform_db_upgrade_7_to_8(
 
     Add a new column to store the dataset's parents to the runs table.
     """
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
         pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
         pbar.set_description("Upgrading database; v7 -> v8")
         # iterate through the pbar for the sake of the side effect; it
         # prints that the database is being upgraded
         for _ in pbar:
-            insert_column(conn, 'runs', 'parent_datasets', 'TEXT')
+            insert_column(atomic_conn, "runs", "parent_datasets", "TEXT")
 
 
 @upgrader

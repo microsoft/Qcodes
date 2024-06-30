@@ -543,10 +543,10 @@ def _parser3(sequencelist: list[list[Any]], wfmdict: dict[Any, Any]) -> _parser3
         wfms_temp = []
         m1s_temp = []
         m2s_temp = []
-        for wfmdict in sequencedict[key]:
-            wfms_temp.append(wfmdict['wfm'])
-            m1s_temp.append(wfmdict['m1'])
-            m2s_temp.append(wfmdict['m2'])
+        for parsed_wfmdict in sequencedict[key]:
+            wfms_temp.append(parsed_wfmdict["wfm"])
+            m1s_temp.append(parsed_wfmdict["m1"])
+            m2s_temp.append(parsed_wfmdict["m2"])
 
         wfms.append(wfms_temp)
         m1s.append(m1s_temp)
