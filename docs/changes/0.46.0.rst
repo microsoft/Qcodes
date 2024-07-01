@@ -1,4 +1,4 @@
-QCoDeS 0.46.0 (2024-06-10)
+QCoDeS 0.46.0 (2024-06-27)
 ==========================
 
 Breaking Changes:
@@ -17,6 +17,15 @@ Breaking Changes:
 
   All drivers shipping with qcodes for Vendors from A-K have been updated in this pr.
   The remaining drivers were updated in (:pr:`6087`). (:pr:`6012`)
+
+- It is now considered unsupported to modify the `parameters` attribute of an instrument or instrument module after it has been created.
+  To remove a parameter from an instrument use the `remove_parameter` method. (:pr:`6174`)
+
+- InstrumentBase.add_parameter will now error if an attribute of the same name as the parameter added already exists and
+  this attribute is an instance of `ParameterBase`. This is to prevent issues where a parameter is partially
+  overwritten by a new parameter. To remove the existing Parameter use the new `instrument.remove_parameter`` method.
+  If the attribute is not a ParameterBase this will instead warn. It is the intention that this becomes an error in the future.
+  (:pr:`6174`) (:pr:`6211`)
 
 
 Improved:

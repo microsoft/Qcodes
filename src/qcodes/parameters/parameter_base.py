@@ -316,13 +316,33 @@ class ParameterBase(MetadatableWithName):
         self._abstract = abstract
 
         if instrument is not None and bind_to_instrument:
-            existing_parameter = instrument.parameters.get(name, None)
+            found_as_delegate = instrument.parameters.get(name, False)
+            # we allow properties since a pattern that has been seen in the wild
+            # is properties that are used to wrap parameters of the same name
+            # to define an interface for the instrument
+            is_property = isinstance(
+                getattr(instrument.__class__, name, None), property
+            )
+            found_as_attr = not is_property and hasattr(instrument, name)
 
-            if existing_parameter:
-                if not existing_parameter.abstract:
+            if found_as_delegate or found_as_attr:
+                existing_parameter = instrument.parameters.get(name, None)
+
+                if existing_parameter is not None and not existing_parameter.abstract:
                     raise KeyError(
                         f"Duplicate parameter name {name} on instrument {instrument}"
                     )
+                if existing_parameter is None:
+                    existing_attribute = getattr(instrument, name, None)
+                    if isinstance(existing_attribute, ParameterBase):
+                        raise KeyError(
+                            f"Duplicate parameter name {name} on instrument {instrument}"
+                        )
+                    elif existing_attribute is not None:
+                        warnings.warn(
+                            f"Parameter {name} overrides an attribute of the same name on instrument {instrument} "
+                            "This will be an error in the future.",
+                        )
 
             instrument.parameters[name] = self
 

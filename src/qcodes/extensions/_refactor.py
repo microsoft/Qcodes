@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import argparse
 import os
+from ast import literal_eval
 from dataclasses import dataclass
 from glob import glob
 from pathlib import Path
 from textwrap import dedent
-from typing import cast
 
 try:
     import libcst as cst
-    from libcst import matchers as m
     from libcst.codemod import CodemodContext, VisitorBasedCodemodCommand
 except ImportError as er:
     raise ImportError(
@@ -53,69 +52,42 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
         if self._call_stack[-1] != "self.add_parameter":
             return
 
-        first_positional_arg_is_str = self._arg_num[
-            self._call_stack[-1]
-        ] == 1 and m.matches(
-            node,
-            matcher=m.Arg(value=m.SimpleString(), keyword=None),
-        )
-        arg_is_name = m.matches(
-            node, m.Arg(keyword=m.Name(value="name"), value=m.SimpleString())
-        )
-
-        arg_is_docstring = m.matches(
-            node,
-            matcher=m.Arg(
-                keyword=m.Name(value="docstring"),
-                value=m.OneOf(m.SimpleString(), m.ConcatenatedString()),
-            ),
-        )
-
-        arg_is_docstring_dedent = m.matches(
-            node,
-            m.Arg(
-                keyword=m.Name(value="docstring"),
-                value=m.Call(args=[m.Arg(m.SimpleString())]),
-            ),
-        )
-
-        arg_is_parameter_class = m.matches(
-            node,
-            matcher=m.Arg(keyword=m.Name(value="parameter_class"), value=m.Name()),
-        )
-
-        second_positional_arg_is_str = self._arg_num[
-            self._call_stack[-1]
-        ] == 2 and m.matches(
-            node,
-            matcher=m.Arg(value=m.Name(), keyword=None),
-        )
-
-        if first_positional_arg_is_str or arg_is_name:
-            self.annotations.name = cst.ensure_type(
-                node.value, cst.SimpleString
-            ).raw_value
-
-        if arg_is_docstring:
-            self.annotations.docstring = str(
-                cast(
-                    cst.SimpleString | cst.ConcatenatedString, node.value
-                ).evaluated_value
-            )
-        if arg_is_docstring_dedent:
-            self.annotations.docstring = dedent(
-                str(
-                    cst.ensure_type(
-                        cst.ensure_type(node.value, cst.Call).args[0].value,
-                        cst.SimpleString,
-                    ).evaluated_value
-                )
-            ).strip()
-
-        if arg_is_parameter_class or second_positional_arg_is_str:
-            self.annotations.parameter_class = cst.ensure_type(
-                node.value, cst.Name
-            ).value
+        match node:
+            case cst.Arg(
+                value=cst.SimpleString(e_value), keyword=None
+            ) if self._arg_num[self._call_stack[-1]]:
+                # first positional arg is str
+                self.annotations.name = e_value.strip("\"'")
+            case cst.Arg(
+                keyword=cst.Name(value="name"), value=cst.SimpleString(e_value)
+            ):
+                # arg is name
+                self.annotations.name = e_value.strip("\"'")
+            case cst.Arg(
+                keyword=cst.Name("docstring"), value=cst.SimpleString(e_value)
+            ):
+                # arg is docstring
+                self.annotations.docstring = literal_eval(e_value)
+            case cst.Arg(
+                keyword=cst.Name("docstring"),
+                value=e_value,
+            ) if isinstance(e_value, cst.ConcatenatedString):
+                # arg is docstring concatenated
+                self.annotations.docstring = str(e_value.evaluated_value)
+            case cst.Arg(
+                keyword=cst.Name("docstring"),
+                value=cst.Call(args=[cst.Arg(cst.SimpleString(e_value))]),
+            ):
+                # arg is docstring dedent
+                self.annotations.docstring = dedent(literal_eval(e_value)).strip()
+            case cst.Arg(value=cst.Name(e_value), keyword=None) if self._arg_num[
+                self._call_stack[-1]
+            ] == 2:
+                # second positional arg is str
+                self.annotations.parameter_class = e_value
+            case cst.Arg(keyword=cst.Name("parameter_class"), value=cst.Name(e_value)):
+                # arg is parameter class
+                self.annotations.parameter_class = e_value
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         call_name = _get_call_name(updated_node)
@@ -131,16 +103,24 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
         annotations = self.annotations
         self.annotations = Extracted()
 
-        if not m.matches(
-            updated_node.body[0],
-            m.Expr(value=m.Call(func=m.Attribute(attr=m.Name("add_parameter")))),
-        ):
-            return updated_node
+        match updated_node.body[0]:
+            case cst.Expr(
+                value=cst.Call(func=cst.Attribute(attr=cst.Name("add_parameter")))
+            ):
+                return self._create_updated_node(annotations, updated_node)
+            case _:
+                return updated_node
 
+    @staticmethod
+    def _create_updated_node(
+        annotations: Extracted, updated_node: cst.SimpleStatementLine
+    ) -> (
+        cst.SimpleStatementLine
+        | cst.FlattenSentinel[cst.SimpleStatementLine | cst.BaseCompoundStatement]
+    ):
         call_node = cst.ensure_type(
             cst.ensure_type(updated_node.body[0], cst.Expr).value, cst.Call
         )
-
         if annotations.name is None:
             return updated_node
 
@@ -210,18 +190,14 @@ def main() -> None:
 
 
 def _get_call_name(node: cst.Call) -> str | None:
-    if m.matches(node.func, m.Attribute(value=m.Name(), attr=m.Name())):
-        my_class = cst.ensure_type(
-            cst.ensure_type(node.func, cst.Attribute).value, cst.Name
-        ).value
-        my_attr = cst.ensure_type(
-            cst.ensure_type(node.func, cst.Attribute).attr, cst.Name
-        ).value
-
-        func_name = f"{my_class}.{my_attr}"
-    elif m.matches(node.func, m.Name()):
-        func_name = cst.ensure_type(node.func, cst.Name).value
-    else:
-        return None
-
+    func_name: str | None
+    match node:
+        case cst.Call(
+            func=cst.Attribute(value=cst.Name(my_class), attr=cst.Name(my_attr))
+        ):
+            func_name = f"{my_class}.{my_attr}"
+        case cst.Call(cst.Name(e_value)):
+            func_name = e_value
+        case _:
+            func_name = None
     return func_name
