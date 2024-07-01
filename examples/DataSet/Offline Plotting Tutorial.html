@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline Plotting Tutorial &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Offline plotting with categorical data" href="Offline%20plotting%20with%20categorical%20data.html" />
+    <link rel="prev" title="Measuring X as a function of time" href="Measuring%20X%20as%20a%20function%20of%20time.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Offline Plotting Tutorial</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#A-single,-simple-1D-sweep">A single, simple 1D sweep</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Two-interleaved-1D-sweeps">Two interleaved 1D sweeps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Regular-2D-rectangular-sweep-scan">Regular 2D rectangular sweep scan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Warped-2D-rectangular-sweep-scan">Warped 2D rectangular sweep scan</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Interrupted-2D-scans-(a-hole-in-the-cheese)">Interrupted 2D scans (a hole in the cheese)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Fancy-plotting">Fancy plotting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Rasterizing">Rasterizing</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Offline Plotting Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/DataSet/Offline Plotting Tutorial.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/Offline Plotting Tutorial.ipynb">docs/examples/DataSet/Offline Plotting Tutorial.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/Offline Plotting Tutorial.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Offline-Plotting-Tutorial">
+<h1>Offline Plotting Tutorial<a class="headerlink" href="#Offline-Plotting-Tutorial" title="Link to this heading"></a></h1>
+<p>The dataset comes with a tool for offline (i.e. not live as the data are coming in) plotting. This notebook explains how to use it and what it is capable of plotting. <strong>NOTE</strong>: This notebook only covers the plotting of numerical data. For categorical (string-valued) data, please see <a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html"><span class="doc">Offline plotting with categorical data</span></a>.</p>
+<p>The function that is going to be used in this tutorial is the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code>. For convenience it is also possible to directly plot the dataset from the <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code>. Apart from the first argument <code class="docutils literal notranslate"><span class="pre">plot_by_id</span></code> behaves exactly like the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code>. All customizations shown below can also be applied to <code class="docutils literal notranslate"><span class="pre">plot_by_id</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Measurement</span><span class="p">,</span>
+    <span class="n">initialise_or_create_database_at</span><span class="p">,</span>
+    <span class="n">load_or_create_experiment</span><span class="p">,</span>
+    <span class="n">plot_dataset</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : /home/runner/.qcodes/logs/240701-14900-qcodes.log
+</pre></div></div>
+</div>
+<p>Let us first initialise our database and create an experiment which shall produce the data to be visualise.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;offline_plotting_example.db&quot;</span><span class="p">)</span>
+<span class="n">exp</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span><span class="s1">&#39;offline_plotting_experiment&#39;</span><span class="p">,</span> <span class="s1">&#39;nosample&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Next we make a handful of parameters to be used in the examples of this notebook.</p>
+<p>For those curious, setting <code class="docutils literal notranslate"><span class="pre">set_cmd=None</span></code> and <code class="docutils literal notranslate"><span class="pre">get_cmd=None</span></code> makes the <code class="docutils literal notranslate"><span class="pre">Parameters</span></code> settable and gettable without them being hooked up to any external/auxiliary action (in old QCoDeS versions, this was known as a <code class="docutils literal notranslate"><span class="pre">ManualParameter</span></code>).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Make a handful of parameters to be used in the examples</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Voltage&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+              <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span>
+              <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Voltage&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;V&#39;</span><span class="p">,</span>
+              <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">y2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;y2&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Current&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span>
+               <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Majorana number&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;Anyonic charge&#39;</span><span class="p">,</span>
+              <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="A-single,-simple-1D-sweep">
+<h2>A single, simple 1D sweep<a class="headerlink" href="#A-single,-simple-1D-sweep" title="Link to this heading"></a></h2>
+<p>For the sake of simplicity, let us perform a single, 1D sweep:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,))</span>
+
+<span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">3.4</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="mi">250</span><span class="p">)</span>
+
+<span class="c1"># Randomly shuffle the values in order to test the plot</span>
+<span class="c1"># that is to be created for this data is a correct line</span>
+<span class="c1"># that does not depend on the order of the data.</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">xvals</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xnum</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span>  <span class="c1"># multiplicative noise yeah yeah</span>
+        <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xnum</span><span class="p">),</span>
+                             <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">xnum</span><span class="o">+</span><span class="n">noise</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">xnum</span><span class="o">+</span><span class="n">noise</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+<span class="n">dataid</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">run_id</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 1.
+</pre></div></div>
+</div>
+<p>Now let us plot that run. The function <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> takes the <code class="docutils literal notranslate"><span class="pre">dataset</span></code> created by the run to plot as a positional argument. Furthermore, the user may specify the <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> axis object (or list of axis objects) to plot on.</p>
+<p>If no axes are specified, the function creates new axis object(s). The function returns a tuple of a list of the axes and a list of the colorbar axes (just <code class="docutils literal notranslate"><span class="pre">None</span></code>s if there are no colorbars).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">cbaxes</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_11_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_11_0.png" />
+</div>
+</div>
+<p>Using the returned axis, we can change, among other things, the plot linewidth and color. We refer to the <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> documentation for details on <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> plot customization.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">my_ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">line</span> <span class="o">=</span> <span class="n">my_ax</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">line</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s1">&#39;#223344&#39;</span><span class="p">)</span>
+<span class="n">line</span><span class="o">.</span><span class="n">set_linewidth</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Rescaling-units-and-ticks">
+<h3>Rescaling units and ticks<a class="headerlink" href="#Rescaling-units-and-ticks" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> function can conveniently rescale the units and ticks of the plot. For example, if one of the axes is voltage in units of <code class="docutils literal notranslate"><span class="pre">V</span></code>, but the values are in the range of millivolts, then <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> will rescale the ticks of the axis to show <code class="docutils literal notranslate"><span class="pre">5</span></code> instead of <code class="docutils literal notranslate"><span class="pre">0.005</span></code>, and the unit in the axis label will be adjusted from <code class="docutils literal notranslate"><span class="pre">V</span></code> to <code class="docutils literal notranslate"><span class="pre">mV</span></code>.</p>
+<p>This feature works with the relevant SI units, and some others. In case the units of the parameter are not from that list, or are simply not specified, ticks and labels are left intact.</p>
+<p>The feature can be explicitly turned off by passing <code class="docutils literal notranslate"><span class="pre">rescale_axes=False</span></code> to the function.</p>
+<p>The following plot demontrates the feature.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">t</span><span class="p">,))</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">tnum</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">3.4</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="mi">50</span><span class="p">):</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span>
+        <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">t</span><span class="p">,</span> <span class="n">tnum</span><span class="o">*</span><span class="mf">1e-6</span><span class="p">),</span>
+                             <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">tnum</span><span class="o">+</span><span class="n">noise</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">tnum</span><span class="o">+</span><span class="n">noise</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="mf">1e3</span><span class="p">))</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 2.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #2, Experiment offline_plotting_experiment (nosample)&#39;}, xlabel=&#39;Time (μs)&#39;, ylabel=&#39;Voltage (kV)&#39;&gt;],
+ [None])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_16_1.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_16_1.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="Two-interleaved-1D-sweeps">
+<h2>Two interleaved 1D sweeps<a class="headerlink" href="#Two-interleaved-1D-sweeps" title="Link to this heading"></a></h2>
+<p>Now we make a run where two parameters are measured as a function of the same parameter.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+
+<span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">250</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+
+    <span class="k">for</span> <span class="n">xnum</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xnum</span><span class="p">),</span>
+                             <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">xnum</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xnum</span><span class="p">),</span>
+                             <span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="o">-</span><span class="n">xnum</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 3.
+</pre></div></div>
+</div>
+<p>In such a situation, the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> by default creates a new axis for <strong>each</strong> dependent parameter. Sometimes this is not desirable; we’d rather have both plots on the same axis. If this is the case, then, we might pass the same axis twice to the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">cbaxes</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_20_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_20_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_20_1.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_20_1.png" />
+</div>
+</div>
+<p>Let’s do that now</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">,</span> <span class="n">cbaxes</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">[</span><span class="n">ax</span><span class="p">,</span> <span class="n">ax</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_22_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_22_0.png" />
+</div>
+</div>
+</section>
+<section id="Regular-2D-rectangular-sweep-scan">
+<h2>Regular 2D rectangular sweep scan<a class="headerlink" href="#Regular-2D-rectangular-sweep-scan" title="Link to this heading"></a></h2>
+<p>For 2D plots, a colorbar is usually present. As mentioned above, the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> function returns a colorbar.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span>
+
+<span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">tvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xv</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tv</span> <span class="ow">in</span> <span class="n">tvals</span><span class="p">:</span>
+            <span class="c1"># just some arbitrary semi good looking function</span>
+            <span class="n">zv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xv</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">),</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tv</span><span class="p">),</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">zv</span><span class="p">))</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 4.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_25_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_25_0.png" />
+</div>
+</div>
+<p>A fairly normal situation is that the colorbar was somehow mislabelled. Using the returned colorbar, the label can be overwritten.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">colorbar</span> <span class="o">=</span> <span class="n">colorbars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">colorbar</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Correct science label&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Customisations">
+<h3>Customisations<a class="headerlink" href="#Customisations" title="Link to this heading"></a></h3>
+<p>In addition to tweaking the returned axes and colorbars, it is possible to customise the plot directly via the call to the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code>. This is done by the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> via passing on the keyword arguments to the corresponding <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> function that runs under the hood.</p>
+<p>A few examples:</p>
+<section id="Changing-the-colormap">
+<h4>Changing the colormap<a class="headerlink" href="#Changing-the-colormap" title="Link to this heading"></a></h4>
+<p>Any <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> colormap can be used. The relevant keyword argument is <code class="docutils literal notranslate"><span class="pre">cmap</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cmap</span> <span class="o">=</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colormaps</span><span class="o">.</span><span class="n">get_cmap</span><span class="p">(</span><span class="s2">&quot;hot&quot;</span><span class="p">)</span>
+<span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_30_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_30_0.png" />
+</div>
+</div>
+</section>
+<section id="Setting-the-colorscale-to-logarithmic">
+<h4>Setting the colorscale to logarithmic<a class="headerlink" href="#Setting-the-colorscale-to-logarithmic" title="Link to this heading"></a></h4>
+<p>To set the colorscale to logarithmic, we can use the keyword argument <code class="docutils literal notranslate"><span class="pre">norm</span></code> along with a <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> <code class="docutils literal notranslate"><span class="pre">Norm</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">LogNorm</span>
+
+<span class="n">norm</span><span class="o">=</span><span class="n">LogNorm</span><span class="p">()</span>
+<span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">norm</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_32_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_32_0.png" />
+</div>
+</div>
+</section>
+<section id="Setting-limits-on-the-colorscale">
+<h4>Setting limits on the colorscale<a class="headerlink" href="#Setting-limits-on-the-colorscale" title="Link to this heading"></a></h4>
+<p>The keyword arguments <code class="docutils literal notranslate"><span class="pre">vmin</span></code> and <code class="docutils literal notranslate"><span class="pre">vmax</span></code> come in handy, if we need to set limits on the colorscale.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_34_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_34_0.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="Warped-2D-rectangular-sweep-scan">
+<h2>Warped 2D rectangular sweep scan<a class="headerlink" href="#Warped-2D-rectangular-sweep-scan" title="Link to this heading"></a></h2>
+<p>A nice feature of the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> is that the grid may be warped; it makes no difference. Here we warp the x axis of the previous scan to increase the resolution in the right half plane.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xvals</span><span class="p">)</span>
+<span class="n">tvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xv</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tv</span> <span class="ow">in</span> <span class="n">tvals</span><span class="p">:</span>
+            <span class="n">zv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xv</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">),</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tv</span><span class="p">),</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">zv</span><span class="p">))</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 5.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">cbaxes</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_37_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_37_0.png" />
+</div>
+</div>
+</section>
+<section id="Interrupted-2D-scans-(a-hole-in-the-cheese)">
+<h2>Interrupted 2D scans (a hole in the cheese)<a class="headerlink" href="#Interrupted-2D-scans-(a-hole-in-the-cheese)" title="Link to this heading"></a></h2>
+<p>In case a sweep in interrupted, the entire grid will not be filled out. This is also supported, in fact, any single rectangular hole is allowed.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">9</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xvals</span><span class="o">+</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">tvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+
+<span class="c1"># define two small forbidden range functions</span>
+
+
+<span class="k">def</span> <span class="nf">no_x</span><span class="p">(</span><span class="n">xv</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">xv</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">xv</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">no_t</span><span class="p">(</span><span class="n">tv</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">tv</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">tv</span> <span class="o">&lt;</span> <span class="mi">450</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xv</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tv</span> <span class="ow">in</span> <span class="n">tvals</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">no_x</span><span class="p">(</span><span class="n">xv</span><span class="p">)</span> <span class="ow">and</span> <span class="n">no_t</span><span class="p">(</span><span class="n">tv</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">zv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xv</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span>
+                <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">),</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tv</span><span class="p">),</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">zv</span><span class="p">))</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 6.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_40_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_40_0.png" />
+</div>
+</div>
+</section>
+<section id="Fancy-plotting">
+<h2>Fancy plotting<a class="headerlink" href="#Fancy-plotting" title="Link to this heading"></a></h2>
+<p>As a final example, let us combine several plots in one window.</p>
+<p>We first make a little grid of axes.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">figaxes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_43_0.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_43_0.png" />
+</div>
+</div>
+<p>Next, we make some runs (shamelessly copy-pasting from above).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># First run</span>
+<span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,))</span>
+
+<span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">3.4</span><span class="p">,</span> <span class="mf">4.2</span><span class="p">,</span> <span class="mi">250</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xnum</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span><span class="o">*</span><span class="mf">0.1</span>  <span class="c1"># multiplicative noise yeah yeah</span>
+        <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xnum</span><span class="p">),</span>
+                             <span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">xnum</span><span class="o">+</span><span class="n">noise</span><span class="p">)</span><span class="o">**</span><span class="mi">3</span> <span class="o">-</span> <span class="mi">5</span><span class="o">*</span><span class="p">(</span><span class="n">xnum</span><span class="o">+</span><span class="n">noise</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+
+<span class="n">ds1</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+
+<span class="c1"># Second run</span>
+
+<span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span>
+
+<span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">tvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">25</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xv</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tv</span> <span class="ow">in</span> <span class="n">tvals</span><span class="p">:</span>
+            <span class="c1"># just some arbitrary semi good looking function</span>
+            <span class="n">zv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xv</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">),</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tv</span><span class="p">),</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">zv</span><span class="p">))</span>
+
+<span class="n">ds2</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 7.
+Starting experimental run with id: 8.
+</pre></div></div>
+</div>
+<p>And then we put them just where we please.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">ds1</span><span class="p">,</span> <span class="n">figaxes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">ds2</span><span class="p">,</span> <span class="n">figaxes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">colorbars</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Note that if we want to replot on an axis with a colorbar we probably also want to reuse the colorbar.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axes</span><span class="p">,</span> <span class="n">colorbars</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">ds2</span><span class="p">,</span> <span class="n">figaxes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">colorbars</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Rasterizing">
+<h2>Rasterizing<a class="headerlink" href="#Rasterizing" title="Link to this heading"></a></h2>
+<p>By default <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> renders each individual data point as a separate square in 2D plots when storing in a vector format (pdf, svg). This is not a problem for small data sets, but the time needed to generate a pdf increases rapidly with the number of data points. Therefore, the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> will automatically raster the data (lines, ticks and labels are still stored as text) if more than 5000 data points are plotted. The particular value of the rasterization threshold can be set in the
+<code class="docutils literal notranslate"><span class="pre">qcodesrc.json</span></code> config file.</p>
+<p>Alternatively the <code class="docutils literal notranslate"><span class="pre">rasterized</span></code> keyword can be passed to the <code class="docutils literal notranslate"><span class="pre">plot_dataset</span></code> function.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">))</span>
+
+<span class="n">xvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">tvals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1500</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">xv</span> <span class="ow">in</span> <span class="n">xvals</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">tv</span> <span class="ow">in</span> <span class="n">tvals</span><span class="p">:</span>
+            <span class="c1"># just some arbitrary semi good looking function</span>
+            <span class="n">zv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">xv</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.001</span><span class="o">*</span><span class="n">tv</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">xv</span><span class="p">),</span> <span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">tv</span><span class="p">),</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">zv</span><span class="p">))</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 9.
+</pre></div></div>
+</div>
+<p>To get a feeling for the time difference between rasterzing and not, we time the two approaches here.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="n">axeslist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+<span class="n">axeslist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;test_plot_dataset_</span><span class="si">{</span><span class="n">dataid</span><span class="si">}</span><span class="s1">.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CPU times: user 287 ms, sys: 305 ms, total: 592 ms
+Wall time: 278 ms
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_56_1.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_56_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="n">axeslist</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">rasterized</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">axeslist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;test_plot_dataset_</span><span class="si">{</span><span class="n">dataid</span><span class="si">}</span><span class="s1">.pdf&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CPU times: user 3.69 s, sys: 277 ms, total: 3.97 s
+Wall time: 3.67 s
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Offline_Plotting_Tutorial_57_1.png" src="../../_images/examples_DataSet_Offline_Plotting_Tutorial_57_1.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Measuring%20X%20as%20a%20function%20of%20time.html" class="btn btn-neutral float-left" title="Measuring X as a function of time" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Offline%20plotting%20with%20categorical%20data.html" class="btn btn-neutral float-right" title="Offline plotting with categorical data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

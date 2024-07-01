@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creating Simulated PyVISA Instruments &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Instrument" href="Instruments.html" />
+    <link rel="prev" title="Creating QCoDeS instrument drivers" href="Creating-Instrument-Drivers.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Creating Simulated PyVISA Instruments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#What?">What?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Not!">Not!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#How?">How?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Example:-Weinschel8320">Example: Weinschel8320</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Congratulations!-That-was-it.">Congratulations! That was it.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Bonus-example:-including-parameters-in-the-simulated-instrument">Bonus example: including parameters in the simulated instrument</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#That's-it!">That’s it!</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Creating Simulated PyVISA Instruments</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/writing_drivers/Creating-Simulated-PyVISA-Instruments.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/writing_drivers/Creating-Simulated-PyVISA-Instruments.ipynb">docs/examples/writing_drivers/Creating-Simulated-PyVISA-Instruments.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/writing_drivers/Creating-Simulated-PyVISA-Instruments.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Creating-Simulated-PyVISA-Instruments">
+<h1>Creating Simulated PyVISA Instruments<a class="headerlink" href="#Creating-Simulated-PyVISA-Instruments" title="Link to this heading"></a></h1>
+<p>When developing stuff in a large codebase like QCoDeS, it is often uncanningly easy to submit a change that breaks stuff. Therefore, <em>continuous integration</em> is performed in the form of automated tests that run before new code is allowed into the codebase. The many tests of QCoDeS can be found in the <code class="docutils literal notranslate"><span class="pre">tests</span></code> folder.</p>
+<p>But how about drivers? They constitute the majority of the codebase, but how can we test them? Wouldn’t that require a physical copy each instrument to be present on the California server where we run our tests? It used to be so, but not anymore! For drivers utilising PyVISA (i.e. <code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code> drivers), we may create simulated instruments to which the drivers may connect.</p>
+<section id="What?">
+<h2>What?<a class="headerlink" href="#What?" title="Link to this heading"></a></h2>
+<p>This way, we may instantiate drivers and run simple tests on them. Tests like:</p>
+<ul class="simple">
+<li><p>Can the driver even instantiate? This is very relevant when underlying APIs change.</p></li>
+<li><p>Is the drivers (e.g.) “voltage-to-bytecode” converter working properly?</p></li>
+</ul>
+</section>
+<section id="Not!">
+<h2>Not!<a class="headerlink" href="#Not!" title="Link to this heading"></a></h2>
+<p>It is not feasible to simulate any but the most trivial features of the instrument. Simulated instruments can not and should not perform tests like:</p>
+<ul class="simple">
+<li><p>Do we wait sufficiently long for this oscilloscope’s trace to be acquired?</p></li>
+<li><p>Does our driver handle overlapping commands of this AWG correctly?</p></li>
+</ul>
+</section>
+<section id="How?">
+<h2>How?<a class="headerlink" href="#How?" title="Link to this heading"></a></h2>
+<p>The basic scheme goes as follows:</p>
+<ul class="simple">
+<li><p>Write a <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file for the simulated instrument. The instructions for that may be found here: <a class="reference external" href="https://pyvisa-sim.readthedocs.io/en/latest/">https://pyvisa-sim.readthedocs.io/en/latest/</a> and specifically here: <a class="reference external" href="https://pyvisa-sim.readthedocs.io/en/latest/definitions.html#definitions">https://pyvisa-sim.readthedocs.io/en/latest/definitions.html#definitions</a></p></li>
+<li><p>Then write a test for your instrument and put it in <code class="docutils literal notranslate"><span class="pre">tests/drivers</span></code>. The file should have the name <code class="docutils literal notranslate"><span class="pre">test_&lt;nameofyourdriver&gt;.py</span></code>.</p></li>
+<li><p>Check that all is well by running <code class="docutils literal notranslate"><span class="pre">$</span> <span class="pre">pytest</span> <span class="pre">test_&lt;nameofyourdriver&gt;.py</span></code>.</p></li>
+</ul>
+<p>Below is an example.</p>
+</section>
+<section id="Example:-Weinschel8320">
+<h2>Example: Weinschel8320<a class="headerlink" href="#Example:-Weinschel8320" title="Link to this heading"></a></h2>
+<p>The Weinschel 8320 is a very simple driver.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">qcodes.validators</span> <span class="k">as</span> <span class="nn">vals</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument.visa</span> <span class="kn">import</span> <span class="n">VisaInstrument</span><span class="p">,</span> <span class="n">VisaInstrumentKWArgs</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+
+<span class="k">class</span> <span class="nc">Weinschel8320</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    QCoDeS driver for the stepped attenuator</span>
+<span class="sd">    Weinschel is formerly known as Aeroflex/Weinschel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">attenuation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;attenuation&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;dB&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;ATTN ALL </span><span class="si">{:02.0f}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;ATTN? 1&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">60.1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter attenuation&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : C:\Users\jenielse\.qcodes\logs\command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : C:\Users\jenielse\.qcodes\logs\221108-14924-qcodes.log
+</pre></div></div>
+</div>
+<section id="The-.yaml-file">
+<h3>The <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file<a class="headerlink" href="#The-.yaml-file" title="Link to this heading"></a></h3>
+<p>The simplest <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file that is still useful, reads, in all its glory:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>spec: &quot;1.0&quot;
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: &quot;\r&quot;  # MAKE SURE! that this matches the terminator of the driver!
+        r: &quot;\r&quot;
+    error: ERROR
+    dialogues:
+      - q: &quot;*IDN?&quot;
+        r: &quot;QCoDeS, Weinschel 8320 (Simulated), 1337, 0.0.01&quot;
+
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
+</pre></div>
+</div>
+<p>Note that since no physical connection is made, it doesn’t matter what interface we pretend to use (GPIB, USB, ethernet, serial, …). As a convention, we always write GPIB in the <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> files. This simulates an instrument with no settable parameter; only an <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response. This is enough to instantiate the instrument.</p>
+<p>We save the above file as <code class="docutils literal notranslate"><span class="pre">qcodes/instrument/sims/Weinschel_8320.yaml</span></code>. Note that in this example we have cheated a bit and already written the file in that location.</p>
+<p>Then we may connect to the simulated instrument.</p>
+<p>There are two different ways we may tell pyvisa-sim which yaml file to make use of. We can either follow the official instructions and pass visalib as a string of the form “<a class="reference external" href="mailto:pathtoyamlfile&#37;&#52;&#48;sim">pathtoyamlfile<span>&#64;</span>sim</a>” where <code class="docutils literal notranslate"><span class="pre">sim</span></code> indicates that we make use of the simulated backend. This is however not very convenient when the yaml file is part of a package since we would need to know the absolute path. It is therefor also possible to use the argument pyvisa_sim_file. This can be given in two forms either just the name
+of the file such as <code class="docutils literal notranslate"><span class="pre">Weinschel_8320.yaml</span></code> in which case we search for the file in the <code class="docutils literal notranslate"><span class="pre">qcodes.instrument.sims</span></code> folder. Or alternatively in the format <code class="docutils literal notranslate"><span class="pre">mymodule.mysubmodule:name_of_file</span></code> e.g. <code class="docutils literal notranslate"><span class="pre">qcodes.instrument.sims:Weinschel_8320.yaml</span></code> in which case we search for the file in the supplied module.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">wein_sim</span> <span class="o">=</span> <span class="n">Weinschel8320</span><span class="p">(</span><span class="s1">&#39;wein_sim&#39;</span><span class="p">,</span>
+                          <span class="n">address</span><span class="o">=</span><span class="s1">&#39;GPIB::1::INSTR&#39;</span><span class="p">,</span>  <span class="c1"># This matches the address in the .yaml file</span>
+                          <span class="n">pyvisa_sim_file</span><span class="o">=</span><span class="s2">&quot;Weinschel_8320.yaml&quot;</span>
+                          <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to: QCoDeS Weinschel 8320 (Simulated) (serial:1337, firmware:0.0.01) in 0.07s
+</pre></div></div>
+</div>
+</section>
+<section id="The-test">
+<h3>The test<a class="headerlink" href="#The-test" title="Link to this heading"></a></h3>
+<p>Now we can write a useful test!</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.weinschel</span> <span class="kn">import</span> <span class="n">Weinschel8320</span>
+
+
+<span class="c1"># The following decorator makes the driver</span>
+<span class="c1"># available to all the functions in this module</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weinschel_driver_1&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_weinschel_driver_1</span><span class="p">():</span>
+    <span class="n">wein_sim</span> <span class="o">=</span> <span class="n">Weinschel8320</span><span class="p">(</span><span class="s1">&#39;wein_sim&#39;</span><span class="p">,</span>
+                              <span class="n">address</span><span class="o">=</span><span class="s1">&#39;GPIB::1::65535::INSTR&#39;</span><span class="p">,</span>
+                              <span class="n">pyvisa_sim_file</span><span class="o">=</span><span class="s2">&quot;Weinschel_8320.yaml&quot;</span>
+                              <span class="p">)</span>
+    <span class="k">yield</span> <span class="n">wein_sim</span>
+
+    <span class="n">wein_sim</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">test_init_v1</span><span class="p">(</span><span class="n">weinschel_driver_1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Test that simple initialisation works</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># There is not that much to do, really.</span>
+    <span class="c1"># We can check that the IDN string reads back correctly</span>
+
+    <span class="n">idn_dict</span> <span class="o">=</span> <span class="n">weinschel_driver_1</span><span class="o">.</span><span class="n">IDN</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="n">idn_dict</span><span class="p">[</span><span class="s1">&#39;vendor&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;QCoDeS&#39;</span>
+<br/></pre></div>
+</div>
+</div>
+<p>Save the test as <code class="docutils literal notranslate"><span class="pre">tests/drivers/test_weinschel_8320.py</span></code>.</p>
+<p>Open a command line/console/terminal, navigate to the <code class="docutils literal notranslate"><span class="pre">tests/drivers/</span></code> folder and run</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt;&gt; pytest test_weinschel_8320.py
+</pre></div>
+</div>
+<p>This should give you an output similar to</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>========================================= 1 passed in 0.73 seconds ==========================================
+</pre></div>
+</div>
+</section>
+</section>
+<section id="Congratulations!-That-was-it.">
+<h2>Congratulations! That was it.<a class="headerlink" href="#Congratulations!-That-was-it." title="Link to this heading"></a></h2>
+</section>
+<section id="Bonus-example:-including-parameters-in-the-simulated-instrument">
+<h2>Bonus example: including parameters in the simulated instrument<a class="headerlink" href="#Bonus-example:-including-parameters-in-the-simulated-instrument" title="Link to this heading"></a></h2>
+<p>It is also possible to add queriable parameters to the <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file, but testing that you can read those back is of limited value. You should only add them if your driver needs them to instantiate, e.g. if it checks that some range or impedance is configured correctly on startup, or - more generally - if a part of your driver code that you’d like to test needs it to run.</p>
+<p>For the sake of this example, let us add a test that the driver’s parameter’s validator will reject an attenuation of less than 0 dBm. Note that this concrete test is redundant, since we have separate tests for validators. It is, however, an excellent example to learn from.</p>
+<p>First we update the <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file to contain a property matching the parameter.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>spec: &quot;1.0&quot;
+devices:
+  device 1:
+    eom:
+      GPIB INSTR:
+        q: &quot;\r&quot;  # MAKE SURE! that this matches the terminator of the driver!
+        r: &quot;\r&quot;
+    error: ERROR
+    dialogues:
+      - q: &quot;*IDN?&quot;
+        r: &quot;QCoDeS, Weinschel 8320 (Simulated), 1337, 0.0.01&quot;
+
+    properties:
+
+      attenuation:
+        default: 0
+        getter:
+          q: &quot;ATTN? 1&quot;  # the set/get commands have to simply be copied over from the driver
+          r: &quot;{:02.0f}&quot;
+        setter:
+          q: &quot;ATTN ALL {:02.0f}&quot;
+
+resources:
+  GPIB::1::INSTR:
+    device: device 1
+</pre></div>
+</div>
+<p>Notice that we don’t include the the <code class="docutils literal notranslate"><span class="pre">r:</span> <span class="pre">OK</span></code> as the response of setting a property. This is in contrast to what <a class="reference external" href="https://pyvisa-sim.readthedocs.io/en/latest/definitions.html#properties">https://pyvisa-sim.readthedocs.io/en/latest/definitions.html#properties</a> does. The response of a successful setting of a parameter will not return ‘OK’.</p>
+<p>Again we have cheated and already added that file to the above location.</p>
+<p>Next we update the test script.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.weinschel</span> <span class="kn">import</span> <span class="n">Weinschel8320</span>
+
+
+<span class="c1"># The following decorator makes the driver</span>
+<span class="c1"># available to all the functions in this module</span>
+<span class="nd">@pytest</span><span class="o">.</span><span class="n">fixture</span><span class="p">(</span><span class="n">scope</span><span class="o">=</span><span class="s1">&#39;function&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weinschel_driver_2&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_weinschel_driver</span><span class="p">():</span>
+    <span class="n">wein_sim</span> <span class="o">=</span> <span class="n">Weinschel8320</span><span class="p">(</span><span class="s1">&#39;wein_sim&#39;</span><span class="p">,</span>
+                              <span class="n">address</span><span class="o">=</span><span class="s1">&#39;GPIB::1::INSTR&#39;</span><span class="p">,</span>
+                              <span class="n">pyvisa_sim_file</span><span class="o">=</span><span class="s2">&quot;Weinschel_8320.yaml&quot;</span>
+                              <span class="p">)</span>
+    <span class="k">yield</span> <span class="n">wein_sim</span>
+
+    <span class="n">wein_sim</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">test_init_v2</span><span class="p">(</span><span class="n">driver</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Test that simple initialisation works</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># There is not that much to do, really.</span>
+    <span class="c1"># We can check that the IDN string reads back correctly</span>
+
+    <span class="n">idn_dict</span> <span class="o">=</span> <span class="n">driver</span><span class="o">.</span><span class="n">IDN</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="n">idn_dict</span><span class="p">[</span><span class="s1">&#39;vendor&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;QCoDeS&#39;</span>
+
+
+<span class="k">def</span> <span class="nf">test_attenuation_validation</span><span class="p">(</span><span class="n">weinschel_driver_2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Test that incorrect values are rejected</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">bad_values</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">bv</span> <span class="ow">in</span> <span class="n">bad_values</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">weinschel_driver_2</span><span class="o">.</span><span class="n">attenuation</span><span class="p">(</span><span class="n">bv</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<p>Open a command line/console/terminal, navigate to the <code class="docutils literal notranslate"><span class="pre">tests/drivers/</span></code> folder and run</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&gt;&gt; pytest test_weinschel_8320.py
+</pre></div>
+</div>
+<p>This should give you an output similar to</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>========================================= 2 passed in 0.73 seconds ==========================================
+</pre></div>
+</div>
+</section>
+<section id="That's-it!">
+<h2>That’s it!<a class="headerlink" href="#That's-it!" title="Link to this heading"></a></h2>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {}, "version_major": 2, "version_minor": 0}
+</script></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Creating-Instrument-Drivers.html" class="btn btn-neutral float-left" title="Creating QCoDeS instrument drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Instruments.html" class="btn btn-neutral float-right" title="Instrument" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

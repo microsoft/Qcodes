@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.parameters.parameter_base &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.parameters.parameter_base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.parameters.parameter_base</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">collections.abc</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">cached_property</span><span class="p">,</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">overload</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.metadatable</span> <span class="kn">import</span> <span class="n">Metadatable</span><span class="p">,</span> <span class="n">MetadatableWithName</span>
+<span class="kn">from</span> <span class="nn">qcodes.utils</span> <span class="kn">import</span> <span class="n">DelegateAttributes</span><span class="p">,</span> <span class="n">full_class</span><span class="p">,</span> <span class="n">qcodes_abstractmethod</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Ints</span><span class="p">,</span> <span class="n">Validator</span>
+
+<span class="kn">from</span> <span class="nn">.cache</span> <span class="kn">import</span> <span class="n">_Cache</span><span class="p">,</span> <span class="n">_CacheProtocol</span>
+<span class="kn">from</span> <span class="nn">.named_repr</span> <span class="kn">import</span> <span class="n">named_repr</span>
+<span class="kn">from</span> <span class="nn">.permissive_range</span> <span class="kn">import</span> <span class="n">permissive_range</span>
+
+<span class="c1"># for now the type the parameter may contain is not restricted at all</span>
+<span class="n">ParamDataType</span> <span class="o">=</span> <span class="n">Any</span>
+<span class="n">ParamRawDataType</span> <span class="o">=</span> <span class="n">Any</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Sized</span>
+    <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">TracebackType</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.instrument.base</span> <span class="kn">import</span> <span class="n">InstrumentBase</span>
+
+<span class="n">LOG</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_SetParamContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class is returned by the ``set_to`` method of parameter</span>
+
+<span class="sd">    Example usage:</span>
+
+<span class="sd">    &gt;&gt;&gt; v = dac.voltage()</span>
+<span class="sd">    &gt;&gt;&gt; with dac.voltage.set_to(-1):</span>
+<span class="sd">        ...     # Do stuff with the DAC output set to -1 V.</span>
+<span class="sd">        ...</span>
+<span class="sd">    &gt;&gt;&gt; assert abs(dac.voltage() - v) &lt;= tolerance</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parameter</span><span class="p">:</span> <span class="n">ParameterBase</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">,</span>
+        <span class="n">allow_changes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="p">:</span> <span class="n">ParameterBase</span> <span class="o">=</span> <span class="n">parameter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_allow_changes</span> <span class="o">=</span> <span class="n">allow_changes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_original_value</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_original_settable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_original_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_original_value</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allow_changes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_original_settable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">settable</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">_settable</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">typ</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="ne">BaseException</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="ne">BaseException</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">traceback</span><span class="p">:</span> <span class="n">TracebackType</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allow_changes</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_original_settable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">_settable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_original_settable</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_original_value</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_original_value</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="c1"># Likely an uninitialized Parameter</span>
+                <span class="n">LOG</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Encountered an exception setting the original value &quot;</span>
+                    <span class="s2">&quot;when exiting set_to context of &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_parameter</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+
+
+<div class="viewcode-block" id="invert_val_mapping">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.invert_val_mapping">[docs]</a>
+<span class="k">def</span> <span class="nf">invert_val_mapping</span><span class="p">(</span><span class="n">val_mapping</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inverts the value mapping dictionary for allowed parameter values&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">val_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+
+<div class="viewcode-block" id="ParameterBase">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase">[docs]</a>
+<span class="k">class</span> <span class="nc">ParameterBase</span><span class="p">(</span><span class="n">MetadatableWithName</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shared behavior for all parameters. Not intended to be used</span>
+<span class="sd">    directly, normally you should use ``Parameter``, ``ArrayParameter``,</span>
+<span class="sd">    ``MultiParameter``, or ``CombinedParameter``.</span>
+<span class="sd">    Note that ``CombinedParameter`` is not yet a subclass of ``ParameterBase``</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: the local name of the parameter. Must be a valid</span>
+<span class="sd">            identifier, ie no spaces or special characters or starting with a</span>
+<span class="sd">            number. If this parameter is part of an Instrument or Station,</span>
+<span class="sd">            this should match how it will be referenced from that parent,</span>
+<span class="sd">            ie ``instrument.name`` or ``instrument.parameters[name]``</span>
+
+<span class="sd">        instrument: the instrument this parameter</span>
+<span class="sd">            belongs to, if any</span>
+
+<span class="sd">        snapshot_get: False prevents any update to the</span>
+<span class="sd">            parameter during a snapshot, even if the snapshot was called with</span>
+<span class="sd">            ``update=True``, for example if it takes too long to update.</span>
+<span class="sd">            Default True.</span>
+
+<span class="sd">        snapshot_value: False prevents parameter value to be</span>
+<span class="sd">            stored in the snapshot. Useful if the value is large.</span>
+
+<span class="sd">        snapshot_exclude: True prevents parameter to be</span>
+<span class="sd">            included in the snapshot. Useful if there are many of the same</span>
+<span class="sd">            parameter which are clogging up the snapshot.</span>
+<span class="sd">            Default False</span>
+
+<span class="sd">        step: max increment of parameter value.</span>
+<span class="sd">            Larger changes are broken into multiple steps this size.</span>
+<span class="sd">            When combined with delays, this acts as a ramp.</span>
+
+<span class="sd">        scale: Scale to multiply value with before</span>
+<span class="sd">            performing set. the internally multiplied value is stored in</span>
+<span class="sd">            ``cache.raw_value``. Can account for a voltage divider.</span>
+
+<span class="sd">        offset: Compensate for a parameter specific offset. (just as scale)</span>
+<span class="sd">            get value = raw value - offset.</span>
+<span class="sd">            set value = argument + offset.</span>
+<span class="sd">            If offset and scale are used in combination, when getting a value,</span>
+<span class="sd">            first an offset is added, then the scale is applied.</span>
+
+<span class="sd">        inter_delay: Minimum time (in seconds) between successive sets.</span>
+<span class="sd">            If the previous set was less than this, it will wait until the</span>
+<span class="sd">            condition is met. Can be set to 0 to go maximum speed with</span>
+<span class="sd">            no errors.</span>
+
+<span class="sd">        post_delay: time (in seconds) to wait after the *start* of each set,</span>
+<span class="sd">            whether part of a sweep or not. Can be set to 0 to go maximum</span>
+<span class="sd">            speed with no errors.</span>
+
+<span class="sd">        val_mapping: A bidirectional map data/readable values to instrument</span>
+<span class="sd">            codes, expressed as a dict: ``{data_val: instrument_code}``</span>
+<span class="sd">            For example, if the instrument uses &#39;0&#39; to mean 1V and &#39;1&#39; to mean</span>
+<span class="sd">            10V, set val_mapping={1: &#39;0&#39;, 10: &#39;1&#39;} and on the user side you</span>
+<span class="sd">            only see 1 and 10, never the coded &#39;0&#39; and &#39;1&#39;</span>
+<span class="sd">            If vals is omitted, will also construct a matching Enum validator.</span>
+<span class="sd">            NOTE: only applies to get if get_cmd is a string, and to set if</span>
+<span class="sd">            set_cmd is a string.</span>
+<span class="sd">            You can use ``val_mapping`` with ``get_parser``, in which case</span>
+<span class="sd">            ``get_parser`` acts on the return value from the instrument first,</span>
+<span class="sd">            then ``val_mapping`` is applied (in reverse).</span>
+
+<span class="sd">        get_parser: Function to transform the response from get to the final</span>
+<span class="sd">            output value. See also val_mapping</span>
+
+<span class="sd">        set_parser: Function to transform the input set value to an encoded</span>
+<span class="sd">            value sent to the instrument. See also val_mapping.</span>
+
+<span class="sd">        vals: a Validator object for this parameter</span>
+
+<span class="sd">        max_val_age: The max time (in seconds) to trust a saved value obtained</span>
+<span class="sd">            from ``cache.get`` (or ``get_latest``). If this parameter has not</span>
+<span class="sd">            been set or measured more recently than this, perform an</span>
+<span class="sd">            additional measurement.</span>
+
+<span class="sd">        metadata: extra information to include with the</span>
+<span class="sd">            JSON snapshot of the parameter</span>
+
+<span class="sd">        abstract: Specifies if this parameter is abstract or not. Default</span>
+<span class="sd">            is False. If the parameter is &#39;abstract&#39;, it *must* be overridden</span>
+<span class="sd">            by a non-abstract parameter before the instrument containing</span>
+<span class="sd">            this parameter can be instantiated. We override a parameter by</span>
+<span class="sd">            adding one with the same name and unit. An abstract parameter</span>
+<span class="sd">            can be added in a base class and overridden in a subclass.</span>
+
+<span class="sd">        bind_to_instrument: Should the parameter be registered as a delegate attribute</span>
+<span class="sd">            on the instrument passed via the instrument argument.</span>
+
+<span class="sd">        register_name: Specifies if the parameter should be registered in datasets</span>
+<span class="sd">            using a different name than the parameter&#39;s full_name</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">snapshot_get</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">offset</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">inter_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">post_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">val_mapping</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">get_parser</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">set_parser</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">snapshot_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">snapshot_exclude</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">max_val_age</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">vals</span><span class="p">:</span> <span class="n">Validator</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">abstract</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">bind_to_instrument</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">register_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter name must be a valid identifier &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> which is not. Parameter names &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;cannot start with a number and &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;must not contain spaces or special characters&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_register_name</span> <span class="o">=</span> <span class="n">register_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span> <span class="o">=</span> <span class="n">instrument</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_get</span> <span class="o">=</span> <span class="n">snapshot_get</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_value</span> <span class="o">=</span> <span class="n">snapshot_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="n">snapshot_exclude</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="p">(</span><span class="n">Validator</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;vals must be None or a Validator&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">val_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="o">*</span><span class="n">val_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Validator</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="n">vals</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inter_delay</span> <span class="o">=</span> <span class="n">inter_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_delay</span> <span class="o">=</span> <span class="n">post_delay</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">val_mapping</span> <span class="o">=</span> <span class="n">val_mapping</span>
+        <span class="k">if</span> <span class="n">val_mapping</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inverse_val_mapping</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inverse_val_mapping</span> <span class="o">=</span> <span class="n">invert_val_mapping</span><span class="p">(</span><span class="n">val_mapping</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_parser</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">get_parser</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_parser</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">set_parser</span>
+
+        <span class="c1"># ``_Cache`` stores &quot;latest&quot; value (and raw value) and timestamp</span>
+        <span class="c1"># when it was set or measured</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">:</span> <span class="n">_CacheProtocol</span> <span class="o">=</span> <span class="n">_Cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_val_age</span><span class="o">=</span><span class="n">max_val_age</span><span class="p">)</span>
+        <span class="c1"># ``GetLatest`` is left from previous versions where it would</span>
+        <span class="c1"># implement a subset of features which ``_Cache`` has.</span>
+        <span class="c1"># It is left for now for backwards compatibility reasons and shall</span>
+        <span class="c1"># be deprecated and removed in the future versions.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_latest</span><span class="p">:</span> <span class="n">GetLatest</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_latest</span> <span class="o">=</span> <span class="n">GetLatest</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ParamDataType</span><span class="p">]</span>
+        <span class="n">implements_get_raw</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;get_raw&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_raw</span><span class="p">,</span> <span class="s2">&quot;__qcodes_is_abstract_method__&quot;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gettable</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">implements_get_raw</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_raw</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gettable</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Overwriting get in a subclass of &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;ParameterBase: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> is not allowed.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">implements_set_raw</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;set_raw&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_raw</span><span class="p">,</span> <span class="s2">&quot;__qcodes_is_abstract_method__&quot;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_settable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">implements_set_raw</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_raw</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_settable</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;set&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Overwriting set in a subclass of &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;ParameterBase: &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> is not allowed.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># subclasses should extend this list with extra attributes they</span>
+        <span class="c1"># want automatically included in the snapshot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_attrs</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;instrument&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;step&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;scale&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;offset&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;inter_delay&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;post_delay&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;val_mapping&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;vals&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;validators&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+        <span class="c1"># Specify time of last set operation, used when comparing to delay to</span>
+        <span class="c1"># check if additional waiting time is needed before next set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t_last_set</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="c1"># should we call validate when getting data. default to False</span>
+        <span class="c1"># intended to be changed in a subclass if you want the subclass</span>
+        <span class="c1"># to perform a validation on get</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_on_get</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_abstract</span> <span class="o">=</span> <span class="n">abstract</span>
+
+        <span class="k">if</span> <span class="n">instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">bind_to_instrument</span><span class="p">:</span>
+            <span class="n">found_as_delegate</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># we allow properties since a pattern that has been seen in the wild</span>
+            <span class="c1"># is properties that are used to wrap parameters of the same name</span>
+            <span class="c1"># to define an interface for the instrument</span>
+            <span class="n">is_property</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="n">instrument</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">property</span>
+            <span class="p">)</span>
+            <span class="n">found_as_attr</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">is_property</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">found_as_delegate</span> <span class="ow">or</span> <span class="n">found_as_attr</span><span class="p">:</span>
+                <span class="n">existing_parameter</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">existing_parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">existing_parameter</span><span class="o">.</span><span class="n">abstract</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Duplicate parameter name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> on instrument </span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="k">if</span> <span class="n">existing_parameter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">existing_attribute</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">existing_attribute</span><span class="p">,</span> <span class="n">ParameterBase</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Duplicate parameter name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> on instrument </span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">existing_attribute</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> overrides an attribute of the same name on instrument </span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2"> &quot;</span>
+                            <span class="s2">&quot;This will be an error in the future.&quot;</span><span class="p">,</span>
+                        <span class="p">)</span>
+
+            <span class="n">instrument</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">_build__doc__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">vals</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Validator</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The first validator of the parameter. None</span>
+<span class="sd">        if no validators are set for this parameter.</span>
+
+<span class="sd">        :getter: Returns the first validator or None if no validators.</span>
+<span class="sd">        :setter: Sets the first validator. Set to None to remove the first validator.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If removing the first validator when more than one validator is set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@vals</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">vals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">:</span> <span class="n">Validator</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">vals</span>
+        <span class="k">elif</span> <span class="n">vals</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">vals</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Cannot remove default validator from parameter with additional validators.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># setting the validator to None but the parameter already doesn&#39;t have a validator</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build__doc__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ParameterBase.add_validator">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.add_validator">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">:</span> <span class="n">Validator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a validator for the parameter. The parameter is validated against</span>
+<span class="sd">        all validators in reverse order of how they are added.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            vals: Validator to add to the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build__doc__</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ParameterBase.remove_validator">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.remove_validator">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Validator</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove the last validator added to the parameter and return it.</span>
+<span class="sd">        Returns None if there are no validators associated with the parameter.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The last validator added to the parameter or None if there are no</span>
+<span class="sd">            validators associated with the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">removed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build__doc__</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">removed</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">validators</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Validator</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tuple of all validators associated with the parameter.</span>
+
+<span class="sd">        :getter: All validators associated with the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ParameterBase.extra_validator">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.extra_validator">[docs]</a>
+    <span class="nd">@contextmanager</span>
+    <span class="k">def</span> <span class="nf">extra_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals</span><span class="p">:</span> <span class="n">Validator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Contextmanager to to temporarily add a validator to the parameter within the</span>
+<span class="sd">        given context. The validator is removed from the parameter when the context</span>
+<span class="sd">        ends.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_validator</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+        <span class="k">yield</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_validator</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">raw_value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Note that this property will be deprecated soon. Use</span>
+<span class="sd">        ``cache.raw_value`` instead.</span>
+
+<span class="sd">        Represents the cached raw value of the parameter.</span>
+
+<span class="sd">        :getter: Returns the cached raw value of the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">raw_value</span>
+
+<div class="viewcode-block" id="ParameterBase.get_raw">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.get_raw">[docs]</a>
+    <span class="nd">@qcodes_abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``get_raw`` is called to perform the actual data acquisition from the</span>
+<span class="sd">        instrument. This method should either be overwritten to perform the</span>
+<span class="sd">        desired operation or alternatively for :class:`.Parameter` a</span>
+<span class="sd">        suitable method is automatically generated if ``get_cmd`` is supplied</span>
+<span class="sd">        to the parameter constructor. The method is automatically wrapped to</span>
+<span class="sd">        provide a ``get`` method on the parameter instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="ParameterBase.set_raw">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.set_raw">[docs]</a>
+    <span class="nd">@qcodes_abstractmethod</span>
+    <span class="k">def</span> <span class="nf">set_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamRawDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        ``set_raw`` is called to perform the actual setting of a parameter on</span>
+<span class="sd">        the instrument. This method should either be overwritten to perform the</span>
+<span class="sd">        desired operation or alternatively for :class:`.Parameter` a</span>
+<span class="sd">        suitable method is automatically generated if ``set_cmd`` is supplied</span>
+<span class="sd">        to the parameter constructor. The method is automatically wrapped to</span>
+<span class="sd">        provide a ``set`` method on the parameter instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="ParameterBase.__str__">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Include the instrument name with the Parameter name if possible.&quot;&quot;&quot;</span>
+        <span class="n">inst_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inst_name</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">inst_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">named_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamDataType</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamDataType</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gettable</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no get cmd found in Parameter </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">settable</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no set cmd found in Parameter </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ParameterBase.snapshot_base">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.snapshot_base">[docs]</a>
+    <span class="k">def</span> <span class="nf">snapshot_base</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">update</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">params_to_skip_update</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        State of the parameter as a JSON-compatible dict (everything that</span>
+<span class="sd">        the custom JSON encoder class</span>
+<span class="sd">        :class:`.NumpyJSONEncoder` supports).</span>
+
+<span class="sd">        If the parameter has been initiated with ``snapshot_value=False``,</span>
+<span class="sd">        the snapshot will NOT include the ``value`` and ``raw_value`` of the</span>
+<span class="sd">        parameter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            update: If True, update the state by calling ``parameter.get()``</span>
+<span class="sd">                unless ``snapshot_get`` of the parameter is ``False``.</span>
+<span class="sd">                If ``update`` is ``None``, use the current value from the</span>
+<span class="sd">                ``cache`` unless the cache is invalid. If ``False``, never call</span>
+<span class="sd">                ``parameter.get()``.</span>
+<span class="sd">            params_to_skip_update: No effect but may be passed from superclass</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            base snapshot</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">snapshot_exclude</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">) is used in the snapshot while it &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;should be excluded from the snapshot&quot;</span><span class="p">,</span>
+                <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;__class__&quot;</span><span class="p">:</span> <span class="n">full_class</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="s2">&quot;full_name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">)}</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_value</span><span class="p">:</span>
+            <span class="n">has_get</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gettable</span>
+            <span class="n">allowed_to_call_get_when_snapshotting</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_get</span> <span class="ow">and</span> <span class="n">update</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">can_call_get_when_snapshotting</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">allowed_to_call_get_when_snapshotting</span> <span class="ow">and</span> <span class="n">has_get</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">can_call_get_when_snapshotting</span> <span class="ow">and</span> <span class="n">update</span><span class="p">:</span>
+                <span class="n">state</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">state</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                    <span class="n">get_if_invalid</span><span class="o">=</span><span class="n">can_call_get_when_snapshotting</span>
+                <span class="p">)</span>
+
+            <span class="n">state</span><span class="p">[</span><span class="s2">&quot;raw_value&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">raw_value</span>
+
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;ts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">timestamp</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;ts&quot;</span><span class="p">],</span> <span class="n">datetime</span><span class="p">):</span>
+            <span class="n">dttime</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;ts&quot;</span><span class="p">]</span>
+            <span class="n">state</span><span class="p">[</span><span class="s2">&quot;ts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dttime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2"> %H:%M:%S&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_meta_attrs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;instrument&quot;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="p">:</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;instrument&quot;</span><span class="p">:</span> <span class="n">full_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="p">),</span>
+                        <span class="s2">&quot;instrument_name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+            <span class="k">elif</span> <span class="n">attr</span> <span class="o">==</span> <span class="s2">&quot;validators&quot;</span><span class="p">:</span>
+                <span class="n">state</span><span class="p">[</span><span class="s2">&quot;validators&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">repr</span><span class="p">(</span><span class="n">validator</span><span class="p">)</span> <span class="k">for</span> <span class="n">validator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validators</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">attr_strip</span> <span class="o">=</span> <span class="n">attr</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>  <span class="c1"># strip leading underscores</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Validator</span><span class="p">):</span>
+                        <span class="n">state</span><span class="p">[</span><span class="n">attr_strip</span><span class="p">]</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">Metadatable</span><span class="p">):</span>
+                        <span class="n">state</span><span class="p">[</span><span class="n">attr_strip</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="n">update</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">state</span><span class="p">[</span><span class="n">attr_strip</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="k">return</span> <span class="n">state</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">snapshot_value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        If True the value of the parameter will be included in the snapshot.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_snapshot_value</span>
+
+    <span class="k">def</span> <span class="nf">_from_value_to_raw_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+        <span class="n">raw_value</span><span class="p">:</span> <span class="n">ParamRawDataType</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Convert set values using val_mapping dictionary</span>
+            <span class="n">raw_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_mapping</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">raw_value</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="c1"># transverse transformation in reverse order as compared to</span>
+        <span class="c1"># getter: apply scale first</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+                <span class="c1"># Scale contains multiple elements, one for each value</span>
+                <span class="n">raw_value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="n">val</span> <span class="o">*</span> <span class="n">scale</span> <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">raw_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Use single scale for all values</span>
+                <span class="n">raw_value</span> <span class="o">=</span> <span class="n">raw_value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+
+        <span class="c1"># apply offset next</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+                <span class="c1"># offset contains multiple elements, one for each value</span>
+                <span class="n">raw_value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="n">val</span> <span class="o">+</span> <span class="n">offset</span> <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">raw_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Use single offset for all values</span>
+                <span class="n">raw_value</span> <span class="o">=</span> <span class="n">raw_value</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+
+        <span class="c1"># parser last</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_parser</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">raw_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_parser</span><span class="p">(</span><span class="n">raw_value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">raw_value</span>
+
+    <span class="k">def</span> <span class="nf">_from_raw_value_to_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_value</span><span class="p">:</span> <span class="n">ParamRawDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamDataType</span><span class="p">:</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parser</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parser</span><span class="p">(</span><span class="n">raw_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">raw_value</span>
+
+        <span class="c1"># apply offset first (native scale)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># offset values</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+                    <span class="c1"># offset contains multiple elements, one for each value</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                        <span class="n">val</span> <span class="o">-</span> <span class="n">offset</span> <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">offset</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+                    <span class="c1"># Use single offset for all values</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">val</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span>
+
+        <span class="c1"># scale second</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Scale values</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span>
+            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+                    <span class="c1"># Scale contains multiple elements, one for each value</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">val</span> <span class="o">/</span> <span class="n">scale</span> <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">scale</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Iterable</span><span class="p">):</span>
+                    <span class="c1"># Use single scale for all values</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">val</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_val_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_val_mapping</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_val_mapping</span><span class="p">[</span><span class="n">value</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inverse_val_mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)]</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&#39; not in val_mapping&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">_wrap_get</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">get_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ParamRawDataType</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">ParamDataType</span><span class="p">]:</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">get_function</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">get_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamDataType</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gettable</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Trying to get a parameter that is not gettable.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Trying to get an abstract parameter: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># There might be cases where a .get also has args/kwargs</span>
+                <span class="n">raw_value</span> <span class="o">=</span> <span class="n">get_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+                <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_raw_value_to_value</span><span class="p">(</span><span class="n">raw_value</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_on_get</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span> <span class="n">raw_value</span><span class="o">=</span><span class="n">raw_value</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="n">value</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;getting </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="k">return</span> <span class="n">get_wrapper</span>
+
+    <span class="k">def</span> <span class="nf">_wrap_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">set_function</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">set_wrapper</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">settable</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Trying to set a parameter that is not settable.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Trying to set an abstract parameter: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+                <span class="c1"># In some cases intermediate sweep values must be used.</span>
+                <span class="c1"># Unless `self.step` is defined, get_sweep_values will return</span>
+                <span class="c1"># a list containing only `value`.</span>
+                <span class="n">steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ramp_values</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">step_index</span><span class="p">,</span> <span class="n">val_step</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
+                    <span class="c1"># even if the final value is valid we may be generating</span>
+                    <span class="c1"># steps that are not so validate them too</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">val_step</span><span class="p">)</span>
+
+                    <span class="n">raw_val_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_value_to_raw_value</span><span class="p">(</span><span class="n">val_step</span><span class="p">)</span>
+
+                    <span class="c1"># Check if delay between set operations is required</span>
+                    <span class="n">t_elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_last_set</span>
+                    <span class="k">if</span> <span class="n">t_elapsed</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">inter_delay</span><span class="p">:</span>
+                        <span class="c1"># Sleep until time since last set is larger than</span>
+                        <span class="c1"># self.inter_delay</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inter_delay</span> <span class="o">-</span> <span class="n">t_elapsed</span><span class="p">)</span>
+
+                    <span class="c1"># Start timer to measure execution time of set_function</span>
+                    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+
+                    <span class="n">set_function</span><span class="p">(</span><span class="n">raw_val_step</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+                    <span class="c1"># Update last set time (used for calculating delays)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_t_last_set</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+
+                    <span class="c1"># Check if any delay after setting is required</span>
+                    <span class="n">t_elapsed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_last_set</span> <span class="o">-</span> <span class="n">t0</span>
+                    <span class="k">if</span> <span class="n">t_elapsed</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_delay</span><span class="p">:</span>
+                        <span class="c1"># Sleep until total time is larger than self.post_delay</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">post_delay</span> <span class="o">-</span> <span class="n">t_elapsed</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">_update_with</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">val_step</span><span class="p">,</span> <span class="n">raw_value</span><span class="o">=</span><span class="n">raw_val_step</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;setting </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,)</span>
+                <span class="k">raise</span> <span class="n">e</span>
+
+        <span class="k">return</span> <span class="n">set_wrapper</span>
+
+<div class="viewcode-block" id="ParameterBase.get_ramp_values">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.get_ramp_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ramp_values</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Sized</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="n">Sized</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return values to sweep from current value to target value.</span>
+<span class="sd">        This method can be overridden to have a custom sweep behaviour.</span>
+<span class="sd">        It can even be overridden by a generator.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: target value</span>
+<span class="sd">            step: maximum step size</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List of stepped values, including target value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sized</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s2">&quot;Don&#39;t know how to step a parameter with more than one value&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_latest</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="n">start_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_latest</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+                <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span>
+            <span class="p">):</span>
+                <span class="c1"># parameter is numeric but either one of the endpoints</span>
+                <span class="c1"># is not or the starting point is unknown. The later</span>
+                <span class="c1"># can happen for a non gettable parameter in the initial set</span>
+                <span class="c1"># operation.</span>
+                <span class="n">LOG</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;cannot sweep </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">start_value</span><span class="si">!r}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;to </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2"> - jumping.&quot;</span>
+                <span class="p">)</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+
+            <span class="c1"># drop the initial value, we&#39;re already there</span>
+            <span class="k">return</span> <span class="n">permissive_range</span><span class="p">(</span><span class="n">start_value</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">step</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span></div>
+
+
+    <span class="nd">@cached_property</span>
+    <span class="k">def</span> <span class="nf">_validate_context</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># return string describing the context for a validator</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">return</span> <span class="s2">&quot;Parameter: &quot;</span> <span class="o">+</span> <span class="n">context</span>
+
+<div class="viewcode-block" id="ParameterBase.validate">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.validate">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate the value supplied.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: value to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If the value is of the wrong type.</span>
+<span class="sd">            ValueError: If the value is outside the bounds specified by the</span>
+<span class="sd">               validator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">validator</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">validator</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_context</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stepsize that this Parameter uses during set operation.</span>
+<span class="sd">        Stepsize must be a positive number or None.</span>
+<span class="sd">        If step is a positive number, this is the maximum value change</span>
+<span class="sd">        allowed in one hardware call, so a single set can result in many</span>
+<span class="sd">        calls to the hardware if the starting value is far from the target.</span>
+<span class="sd">        All but the final change will attempt to change by +/- step exactly.</span>
+<span class="sd">        If step is None stepping will not be used.</span>
+
+<span class="sd">        :getter: Returns the current stepsize.</span>
+<span class="sd">        :setter: Sets the value of the step.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: if step is set to not numeric or None</span>
+<span class="sd">            ValueError: if step is set to negative</span>
+<span class="sd">            TypeError:  if step is set to not integer or None for an</span>
+<span class="sd">                integer parameter</span>
+<span class="sd">            TypeError: if step is set to not a number on None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step</span>
+
+    <span class="nd">@step</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">step</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="s2">&quot;is_numeric&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;you can only step numeric parameters&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">step</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;step must be a number&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">step</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;step must be positive&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">Ints</span><span class="p">)</span> <span class="k">for</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vals</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">step</span><span class="p">,</span> <span class="nb">int</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;step must be a positive int for an Ints parameter&quot;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_step</span> <span class="o">=</span> <span class="n">step</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">post_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delay time after *start* of set operation, for each set.</span>
+<span class="sd">        The actual time will not be shorter than this, but may be longer</span>
+<span class="sd">        if the underlying set call takes longer.</span>
+
+<span class="sd">        Typically used in conjunction with `step` to create an effective</span>
+<span class="sd">        ramp rate, but can also be used without a `step` to enforce a delay</span>
+<span class="sd">        *after* every set. One might think of post_delay as how long a set</span>
+<span class="sd">        operation is supposed to take. For example, there might be an</span>
+<span class="sd">        instrument that needs extra time after setting a parameter although</span>
+<span class="sd">        the command for setting the parameter returns quickly.</span>
+
+<span class="sd">        :getter: Returns the current post_delay.</span>
+<span class="sd">        :setter: Sets the value of the post_delay.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If delay is not int nor float</span>
+<span class="sd">            ValueError: If delay is negative</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_delay</span>
+
+    <span class="nd">@post_delay</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">post_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">post_delay</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">post_delay</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;post_delay (</span><span class="si">{</span><span class="n">post_delay</span><span class="si">}</span><span class="s2">) must be a number&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">post_delay</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;post_delay (</span><span class="si">{</span><span class="n">post_delay</span><span class="si">}</span><span class="s2">) must not be negative&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_post_delay</span> <span class="o">=</span> <span class="n">post_delay</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inter_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Delay time between consecutive set operations.</span>
+<span class="sd">        The actual time will not be shorter than this, but may be longer</span>
+<span class="sd">        if the underlying set call takes longer.</span>
+
+<span class="sd">        Typically used in conjunction with `step` to create an effective</span>
+<span class="sd">        ramp rate, but can also be used without a `step` to enforce a delay</span>
+<span class="sd">        *between* sets.</span>
+
+<span class="sd">        :getter: Returns the current inter_delay.</span>
+<span class="sd">        :setter: Sets the value of the inter_delay.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError: If delay is not int nor float</span>
+<span class="sd">            ValueError: If delay is negative</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inter_delay</span>
+
+    <span class="nd">@inter_delay</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">inter_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inter_delay</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inter_delay</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;inter_delay (</span><span class="si">{</span><span class="n">inter_delay</span><span class="si">}</span><span class="s2">) must be a number&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inter_delay</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;inter_delay (</span><span class="si">{</span><span class="n">inter_delay</span><span class="si">}</span><span class="s2">) must not be negative&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inter_delay</span> <span class="o">=</span> <span class="n">inter_delay</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Name of the parameter. This is identical to :meth:`short_name`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Short name of the parameter. This is without the name of the</span>
+<span class="sd">        instrument or submodule that the parameter may be bound to. For</span>
+<span class="sd">        full name refer to :meth:`full_name`.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_short_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">full_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Name of the parameter including the name of the instrument and</span>
+<span class="sd">        submodule that the parameter may be bound to. The names are separated</span>
+<span class="sd">        by underscores, like this: ``instrument_submodule_parameter``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_parts</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">register_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Name that will be used to register this parameter in a dataset</span>
+<span class="sd">        By default, this returns ``full_name`` or the value of the</span>
+<span class="sd">        ``register_name`` argument if it was passed at initialization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_register_name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the first instrument that this parameter is bound to.</span>
+<span class="sd">        E.g if this is bound to a channel it will return the channel</span>
+<span class="sd">        and not the instrument that the channel is bound too. Use</span>
+<span class="sd">        :meth:`root_instrument` to get the real instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">root_instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the fundamental instrument that this parameter belongs too.</span>
+<span class="sd">        E.g if the parameter is bound to a channel this will return the</span>
+<span class="sd">        fundamental instrument that that channel belongs to. Use</span>
+<span class="sd">        :meth:`instrument` to get the channel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="o">.</span><span class="n">root_instrument</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="ParameterBase.set_to">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.set_to">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_to</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">,</span> <span class="n">allow_changes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_SetParamContext</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use a context manager to temporarily set a parameter to a value. By</span>
+<span class="sd">        default, the parameter value cannot be changed inside the context.</span>
+<span class="sd">        This may be overridden with ``allow_changes=True``.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; from qcodes.parameters import Parameter</span>
+<span class="sd">            &gt;&gt;&gt; p = Parameter(&quot;p&quot;, set_cmd=None, get_cmd=None)</span>
+<span class="sd">            &gt;&gt;&gt; p.set(2)</span>
+<span class="sd">            &gt;&gt;&gt; with p.set_to(3):</span>
+<span class="sd">            ...     print(f&quot;p value in with block {p.get()}&quot;)  # prints 3</span>
+<span class="sd">            ...     p.set(5)  # raises an exception</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;p value outside with block {p.get()}&quot;)  # prints 2</span>
+<span class="sd">            &gt;&gt;&gt; with p.set_to(3, allow_changes=True):</span>
+<span class="sd">            ...     p.set(5)  # now this works</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;value after second block: {p.get()}&quot;)  # still prints 2</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">context_manager</span> <span class="o">=</span> <span class="n">_SetParamContext</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">allow_changes</span><span class="o">=</span><span class="n">allow_changes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">context_manager</span></div>
+
+
+<div class="viewcode-block" id="ParameterBase.restore_at_exit">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterBase.restore_at_exit">[docs]</a>
+    <span class="k">def</span> <span class="nf">restore_at_exit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allow_changes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_SetParamContext</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Use a context manager to restore the value of a parameter after a</span>
+<span class="sd">        ``with`` block.</span>
+
+<span class="sd">        By default, the parameter value may be changed inside the block, but</span>
+<span class="sd">        this can be prevented with ``allow_changes=False``. This can be</span>
+<span class="sd">        useful, for example, for debugging a complex measurement that</span>
+<span class="sd">        unintentionally modifies a parameter.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; p = Parameter(&quot;p&quot;, set_cmd=None, get_cmd=None)</span>
+<span class="sd">            &gt;&gt;&gt; p.set(2)</span>
+<span class="sd">            &gt;&gt;&gt; with p.restore_at_exit():</span>
+<span class="sd">            ...     p.set(3)</span>
+<span class="sd">            ...     print(f&quot;value inside with block: {p.get()}&quot;)  # prints 3</span>
+<span class="sd">            &gt;&gt;&gt; print(f&quot;value after with block: {p.get()}&quot;)  # prints 2</span>
+<span class="sd">            &gt;&gt;&gt; with p.restore_at_exit(allow_changes=False):</span>
+<span class="sd">            ...     p.set(5)  # raises an exception</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">(),</span> <span class="n">allow_changes</span><span class="o">=</span><span class="n">allow_changes</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name_parts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        List of the parts that make up the full name of this parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">name_parts</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="s2">&quot;name_parts&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="n">name_parts</span> <span class="o">==</span> <span class="p">[]:</span>
+                <span class="c1"># add fallback for the case where someone has bound</span>
+                <span class="c1"># the parameter to something that is not an instrument</span>
+                <span class="c1"># but perhaps it has a name anyway?</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">name_parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name_parts</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">name_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">name_parts</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">gettable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Is it allowed to call get on this parameter?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gettable</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">settable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Is it allowed to call set on this parameter?</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_settable</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">underlying_instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an instance of the underlying hardware instrument that this</span>
+<span class="sd">        parameter communicates with, per this parameter&#39;s implementation.</span>
+
+<span class="sd">        This is useful in the case where a parameter does not belongs to</span>
+<span class="sd">        an instrument instance that represents a real hardware instrument</span>
+<span class="sd">        but actually uses a real hardware instrument in its implementation</span>
+<span class="sd">        (e.g. via calls to one or more parameters of that real hardware</span>
+<span class="sd">        instrument). This is also useful when a parameter does belong to</span>
+<span class="sd">        an instrument instance but that instance does not represent the</span>
+<span class="sd">        real hardware instrument that the parameter interacts with: hence</span>
+<span class="sd">        ``root_instrument`` of the parameter cannot be the</span>
+<span class="sd">        ``hardware_instrument``, however ``underlying_instrument`` can be</span>
+<span class="sd">        implemented to return the ``hardware_instrument``.</span>
+
+<span class="sd">        By default it returns the ``root_instrument`` of the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">abstract</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_abstract</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">GetLatest</span><span class="p">(</span><span class="n">DelegateAttributes</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for a class:`.Parameter` that just returns the last set or measured</span>
+<span class="sd">    value stored in the class:`.Parameter` itself. If get has never been called</span>
+<span class="sd">    on the parameter or the time since get was called is larger than</span>
+<span class="sd">    ``max_val_age``, get will be called on the parameter. If the parameter</span>
+<span class="sd">    does not implement get, set should be called (or the initial_value set)</span>
+<span class="sd">    before calling get on this wrapper. It is an error to set</span>
+<span class="sd">    ``max_val_age`` for a parameter that does not have a get function.</span>
+
+<span class="sd">    The functionality of this class is subsumed and improved in</span>
+<span class="sd">    parameter&#39;s cache that is accessible via ``.cache`` attribute of the</span>
+<span class="sd">    :class:`.Parameter`. Use of ``parameter.cache`` is recommended over use of</span>
+<span class="sd">    ``parameter.get_latest``.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; # Can be called:</span>
+<span class="sd">        &gt;&gt;&gt; param.get_latest()</span>
+<span class="sd">        &gt;&gt;&gt; # Or used as if it were a gettable-only parameter itself:</span>
+<span class="sd">        &gt;&gt;&gt; Loop(...).each(param.get_latest)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parameter: Parameter to be wrapped.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">ParameterBase</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span> <span class="o">=</span> <span class="n">parameter</span>
+
+    <span class="n">delegate_attr_objects</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;parameter&quot;</span><span class="p">]</span>
+    <span class="n">omit_delegate_attrs</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;set&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamDataType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return latest value if time since get was less than</span>
+<span class="sd">        `max_val_age`, otherwise perform `get()` and</span>
+<span class="sd">        return result. A `get()` will also be performed if the</span>
+<span class="sd">        parameter never has been captured.</span>
+
+<span class="sd">        It is recommended to use ``parameter.cache.get()`` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_timestamp</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the age of the latest parameter value.</span>
+
+<span class="sd">        It is recommended to use ``parameter.cache.timestamp`` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">timestamp</span>
+
+    <span class="k">def</span> <span class="nf">get_raw_value</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return latest raw value of the parameter.</span>
+
+<span class="sd">        It is recommended to use ``parameter.cache.raw_value`` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">_raw_value</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamDataType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Same as ``get()``</span>
+
+<span class="sd">        It is recommended to use ``parameter.cache()`` instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

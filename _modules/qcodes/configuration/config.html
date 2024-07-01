@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.configuration.config &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.configuration.config</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.configuration.config</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">from</span> <span class="nn">importlib.resources</span> <span class="kn">import</span> <span class="n">files</span>
+<span class="kn">from</span> <span class="nn">os.path</span> <span class="kn">import</span> <span class="n">expanduser</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">jsonschema</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">EMPTY_USER_SCHEMA</span> <span class="o">=</span> <span class="s2">&quot;User schema at </span><span class="si">{}</span><span class="s2"> not found. User settings won&#39;t be validated&quot;</span>
+<span class="n">MISS_DESC</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot; Passing a description without a type does not make sense.</span>
+<span class="s2">Description is ignored &quot;&quot;&quot;</span>
+
+<span class="n">BASE_SCHEMA</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;$schema&quot;</span><span class="p">:</span> <span class="s2">&quot;http://json-schema.org/draft-04/schema#&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;schema for a user qcodes config file&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[]</span>
+<span class="p">}</span>
+
+<span class="c1"># https://github.com/python/mypy/issues/4182</span>
+<span class="n">_PARENT_MODULE</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">__loader__</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># type: ignore[name-defined]</span>
+
+
+<div class="viewcode-block" id="Config">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config">[docs]</a>
+<span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    QCoDeS config system</span>
+
+<span class="sd">    Start with sane defaults, which you can&#39;t change, and</span>
+<span class="sd">    then customize your experience using files that update the configuration.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">config_file_name</span> <span class="o">=</span> <span class="s2">&quot;qcodesrc.json&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of config file&quot;&quot;&quot;</span>
+    <span class="n">schema_file_name</span> <span class="o">=</span> <span class="s2">&quot;qcodesrc_schema.json&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Name of schema file&quot;&quot;&quot;</span>
+    <span class="c1"># get abs path of packge config file</span>
+    <span class="n">default_file_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">files</span><span class="p">(</span><span class="n">_PARENT_MODULE</span><span class="p">)</span> <span class="o">/</span> <span class="n">config_file_name</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of default config&quot;&quot;&quot;</span>
+    <span class="n">current_config_path</span> <span class="o">=</span> <span class="n">default_file_name</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Path of the last loaded config file&quot;&quot;&quot;</span>
+
+    <span class="c1"># get abs path of schema  file</span>
+    <span class="n">schema_default_file_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">files</span><span class="p">(</span><span class="n">_PARENT_MODULE</span><span class="p">)</span> <span class="o">/</span> <span class="n">schema_file_name</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of default schema&quot;&quot;&quot;</span>
+
+    <span class="c1"># home dir, os independent</span>
+    <span class="n">home_file_name</span> <span class="o">=</span> <span class="n">expanduser</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">,</span> <span class="n">config_file_name</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of home config&quot;&quot;&quot;</span>
+    <span class="n">schema_home_file_name</span> <span class="o">=</span> <span class="n">home_file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">config_file_name</span><span class="p">,</span>
+                                                   <span class="n">schema_file_name</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of home schema&quot;&quot;&quot;</span>
+
+    <span class="c1"># this is for *nix people</span>
+    <span class="n">env_file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;QCODES_CONFIG&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of env config&quot;&quot;&quot;</span>
+    <span class="n">schema_env_file_name</span> <span class="o">=</span> <span class="n">env_file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">config_file_name</span><span class="p">,</span>
+                                                 <span class="n">schema_file_name</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of env schema&quot;&quot;&quot;</span>
+    <span class="c1"># current working dir</span>
+    <span class="n">cwd_file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">(),</span> <span class="n">config_file_name</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of cwd config&quot;&quot;&quot;</span>
+    <span class="n">schema_cwd_file_name</span> <span class="o">=</span> <span class="n">cwd_file_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">config_file_name</span><span class="p">,</span>
+                                                 <span class="n">schema_file_name</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filename of cwd schema&quot;&quot;&quot;</span>
+
+    <span class="n">current_schema</span><span class="p">:</span> <span class="n">DotDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validators and descriptions of config values&quot;&quot;&quot;</span>
+    <span class="n">current_config</span><span class="p">:</span> <span class="n">DotDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Valid config values&quot;&quot;&quot;</span>
+
+    <span class="n">defaults</span><span class="p">:</span> <span class="n">DotDict</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default configuration&quot;&quot;&quot;</span>
+    <span class="n">defaults_schema</span><span class="p">:</span> <span class="n">DotDict</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default schema&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path: Optional path to directory containing</span>
+<span class="sd">                a `qcodesrc.json` config file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loaded_config_files</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">default_file_name</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_diff_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_diff_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_file_path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">defaults_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_default</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_config</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Config.load_default">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.load_default">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DotDict</span><span class="p">,</span> <span class="n">DotDict</span><span class="p">]:</span>
+        <span class="n">defaults</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_file_name</span><span class="p">)</span>
+        <span class="n">defaults_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_default_file_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">defaults</span><span class="p">,</span> <span class="n">defaults_schema</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">defaults</span><span class="p">,</span> <span class="n">defaults_schema</span></div>
+
+
+<div class="viewcode-block" id="Config.update_config">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.update_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load defaults updates with cwd, env, home and the path specified</span>
+<span class="sd">        and validates.</span>
+<span class="sd">        A configuration file must be called qcodesrc.json</span>
+<span class="sd">        A schema file must be called qcodesrc_schema.json</span>
+<span class="sd">        Configuration files (and their schema) are loaded and updated from the</span>
+<span class="sd">        directories in the following order:</span>
+
+<span class="sd">            - default json config file from the repository</span>
+<span class="sd">            - user json config in user home directory</span>
+<span class="sd">            - user json config in $QCODES_CONFIG</span>
+<span class="sd">            - user json config in current working directory</span>
+<span class="sd">            - user json file in the path specified</span>
+
+<span class="sd">        If a key/value is not specified in the user configuration the default</span>
+<span class="sd">        is used. Key/value pairs loaded later will take preference over those</span>
+<span class="sd">        loaded earlier.</span>
+<span class="sd">        Configs are validated after every update.</span>
+<span class="sd">        Validation is also performed against a user provided schema if it&#39;s</span>
+<span class="sd">        found in the directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path: Optional path to directory containing a `qcodesrc.json`</span>
+<span class="sd">               config file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">defaults_schema</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loaded_config_files</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">default_file_name</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_config_from_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">home_file_name</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">schema_home_file_name</span><span class="p">,</span>
+                                      <span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_config_from_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_file_name</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">schema_env_file_name</span><span class="p">,</span>
+                                      <span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_config_from_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cwd_file_name</span><span class="p">,</span>
+                                      <span class="bp">self</span><span class="o">.</span><span class="n">schema_cwd_file_name</span><span class="p">,</span>
+                                      <span class="n">config</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config_file_path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_file_path</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">config_file_name</span><span class="p">)</span>
+            <span class="n">schema_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config_file_path</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">schema_file_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_config_from_file</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="n">schema_file</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not load config from any of the &quot;</span>
+                               <span class="s2">&quot;expected locations.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_config_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loaded_config_files</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">config</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_update_config_from_file</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updated ``config`` dictionary with config information from file in</span>
+<span class="sd">        ``file_path`` that has schema specified in ``schema``</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            file_path: Path to `qcodesrc.json` config file</span>
+<span class="sd">            schema: Path to `qcodesrc_schema.json` to be used</span>
+<span class="sd">            config: Config dictionary to be updated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loaded_config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">my_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">update</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">my_config</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Config.validate">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.validate">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">json_config</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">schema</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">extra_schema_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate configuration; if no arguments are passed, the default</span>
+<span class="sd">        config is validated against the default schema. If either</span>
+<span class="sd">        ``json_config`` or ``schema`` is passed the corresponding</span>
+<span class="sd">        default is not used.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            json_config: json dictionary to validate</span>
+<span class="sd">            schema: schema dictionary</span>
+<span class="sd">            extra_schema_path: schema path that contains extra validators to be</span>
+<span class="sd">                added to schema dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cannot validate as current_schema is None&quot;</span><span class="p">)</span>
+            <span class="n">schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span>
+
+        <span class="k">if</span> <span class="n">json_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">json_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_config</span>
+
+        <span class="k">if</span> <span class="n">extra_schema_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># add custom validation</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">extra_schema_path</span><span class="p">):</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">extra_schema_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="c1"># user schema has to be both valid in itself</span>
+                    <span class="c1"># but then just update the user properties</span>
+                    <span class="c1"># so that default types and values can NEVER</span>
+                    <span class="c1"># be overwritten</span>
+                    <span class="n">new_user</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="s2">&quot;user&quot;</span><span class="p">]</span>
+                    <span class="n">user</span> <span class="o">=</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">][</span><span class="s1">&#39;user&#39;</span><span class="p">]</span>
+                    <span class="n">user</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">new_user</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">EMPTY_USER_SCHEMA</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">extra_schema_path</span><span class="p">))</span>
+
+        <span class="n">jsonschema</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">json_config</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Config.add">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.add">[docs]</a>
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">value_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add custom config value in place</span>
+
+<span class="sd">        Adds ``key``, ``value`` with optional ``value_type`` to user config and</span>
+<span class="sd">        schema. If ``value_type`` is specified then the new value is validated.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            key: key to be added under user config</span>
+<span class="sd">            value: value to add to config</span>
+<span class="sd">            value_type: type of value, allowed are string, boolean, integer</span>
+<span class="sd">            description: description of key to add to schema</span>
+<span class="sd">            default: default value, stored only in the schema</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; defaults.add(&quot;trace_color&quot;, &quot;blue&quot;, &quot;string&quot;, &quot;description&quot;)</span>
+
+<span class="sd">        will update the config:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            ...</span>
+<span class="sd">            &quot;user&quot;: { &quot;trace_color&quot;: &quot;blue&quot;}</span>
+<span class="sd">            ...</span>
+
+<span class="sd">        and the schema:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            ...</span>
+<span class="sd">            &quot;user&quot;:{</span>
+<span class="sd">                &quot;type&quot; : &quot;object&quot;,</span>
+<span class="sd">                &quot;description&quot;: &quot;controls user settings of qcodes&quot;</span>
+<span class="sd">                &quot;properties&quot; : {</span>
+<span class="sd">                            &quot;trace_color&quot;: {</span>
+<span class="sd">                            &quot;description&quot; : &quot;description&quot;,</span>
+<span class="sd">                            &quot;type&quot;: &quot;string&quot;</span>
+<span class="sd">                            }</span>
+<span class="sd">                    }</span>
+<span class="sd">            }</span>
+<span class="sd">            ...</span>
+
+<span class="sd">        Todo:</span>
+<span class="sd">            - Add enum  support for value_type</span>
+<span class="sd">            - finish _diffing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cannot add value to empty config&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_config</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_diff_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_diff_config</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_diff_config</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="n">value_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">MISS_DESC</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># update schema!</span>
+            <span class="n">schema_entry</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Any</span><span class="p">]]</span>
+            <span class="n">schema_entry</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">value_type</span><span class="p">}}</span>
+            <span class="k">if</span> <span class="n">description</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">schema_entry</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">key</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">value_type</span><span class="p">,</span>
+                        <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="n">default</span><span class="p">,</span>
+                        <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="n">description</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="c1"># the schema is nested we only update properties of the user object</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cannot add value as no current schema is &quot;</span>
+                                   <span class="s2">&quot;set&quot;</span><span class="p">)</span>
+            <span class="n">user</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="s2">&quot;user&quot;</span><span class="p">]</span>
+            <span class="n">user</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">schema_entry</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span><span class="p">)</span>
+
+            <span class="c1"># TODO(giulioungaretti) finish diffing</span>
+            <span class="c1"># now we update the entire schema</span>
+            <span class="c1"># and the entire configuration</span>
+            <span class="c1"># if it&#39;s saved then it will always</span>
+            <span class="c1"># take precedence even if the defaults</span>
+            <span class="c1"># values are changed upstream, and the local</span>
+            <span class="c1"># ones were actually left to their default</span>
+            <span class="c1"># values</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_diff_schema</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_diff_schema</span> <span class="o">=</span> <span class="n">BASE_SCHEMA</span>
+
+            <span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_diff_schema</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">props</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+                <span class="n">props</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">props</span><span class="p">[</span><span class="s2">&quot;user&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">schema_entry</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Config.load_config">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.load_config">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load_config</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DotDict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a config JSON file</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path: path to the config file</span>
+<span class="sd">        Return:</span>
+<span class="sd">            a dot accessible dictionary config object</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            FileNotFoundError: if config is missing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fp</span><span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Loading config from </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="n">config_dot_dict</span> <span class="o">=</span> <span class="n">DotDict</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">config_dot_dict</span></div>
+
+
+<div class="viewcode-block" id="Config.save_config">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.save_config">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save current config to file at given path.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path: path of new file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_config</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Config.save_schema">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.save_schema">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save current schema to file at given path.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path: path of new file</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Config.save_to_home">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.save_to_home">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_to_home</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save config and schema to files in home dir&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">home_file_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_schema</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_home_file_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Config.save_to_env">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.save_to_env">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_to_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save config and schema to files in path specified in env variable&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_file_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_schema</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_env_file_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Config.save_to_cwd">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.save_to_cwd">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_to_cwd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save config and schema to files in current working dir&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cwd_file_name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_schema</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">schema_cwd_file_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Config.describe">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.Config.describe">[docs]</a>
+    <span class="k">def</span> <span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Describe a configuration entry</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: name of entry to describe in &#39;dotdict&#39; notation,</span>
+<span class="sd">                e.g. name=&quot;user.scriptfolder&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_config</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Config is empty, cannot describe entry.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No schema found, cannot describe entry.&quot;</span><span class="p">)</span>
+        <span class="n">sch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_schema</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot describe </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> Some part of it &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;is null&quot;</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">sch</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+                <span class="n">sch</span> <span class="o">=</span> <span class="n">sch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sch</span> <span class="o">=</span> <span class="n">sch</span><span class="p">[</span><span class="s1">&#39;properties&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
+        <span class="n">description</span> <span class="o">=</span> <span class="n">sch</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;Generic value&quot;</span>
+        <span class="n">_type</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sch</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">&quot;Not defined&quot;</span>
+        <span class="n">default</span> <span class="o">=</span> <span class="n">sch</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;Not defined&quot;</span>
+
+        <span class="c1"># add cool description to docstring</span>
+        <span class="n">base_docstring</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span><span class="si">{}</span><span class="s2">.</span><span class="se">\n</span><span class="s2">Current value: </span><span class="si">{}</span><span class="s2">. Type: </span><span class="si">{}</span><span class="s2">. Default: </span><span class="si">{}</span><span class="s2">.&quot;&quot;&quot;</span>
+
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">base_docstring</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">description</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">_type</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">doc</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_config</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> not found in current config&quot;</span><span class="p">)</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">val</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_config</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">old</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current values: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_config</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot;Current paths: </span><span class="se">\n</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loaded_config_files</span><span class="si">}</span><span class="s2"> </span><span class="se">\n</span><span class="s2">&quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">old</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+
+
+<div class="viewcode-block" id="DotDict">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.DotDict">[docs]</a>
+<span class="k">class</span> <span class="nc">DotDict</span><span class="p">(</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper dict that allows to get dotted attributes</span>
+
+<span class="sd">    Requires keys to be strings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+
+    <span class="k">def</span> <span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="n">myKey</span><span class="p">,</span> <span class="n">restOfKey</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">myKey</span><span class="p">,</span> <span class="n">DotDict</span><span class="p">())</span>
+            <span class="n">target</span><span class="p">[</span><span class="n">restOfKey</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">DotDict</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">DotDict</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="nb">dict</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">myKey</span><span class="p">,</span> <span class="n">restOfKey</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">myKey</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">target</span><span class="p">[</span><span class="n">restOfKey</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s1">&#39;.&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__contains__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">myKey</span><span class="p">,</span> <span class="n">restOfKey</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">myKey</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">restOfKey</span> <span class="ow">in</span> <span class="n">target</span>
+
+    <span class="k">def</span> <span class="nf">__deepcopy__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memo</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DotDict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DotDict</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="DotDict.__getattr__">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.DotDict.__getattr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overwrite ``__getattr__`` to provide dot access</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DotDict.__setattr__">
+<a class="viewcode-back" href="../../../api/configuration/index.html#qcodes.configuration.DotDict.__setattr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overwrite ``__setattr__`` to provide dot access</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__setitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">u</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">u</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">update</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{}),</span> <span class="n">v</span><span class="p">)</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">d</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

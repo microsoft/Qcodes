@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting Started &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="15 minutes to QCoDeS" href="../examples/15_minutes_to_QCoDeS.html" />
+    <link rel="prev" title="" href="../index.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#installing-the-latest-qcodes-release-with-pip">Installing the latest QCoDeS release with pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-the-latest-qcodes-release-with-conda">Installing the latest QCoDeS release with conda</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-qcodes-from-github">Installing QCoDeS from GitHub</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-qcodes-from-a-forked-github-repository">Installing QCoDeS from a Forked GitHub Repository</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#other-dependencies">Other dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#updating-qcodes">Updating QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#keeping-your-environment-up-to-date">Keeping your environment up to date</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#using-qcodes">Using QCoDes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#working-example-notebooks">Working example notebooks</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Getting Started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/start/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<span id="gettingstarted"></span><h1>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<p>You need a working python 3.9 installation, as the minimum Python version, to be able to
+use QCoDeS. We highly recommend installing Miniconda, which takes care of installing Python
+and managing packages. In the following it will be assumed that you use Miniconda.
+Download and install it from <a class="reference external" href="https://docs.conda.io/en/latest/miniconda.html">here</a>. Make
+sure to download the latest version with python 3.9 or newer.</p>
+<p>Once you download, install Miniconda according to the instructions on screen,
+choosing the single user installation option.</p>
+<p>The next section will guide you through the installation of QCoDeS
+on Windows, although most of the things also work for macOS and Linux.</p>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>Before you install QCoDeS you have to decide whether you want to install the
+latest stable release or if you want to get the developer version from GitHub.</p>
+<p>Stable versions of QCoDeS are distributed via both PyPi and CondaForge to be installed
+with pip and conda respectively. Below we will cover both installation types.
+For new users we recommend installing QCoDeS from conda-forge.</p>
+<section id="installing-the-latest-qcodes-release-with-pip">
+<h3>Installing the latest QCoDeS release with pip<a class="headerlink" href="#installing-the-latest-qcodes-release-with-pip" title="Link to this heading"></a></h3>
+<p>Next launch an Anaconda Prompt (start typing anaconda in the start menu and
+click on <em>Anaconda Prompt</em>).</p>
+<p>Here type in the prompt:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>qcodes<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9
+conda<span class="w"> </span>activate<span class="w"> </span>qcodes
+pip<span class="w"> </span>install<span class="w"> </span>qcodes
+</pre></div>
+</div>
+<p>The first line creates a new conda environment that is called <em>qcodes</em> with
+python 3.9. The second line activates this freshly created environment, so that
+the command in the third line will install qcodes for this environment.</p>
+</section>
+<section id="installing-the-latest-qcodes-release-with-conda">
+<h3>Installing the latest QCoDeS release with conda<a class="headerlink" href="#installing-the-latest-qcodes-release-with-conda" title="Link to this heading"></a></h3>
+<p>To install QCoDeS using Conda from conda-forge type the following into a prompt.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>qcodes
+conda<span class="w"> </span>activate<span class="w"> </span>qcodes
+conda<span class="w"> </span>config<span class="w"> </span>--add<span class="w"> </span>channels<span class="w"> </span>conda-forge<span class="w"> </span>--env
+conda<span class="w"> </span>config<span class="w"> </span>--set<span class="w"> </span>channel_priority<span class="w"> </span>strict<span class="w"> </span>--env
+conda<span class="w"> </span>install<span class="w"> </span>qcodes
+</pre></div>
+</div>
+<p>First we crate a new environment to install QCoDeS into and then we set that
+environment up to install packages from conda-forge since QCoDeS is not available in the
+default channel. As recommended by the conda-forge maintainers we set channel_priority to strict
+to prefer all packages to be installed from the conda-forge channel.
+Note that we use the <cite>–env</cite> flag to only set these settings for the QCoDeS env. We
+do this to not change the settings for any other environment that you may have created.
+Finally we install QCoDeS into this environment.</p>
+</section>
+<section id="installing-qcodes-from-github">
+<h3>Installing QCoDeS from GitHub<a class="headerlink" href="#installing-qcodes-from-github" title="Link to this heading"></a></h3>
+<p>Clone the QCoDeS repository and submodules from GitHub from <a class="reference external" href="https://github.com/QCoDeS/Qcodes">https://github.com/QCoDeS/Qcodes</a></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--recurse-submodules<span class="w"> </span>https://github.com/QCoDeS/Qcodes<span class="w"> </span>&lt;path-to-repository&gt;
+</pre></div>
+</div>
+<p>Finally install QCoDeS add the repository via</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>&lt;path-to-repository&gt;
+</pre></div>
+</div>
+<p>This will perform an <cite>editable install</cite> such that any changes of QCoDeS in your
+local git clone are automatically available without having to reinstall QCoDeS.</p>
+<p>Note that if you wish to run the QCoDeS test you will also need to install the testing
+dependencies. This can be done by installing QCoDeS using the <cite>test</cite> extra target.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>&lt;path-to-repository&gt;<span class="o">[</span>test<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+<section id="installing-qcodes-from-a-forked-github-repository">
+<h3>Installing QCoDeS from a Forked GitHub Repository<a class="headerlink" href="#installing-qcodes-from-a-forked-github-repository" title="Link to this heading"></a></h3>
+<p>If you’ve forked the QCoDeS repository, make sure to also fetch the tags from the upstream repository for accurate versioning, especially if you wish to install with test dependencies. Not doing so may result in version conflicts.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Add the original QCoDeS repository as the &#39;upstream&#39; remote</span>
+git<span class="w"> </span>remote<span class="w"> </span>add<span class="w"> </span>upstream<span class="w"> </span>https://github.com/QCoDeS/Qcodes.git
+
+<span class="c1"># Fetch all tags from the &#39;upstream&#39; repository</span>
+git<span class="w"> </span>fetch<span class="w"> </span>--tags<span class="w"> </span>upstream
+</pre></div>
+</div>
+<p>After fetching the tags, proceed with the installation as usual:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>&lt;path-to-forked-repository&gt;
+<span class="c1"># Or with test dependencies</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>&lt;path-to-forked-repository&gt;<span class="o">[</span>test<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+<section id="other-dependencies">
+<h3>Other dependencies<a class="headerlink" href="#other-dependencies" title="Link to this heading"></a></h3>
+<p>To connect to many instruments (All instruments that are subclasses of
+<code class="docutils literal notranslate"><span class="pre">VisaInstrument</span></code> ) you need a working VISA implementation installed. There
+are several of these available from instrument vendors and other sources.</p>
+<p>We recommend you to install the Keysight IO Libraries Suite from <a class="reference external" href="https://www.keysight.com/find/iosuite">here</a>. To download it, you will need to
+provide your e-mail id, name and location but the download is free of charge.</p>
+<p>See the <a class="reference external" href="https://pyvisa.readthedocs.io/en/latest/advanced/backends.html">PyVISA documentation</a> for more information.</p>
+</section>
+<section id="updating-qcodes">
+<h3>Updating QCoDeS<a class="headerlink" href="#updating-qcodes" title="Link to this heading"></a></h3>
+<p>If you have installed with pip, run the following to update:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>qcodes
+</pre></div>
+</div>
+<p>If you have installed from conda-forge</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>update<span class="w"> </span>qcodes
+</pre></div>
+</div>
+<p>in principle, there should be a new release out roughly every month.</p>
+<p>If you have installed with git, pull the QCoDeS repository using your
+favourite method (git bash, git shell, github desktop, …). There are
+new commits to the repository daily.</p>
+</section>
+<section id="keeping-your-environment-up-to-date">
+<h3>Keeping your environment up to date<a class="headerlink" href="#keeping-your-environment-up-to-date" title="Link to this heading"></a></h3>
+<p>Additional dependencies are periodically added to the QCoDeS and
+new versions of packages that QCoDeS depends on are released.</p>
+<p>Installing a new version of QCoDeS will automatically upgrade any dependency if required.
+However you may wish to upgrade some of the dependency to a newer version than the minimum
+version required by QCoDeS</p>
+<p>If you have installed QCoDeS using pip you can upgrade each package individually.
+E.g. to upgrade numpy you would do.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>numpy
+</pre></div>
+</div>
+<p>You can list all outdated packages using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>list<span class="w"> </span>--outdated
+</pre></div>
+</div>
+<p>If you have installed QCoDeS using conda upgrading all packages can be done by:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>update<span class="w"> </span>-n<span class="w"> </span>base<span class="w"> </span>conda<span class="w"> </span>-c<span class="w"> </span>defaults
+conda<span class="w"> </span>update<span class="w"> </span>--all
+</pre></div>
+</div>
+<p>The first line ensures that the <code class="docutils literal notranslate"><span class="pre">conda</span></code> package manager it self is
+up to date and the second line will ensure that the latest versions of the
+packages used by QCoDeS are installed.</p>
+<p>If you using QCoDeS from an editable install you should also reinstall QCoDeS using</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>&lt;path-to-repository&gt;
+</pre></div>
+</div>
+<p>After upgrading the environment to make sure that dependencies are tracked correctly.</p>
+<p>Note that if you install packages yourself into the same
+environment it is preferable to install them using the same package manager that
+you install QCoDeS with. There is a chance that
+mixing packages from <code class="docutils literal notranslate"><span class="pre">conda</span></code> and <code class="docutils literal notranslate"><span class="pre">pip</span></code> will produce a broken environment.
+Especially if the same package is installed using both <code class="docutils literal notranslate"><span class="pre">pip</span></code> and <code class="docutils literal notranslate"><span class="pre">conda</span></code>.</p>
+</section>
+</section>
+<section id="using-qcodes">
+<h2>Using QCoDes<a class="headerlink" href="#using-qcodes" title="Link to this heading"></a></h2>
+<p>For using QCoDeS, as with any other python library, it is useful to use an
+application that facilitates the editing and execution of python files. There
+are two widely  used options:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><strong>Jupyter</strong>, a browser based notebook</p></li>
+<li><p><strong>Spyder</strong>, an integrated development environment</p></li>
+</ul>
+</div></blockquote>
+<p>Both can be installed using <code class="docutils literal notranslate"><span class="pre">conda</span></code> or <code class="docutils literal notranslate"><span class="pre">pip</span></code> in the created <code class="docutils literal notranslate"><span class="pre">conda</span></code> environment
+for QCoDeS. Then installation can be simply done by activating the QCoDeS environment
+in the terminal and running the following:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>spyder
+pip<span class="w"> </span>install<span class="w"> </span>jupyter
+</pre></div>
+</div>
+<p>If you prefer <em>jupyterlab</em> over classic <em>jupyter notebook</em>, you should install it
+separately:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>jupyterlab
+</pre></div>
+</div>
+<p>If you installed QCoDeS using conda-forge, you may want to install above using
+<code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">install</span></code> rather than <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>. After installation, they could be easily
+called in your QCoDeS-activated <code class="docutils literal notranslate"><span class="pre">conda</span></code> terminal.</p>
+<p>For running spyder:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spyder
+</pre></div>
+</div>
+<p>or for jupyter notebook:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>jupyter<span class="w"> </span>notebook
+</pre></div>
+</div>
+<p>or jupyter lab:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>jupyter<span class="w"> </span>lab
+</pre></div>
+</div>
+<p>For other options from the terminal you can activate the QCoDeS in that terminal
+then start any other application, such as <em>IPython</em> or
+just plain old <em>Python</em>.</p>
+<p>It is also possible to install <em>Anaconda</em> for managing <code class="docutils literal notranslate"><span class="pre">conda</span></code> environments, however,
+you should be mindful about using it as <em>Anaconda</em> installs a wide verity of packages in
+the <code class="docutils literal notranslate"><span class="pre">root</span></code> environment upon installation. It comes with a <em>GUI</em> called <em>Anaconda Navigator</em>
+to work with. If you rather to use this <em>GUI</em> over the <code class="docutils literal notranslate"><span class="pre">conda</span></code> terminal, make sure to select
+the QCoDeS environment in the program, then you could be able to run the packages installed
+in that environment. The reason is because by default, <em>Anaconda Navigator</em> starts with the
+<code class="docutils literal notranslate"><span class="pre">base(root)</span></code> environment.</p>
+</section>
+<section id="working-example-notebooks">
+<h2>Working example notebooks<a class="headerlink" href="#working-example-notebooks" title="Link to this heading"></a></h2>
+<p>For a more hands-on approach to learning about QCoDeS, have a look at <a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html"><span class="doc">15 minutes to Qcodes</span></a>.</p>
+<p>We also have a library of <a class="reference internal" href="../examples/index.html"><span class="doc">examples notebooks</span></a> that detail more specific features of the software suite.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../examples/15_minutes_to_QCoDeS.html" class="btn btn-neutral float-right" title="15 minutes to QCoDeS" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

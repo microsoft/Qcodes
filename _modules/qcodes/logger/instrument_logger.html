@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.logger.instrument_logger &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.logger.instrument_logger</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.logger.instrument_logger</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines a :class:`logging.LoggerAdapter` and</span>
+<span class="sd">:class:`logging.Filter`. They are used to enable the capturing of output from</span>
+<span class="sd">specific</span>
+<span class="sd">instruments.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">collections.abc</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="kn">import</span> <span class="n">LevelType</span><span class="p">,</span> <span class="n">get_console_handler</span><span class="p">,</span> <span class="n">handler_level</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Sequence</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">InstrumentBase</span>
+
+
+<span class="k">class</span> <span class="nc">InstrumentLoggerAdapter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">LoggerAdapter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    In the Python logging module adapters are used to add context information</span>
+<span class="sd">    to logging. The :class:`logging.LoggerAdapter` has the same methods as the</span>
+<span class="sd">    :class:`logging.Logger` and can thus be used as such.</span>
+
+<span class="sd">    Here it is used to add the instruments full name to the log records so that</span>
+<span class="sd">    they can be filtered (using the :class:`InstrumentFilter`) by instrument</span>
+<span class="sd">    instance.</span>
+
+<span class="sd">    The context data gets stored in the `extra` dictionary as a property of the</span>
+<span class="sd">    Adapter. It is filled by the ``__init__`` method::</span>
+
+<span class="sd">        &gt;&gt;&gt; LoggerAdapter(log, {&#39;instrument&#39;: instrument_instance})</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the message and the kwargs for the handlers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">extra</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extra</span><span class="p">)</span>
+        <span class="n">inst</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;instrument&quot;</span><span class="p">)</span>
+
+        <span class="n">full_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">inst</span><span class="p">,</span> <span class="s2">&quot;full_name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">instr_type</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">inst</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;extra&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extra</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;extra&quot;</span><span class="p">][</span><span class="s2">&quot;instrument_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">full_name</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;extra&quot;</span><span class="p">][</span><span class="s2">&quot;instrument_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">instr_type</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">full_name</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">instr_type</span><span class="si">}</span><span class="s2">)] </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">kwargs</span>
+
+
+<span class="k">class</span> <span class="nc">InstrumentFilter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Filter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Filter to filter out records that originate from the given instruments.</span>
+<span class="sd">    Records created through the :class:`InstrumentLoggerAdapter` have additional</span>
+<span class="sd">    properties as specified in the `extra` dictionary which is a property of</span>
+<span class="sd">    the adapter.</span>
+
+<span class="sd">    Here the ``instrument_name`` property gets used to reject records that don&#39;t</span>
+<span class="sd">    originate from the list of instruments that has been passed to the</span>
+<span class="sd">    ``__init__`` method.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instruments</span><span class="p">:</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">InstrumentBase</span><span class="p">]):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instruments</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
+            <span class="n">instrument_seq</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">instruments</span><span class="o">.</span><span class="n">full_name</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">instrument_seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">inst</span><span class="o">.</span><span class="n">full_name</span> <span class="k">for</span> <span class="n">inst</span> <span class="ow">in</span> <span class="n">instruments</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">instrument_seq</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">LogRecord</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">inst</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="s2">&quot;instrument_name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inst</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="n">insrument_match</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">inst</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">instrument_name</span><span class="p">)</span> <span class="k">for</span> <span class="n">instrument_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument_set</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">insrument_match</span>
+
+
+<div class="viewcode-block" id="get_instrument_logger">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.get_instrument_logger">[docs]</a>
+<span class="k">def</span> <span class="nf">get_instrument_logger</span><span class="p">(</span>
+    <span class="n">instrument_instance</span><span class="p">:</span> <span class="n">InstrumentBase</span><span class="p">,</span> <span class="n">logger_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentLoggerAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns an :class:`InstrumentLoggerAdapter` that can be used to log</span>
+<span class="sd">    messages</span>
+<span class="sd">    including ``instrument_instance`` as  an additional context.</span>
+
+<span class="sd">    The :class:`logging.LoggerAdapter` object can be used as any logger.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        instrument_instance: The instrument instance to be added to the context</span>
+<span class="sd">            of the log record.</span>
+<span class="sd">        logger_name: Name of the logger to which the records will be passed.</span>
+<span class="sd">            If `None`, defaults to the root logger.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        :class:`logging.LoggerAdapter` instance, that can be used for instrument</span>
+<span class="sd">        specific logging.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger_name</span> <span class="o">=</span> <span class="n">logger_name</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">InstrumentLoggerAdapter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">logger_name</span><span class="p">),</span>
+                                   <span class="p">{</span><span class="s1">&#39;instrument&#39;</span><span class="p">:</span> <span class="n">instrument_instance</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="filter_instrument">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.filter_instrument">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">filter_instrument</span><span class="p">(</span>
+    <span class="n">instrument</span><span class="p">:</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">InstrumentBase</span><span class="p">],</span>
+    <span class="n">handler</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Handler</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">level</span><span class="p">:</span> <span class="n">LevelType</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context manager that adds a filter that only enables the log messages of</span>
+<span class="sd">    the supplied instruments to pass.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; h1, h2 = logger.get_console_handler(), logger.get_file_handler()</span>
+<span class="sd">        &gt;&gt;&gt; with logger.filter_instruments((qdac, dmm2), handler=[h1, h2]):</span>
+<span class="sd">        &gt;&gt;&gt;     qdac.ch01(1)  # logged</span>
+<span class="sd">        &gt;&gt;&gt;     v1 = dmm2.v() # logged</span>
+<span class="sd">        &gt;&gt;&gt;     v2 = keithley.v()  # not logged</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        instrument: The instrument or sequence of instruments to enable</span>
+<span class="sd">            messages from.</span>
+<span class="sd">        level: Level to set the handlers to.</span>
+<span class="sd">        handler: Single or sequence of handlers to change.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">handlers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Handler</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">handler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">myhandler</span> <span class="o">=</span> <span class="n">get_console_handler</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">myhandler</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Trying to filter instrument but no handler &quot;</span>
+                               <span class="s2">&quot;defined. Did you forget to call &quot;</span>
+                               <span class="s2">&quot;`start_logger` before?&quot;</span><span class="p">)</span>
+        <span class="n">handlers</span> <span class="o">=</span> <span class="p">(</span><span class="n">myhandler</span><span class="p">,)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
+        <span class="n">handlers</span> <span class="o">=</span> <span class="p">(</span><span class="n">handler</span><span class="p">,)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">handlers</span> <span class="o">=</span> <span class="n">handler</span>
+
+    <span class="n">instrument_filter</span> <span class="o">=</span> <span class="n">InstrumentFilter</span><span class="p">(</span><span class="n">instrument</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">handlers</span><span class="p">:</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">addFilter</span><span class="p">(</span><span class="n">instrument_filter</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">level</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">handler_level</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">handlers</span><span class="p">):</span>
+                <span class="k">yield</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">handlers</span><span class="p">:</span>
+            <span class="n">h</span><span class="o">.</span><span class="n">removeFilter</span><span class="p">(</span><span class="n">instrument_filter</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

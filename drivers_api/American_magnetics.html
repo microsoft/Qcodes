@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>American Magnetics Inc Drivers &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Basel Drivers" href="Basel.html" />
+    <link rel="prev" title="Alazar Tech Drivers" href="AlazarTech.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">American Magnetics Inc Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430Exception"><code class="docutils literal notranslate"><span class="pre">AMI430Exception</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enabled"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.enabled</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.state"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.state</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.in_persistent_mode"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.in_persistent_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.current"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.current</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.heat_time"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.heat_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.cool_time"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.cool_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.disable"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.disable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enable"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.enable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_enabled"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.check_enabled()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.on"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.on()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.off"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.off()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_state"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.check_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.parameters"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.functions"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.submodules"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.instrument_modules"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.log"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.metadata"><code class="docutils literal notranslate"><span class="pre">AMI430SwitchHeater.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430Warning"><code class="docutils literal notranslate"><span class="pre">AMI430Warning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430"><code class="docutils literal notranslate"><span class="pre">AMIModel430</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.default_terminator"><code class="docutils literal notranslate"><span class="pre">AMIModel430.default_terminator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate_units"><code class="docutils literal notranslate"><span class="pre">AMIModel430.ramp_rate_units</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_units"><code class="docutils literal notranslate"><span class="pre">AMIModel430.field_units</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.current_ramp_limit"><code class="docutils literal notranslate"><span class="pre">AMIModel430.current_ramp_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_ramp_limit"><code class="docutils literal notranslate"><span class="pre">AMIModel430.field_ramp_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.coil_constant"><code class="docutils literal notranslate"><span class="pre">AMIModel430.coil_constant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.current_limit"><code class="docutils literal notranslate"><span class="pre">AMIModel430.current_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_limit"><code class="docutils literal notranslate"><span class="pre">AMIModel430.field_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field"><code class="docutils literal notranslate"><span class="pre">AMIModel430.field</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate"><code class="docutils literal notranslate"><span class="pre">AMIModel430.ramp_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.setpoint"><code class="docutils literal notranslate"><span class="pre">AMIModel430.setpoint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.is_quenched"><code class="docutils literal notranslate"><span class="pre">AMIModel430.is_quenched</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state"><code class="docutils literal notranslate"><span class="pre">AMIModel430.ramping_state</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state_check_interval"><code class="docutils literal notranslate"><span class="pre">AMIModel430.ramping_state_check_interval</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.set_field"><code class="docutils literal notranslate"><span class="pre">AMIModel430.set_field()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.wait_while_ramping"><code class="docutils literal notranslate"><span class="pre">AMIModel430.wait_while_ramping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.write_raw"><code class="docutils literal notranslate"><span class="pre">AMIModel430.write_raw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ask_raw"><code class="docutils literal notranslate"><span class="pre">AMIModel430.ask_raw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.visabackend"><code class="docutils literal notranslate"><span class="pre">AMIModel430.visabackend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.visa_handle"><code class="docutils literal notranslate"><span class="pre">AMIModel430.visa_handle</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.visalib"><code class="docutils literal notranslate"><span class="pre">AMIModel430.visalib</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.parameters"><code class="docutils literal notranslate"><span class="pre">AMIModel430.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.functions"><code class="docutils literal notranslate"><span class="pre">AMIModel430.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.submodules"><code class="docutils literal notranslate"><span class="pre">AMIModel430.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.instrument_modules"><code class="docutils literal notranslate"><span class="pre">AMIModel430.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.log"><code class="docutils literal notranslate"><span class="pre">AMIModel430.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.metadata"><code class="docutils literal notranslate"><span class="pre">AMIModel430.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.cartesian_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.x_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.y_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.z_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.spherical_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.phi_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.theta_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.field_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.cylindrical_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho_measured"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.rho_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.cartesian</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.x</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.parameters"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.functions"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.submodules"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.instrument_modules"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.log"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.metadata"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.z</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.spherical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.phi</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.theta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.field</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.cylindrical</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.rho</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.block_during_ramp"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.block_during_ramp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.vector_ramp_rate"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.vector_ramp_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.get_idn"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.ramp_simultaneously"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.ramp_simultaneously()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_for"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.calculate_axes_ramp_rates_for()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_vector_ramp_rate_from_duration"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.calculate_vector_ramp_rate_from_duration()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.wait_while_all_axes_ramping"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.wait_while_all_axes_ramping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.any_axis_is_ramping"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.any_axis_is_ramping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.pause"><code class="docutils literal notranslate"><span class="pre">AMIModel4303D.pause()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">American Magnetics Inc Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/American_magnetics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.american_magnetics">
+<span id="american-magnetics-inc-drivers"></span><span id="ami-api"></span><h1>American Magnetics Inc Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.american_magnetics" title="Link to this heading"></a></h1>
+<p><strong>Exceptions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430Exception" title="qcodes.instrument_drivers.american_magnetics.AMI430Exception"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AMI430Exception</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430Warning" title="qcodes.instrument_drivers.american_magnetics.AMI430Warning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AMI430Warning</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AMI430SwitchHeater</span></code></a>(parent, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430" title="qcodes.instrument_drivers.american_magnetics.AMIModel430"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AMIModel430</span></code></a>(name, address[, reset, ...])</p></td>
+<td><p>Driver for the American Magnetics Model 430 magnet power supply programmer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AMIModel4303D</span></code></a>(name, instrument_x, ...)</p></td>
+<td><p>Driver for controlling three American Magnetics Model 430 magnet power supplies simultaneously for setting magnetic field vectors.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430Exception">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.american_magnetics.</span></span><span class="sig-name descname"><span class="pre">AMI430Exception</span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430Exception"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430Exception" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Exception" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.american_magnetics.</span></span><span class="sig-name descname"><span class="pre">AMI430SwitchHeater</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430" title="qcodes.instrument_drivers.american_magnetics.AMIModel430"><span class="pre">AMIModel430</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430SwitchHeater"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enabled" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enabled"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enabled</span></code></a></p></td>
+<td><p>Parameter enabled</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.state" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code></a></p></td>
+<td><p>Parameter state</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.in_persistent_mode" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.in_persistent_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">in_persistent_mode</span></code></a></p></td>
+<td><p>Parameter in_persistent_mode</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.current" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.current"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current</span></code></a></p></td>
+<td><p>Parameter current</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.heat_time" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.heat_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">heat_time</span></code></a></p></td>
+<td><p>Parameter heat_time</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.cool_time" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.cool_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cool_time</span></code></a></p></td>
+<td><p>Parameter cool_time</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.disable" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.disable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">disable</span></code></a>()</p></td>
+<td><p>Turn measurement off</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enable" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enable</span></code></a>()</p></td>
+<td><p>Turn measurement on</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_enabled" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_enabled"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_enabled</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.on" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.on"><code class="xref py py-obj docutils literal notranslate"><span class="pre">on</span></code></a>(*args, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.off" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.off"><code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code></a>(*args, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_state" title="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_state</span></code></a>(*args, **kwargs)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enabled">
+<span class="sig-name descname"><span class="pre">enabled</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;enabled&quot;,</span> <span class="pre">label=&quot;Switch</span> <span class="pre">Heater</span> <span class="pre">Enabled&quot;,</span> <span class="pre">get_cmd=self.check_enabled,</span> <span class="pre">set_cmd=lambda</span> <span class="pre">x:</span> <span class="pre">(self.enable()</span> <span class="pre">if</span> <span class="pre">x</span> <span class="pre">else</span> <span class="pre">self.disable()),</span> <span class="pre">vals=Bool(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enabled" title="Link to this definition"></a></dt>
+<dd><p>Parameter enabled</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.state">
+<span class="sig-name descname"><span class="pre">state</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;state&quot;,</span> <span class="pre">label=&quot;Switch</span> <span class="pre">Heater</span> <span class="pre">On&quot;,</span> <span class="pre">get_cmd=self.check_state,</span> <span class="pre">set_cmd=lambda</span> <span class="pre">x:</span> <span class="pre">(self.on()</span> <span class="pre">if</span> <span class="pre">x</span> <span class="pre">else</span> <span class="pre">self.off()),</span> <span class="pre">vals=Bool(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.state" title="Link to this definition"></a></dt>
+<dd><p>Parameter state</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.in_persistent_mode">
+<span class="sig-name descname"><span class="pre">in_persistent_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;in_persistent_mode&quot;,</span> <span class="pre">label=&quot;Persistent</span> <span class="pre">Mode&quot;,</span> <span class="pre">get_cmd=&quot;PERS?&quot;,</span> <span class="pre">val_mapping={True:</span> <span class="pre">1,</span> <span class="pre">False:</span> <span class="pre">0},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.in_persistent_mode" title="Link to this definition"></a></dt>
+<dd><p>Parameter in_persistent_mode</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.current">
+<span class="sig-name descname"><span class="pre">current</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current&quot;,</span> <span class="pre">label=&quot;Switch</span> <span class="pre">Heater</span> <span class="pre">Current&quot;,</span> <span class="pre">unit=&quot;mA&quot;,</span> <span class="pre">get_cmd=&quot;PS:CURR?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">set_cmd=&quot;CONF:PS:CURR</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=Numbers(0,</span> <span class="pre">125),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.current" title="Link to this definition"></a></dt>
+<dd><p>Parameter current</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.heat_time">
+<span class="sig-name descname"><span class="pre">heat_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;heat_time&quot;,</span> <span class="pre">label=&quot;Heating</span> <span class="pre">Time&quot;,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">get_cmd=&quot;PS:HTIME?&quot;,</span> <span class="pre">get_parser=int,</span> <span class="pre">set_cmd=&quot;CONF:PS:HTIME</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=Ints(5,</span> <span class="pre">120),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.heat_time" title="Link to this definition"></a></dt>
+<dd><p>Parameter heat_time</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.cool_time">
+<span class="sig-name descname"><span class="pre">cool_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;cool_time&quot;,</span> <span class="pre">label=&quot;Cooling</span> <span class="pre">Time&quot;,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">get_cmd=&quot;PS:CTIME?&quot;,</span> <span class="pre">get_parser=int,</span> <span class="pre">set_cmd=&quot;CONF:PS:CTIME</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=Ints(5,</span> <span class="pre">3600),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.cool_time" title="Link to this definition"></a></dt>
+<dd><p>Parameter cool_time</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.disable">
+<span class="sig-name descname"><span class="pre">disable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430SwitchHeater.disable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.disable" title="Link to this definition"></a></dt>
+<dd><p>Turn measurement off</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enable">
+<span class="sig-name descname"><span class="pre">enable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430SwitchHeater.enable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.enable" title="Link to this definition"></a></dt>
+<dd><p>Turn measurement on</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_enabled">
+<span class="sig-name descname"><span class="pre">check_enabled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430SwitchHeater.check_enabled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_enabled" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.on">
+<span class="sig-name descname"><span class="pre">on</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*args:</span> <span class="pre">~typing.~P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs:</span> <span class="pre">~typing.~P</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430SwitchHeater.on"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.on" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.off">
+<span class="sig-name descname"><span class="pre">off</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*args:</span> <span class="pre">~typing.~P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs:</span> <span class="pre">~typing.~P</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430SwitchHeater.off"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.off" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_state">
+<span class="sig-name descname"><span class="pre">check_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*args:</span> <span class="pre">~typing.~P</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs:</span> <span class="pre">~typing.~P</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430SwitchHeater.check_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.check_state" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430SwitchHeater.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMI430Warning">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.american_magnetics.</span></span><span class="sig-name descname"><span class="pre">AMI430Warning</span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMI430Warning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMI430Warning" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#UserWarning" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">UserWarning</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.american_magnetics.</span></span><span class="sig-name descname"><span class="pre">AMIModel430</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">reset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_ramp_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel430"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>Driver for the American Magnetics Model 430 magnet power supply programmer.</p>
+<p>This class controls a single magnet power supply. In order to use two or
+three magnets simultaneously to set field vectors, first instantiate the
+individual magnets using this class and then pass them as arguments to
+the AMIModel4303D virtual instrument classes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – a name for the instrument</p></li>
+<li><p><strong>address</strong> – VISA formatted address of the power supply programmer.
+Of the form <code class="docutils literal notranslate"><span class="pre">TCPIP[board]::host</span> <span class="pre">address::port::SOCKET</span></code>
+e.g. <code class="docutils literal notranslate"><span class="pre">TCPIP0::192.168.0.1::7800::SOCKET</span></code></p></li>
+<li><p><strong>reset</strong> – Should the reset method be called on the instrument at init time</p></li>
+<li><p><strong>current_ramp_limit</strong> – A current ramp limit, in units of A/s</p></li>
+<li><p><strong>**kwargs</strong> – Additional kwargs are passed to the base class</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.default_terminator" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.default_terminator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_terminator</span></code></a></p></td>
+<td><p>The default terminator to use if the terminator is not specified when creating the instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate_units" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate_units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_rate_units</span></code></a></p></td>
+<td><p>Parameter ramp_rate_units</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_units" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.field_units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_units</span></code></a></p></td>
+<td><p>Parameter field_units</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.current_ramp_limit" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.current_ramp_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_ramp_limit</span></code></a></p></td>
+<td><p>Parameter current_ramp_limit</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_ramp_limit" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.field_ramp_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_ramp_limit</span></code></a></p></td>
+<td><p>Parameter field_ramp_limit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.coil_constant" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.coil_constant"><code class="xref py py-obj docutils literal notranslate"><span class="pre">coil_constant</span></code></a></p></td>
+<td><p>Parameter coil_constant</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.current_limit" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.current_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_limit</span></code></a></p></td>
+<td><p>Parameter current_limit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_limit" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.field_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_limit</span></code></a></p></td>
+<td><p>Parameter field_limit</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></a></p></td>
+<td><p>Parameter field</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_rate</span></code></a></p></td>
+<td><p>Parameter ramp_rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.setpoint" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.setpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setpoint</span></code></a></p></td>
+<td><p>Parameter setpoint</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.is_quenched" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.is_quenched"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_quenched</span></code></a></p></td>
+<td><p>Parameter is_quenched</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramping_state</span></code></a></p></td>
+<td><p>Parameter ramping_state</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state_check_interval" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state_check_interval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramping_state_check_interval</span></code></a></p></td>
+<td><p>Parameter ramping_state_check_interval</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.set_field" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.set_field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_field</span></code></a>(value, *[, block, ...])</p></td>
+<td><p>Ramp to a certain field</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.wait_while_ramping" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.wait_while_ramping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wait_while_ramping</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.write_raw" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.write_raw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_raw</span></code></a>(cmd)</p></td>
+<td><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.write</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ask_raw" title="qcodes.instrument_drivers.american_magnetics.AMIModel430.ask_raw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask_raw</span></code></a>(cmd)</p></td>
+<td><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.ask</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.default_terminator">
+<span class="sig-name descname"><span class="pre">default_terminator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\r\n'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.default_terminator" title="Link to this definition"></a></dt>
+<dd><p>The default terminator to use if the terminator is not specified when creating the instrument.
+None means use the default terminator from PyVisa.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate_units">
+<span class="sig-name descname"><span class="pre">ramp_rate_units</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ramp_rate_units&quot;,</span> <span class="pre">get_cmd=&quot;RAMP:RATE:UNITS?&quot;,</span> <span class="pre">set_cmd=(lambda</span> <span class="pre">units:</span> <span class="pre">self._update_units(ramp_rate_units=units)),</span> <span class="pre">val_mapping={&quot;seconds&quot;:</span> <span class="pre">0,</span> <span class="pre">&quot;minutes&quot;:</span> <span class="pre">1},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate_units" title="Link to this definition"></a></dt>
+<dd><p>Parameter ramp_rate_units</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.field_units">
+<span class="sig-name descname"><span class="pre">field_units</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field_units&quot;,</span> <span class="pre">get_cmd=&quot;FIELD:UNITS?&quot;,</span> <span class="pre">set_cmd=(lambda</span> <span class="pre">units:</span> <span class="pre">self._update_units(field_units=units)),</span> <span class="pre">val_mapping={&quot;kilogauss&quot;:</span> <span class="pre">0,</span> <span class="pre">&quot;tesla&quot;:</span> <span class="pre">1},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_units" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_units</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.current_ramp_limit">
+<span class="sig-name descname"><span class="pre">current_ramp_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current_ramp_limit&quot;,</span> <span class="pre">get_cmd=lambda:</span> <span class="pre">self._current_ramp_limit,</span> <span class="pre">set_cmd=self._update_ramp_rate_limit,</span> <span class="pre">unit=&quot;A/s&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.current_ramp_limit" title="Link to this definition"></a></dt>
+<dd><p>Parameter current_ramp_limit</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.field_ramp_limit">
+<span class="sig-name descname"><span class="pre">field_ramp_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field_ramp_limit&quot;,</span> <span class="pre">get_cmd=lambda:</span> <span class="pre">self.current_ramp_limit(),</span> <span class="pre">set_cmd=lambda</span> <span class="pre">x:</span> <span class="pre">self.current_ramp_limit(x),</span> <span class="pre">scale=1</span> <span class="pre">/</span> <span class="pre">float(self.ask(&quot;COIL?&quot;)),</span> <span class="pre">unit=&quot;T/s&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_ramp_limit" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_ramp_limit</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.coil_constant">
+<span class="sig-name descname"><span class="pre">coil_constant</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;coil_constant&quot;,</span> <span class="pre">get_cmd=self._update_coil_constant,</span> <span class="pre">set_cmd=self._update_coil_constant,</span> <span class="pre">vals=Numbers(0.001,</span> <span class="pre">999.99999),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.coil_constant" title="Link to this definition"></a></dt>
+<dd><p>Parameter coil_constant</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.current_limit">
+<span class="sig-name descname"><span class="pre">current_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current_limit&quot;,</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">set_cmd=&quot;CONF:CURR:LIMIT</span> <span class="pre">{}&quot;,</span> <span class="pre">get_cmd=&quot;CURR:LIMIT?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(0,</span> <span class="pre">80),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.current_limit" title="Link to this definition"></a></dt>
+<dd><p>Parameter current_limit</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.field_limit">
+<span class="sig-name descname"><span class="pre">field_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field_limit&quot;,</span> <span class="pre">set_cmd=self.current_limit.set,</span> <span class="pre">get_cmd=self.current_limit.get,</span> <span class="pre">scale=1</span> <span class="pre">/</span> <span class="pre">float(self.ask(&quot;COIL?&quot;)),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field_limit" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_limit</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.field">
+<span class="sig-name descname"><span class="pre">field</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field&quot;,</span> <span class="pre">get_cmd=&quot;FIELD:MAG?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">set_cmd=self.set_field</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.field" title="Link to this definition"></a></dt>
+<dd><p>Parameter field</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate">
+<span class="sig-name descname"><span class="pre">ramp_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ramp_rate&quot;,</span> <span class="pre">get_cmd=self._get_ramp_rate,</span> <span class="pre">set_cmd=self._set_ramp_rate</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramp_rate" title="Link to this definition"></a></dt>
+<dd><p>Parameter ramp_rate</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.setpoint">
+<span class="sig-name descname"><span class="pre">setpoint</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;setpoint&quot;,</span> <span class="pre">get_cmd=&quot;FIELD:TARG?&quot;,</span> <span class="pre">get_parser=float</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.setpoint" title="Link to this definition"></a></dt>
+<dd><p>Parameter setpoint</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.is_quenched">
+<span class="sig-name descname"><span class="pre">is_quenched</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;is_quenched&quot;,</span> <span class="pre">get_cmd=&quot;QU?&quot;,</span> <span class="pre">val_mapping={True:</span> <span class="pre">1,</span> <span class="pre">False:</span> <span class="pre">0}</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.is_quenched" title="Link to this definition"></a></dt>
+<dd><p>Parameter is_quenched</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state">
+<span class="sig-name descname"><span class="pre">ramping_state</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ramping_state&quot;,</span> <span class="pre">get_cmd=&quot;STATE?&quot;,</span> <span class="pre">get_parser=int,</span> <span class="pre">val_mapping={</span> <span class="pre">&quot;ramping&quot;:</span> <span class="pre">1,</span> <span class="pre">&quot;holding&quot;:</span> <span class="pre">2,</span> <span class="pre">&quot;paused&quot;:</span> <span class="pre">3,</span> <span class="pre">&quot;manual</span> <span class="pre">up&quot;:</span> <span class="pre">4,</span> <span class="pre">&quot;manual</span> <span class="pre">down&quot;:</span> <span class="pre">5,</span> <span class="pre">&quot;zeroing</span> <span class="pre">current&quot;:</span> <span class="pre">6,</span> <span class="pre">&quot;quench</span> <span class="pre">detected&quot;:</span> <span class="pre">7,</span> <span class="pre">&quot;at</span> <span class="pre">zero</span> <span class="pre">current&quot;:</span> <span class="pre">8,</span> <span class="pre">&quot;heating</span> <span class="pre">switch&quot;:</span> <span class="pre">9,</span> <span class="pre">&quot;cooling</span> <span class="pre">switch&quot;:</span> <span class="pre">10,</span> <span class="pre">},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state" title="Link to this definition"></a></dt>
+<dd><p>Parameter ramping_state</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state_check_interval">
+<span class="sig-name descname"><span class="pre">ramping_state_check_interval</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ramping_state_check_interval&quot;,</span> <span class="pre">initial_value=0.05,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">vals=Numbers(0,</span> <span class="pre">10),</span> <span class="pre">set_cmd=None,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ramping_state_check_interval" title="Link to this definition"></a></dt>
+<dd><p>Parameter ramping_state_check_interval</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.set_field">
+<span class="sig-name descname"><span class="pre">set_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perform_safety_check</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel430.set_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.set_field" title="Link to this definition"></a></dt>
+<dd><p>Ramp to a certain field</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>value</strong> – Value to ramp to.</p></li>
+<li><p><strong>block</strong> – Whether to wait unit the field has finished setting</p></li>
+<li><p><strong>perform_safety_check</strong> – Whether to set the field via a parent
+driver (if present), which might perform additional safety
+checks.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.wait_while_ramping">
+<span class="sig-name descname"><span class="pre">wait_while_ramping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel430.wait_while_ramping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.wait_while_ramping" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.write_raw">
+<span class="sig-name descname"><span class="pre">write_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel430.write_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.write_raw" title="Link to this definition"></a></dt>
+<dd><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.write</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – The command to send to the instrument.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.ask_raw">
+<span class="sig-name descname"><span class="pre">ask_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel430.ask_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.ask_raw" title="Link to this definition"></a></dt>
+<dd><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.ask</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – The command to send to the instrument.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The instrument’s response.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.visabackend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.14.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.visa_handle" title="Link to this definition"></a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.visalib" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel430.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.american_magnetics.</span></span><span class="sig-name descname"><span class="pre">AMIModel4303D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430" title="qcodes.instrument_drivers.american_magnetics.AMIModel430"><span class="pre">AMIModel430</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430" title="qcodes.instrument_drivers.american_magnetics.AMIModel430"><span class="pre">AMIModel430</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">instrument_z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel430" title="qcodes.instrument_drivers.american_magnetics.AMIModel430"><span class="pre">AMIModel430</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">CartesianFieldLimitFunction</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instrument</span></code></a></p>
+<p>Driver for controlling three American Magnetics Model 430 magnet power
+supplies simultaneously for setting magnetic field vectors.</p>
+<p>The individual magnet power supplies can be passed in as either
+instances of AMIModel430 driver or as names of existing AMIModel430 instances.
+In the latter case, the instances will be found via the passed names.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – a name for the instrument</p></li>
+<li><p><strong>instrument_x</strong> – AMIModel430 instance or a names of existing AMIModel430
+instance for controlling the X axis of magnetic field</p></li>
+<li><p><strong>instrument_y</strong> – AMIModel430 instance or a names of existing AMIModel430
+instance for controlling the Y axis of magnetic field</p></li>
+<li><p><strong>instrument_z</strong> – AMIModel430 instance or a names of existing AMIModel430
+instance for controlling the Z axis of magnetic field</p></li>
+<li><p><strong>field_limit</strong> – a number for maximum allows magnetic field or an
+iterable of callable field limit functions that define
+region(s) of allowed values in 3D magnetic field space</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cartesian_measured</span></code></a></p></td>
+<td><p>Parameter cartesian_measured</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">x_measured</span></code></a></p></td>
+<td><p>Parameter x_measured</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">y_measured</span></code></a></p></td>
+<td><p>Parameter y_measured</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">z_measured</span></code></a></p></td>
+<td><p>Parameter z_measured</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spherical_measured</span></code></a></p></td>
+<td><p>Parameter spherical_measured</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">phi_measured</span></code></a></p></td>
+<td><p>Parameter phi_measured</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">theta_measured</span></code></a></p></td>
+<td><p>Parameter theta_measured</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_measured</span></code></a></p></td>
+<td><p>Parameter field_measured</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cylindrical_measured</span></code></a></p></td>
+<td><p>Parameter cylindrical_measured</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho_measured" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rho_measured</span></code></a></p></td>
+<td><p>Parameter rho_measured</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cartesian</span></code></a></p></td>
+<td><p>Parameter cartesian</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x"><code class="xref py py-obj docutils literal notranslate"><span class="pre">x</span></code></a></p></td>
+<td><p>Parameter x</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">y</span></code></a></p></td>
+<td><p>Parameter y</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">z</span></code></a></p></td>
+<td><p>Parameter z</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">spherical</span></code></a></p></td>
+<td><p>Parameter spherical</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">phi</span></code></a></p></td>
+<td><p>Parameter phi</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">theta</span></code></a></p></td>
+<td><p>Parameter theta</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></a></p></td>
+<td><p>Parameter field</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cylindrical</span></code></a></p></td>
+<td><p>Parameter cylindrical</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rho</span></code></a></p></td>
+<td><p>Parameter rho</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.block_during_ramp" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.block_during_ramp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">block_during_ramp</span></code></a></p></td>
+<td><p>Parameter block_during_ramp</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.vector_ramp_rate" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.vector_ramp_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_ramp_rate</span></code></a></p></td>
+<td><p>Ramp rate along a line (vector) in 3D field space</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.get_idn" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.ramp_simultaneously" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.ramp_simultaneously"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code></a>(setpoint, duration)</p></td>
+<td><p>Ramp all axes simultaneously to the given setpoint and in the given time</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_for" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_for"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_axes_ramp_rates_for</span></code></a>(start, ...)</p></td>
+<td><p>Given starting and setpoint fields and expected ramp time calculates required ramp rates for x, y, z axes (in this order) where axes are ramped simultaneously.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_vector_ramp_rate_from_duration" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_vector_ramp_rate_from_duration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_vector_ramp_rate_from_duration</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calculate_axes_ramp_rates_from_vector_ramp_rate</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.wait_while_all_axes_ramping" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.wait_while_all_axes_ramping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wait_while_all_axes_ramping</span></code></a>()</p></td>
+<td><p>Wait and blocks as long as any magnet axis is ramping.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.any_axis_is_ramping" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.any_axis_is_ramping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">any_axis_is_ramping</span></code></a>()</p></td>
+<td><p>Returns True if any of the magnet axes are currently ramping, or False if none of the axes are ramping.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.pause" title="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.pause"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pause</span></code></a>()</p></td>
+<td><p>Pause all magnet axes.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian_measured">
+<span class="sig-name descname"><span class="pre">cartesian_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;cartesian_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;x&quot;,</span> <span class="pre">&quot;y&quot;,</span> <span class="pre">&quot;z&quot;),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter cartesian_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x_measured">
+<span class="sig-name descname"><span class="pre">x_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;x_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;x&quot;),</span> <span class="pre">unit=&quot;T&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter x_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y_measured">
+<span class="sig-name descname"><span class="pre">y_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;y_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;y&quot;),</span> <span class="pre">unit=&quot;T&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter y_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z_measured">
+<span class="sig-name descname"><span class="pre">z_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;z_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;z&quot;),</span> <span class="pre">unit=&quot;T&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter z_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical_measured">
+<span class="sig-name descname"><span class="pre">spherical_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;spherical_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;r&quot;,</span> <span class="pre">&quot;theta&quot;,</span> <span class="pre">&quot;phi&quot;),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter spherical_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi_measured">
+<span class="sig-name descname"><span class="pre">phi_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;phi_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;phi&quot;),</span> <span class="pre">unit=&quot;deg&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter phi_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta_measured">
+<span class="sig-name descname"><span class="pre">theta_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;theta_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;theta&quot;),</span> <span class="pre">unit=&quot;deg&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter theta_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field_measured">
+<span class="sig-name descname"><span class="pre">field_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;r&quot;),</span> <span class="pre">unit=&quot;T&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical_measured">
+<span class="sig-name descname"><span class="pre">cylindrical_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;cylindrical_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;rho&quot;,</span> <span class="pre">&quot;phi&quot;,</span> <span class="pre">&quot;z&quot;),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter cylindrical_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho_measured">
+<span class="sig-name descname"><span class="pre">rho_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;rho_measured&quot;,</span> <span class="pre">get_cmd=partial(self._get_measured,</span> <span class="pre">&quot;rho&quot;),</span> <span class="pre">unit=&quot;T&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter rho_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian">
+<span class="sig-name descname"><span class="pre">cartesian</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;cartesian&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;x&quot;,</span> <span class="pre">&quot;y&quot;,</span> <span class="pre">&quot;z&quot;)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;x&quot;,</span> <span class="pre">&quot;y&quot;,</span> <span class="pre">&quot;z&quot;)),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">vals=Anything(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cartesian" title="Link to this definition"></a></dt>
+<dd><p>Parameter cartesian</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x">
+<span class="sig-name descname"><span class="pre">x</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;x&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;x&quot;,)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;x&quot;,)),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">vals=Numbers(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.x" title="Link to this definition"></a></dt>
+<dd><p>Parameter x</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y">
+<span class="sig-name descname"><span class="pre">y</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;y&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;y&quot;,)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;y&quot;,)),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">vals=Numbers(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.y" title="Link to this definition"></a></dt>
+<dd><p>Parameter y</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z">
+<span class="sig-name descname"><span class="pre">z</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;z&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;z&quot;,)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;z&quot;,)),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">vals=Numbers(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.z" title="Link to this definition"></a></dt>
+<dd><p>Parameter z</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical">
+<span class="sig-name descname"><span class="pre">spherical</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;spherical&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;r&quot;,</span> <span class="pre">&quot;theta&quot;,</span> <span class="pre">&quot;phi&quot;)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;r&quot;,</span> <span class="pre">&quot;theta&quot;,</span> <span class="pre">&quot;phi&quot;)),</span> <span class="pre">unit=&quot;tuple?&quot;,</span> <span class="pre">vals=Anything(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.spherical" title="Link to this definition"></a></dt>
+<dd><p>Parameter spherical</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi">
+<span class="sig-name descname"><span class="pre">phi</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;phi&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;phi&quot;,)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;phi&quot;,)),</span> <span class="pre">unit=&quot;deg&quot;,</span> <span class="pre">vals=Numbers(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.phi" title="Link to this definition"></a></dt>
+<dd><p>Parameter phi</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta">
+<span class="sig-name descname"><span class="pre">theta</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;theta&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;theta&quot;,)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;theta&quot;,)),</span> <span class="pre">unit=&quot;deg&quot;,</span> <span class="pre">vals=Numbers(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.theta" title="Link to this definition"></a></dt>
+<dd><p>Parameter theta</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field">
+<span class="sig-name descname"><span class="pre">field</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;r&quot;,)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;r&quot;,)),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">vals=Numbers(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.field" title="Link to this definition"></a></dt>
+<dd><p>Parameter field</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical">
+<span class="sig-name descname"><span class="pre">cylindrical</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;cylindrical&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;rho&quot;,</span> <span class="pre">&quot;phi&quot;,</span> <span class="pre">&quot;z&quot;)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;rho&quot;,</span> <span class="pre">&quot;phi&quot;,</span> <span class="pre">&quot;z&quot;)),</span> <span class="pre">unit=&quot;tuple?&quot;,</span> <span class="pre">vals=Anything(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.cylindrical" title="Link to this definition"></a></dt>
+<dd><p>Parameter cylindrical</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho">
+<span class="sig-name descname"><span class="pre">rho</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;rho&quot;,</span> <span class="pre">get_cmd=partial(self._get_setpoints,</span> <span class="pre">(&quot;rho&quot;,)),</span> <span class="pre">set_cmd=partial(self._set_setpoints,</span> <span class="pre">(&quot;rho&quot;,)),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">vals=Numbers(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.rho" title="Link to this definition"></a></dt>
+<dd><p>Parameter rho</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.block_during_ramp">
+<span class="sig-name descname"><span class="pre">block_during_ramp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;block_during_ramp&quot;,</span> <span class="pre">set_cmd=None,</span> <span class="pre">initial_value=True,</span> <span class="pre">unit=&quot;&quot;,</span> <span class="pre">vals=Bool()</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.block_during_ramp" title="Link to this definition"></a></dt>
+<dd><p>Parameter block_during_ramp</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.vector_ramp_rate">
+<span class="sig-name descname"><span class="pre">vector_ramp_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Parameter(</span> <span class="pre">name=&quot;vector_ramp_rate&quot;,</span> <span class="pre">instrument=self,</span> <span class="pre">unit=&quot;T/s&quot;,</span> <span class="pre">vals=Numbers(min_value=0.0),</span> <span class="pre">set_cmd=None,</span> <span class="pre">get_cmd=None,</span> <span class="pre">set_parser=self._set_vector_ramp_rate_units,</span> <span class="pre">docstring=&quot;Ramp</span> <span class="pre">rate</span> <span class="pre">along</span> <span class="pre">a</span> <span class="pre">line</span> <span class="pre">(vector)</span> <span class="pre">in</span> <span class="pre">3D</span> <span class="pre">space.</span> <span class="pre">Only</span> <span class="pre">active&quot;</span> <span class="pre">&quot;</span> <span class="pre">if</span> <span class="pre">`ramp_mode='simultaneous'`.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.vector_ramp_rate" title="Link to this definition"></a></dt>
+<dd><p>Ramp rate along a line (vector) in 3D field space</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p>
+<p>Even though this is the VISA standard, it applies to various other
+types as well, such as IPInstruments, so it is included here in the
+Instrument base class.</p>
+<p>Override this if your instrument does not support <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> or
+returns a nonstandard IDN string. This string is supposed to be a
+comma-separated list of vendor, model, serial, and firmware, but
+semicolon and colon are also common separators so we accept them here
+as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dict containing vendor, model, serial, and firmware.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.ramp_simultaneously">
+<span class="sig-name descname"><span class="pre">ramp_simultaneously</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">setpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/math_utils/index.html#qcodes.math_utils.FieldVector" title="qcodes.math_utils.field_vector.FieldVector"><span class="pre">FieldVector</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.ramp_simultaneously"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.ramp_simultaneously" title="Link to this definition"></a></dt>
+<dd><p>Ramp all axes simultaneously to the given setpoint and in the given time</p>
+<p>The method calculates and sets the required ramp rates per magnet
+axis, and then initiates a ramp simultaneously on all the axes. The
+trajectory of the tip of the magnetic field vector is thus linear in
+3D space, from the current field value to the setpoint.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">block_during_ramp</span></code> parameter is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the method will block
+until all axes finished ramping.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">block_during_ramp</span></code> parameter is <code class="docutils literal notranslate"><span class="pre">True</span></code>, the ramp rates of
+individual magnet axes will be restored after the end of the
+ramp to their original values before the call of this method. If
+<code class="docutils literal notranslate"><span class="pre">block_during_ramp</span></code> parameter is <code class="docutils literal notranslate"><span class="pre">False</span></code>, call the
+<code class="docutils literal notranslate"><span class="pre">wait_while_all_axes_ramping</span></code> method when needed to restore the
+ramp rates of the individual magnet axes.</p>
+<p>It is required for all axis instruments to have the same units for
+ramp rate and field, otherwise an exception is raised. The given
+setpoint and time are assumed to be in those common units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>setpoint</strong> – <code class="docutils literal notranslate"><span class="pre">FieldVector</span></code> setpoint</p></li>
+<li><p><strong>duration</strong> – time in which the setpoint field has to be reached on all axes</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_for">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate_axes_ramp_rates_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/math_utils/index.html#qcodes.math_utils.FieldVector" title="qcodes.math_utils.field_vector.FieldVector"><span class="pre">FieldVector</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">setpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/math_utils/index.html#qcodes.math_utils.FieldVector" title="qcodes.math_utils.field_vector.FieldVector"><span class="pre">FieldVector</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.calculate_axes_ramp_rates_for"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_for" title="Link to this definition"></a></dt>
+<dd><p>Given starting and setpoint fields and expected ramp time calculates
+required ramp rates for x, y, z axes (in this order) where axes are
+ramped simultaneously.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_vector_ramp_rate_from_duration">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate_vector_ramp_rate_from_duration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/math_utils/index.html#qcodes.math_utils.FieldVector" title="qcodes.math_utils.field_vector.FieldVector"><span class="pre">FieldVector</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">setpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/math_utils/index.html#qcodes.math_utils.FieldVector" title="qcodes.math_utils.field_vector.FieldVector"><span class="pre">FieldVector</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">duration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.calculate_vector_ramp_rate_from_duration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_vector_ramp_rate_from_duration" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate_axes_ramp_rates_from_vector_ramp_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/math_utils/index.html#qcodes.math_utils.FieldVector" title="qcodes.math_utils.field_vector.FieldVector"><span class="pre">FieldVector</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">setpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/math_utils/index.html#qcodes.math_utils.FieldVector" title="qcodes.math_utils.field_vector.FieldVector"><span class="pre">FieldVector</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">vector_ramp_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.calculate_axes_ramp_rates_from_vector_ramp_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.wait_while_all_axes_ramping">
+<span class="sig-name descname"><span class="pre">wait_while_all_axes_ramping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.wait_while_all_axes_ramping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.wait_while_all_axes_ramping" title="Link to this definition"></a></dt>
+<dd><p>Wait and blocks as long as any magnet axis is ramping. After the
+ramping is finished, also resets the individual ramp rates of the
+magnet axes if those were made to be restored, e.g. by using
+<code class="docutils literal notranslate"><span class="pre">simultaneous</span></code> ramp mode.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.any_axis_is_ramping">
+<span class="sig-name descname"><span class="pre">any_axis_is_ramping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.any_axis_is_ramping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.any_axis_is_ramping" title="Link to this definition"></a></dt>
+<dd><p>Returns True if any of the magnet axes are currently ramping, or False
+if none of the axes are ramping.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.american_magnetics.AMIModel4303D.pause">
+<span class="sig-name descname"><span class="pre">pause</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/american_magnetics/AMI430_visa.html#AMIModel4303D.pause"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.american_magnetics.AMIModel4303D.pause" title="Link to this definition"></a></dt>
+<dd><p>Pause all magnet axes.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="AlazarTech.html" class="btn btn-neutral float-left" title="Alazar Tech Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Basel.html" class="btn btn-neutral float-right" title="Basel Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

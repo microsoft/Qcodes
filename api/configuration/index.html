@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.configuration &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="qcodes.dataset" href="../dataset/index.html" />
+    <link rel="prev" title="qcodes.calibrations" href="../calibrations/index.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">QCoDes API documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#qcodes-api">QCoDeS API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">qcodes.configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.configuration.Config"><code class="docutils literal notranslate"><span class="pre">Config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.configuration.DotDict"><code class="docutils literal notranslate"><span class="pre">DotDict</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes-default-configuration">qcodes default configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../station.html">qcodes.station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">QCoDes API documentation</a></li>
+      <li class="breadcrumb-item active">qcodes.configuration</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/configuration/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.configuration">
+<span id="qcodes-configuration"></span><span id="config-api"></span><h1>qcodes.configuration<a class="headerlink" href="#module-qcodes.configuration" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config" title="qcodes.configuration.Config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Config</span></code></a>([path])</p></td>
+<td><p>QCoDeS config system</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.DotDict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DotDict</span></code></a>([value])</p></td>
+<td><p>Wrapper dict that allows to get dotted attributes</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.configuration.Config">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.configuration.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>QCoDeS config system</p>
+<p>Start with sane defaults, which you can’t change, and
+then customize your experience using files that update the configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – Optional path to directory containing
+a <cite>qcodesrc.json</cite> config file</p>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.config_file_name" title="qcodes.configuration.Config.config_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">config_file_name</span></code></a></p></td>
+<td><p>Name of config file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.schema_file_name" title="qcodes.configuration.Config.schema_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_file_name</span></code></a></p></td>
+<td><p>Name of schema file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.default_file_name" title="qcodes.configuration.Config.default_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_file_name</span></code></a></p></td>
+<td><p>Filename of default config</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.current_config_path" title="qcodes.configuration.Config.current_config_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_config_path</span></code></a></p></td>
+<td><p>Path of the last loaded config file</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.schema_default_file_name" title="qcodes.configuration.Config.schema_default_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_default_file_name</span></code></a></p></td>
+<td><p>Filename of default schema</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.home_file_name" title="qcodes.configuration.Config.home_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">home_file_name</span></code></a></p></td>
+<td><p>Filename of home config</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.schema_home_file_name" title="qcodes.configuration.Config.schema_home_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_home_file_name</span></code></a></p></td>
+<td><p>Filename of home schema</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.env_file_name" title="qcodes.configuration.Config.env_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">env_file_name</span></code></a></p></td>
+<td><p>Filename of env config</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.schema_env_file_name" title="qcodes.configuration.Config.schema_env_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_env_file_name</span></code></a></p></td>
+<td><p>Filename of env schema</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.cwd_file_name" title="qcodes.configuration.Config.cwd_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cwd_file_name</span></code></a></p></td>
+<td><p>Filename of cwd config</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.schema_cwd_file_name" title="qcodes.configuration.Config.schema_cwd_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schema_cwd_file_name</span></code></a></p></td>
+<td><p>Filename of cwd schema</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.current_schema" title="qcodes.configuration.Config.current_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_schema</span></code></a></p></td>
+<td><p>Validators and descriptions of config values</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.current_config" title="qcodes.configuration.Config.current_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_config</span></code></a></p></td>
+<td><p>Valid config values</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.defaults" title="qcodes.configuration.Config.defaults"><code class="xref py py-obj docutils literal notranslate"><span class="pre">defaults</span></code></a></p></td>
+<td><p>The default configuration</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.defaults_schema" title="qcodes.configuration.Config.defaults_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">defaults_schema</span></code></a></p></td>
+<td><p>The default schema</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.load_default" title="qcodes.configuration.Config.load_default"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_default</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.update_config" title="qcodes.configuration.Config.update_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_config</span></code></a>([path])</p></td>
+<td><p>Load defaults updates with cwd, env, home and the path specified and validates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.validate" title="qcodes.configuration.Config.validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">validate</span></code></a>([json_config, schema, ...])</p></td>
+<td><p>Validate configuration; if no arguments are passed, the default config is validated against the default schema.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.add" title="qcodes.configuration.Config.add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add</span></code></a>(key, value[, value_type, description, ...])</p></td>
+<td><p>Add custom config value in place</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.load_config" title="qcodes.configuration.Config.load_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_config</span></code></a>(path)</p></td>
+<td><p>Load a config JSON file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.save_config" title="qcodes.configuration.Config.save_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_config</span></code></a>(path)</p></td>
+<td><p>Save current config to file at given path.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.save_schema" title="qcodes.configuration.Config.save_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_schema</span></code></a>(path)</p></td>
+<td><p>Save current schema to file at given path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.save_to_home" title="qcodes.configuration.Config.save_to_home"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_to_home</span></code></a>()</p></td>
+<td><p>Save config and schema to files in home dir</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.save_to_env" title="qcodes.configuration.Config.save_to_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_to_env</span></code></a>()</p></td>
+<td><p>Save config and schema to files in path specified in env variable</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.Config.save_to_cwd" title="qcodes.configuration.Config.save_to_cwd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_to_cwd</span></code></a>()</p></td>
+<td><p>Save config and schema to files in current working dir</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.Config.describe" title="qcodes.configuration.Config.describe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">describe</span></code></a>(name)</p></td>
+<td><p>Describe a configuration entry</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.config_file_name">
+<span class="sig-name descname"><span class="pre">config_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'qcodesrc.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.config_file_name" title="Link to this definition"></a></dt>
+<dd><p>Name of config file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.schema_file_name">
+<span class="sig-name descname"><span class="pre">schema_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'qcodesrc_schema.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.schema_file_name" title="Link to this definition"></a></dt>
+<dd><p>Name of schema file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.default_file_name">
+<span class="sig-name descname"><span class="pre">default_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/qcodes/configuration/qcodesrc.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.default_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of default config</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.current_config_path">
+<span class="sig-name descname"><span class="pre">current_config_path</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/qcodes/configuration/qcodesrc.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.current_config_path" title="Link to this definition"></a></dt>
+<dd><p>Path of the last loaded config file</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.schema_default_file_name">
+<span class="sig-name descname"><span class="pre">schema_default_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/opt/hostedtoolcache/Python/3.11.9/x64/lib/python3.11/site-packages/qcodes/configuration/qcodesrc_schema.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.schema_default_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of default schema</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.home_file_name">
+<span class="sig-name descname"><span class="pre">home_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/runner/qcodesrc.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.home_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of home config</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.schema_home_file_name">
+<span class="sig-name descname"><span class="pre">schema_home_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/runner/qcodesrc_schema.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.schema_home_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of home schema</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.env_file_name">
+<span class="sig-name descname"><span class="pre">env_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#qcodes.configuration.Config.env_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of env config</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.schema_env_file_name">
+<span class="sig-name descname"><span class="pre">schema_env_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#qcodes.configuration.Config.schema_env_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of env schema</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.cwd_file_name">
+<span class="sig-name descname"><span class="pre">cwd_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/runner/work/Qcodes/Qcodes/docs/qcodesrc.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.cwd_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of cwd config</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.schema_cwd_file_name">
+<span class="sig-name descname"><span class="pre">schema_cwd_file_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/runner/work/Qcodes/Qcodes/docs/qcodesrc_schema.json'</span></em><a class="headerlink" href="#qcodes.configuration.Config.schema_cwd_file_name" title="Link to this definition"></a></dt>
+<dd><p>Filename of cwd schema</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.current_schema">
+<span class="sig-name descname"><span class="pre">current_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.config.DotDict"><span class="pre">DotDict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#qcodes.configuration.Config.current_schema" title="Link to this definition"></a></dt>
+<dd><p>Validators and descriptions of config values</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.current_config">
+<span class="sig-name descname"><span class="pre">current_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.config.DotDict"><span class="pre">DotDict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#qcodes.configuration.Config.current_config" title="Link to this definition"></a></dt>
+<dd><p>Valid config values</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.defaults">
+<span class="sig-name descname"><span class="pre">defaults</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.config.DotDict"><span class="pre">DotDict</span></a></em><a class="headerlink" href="#qcodes.configuration.Config.defaults" title="Link to this definition"></a></dt>
+<dd><p>The default configuration</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.defaults_schema">
+<span class="sig-name descname"><span class="pre">defaults_schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.config.DotDict"><span class="pre">DotDict</span></a></em><a class="headerlink" href="#qcodes.configuration.Config.defaults_schema" title="Link to this definition"></a></dt>
+<dd><p>The default schema</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.load_default">
+<span class="sig-name descname"><span class="pre">load_default</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.config.DotDict"><span class="pre">DotDict</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.config.DotDict"><span class="pre">DotDict</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.load_default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.load_default" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.update_config">
+<span class="sig-name descname"><span class="pre">update_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.update_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.update_config" title="Link to this definition"></a></dt>
+<dd><p>Load defaults updates with cwd, env, home and the path specified
+and validates.
+A configuration file must be called qcodesrc.json
+A schema file must be called qcodesrc_schema.json
+Configuration files (and their schema) are loaded and updated from the
+directories in the following order:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>default json config file from the repository</p></li>
+<li><p>user json config in user home directory</p></li>
+<li><p>user json config in $QCODES_CONFIG</p></li>
+<li><p>user json config in current working directory</p></li>
+<li><p>user json file in the path specified</p></li>
+</ul>
+</div></blockquote>
+<p>If a key/value is not specified in the user configuration the default
+is used. Key/value pairs loaded later will take preference over those
+loaded earlier.
+Configs are validated after every update.
+Validation is also performed against a user provided schema if it’s
+found in the directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – Optional path to directory containing a <cite>qcodesrc.json</cite>
+config file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.10)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.10)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_schema_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.validate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.validate" title="Link to this definition"></a></dt>
+<dd><p>Validate configuration; if no arguments are passed, the default
+config is validated against the default schema. If either
+<code class="docutils literal notranslate"><span class="pre">json_config</span></code> or <code class="docutils literal notranslate"><span class="pre">schema</span></code> is passed the corresponding
+default is not used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_config</strong> – json dictionary to validate</p></li>
+<li><p><strong>schema</strong> – schema dictionary</p></li>
+<li><p><strong>extra_schema_path</strong> – schema path that contains extra validators to be
+added to schema dictionary</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.add" title="Link to this definition"></a></dt>
+<dd><p>Add custom config value in place</p>
+<p>Adds <code class="docutils literal notranslate"><span class="pre">key</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code> with optional <code class="docutils literal notranslate"><span class="pre">value_type</span></code> to user config and
+schema. If <code class="docutils literal notranslate"><span class="pre">value_type</span></code> is specified then the new value is validated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> – key to be added under user config</p></li>
+<li><p><strong>value</strong> – value to add to config</p></li>
+<li><p><strong>value_type</strong> – type of value, allowed are string, boolean, integer</p></li>
+<li><p><strong>description</strong> – description of key to add to schema</p></li>
+<li><p><strong>default</strong> – default value, stored only in the schema</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">defaults</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;trace_color&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will update the config:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
+<span class="s2">&quot;user&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;trace_color&quot;</span><span class="p">:</span> <span class="s2">&quot;blue&quot;</span><span class="p">}</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>and the schema:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">...</span>
+<span class="s2">&quot;user&quot;</span><span class="p">:{</span>
+    <span class="s2">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;controls user settings of qcodes&quot;</span>
+    <span class="s2">&quot;properties&quot;</span> <span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;trace_color&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;description&quot;</span> <span class="p">:</span> <span class="s2">&quot;description&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+                <span class="p">}</span>
+        <span class="p">}</span>
+<span class="p">}</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<ul class="simple">
+<li><p>Add enum  support for value_type</p></li>
+<li><p>finish _diffing</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.load_config">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#qcodes.configuration.DotDict" title="qcodes.configuration.config.DotDict"><span class="pre">DotDict</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.load_config" title="Link to this definition"></a></dt>
+<dd><p>Load a config JSON file</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – path to the config file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a dot accessible dictionary config object</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#FileNotFoundError" title="(in Python v3.10)"><strong>FileNotFoundError</strong></a> – if config is missing</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.save_config">
+<span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.save_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.save_config" title="Link to this definition"></a></dt>
+<dd><p>Save current config to file at given path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – path of new file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.save_schema">
+<span class="sig-name descname"><span class="pre">save_schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.save_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.save_schema" title="Link to this definition"></a></dt>
+<dd><p>Save current schema to file at given path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path</strong> – path of new file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.save_to_home">
+<span class="sig-name descname"><span class="pre">save_to_home</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.save_to_home"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.save_to_home" title="Link to this definition"></a></dt>
+<dd><p>Save config and schema to files in home dir</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.save_to_env">
+<span class="sig-name descname"><span class="pre">save_to_env</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.save_to_env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.save_to_env" title="Link to this definition"></a></dt>
+<dd><p>Save config and schema to files in path specified in env variable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.save_to_cwd">
+<span class="sig-name descname"><span class="pre">save_to_cwd</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.save_to_cwd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.save_to_cwd" title="Link to this definition"></a></dt>
+<dd><p>Save config and schema to files in current working dir</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.Config.describe">
+<span class="sig-name descname"><span class="pre">describe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#Config.describe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.Config.describe" title="Link to this definition"></a></dt>
+<dd><p>Describe a configuration entry</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – name of entry to describe in ‘dotdict’ notation,
+e.g. name=”user.scriptfolder”</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.configuration.</span></span><span class="sig-name descname"><span class="pre">DotDict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.10)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#DotDict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.DotDict" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Any</span></code></a>]</p>
+<p>Wrapper dict that allows to get dotted attributes</p>
+<p>Requires keys to be strings.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.clear" title="qcodes.configuration.DotDict.clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.copy" title="qcodes.configuration.DotDict.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.fromkeys" title="qcodes.configuration.DotDict.fromkeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromkeys</span></code></a>([value])</p></td>
+<td><p>Create a new dictionary with keys from iterable and values set to value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.get" title="qcodes.configuration.DotDict.get"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code></a>(key[, default])</p></td>
+<td><p>Return the value for key if key is in the dictionary, else default.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.items" title="qcodes.configuration.DotDict.items"><code class="xref py py-obj docutils literal notranslate"><span class="pre">items</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.keys" title="qcodes.configuration.DotDict.keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">keys</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.pop" title="qcodes.configuration.DotDict.pop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code></a>(k[,d])</p></td>
+<td><p>If the key is not found, return the default if given; otherwise, raise a KeyError.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.popitem" title="qcodes.configuration.DotDict.popitem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">popitem</span></code></a>()</p></td>
+<td><p>Remove and return a (key, value) pair as a 2-tuple.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.setdefault" title="qcodes.configuration.DotDict.setdefault"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setdefault</span></code></a>(key[, default])</p></td>
+<td><p>Insert key with a value of default if key is not in the dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.update" title="qcodes.configuration.DotDict.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a>([E, ]**F)</p></td>
+<td><p>If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k] If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v In either case, this is followed by: for k in F:  D[k] = F[k]</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.values" title="qcodes.configuration.DotDict.values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.__getattr__" title="qcodes.configuration.DotDict.__getattr__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__getattr__</span></code></a>(name)</p></td>
+<td><p>Overwrite <code class="docutils literal notranslate"><span class="pre">__getattr__</span></code> to provide dot access</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.configuration.DotDict.__setattr__" title="qcodes.configuration.DotDict.__setattr__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__setattr__</span></code></a>(key, value)</p></td>
+<td><p>Overwrite <code class="docutils literal notranslate"><span class="pre">__setattr__</span></code> to provide dot access</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Remove</span> <span class="pre">all</span> <span class="pre">items</span> <span class="pre">from</span> <span class="pre">D.</span></span></span><a class="headerlink" href="#qcodes.configuration.DotDict.clear" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">shallow</span> <span class="pre">copy</span> <span class="pre">of</span> <span class="pre">D</span></span></span><a class="headerlink" href="#qcodes.configuration.DotDict.copy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.fromkeys">
+<span class="sig-name descname"><span class="pre">fromkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.configuration.DotDict.fromkeys" title="Link to this definition"></a></dt>
+<dd><p>Create a new dictionary with keys from iterable and values set to value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.configuration.DotDict.get" title="Link to this definition"></a></dt>
+<dd><p>Return the value for key if key is in the dictionary, else default.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.items">
+<span class="sig-name descname"><span class="pre">items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">items</span></span></span><a class="headerlink" href="#qcodes.configuration.DotDict.items" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.keys">
+<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">keys</span></span></span><a class="headerlink" href="#qcodes.configuration.DotDict.keys" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.pop">
+<span class="sig-name descname"><span class="pre">pop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">v,</span> <span class="pre">remove</span> <span class="pre">specified</span> <span class="pre">key</span> <span class="pre">and</span> <span class="pre">return</span> <span class="pre">the</span> <span class="pre">corresponding</span> <span class="pre">value.</span></span></span><a class="headerlink" href="#qcodes.configuration.DotDict.pop" title="Link to this definition"></a></dt>
+<dd><p>If the key is not found, return the default if given; otherwise,
+raise a KeyError.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.popitem">
+<span class="sig-name descname"><span class="pre">popitem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.configuration.DotDict.popitem" title="Link to this definition"></a></dt>
+<dd><p>Remove and return a (key, value) pair as a 2-tuple.</p>
+<p>Pairs are returned in LIFO (last-in, first-out) order.
+Raises KeyError if the dict is empty.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.setdefault">
+<span class="sig-name descname"><span class="pre">setdefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.configuration.DotDict.setdefault" title="Link to this definition"></a></dt>
+<dd><p>Insert key with a value of default if key is not in the dictionary.</p>
+<p>Return the value for key if key is in the dictionary, else default.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <span class="optional">]</span><em class="sig-param"><span class="n"><span class="pre">**F</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Update</span> <span class="pre">D</span> <span class="pre">from</span> <span class="pre">dict/iterable</span> <span class="pre">E</span> <span class="pre">and</span> <span class="pre">F.</span></span></span><a class="headerlink" href="#qcodes.configuration.DotDict.update" title="Link to this definition"></a></dt>
+<dd><p>If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]
+If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v
+In either case, this is followed by: for k in F:  D[k] = F[k]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">an</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">values</span></span></span><a class="headerlink" href="#qcodes.configuration.DotDict.values" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.__getattr__">
+<span class="sig-name descname"><span class="pre">__getattr__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#DotDict.__getattr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.DotDict.__getattr__" title="Link to this definition"></a></dt>
+<dd><p>Overwrite <code class="docutils literal notranslate"><span class="pre">__getattr__</span></code> to provide dot access</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.configuration.DotDict.__setattr__">
+<span class="sig-name descname"><span class="pre">__setattr__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/configuration/config.html#DotDict.__setattr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.configuration.DotDict.__setattr__" title="Link to this definition"></a></dt>
+<dd><p>Overwrite <code class="docutils literal notranslate"><span class="pre">__setattr__</span></code> to provide dot access</p>
+</dd></dl>
+
+</dd></dl>
+
+<section id="qcodes-default-configuration">
+<h2>qcodes default configuration<a class="headerlink" href="#qcodes-default-configuration" title="Link to this heading"></a></h2>
+<p>The following table contains the default configuration of qcodes.</p>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td colspan="6"><p>schema for a qcodes config file</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="5"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="6"><p>properties</p></td>
+</tr>
+<tr class="row-even"><td rowspan="27"><ul class="simple">
+<li><p><strong>core</strong></p></li>
+</ul>
+</td>
+<td colspan="5"><p>controls core settings of qcodes</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>default_fmt</p></li>
+</ul>
+</td>
+<td colspan="4"><p>default location formatter used for the legacy dataset</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>data/{date}/#{counter}_{name}_{time}</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p>loglevel</p></li>
+</ul>
+</td>
+<td colspan="4"><p>deprecated - use logger.console_level</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="3"><p>CRITICAL, ERROR, WARNING, INFO, DEBUG</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>DEBUG</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p>file_loglevel</p></li>
+</ul>
+</td>
+<td colspan="4"><p>deprecated - use logger.file_level</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="3"><p>CRITICAL, ERROR, WARNING, INFO, DEBUG</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>INFO</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p>register_magic</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Register QCoDeS magic when in IPython. Can be set to True, False, or a list of magic commands to be registered</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><p>anyOf</p></td>
+<td><p>type</p></td>
+<td colspan="2"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="2"><p><em>array</em></p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>import_legacy_api</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Import the legacy api in main qcodes namespace</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>db_debug</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Use debugging mode in sqlite</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p><strong>db_location</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>location of the database</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>./experiments.db</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="18"><ul class="simple">
+<li><p>logger</p></li>
+</ul>
+</td>
+<td colspan="5"><p>controls all settings related to the logging module <cite>qcodes.utils.logger</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p>start_logging_on_import</p></li>
+</ul>
+</td>
+<td colspan="4"><p>whether to call <cite>start_all_logging</cite> on qcodes import time. Valid values are ‘always’, ‘never’, ‘if_telemetry_set_up’.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="3"><p>always, never, if_telemetry_set_up</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>if_telemetry_set_up</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p><strong>console_level</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>control logging level of console output</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="3"><p>CRITICAL, ERROR, WARNING, INFO, DEBUG</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>DEBUG</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p><strong>file_level</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>control logging level of file output.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="3"><p>CRITICAL, ERROR, WARNING, INFO, DEBUG</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>INFO</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>logger_levels</p></li>
+</ul>
+</td>
+<td><p>type</p></td>
+<td colspan="3"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td><p>pyvisa</p></td>
+<td colspan="2"><p>INFO</p></td>
+</tr>
+<tr class="row-even"><td><p>additionalProperties</p></td>
+<td><p>type</p></td>
+<td colspan="2"><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="5"><ul class="simple">
+<li><p>subscription</p></li>
+</ul>
+</td>
+<td colspan="5"><p>Controls how subscriptions to the dataset, for e.g. live plotting, are handled. Here subscribers can be registered so that they will be available through <cite>DataSet.subscribe_from_config</cite>. Additionally default subscribers for every DataSet that is generated by the <cite>Measurement</cite> object can be defined.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><ul class="simple">
+<li><p>subscribers</p></li>
+</ul>
+</td>
+<td colspan="4"><p>List of available pre-configured subscribers. The names of the subscriber entries are available as arguments of the <cite>DataSet.subscribe_from_config</cite> method and can be used in this conifg in the <cite>subscription.default_subscribers</cite> property.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>object</em></p></td>
+</tr>
+<tr class="row-even"><td rowspan="13"><ul class="simple">
+<li><p><strong>gui</strong></p></li>
+</ul>
+</td>
+<td colspan="5"><p>controls legacy gui of qcodes</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p><strong>notebook</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>Use notebook frontend</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>True</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p><strong>plotlib</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>Plotting library set to null to run without plotting</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em> / <em>null</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="3"><p>QT, matplotlib, all, None</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p><strong>pyqtmaxplots</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>Maximum number of PyQtPlots to automatically keep in memory</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>integer</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>100</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="26"><ul class="simple">
+<li><p>plotting</p></li>
+</ul>
+</td>
+<td colspan="5"><p>controls plotting functions i.e. <cite>plot_dataset</cite></p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>default_color_map</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Default colormap to use for <cite>plot_dataset</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>viridis</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>rasterize_threshold</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Scatter plots and heatmaps with more than this number of points will have their data rasterized by default when saved in vector format</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>integer</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>5000</p></td>
+</tr>
+<tr class="row-even"><td rowspan="17"><ul class="simple">
+<li><p>auto_color_scale</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Control of a auto color scale, that scales such that potential outliers of the data will not be included in the min/max range.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>object</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="4"><p>properties</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>enabled</p></li>
+</ul>
+</td>
+<td colspan="3"><p>Enable automatic color scaling</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="2"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="2"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="7"><ul class="simple">
+<li><p>cutoff_percentile</p></li>
+</ul>
+</td>
+<td colspan="3"><p>Upper and lower percentage of datapoints that may maximally be discarded by the auto color scale. For example for [1,1] the auto color scale will in a set of 10 0000 points not clip more than the 100 points of lowest and highest value.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="2"><p><em>array</em></p></td>
+</tr>
+<tr class="row-even"><td rowspan="2"><p>default</p></td>
+<td colspan="2"><p>0.5</p></td>
+</tr>
+<tr class="row-odd"><td colspan="2"><p>0.5</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p>items</p></td>
+</tr>
+<tr class="row-odd"><td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><p>type</p></td>
+<td><p><em>number</em></p></td>
+</tr>
+<tr class="row-even"><td><ul class="simple">
+<li></li>
+</ul>
+</td>
+<td><p>type</p></td>
+<td><p><em>number</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><ul class="simple">
+<li><p>color_over</p></li>
+</ul>
+</td>
+<td colspan="3"><p>Matplotlib color representing the datapoints clipped by the upper limit</p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="2"><p>white</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><ul class="simple">
+<li><p>color_under</p></li>
+</ul>
+</td>
+<td colspan="3"><p>Matplotlib color representing the datapoints clipped by the lower limit</p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="2"><p>grey</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="9"><ul class="simple">
+<li><p>user</p></li>
+</ul>
+</td>
+<td colspan="5"><p>Optional feature for qdev-wrappers package: controls user settings of qcodes</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>scriptfolder</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Location of scripts for general experiments</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>/</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>mainfolder</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Location of experiments</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"></td>
+</tr>
+<tr class="row-even"><td rowspan="15"><ul class="simple">
+<li><p>station</p></li>
+</ul>
+</td>
+<td colspan="5"><p>Settings for QCoDeS Station.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>enable_forced_reconnect</p></li>
+</ul>
+</td>
+<td colspan="4"><p>If set to true, on instantiation of an existing instrument from station configuration, the existing instrument instance will be closed.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>default_folder</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Default folder where to look for a YAML station configuration file</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em> / <em>null</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>default_file</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Default file name, specifying a YAML station configuration file to load, when none is specified. The path can be absolute, relative to the current folder or relative to the default folder as specified in the qcodes config.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em> / <em>null</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>use_monitor</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Update the monitor based on the monitor attribute specified in the instruments section of the station config yaml file.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="16"><ul class="simple">
+<li><p><strong>GUID_components</strong></p></li>
+</ul>
+</td>
+<td colspan="5"><p>Identifiers for creating a GUID per run in the dataset database.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-even"><td rowspan="4"><ul class="simple">
+<li><p>GUID_type</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Type of GUID to use. Currently possible to chose between an explicitly assigned ‘Sample identification code’ and a random string as the first part of the GUID.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="3"><p>explicit_sample, random_sample</p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>random_sample</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>location</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Geographical location code</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>integer</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>0</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>work_station</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Work station identification code</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>integer</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>0</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>sample</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Sample identification code</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>integer</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>0</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="52"><ul class="simple">
+<li><p><strong>dataset</strong></p></li>
+</ul>
+</td>
+<td colspan="5"><p>Settings related to the DataSet and Measurement Context manager</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-odd"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p><strong>write_in_background</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>Should the data be written from a background thread</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p><strong>write_period</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>How often should data be written to disk (s)</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>number</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>5.0</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>use_threads</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Should instruments be addresesed in parallel for process_params_meas() in doNd measurement</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p><strong>dond_plot</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>Should dond functions automatically open a plot after the measurement completes</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p><strong>dond_show_progress</strong></p></li>
+</ul>
+</td>
+<td colspan="4"><p>Should dond functions show a progress bar during the measurement</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>callback_percent</p></li>
+</ul>
+</td>
+<td colspan="4"><p>If user wants to callback a function while loading data, the callback is done every callback_percent</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>number</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>5.0</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>export_automatic</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Should the data be exported automatically when a measurement is completed? If this is set ‘export_type’ must be set to a non null value.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="4"><ul class="simple">
+<li><p>export_type</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Data export type for exporting datasets to disk after a measurement finishes. Does not export if set to null (default). Currently supported type(s): netcdf, csv</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em> / <em>null</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>enum</p></td>
+<td colspan="3"><p>netcdf, csv, None</p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>null</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>export_path</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Data export path for exporting datasets to disk after a measurement finishes. Only activated if export_type is set. {db_location} is a directory in the same folder as the .db file with a matching name i.e. for  ~experiments.db will netcdf files will be exported to ~experiments_db</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>{db_location}</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>export_prefix</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Prefix to add to filename for exporting datasets to disk after a measurement finishes. Only activated if export_type is set</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>qcodes_</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="6"><ul class="simple">
+<li><p>export_name_elements</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Elements to use in export file name, elements are dataset properties. Names will be formatted like ‘{export_prefix}_{export_name_elements[0]}_{…}.file_extension}’ respecting the order of the elements</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>array</em></p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p>default</p></td>
+<td colspan="3"><p>captured_run_id</p></td>
+</tr>
+<tr class="row-even"><td colspan="3"><p>guid</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="2"><p>items</p></td>
+<td><p>type</p></td>
+<td colspan="2"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>enum</p></td>
+<td colspan="2"><p>captured_run_id, guid, exp_name, sample_name, name, captured_counter</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>export_chunked_export_of_large_files_enabled</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Should large dataset be exported to netcdf in chuncks and then recombined into one file. This reduces the memory requirements for exporting the dataset but may be slower and fail in some corner cases</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>export_chunked_threshold</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Estimated size in MB above which the dataset will be exported in chuncks and recombined.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>integer</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>1000</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>load_from_exported_file</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Flag to load metadata and raw data from exported file of type specified in export_type. If set to true, qcodes will try to import from file first, if it exists.</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>in_memory_cache</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Should the data be cached in memory as it is measured. Useful to disable for large datasets to save on memory consumption.</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>True</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="8"><ul class="simple">
+<li><p><strong>telemetry</strong></p></li>
+</ul>
+</td>
+<td><p>type</p></td>
+<td colspan="4"><p><em>object</em></p></td>
+</tr>
+<tr class="row-even"><td colspan="5"><p>properties</p></td>
+</tr>
+<tr class="row-odd"><td rowspan="3"><ul class="simple">
+<li><p>enabled</p></li>
+</ul>
+</td>
+<td colspan="4"><p>Whether or not to enable sending telemetry data to the developers of QCoDeS (or elsewhere)</p></td>
+</tr>
+<tr class="row-even"><td><p>type</p></td>
+<td colspan="3"><p><em>boolean</em></p></td>
+</tr>
+<tr class="row-odd"><td><p>default</p></td>
+<td colspan="3"><p>False</p></td>
+</tr>
+<tr class="row-even"><td rowspan="3"><ul class="simple">
+<li><p>instrumentation_key</p></li>
+</ul>
+</td>
+<td colspan="4"><p>A valid Azure Application Insights instrumentation key</p></td>
+</tr>
+<tr class="row-odd"><td><p>type</p></td>
+<td colspan="3"><p><em>string</em></p></td>
+</tr>
+<tr class="row-even"><td><p>default</p></td>
+<td colspan="3"><p>00000000-0000-0000-0000-000000000000</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../calibrations/index.html" class="btn btn-neutral float-left" title="qcodes.calibrations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../dataset/index.html" class="btn btn-neutral float-right" title="qcodes.dataset" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

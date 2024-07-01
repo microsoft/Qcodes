@@ -1,0 +1,816 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Paramtypes explained\n",
+    "\n",
+    "Internally in the SQLite database on disk, data are registered as being of one of (currently) four allowed types:\n",
+    "\n",
+    "- `numeric`\n",
+    "- `array`\n",
+    "- `text`\n",
+    "- `complex`\n",
+    "\n",
+    "This notebook seeks to exemplify when each type should be used, and how differently the `Measurement` object treats data of each type.\n",
+    "\n",
+    "We start with necessary imports, and then initialising our database and creating an experiment."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Logging hadn't been started.\n",
+      "Activating auto-logging. Current session state plus future input saved.\n",
+      "Filename       : C:\\Users\\Jens-work\\.qcodes\\logs\\command_history.log\n",
+      "Mode           : append\n",
+      "Output logging : True\n",
+      "Raw input log  : False\n",
+      "Timestamping   : True\n",
+      "State          : active\n",
+      "Qcodes Logfile : C:\\Users\\Jens-work\\.qcodes\\logs\\210413-19212-qcodes.log\n"
+     ]
+    }
+   ],
+   "source": [
+    "import os\n",
+    "import time\n",
+    "\n",
+    "import numpy as np\n",
+    "\n",
+    "from qcodes.dataset import (\n",
+    "    Measurement,\n",
+    "    initialise_or_create_database_at,\n",
+    "    load_or_create_experiment,\n",
+    ")\n",
+    "from qcodes.instrument_drivers.mock_instruments import DummyInstrument\n",
+    "from qcodes.parameters import ArrayParameter"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Upgrading database; v0 -> v1: : 0it [00:00, ?it/s]\n",
+      "Upgrading database; v1 -> v2: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 500.10it/s]\n",
+      "Upgrading database; v2 -> v3: : 0it [00:00, ?it/s]\n",
+      "Upgrading database; v3 -> v4: : 0it [00:00, ?it/s]\n",
+      "Upgrading database; v4 -> v5: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 333.17it/s]\n",
+      "Upgrading database; v5 -> v6: : 0it [00:00, ?it/s]\n",
+      "Upgrading database; v6 -> v7: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 166.67it/s]\n",
+      "Upgrading database; v7 -> v8: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 499.32it/s]\n",
+      "Upgrading database; v8 -> v9: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 333.28it/s]\n"
+     ]
+    }
+   ],
+   "source": [
+    "initialise_or_create_database_at(os.path.join(os.getcwd(), 'paramtypes_explained.db'))\n",
+    "exp = load_or_create_experiment('paramtypes', sample_name='not_available')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Let us, now, create two dummy instruments to be used in our experiment."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dac = DummyInstrument('dac', gates=['ch1', 'ch2'])\n",
+    "SA = DummyInstrument('SA')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# some array-like data types\n",
+    "\n",
+    "\n",
+    "class Spectrum(ArrayParameter):\n",
+    "\n",
+    "    def __init__(self, name, instrument):\n",
+    "\n",
+    "        self.N = 7\n",
+    "        setpoints = (np.linspace(0, 1, self.N),)\n",
+    "\n",
+    "        super().__init__(name=name,\n",
+    "                         instrument=instrument,\n",
+    "                         setpoints=setpoints,\n",
+    "                         shape=(20,),\n",
+    "                         label='Noisy spectrum',\n",
+    "                         unit='V/sqrt(Hz)',\n",
+    "                         setpoint_names=('Frequency',),\n",
+    "                         setpoint_units=('Hz',))\n",
+    "\n",
+    "    def get_raw(self):\n",
+    "        return np.random.randn(self.N)\n",
+    "\n",
+    "\n",
+    "class MultiDimSpectrum(ArrayParameter):\n",
+    "\n",
+    "    def __init__(self, name, instrument):\n",
+    "        self.start = 0\n",
+    "        self.stop = 1\n",
+    "        self.npts = (2, 5, 3)\n",
+    "        sp1 = np.linspace(self.start, self.stop,\n",
+    "                          self.npts[0])\n",
+    "        sp2 = np.linspace(self.start, self.stop,\n",
+    "                          self.npts[1])\n",
+    "        sp3 = np.linspace(self.start, self.stop,\n",
+    "                          self.npts[2])\n",
+    "        setpoints = (sp1,\n",
+    "                     np.tile(sp2, (len(sp1), 1)),\n",
+    "                     np.tile(sp3, (len(sp1), len(sp2), 1)))\n",
+    "        super().__init__(name=name,\n",
+    "                         instrument=instrument,\n",
+    "                         setpoints=setpoints,\n",
+    "                         shape=(100, 50, 20),\n",
+    "                         label='Flower Power Spectrum in 3D',\n",
+    "                         unit='V/sqrt(Hz)',\n",
+    "                         setpoint_names=('Frequency0', 'Frequency1',\n",
+    "                                         'Frequency2'),\n",
+    "                             setpoint_units=('Hz', 'Other Hz', \"Third Hz\"))\n",
+    "\n",
+    "    def get_raw(self):\n",
+    "        a = self.npts[0]\n",
+    "        b = self.npts[1]\n",
+    "        c = self.npts[2]\n",
+    "        return np.reshape(np.arange(a*b*c), (a, b, c))\n",
+    "\n",
+    "# a string-valued parameter\n",
+    "\n",
+    "\n",
+    "def dac1_too_high():\n",
+    "    return 'Too high' if dac.ch1() > 5 else 'OK'"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Finally, we add our parameters to the dummy instruments:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dac.add_parameter('control', get_cmd=dac1_too_high)\n",
+    "SA.add_parameter('spectrum', parameter_class=Spectrum)\n",
+    "SA.add_parameter('spectrum3D', parameter_class=MultiDimSpectrum)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Numeric"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The `numeric` datatype is simply a number. Data registered with this type are saved as individual numbers. This is the **default** datatype when registering parameters.\n",
+    "\n",
+    "### Numeric example 1\n",
+    "\n",
+    "In this example, all parameters get registered as `numeric` type. This entails that the array in unraveled and inserted point-by-point."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 2. \n",
+      "Finished run in 0.019 s\n"
+     ]
+    }
+   ],
+   "source": [
+    "meas = Measurement(exp=exp)\n",
+    "meas.register_parameter(dac.ch1)\n",
+    "meas.register_parameter(SA.spectrum, setpoints=(dac.ch1,))\n",
+    "\n",
+    "t0 = time.perf_counter()\n",
+    "\n",
+    "with meas.run() as datasaver:\n",
+    "    for dac_v in np.linspace(0, 2, 5):\n",
+    "        dac.ch1(dac_v)\n",
+    "        datasaver.add_result((dac.ch1, dac_v), (SA.spectrum, SA.spectrum()))\n",
+    "\n",
+    "t1 = time.perf_counter()\n",
+    "\n",
+    "print(f'Finished run in {(t1-t0):.3f} s')\n",
+    "\n",
+    "dataset1 = datasaver.dataset"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The data may be retrieved using the `get_parameter_data` method. This function will bring back the data in a way that reflects the datastructure as it is stored."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'SA_spectrum': {'SA_spectrum': array([[ 9.44511977e-01,  5.15389506e-03, -5.49513939e-01,\n",
+       "          -4.74902584e-01,  7.78606078e-01,  1.60876161e+00,\n",
+       "           1.86675166e+00],\n",
+       "         [ 6.45049464e-01, -2.96916435e-01,  1.28307339e+00,\n",
+       "          -4.00745078e-01,  1.62128250e+00,  5.03465392e-01,\n",
+       "           1.78365618e-01],\n",
+       "         [-6.41696721e-01,  8.23933802e-01,  4.31982519e-01,\n",
+       "          -5.95567994e-01, -3.51719035e-01, -1.18379575e-01,\n",
+       "          -7.68179928e-01],\n",
+       "         [ 1.18425319e+00, -2.55345025e-01, -4.16421176e-01,\n",
+       "          -6.90085131e-01,  4.41402258e-01,  1.19062211e+00,\n",
+       "           1.19173472e+00],\n",
+       "         [ 2.98255179e-07, -7.04238921e-01, -8.37208276e-01,\n",
+       "           8.21260152e-01,  8.50272237e-02,  1.91101153e+00,\n",
+       "          -5.04334541e-01]]),\n",
+       "  'dac_ch1': array([[0. , 0. , 0. , 0. , 0. , 0. , 0. ],\n",
+       "         [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],\n",
+       "         [1. , 1. , 1. , 1. , 1. , 1. , 1. ],\n",
+       "         [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],\n",
+       "         [2. , 2. , 2. , 2. , 2. , 2. , 2. ]]),\n",
+       "  'SA_Frequency': array([[0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ]])}}"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset1.get_parameter_data()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Array\n",
+    "\n",
+    "The `array` paramtype stores data as binary blobs in the database. Insertion is faster (asymptotically **much** faster) this way, but the data are \"dead\" to SQL queries inside the database. Be informed that a BLOB in sqlite has a default max length limit set at 1 billion (1,000,000,000) bytes (for more information, refer to [Sqlite](https://sqlite.org/limits.html) docs)."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Array example 1\n",
+    "\n",
+    "Let us repeat the above measurement, but this time using `array` paramtypes."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 3. \n",
+      "Finished run in 0.017 s\n"
+     ]
+    }
+   ],
+   "source": [
+    "meas = Measurement(exp=exp)\n",
+    "meas.register_parameter(dac.ch1)\n",
+    "meas.register_parameter(SA.spectrum, setpoints=(dac.ch1,), paramtype='array')\n",
+    "\n",
+    "t0 = time.perf_counter()\n",
+    "\n",
+    "with meas.run() as datasaver:\n",
+    "    for dac_v in np.linspace(0, 2, 5):\n",
+    "        dac.ch1(dac_v)\n",
+    "        datasaver.add_result((dac.ch1, dac_v), (SA.spectrum, SA.spectrum()))\n",
+    "\n",
+    "t1 = time.perf_counter()\n",
+    "\n",
+    "print(f'Finished run in {(t1-t0):.3f} s')\n",
+    "\n",
+    "dataset2 = datasaver.dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'SA_spectrum': {'SA_spectrum': array([[-0.35068941, -0.30883064,  0.36115541, -1.111584  ,  0.41565782,\n",
+       "          -0.07839163, -0.74757296],\n",
+       "         [-1.38009431, -1.74543952,  0.04901674,  0.12436036,  0.13052063,\n",
+       "           1.10013428,  0.70240313],\n",
+       "         [ 0.71729721,  0.10620435,  0.63188922,  0.15375402,  1.06894546,\n",
+       "          -0.67995662,  1.95221552],\n",
+       "         [ 2.01380803,  0.27441576, -0.19709562, -0.07926196, -0.17917072,\n",
+       "           1.03576323,  1.06308752],\n",
+       "         [-0.18925706, -1.58355572,  0.94109878,  1.00994343, -0.54072337,\n",
+       "           0.83025087, -0.30825092]]),\n",
+       "  'dac_ch1': array([[0. , 0. , 0. , 0. , 0. , 0. , 0. ],\n",
+       "         [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],\n",
+       "         [1. , 1. , 1. , 1. , 1. , 1. , 1. ],\n",
+       "         [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],\n",
+       "         [2. , 2. , 2. , 2. , 2. , 2. , 2. ]]),\n",
+       "  'SA_Frequency': array([[0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ],\n",
+       "         [0.        , 0.16666667, 0.33333333, 0.5       , 0.66666667,\n",
+       "          0.83333333, 1.        ]])}}"
+      ]
+     },
+     "execution_count": 11,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset2.get_parameter_data()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Array example 2\n",
+    "\n",
+    "When storing multidimensional `array` data (think: Alazar cards), both `numeric` and `array` types can be used."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 5. \n"
+     ]
+    }
+   ],
+   "source": [
+    "meas = Measurement(exp=exp)\n",
+    "meas.register_parameter(SA.spectrum3D, paramtype='array')\n",
+    "\n",
+    "with meas.run() as datasaver:\n",
+    "    datasaver.add_result((SA.spectrum3D, SA.spectrum3D()))\n",
+    "dataset3 = datasaver.dataset"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The data come out the way we expect them to."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'SA_spectrum3D': {'SA_spectrum3D': array([[[[ 0,  1,  2],\n",
+       "           [ 3,  4,  5],\n",
+       "           [ 6,  7,  8],\n",
+       "           [ 9, 10, 11],\n",
+       "           [12, 13, 14]],\n",
+       "  \n",
+       "          [[15, 16, 17],\n",
+       "           [18, 19, 20],\n",
+       "           [21, 22, 23],\n",
+       "           [24, 25, 26],\n",
+       "           [27, 28, 29]]]]),\n",
+       "  'SA_Frequency0': array([[[[0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.]],\n",
+       "  \n",
+       "          [[1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.]]]]),\n",
+       "  'SA_Frequency1': array([[[[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]],\n",
+       "  \n",
+       "          [[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]]]]),\n",
+       "  'SA_Frequency2': array([[[[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]],\n",
+       "  \n",
+       "          [[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]]]])}}"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset3.get_parameter_data()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Array example 3\n",
+    "\n",
+    "For completeness, here, we provide an example where the multidimensional array has an auxiliary setpoint."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 7. \n"
+     ]
+    }
+   ],
+   "source": [
+    "meas = Measurement(exp=exp)\n",
+    "meas.register_parameter(dac.ch1)\n",
+    "meas.register_parameter(SA.spectrum3D, paramtype='array', setpoints=(dac.ch1,))\n",
+    "\n",
+    "with meas.run() as datasaver:\n",
+    "    for dac_v in [3, 4, 5]:\n",
+    "        dac.ch1(dac_v)\n",
+    "        datasaver.add_result((dac.ch1, dac_v),\n",
+    "                             (SA.spectrum3D, SA.spectrum3D()))\n",
+    "dataset4 = datasaver.dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'SA_spectrum3D': {'SA_spectrum3D': array([[[[ 0,  1,  2],\n",
+       "           [ 3,  4,  5],\n",
+       "           [ 6,  7,  8],\n",
+       "           [ 9, 10, 11],\n",
+       "           [12, 13, 14]],\n",
+       "  \n",
+       "          [[15, 16, 17],\n",
+       "           [18, 19, 20],\n",
+       "           [21, 22, 23],\n",
+       "           [24, 25, 26],\n",
+       "           [27, 28, 29]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[ 0,  1,  2],\n",
+       "           [ 3,  4,  5],\n",
+       "           [ 6,  7,  8],\n",
+       "           [ 9, 10, 11],\n",
+       "           [12, 13, 14]],\n",
+       "  \n",
+       "          [[15, 16, 17],\n",
+       "           [18, 19, 20],\n",
+       "           [21, 22, 23],\n",
+       "           [24, 25, 26],\n",
+       "           [27, 28, 29]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[ 0,  1,  2],\n",
+       "           [ 3,  4,  5],\n",
+       "           [ 6,  7,  8],\n",
+       "           [ 9, 10, 11],\n",
+       "           [12, 13, 14]],\n",
+       "  \n",
+       "          [[15, 16, 17],\n",
+       "           [18, 19, 20],\n",
+       "           [21, 22, 23],\n",
+       "           [24, 25, 26],\n",
+       "           [27, 28, 29]]]]),\n",
+       "  'dac_ch1': array([[[[3., 3., 3.],\n",
+       "           [3., 3., 3.],\n",
+       "           [3., 3., 3.],\n",
+       "           [3., 3., 3.],\n",
+       "           [3., 3., 3.]],\n",
+       "  \n",
+       "          [[3., 3., 3.],\n",
+       "           [3., 3., 3.],\n",
+       "           [3., 3., 3.],\n",
+       "           [3., 3., 3.],\n",
+       "           [3., 3., 3.]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[4., 4., 4.],\n",
+       "           [4., 4., 4.],\n",
+       "           [4., 4., 4.],\n",
+       "           [4., 4., 4.],\n",
+       "           [4., 4., 4.]],\n",
+       "  \n",
+       "          [[4., 4., 4.],\n",
+       "           [4., 4., 4.],\n",
+       "           [4., 4., 4.],\n",
+       "           [4., 4., 4.],\n",
+       "           [4., 4., 4.]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[5., 5., 5.],\n",
+       "           [5., 5., 5.],\n",
+       "           [5., 5., 5.],\n",
+       "           [5., 5., 5.],\n",
+       "           [5., 5., 5.]],\n",
+       "  \n",
+       "          [[5., 5., 5.],\n",
+       "           [5., 5., 5.],\n",
+       "           [5., 5., 5.],\n",
+       "           [5., 5., 5.],\n",
+       "           [5., 5., 5.]]]]),\n",
+       "  'SA_Frequency0': array([[[[0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.]],\n",
+       "  \n",
+       "          [[1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.]],\n",
+       "  \n",
+       "          [[1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.],\n",
+       "           [0., 0., 0.]],\n",
+       "  \n",
+       "          [[1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.],\n",
+       "           [1., 1., 1.]]]]),\n",
+       "  'SA_Frequency1': array([[[[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]],\n",
+       "  \n",
+       "          [[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]],\n",
+       "  \n",
+       "          [[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]],\n",
+       "  \n",
+       "          [[0.  , 0.  , 0.  ],\n",
+       "           [0.25, 0.25, 0.25],\n",
+       "           [0.5 , 0.5 , 0.5 ],\n",
+       "           [0.75, 0.75, 0.75],\n",
+       "           [1.  , 1.  , 1.  ]]]]),\n",
+       "  'SA_Frequency2': array([[[[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]],\n",
+       "  \n",
+       "          [[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]],\n",
+       "  \n",
+       "          [[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]]],\n",
+       "  \n",
+       "  \n",
+       "         [[[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]],\n",
+       "  \n",
+       "          [[0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ],\n",
+       "           [0. , 0.5, 1. ]]]])}}"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset4.get_parameter_data()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Text\n",
+    "\n",
+    "Text is strings. Sometimes it may be useful to capture categorial data that is represented as string values, or a log message, or else.\n",
+    "\n",
+    "Note that the `paramtype` setting is important. The datasaver will not allow to save `numeric` data for a parameter that was registered as `text`. The opposite it also true: the datasaver will not allow to save strings for a parameter what was registered as non-`text` (`numeric` or `array`)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 8. \n"
+     ]
+    }
+   ],
+   "source": [
+    "meas = Measurement(exp=exp)\n",
+    "meas.register_parameter(dac.ch1)\n",
+    "meas.register_parameter(dac.control, setpoints=(dac.ch1,), paramtype='text')\n",
+    "\n",
+    "with meas.run() as datasaver:\n",
+    "    for dac_v in np.linspace(4, 6, 10):\n",
+    "        dac.ch1(dac_v)\n",
+    "        datasaver.add_result((dac.ch1, dac_v),\n",
+    "                             (dac.control, dac.control()))\n",
+    "dataset5 = datasaver.dataset"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'dac_control': {'dac_control': array(['OK', 'OK', 'OK', 'OK', 'OK', 'Too high', 'Too high', 'Too high',\n",
+       "         'Too high', 'Too high'], dtype='<U8'),\n",
+       "  'dac_ch1': array([4.        , 4.22222222, 4.44444444, 4.66666667, 4.88888889,\n",
+       "         5.11111111, 5.33333333, 5.55555556, 5.77777778, 6.        ])}}"
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dataset5.get_parameter_data()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

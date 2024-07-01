@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.logger.log_analysis &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.logger.log_analysis</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.logger.log_analysis</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module defines a number of functions to make it easier to</span>
+<span class="sd">work with log messages from QCoDeS. Specifically it enables</span>
+<span class="sd">exports of logs and log files to a :class:`pd.DataFrame`</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span>
+
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">.logger</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">FORMAT_STRING_DICT</span><span class="p">,</span>
+    <span class="n">LOGGING_SEPARATOR</span><span class="p">,</span>
+    <span class="n">LevelType</span><span class="p">,</span>
+    <span class="n">get_formatter</span><span class="p">,</span>
+    <span class="n">get_log_file_name</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="log_to_dataframe">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.log_to_dataframe">[docs]</a>
+<span class="k">def</span> <span class="nf">log_to_dataframe</span><span class="p">(</span>
+    <span class="n">log</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">columns</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the provided or default log string as a :class:`pd.DataFrame`.</span>
+
+<span class="sd">    Unless :data:`qcodes.logger.logger.LOGGING_SEPARATOR` or</span>
+<span class="sd">    :data:`qcodes.logger.logger.FORMAT_STRING_DICT` have been changed using the</span>
+<span class="sd">    default for the columns and separator arguments is encouraged.</span>
+
+<span class="sd">    Lines starting with a digit are ignored. In the log setup of</span>
+<span class="sd">    :func:`qcodes.logger.logger.start_logger`</span>
+<span class="sd">    Traceback messages are also logged. These start with a digit.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        log: Log content.</span>
+<span class="sd">        columns: Column headers for the returned dataframe, defaults to</span>
+<span class="sd">            columns used by handlers set up by</span>
+<span class="sd">            :func:`qcodes.logger.logger.start_logger`.</span>
+<span class="sd">        separator: Separator of the log file to separate the columns, defaults</span>
+<span class="sd">            to separator used by handlers set up by</span>
+<span class="sd">            :func:`qcodes.logger.logger.start_logger`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A :class:`pd.DataFrame` containing the log content.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+    <span class="n">separator</span> <span class="o">=</span> <span class="n">separator</span> <span class="ow">or</span> <span class="n">LOGGING_SEPARATOR</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="n">columns</span> <span class="ow">or</span> <span class="nb">list</span><span class="p">(</span><span class="n">FORMAT_STRING_DICT</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># note: if we used commas as separators, pandas read_csv</span>
+    <span class="c1"># could be faster than this string comprehension</span>
+
+    <span class="n">split_cont</span> <span class="o">=</span> <span class="p">[</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">log</span>
+                  <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()]</span>  <span class="c1"># avoid tracebacks</span>
+    <span class="n">dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">split_cont</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">columns</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">dataframe</span></div>
+
+
+
+<div class="viewcode-block" id="logfile_to_dataframe">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.logfile_to_dataframe">[docs]</a>
+<span class="k">def</span> <span class="nf">logfile_to_dataframe</span><span class="p">(</span>
+    <span class="n">logfile</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">columns</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">separator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the provided or default logfile as a :class:`pd.DataFrame`.</span>
+
+<span class="sd">    Unless :data:`qcodes.logger.logger.LOGGING_SEPARATOR` or</span>
+<span class="sd">    :data:`qcodes.logger.logger.FORMAT_STRING_DICT` have been changed using</span>
+<span class="sd">    the default for the columns and separator arguments is encouraged.</span>
+
+<span class="sd">    Lines starting with a digit are ignored. In the log setup of</span>
+<span class="sd">    :func:`qcodes.logger.logger.start_logger`</span>
+<span class="sd">    Traceback messages are also logged. These start with a digit.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        logfile: Name of the logfile, defaults to current default log file.</span>
+<span class="sd">        columns: Column headers for the returned dataframe, defaults to</span>
+<span class="sd">            columns used by handlers set up by</span>
+<span class="sd">            :func:`qcodes.logger.logger.start_logger`.</span>
+<span class="sd">        separator: Separator of the logfile to separate the columns,</span>
+<span class="sd">            defaults to separator used by handlers set up by</span>
+<span class="sd">            :func:`qcodes.logger.logger.start_logger`.</span>
+
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A :class:`pd.DataFrame` containing the logfile content.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logfile</span> <span class="o">=</span> <span class="n">logfile</span> <span class="ow">or</span> <span class="n">get_log_file_name</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">logfile</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">raw_cont</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">log_to_dataframe</span><span class="p">(</span><span class="n">raw_cont</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">separator</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="time_difference">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.time_difference">[docs]</a>
+<span class="k">def</span> <span class="nf">time_difference</span><span class="p">(</span>
+    <span class="n">firsttimes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">secondtimes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">use_first_series_labels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the time differences between two series</span>
+<span class="sd">    containing time stamp strings as their values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        firsttimes: The oldest times</span>
+<span class="sd">        secondtimes: The youngest times</span>
+<span class="sd">        use_first_series_labels: If true, the returned Series</span>
+<span class="sd">            has the same labels as firsttimes. Else it has</span>
+<span class="sd">            the labels of secondtimes</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A :class:`pd.Series`  with float values of the time difference (s)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+
+    <span class="k">if</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="n">firsttimes</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">nfirsttimes</span> <span class="o">=</span> <span class="n">firsttimes</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nfirsttimes</span> <span class="o">=</span> <span class="n">firsttimes</span>
+
+    <span class="k">if</span> <span class="s1">&#39;,&#39;</span> <span class="ow">in</span> <span class="n">secondtimes</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="n">nsecondtimes</span> <span class="o">=</span> <span class="n">secondtimes</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nsecondtimes</span> <span class="o">=</span> <span class="n">secondtimes</span>
+
+    <span class="n">t0s</span> <span class="o">=</span> <span class="n">nfirsttimes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;datetime64[ns]&quot;</span><span class="p">)</span>
+    <span class="n">t1s</span> <span class="o">=</span> <span class="n">nsecondtimes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;datetime64[ns]&quot;</span><span class="p">)</span>
+    <span class="n">t1s_np</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">]</span> <span class="o">=</span> <span class="n">t1s</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">t0s_np</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">datetime64</span><span class="p">]</span> <span class="o">=</span> <span class="n">t0s</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+    <span class="n">timedeltas</span> <span class="o">=</span> <span class="p">(</span><span class="n">t1s_np</span> <span class="o">-</span> <span class="n">t0s_np</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e-9</span>
+
+    <span class="k">if</span> <span class="n">use_first_series_labels</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">timedeltas</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">nfirsttimes</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">timedeltas</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">nsecondtimes</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+
+<div class="viewcode-block" id="capture_dataframe">
+<a class="viewcode-back" href="../../../api/logger/index.html#qcodes.logger.capture_dataframe">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">capture_dataframe</span><span class="p">(</span>
+    <span class="n">level</span><span class="p">:</span> <span class="n">LevelType</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Context manager to capture the logs in a :class:`pd.DataFrame`</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; with logger.capture_dataframe() as (handler, cb):</span>
+<span class="sd">        &gt;&gt;&gt;     qdac.ch01(1)  # some commands</span>
+<span class="sd">        &gt;&gt;&gt;     data_frame = cb()</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        level: Level at which to capture.</span>
+<span class="sd">        logger: Logger used to capture the data. Will default to root logger if</span>
+<span class="sd">            None is supplied.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple of handler that is used to capture the log messages and callback</span>
+<span class="sd">        that returns the cumulative :class:`pd.DataFrame` at any given</span>
+<span class="sd">        point (within the context)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get root logger if none is specified.</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span> <span class="ow">or</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span> <span class="k">as</span> <span class="n">log_capture</span><span class="p">:</span>
+        <span class="n">string_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">(</span><span class="n">log_capture</span><span class="p">)</span>
+        <span class="n">string_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+        <span class="n">string_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">get_formatter</span><span class="p">())</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">string_handler</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">string_handler</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">log_to_dataframe</span><span class="p">(</span>
+                <span class="n">log_capture</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">())</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">string_handler</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

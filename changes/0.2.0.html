@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog for QCoDeS 0.2.0 &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Changelog for QCoDeS 0.1.11" href="0.1.11.html" />
+    <link rel="prev" title="Changelog for QCoDeS 0.2.1" href="0.2.1.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Changelogs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.27.0.html">0.27.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">0.2.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#new-improved">New &amp; Improved</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Changelogs</a></li>
+      <li class="breadcrumb-item active">Changelog for QCoDeS 0.2.0</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/changes/0.2.0.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelog-for-qcodes-0-2-0">
+<h1>Changelog for QCoDeS 0.2.0<a class="headerlink" href="#changelog-for-qcodes-0-2-0" title="Link to this heading"></a></h1>
+<p>This release contains large number of driver updates as well as significant improvements to the dataset and
+documentation. It also introduces a new Parameter Class (ParameterWithSetpoints) that is intended to replace
+ArrayParameter.</p>
+<section id="new-improved">
+<h2>New &amp; Improved<a class="headerlink" href="#new-improved" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>New and Improved drivers:</p>
+<ul>
+<li><p>Alazar cards:</p>
+<ul>
+<li><p>Alazar 9870 Don’t assign to instrument property (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1182">#1182</a>)</p></li>
+<li><p>Alazar add buffer completed callback (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1234">#1234</a>)</p></li>
+<li><p>updated/fixed ATS9870 driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1290">#1290</a>)</p></li>
+<li><p>Alazar remove AlazarParameter support (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1184">#1184</a>)</p></li>
+<li><p>Add firmware version to Alazar get_idn (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1308">#1308</a>)</p></li>
+<li><p>Add Alazar ATS9373 driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1324">#1324</a>)</p></li>
+<li><p>Add functions to read and write registers on Alazar and Trigger holdoff for 9360 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1307">#1307</a>)</p></li>
+<li><p>Alazar add get/set parameter (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1523">#1523</a>)</p></li>
+<li><p>Alazar: refactor DLL API related things (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1471">#1471</a>)</p></li>
+</ul>
+</li>
+<li><p>Lock-in amplifiers:</p>
+<ul>
+<li><p>Fix maximum frequency for SRS860 - it is 500 kHz (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1164">#1164</a>)</p></li>
+<li><p>Standford Research SR860 lock-in amplifier driver improvements and bug fixes (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1160">#1160</a>)</p></li>
+<li><p>SR86x lockin: get values of many parameters at once (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1245">#1245</a>)</p></li>
+<li><p>SR830: Add increment/decrement sensitivity functions. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1380">#1380</a>)</p></li>
+<li><p>driver / SR830 : add the snap XY command to read X and Y together (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1333">#1333</a>)</p></li>
+<li><p>Fix SR830’s _change_sensitivity function. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1411">#1411</a>)</p></li>
+<li><p>Feature/dem 805/implement sampling rate float parameter (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1510">#1510</a>)</p></li>
+<li><p>Feature/dem 804/implement missing uhfli commands (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1500">#1500</a>)</p></li>
+<li><p>Driver: ziuhfli - demod{}_harmonic now return int (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1534">#1534</a>)</p></li>
+</ul>
+</li>
+<li><p>Magnets:</p>
+<ul>
+<li><p>AMI430 driver setting set point despite being outside safe region (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1162">#1162</a>)</p></li>
+<li><p>Driver/Mercury iPS with VISA (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/897">#897</a>)</p></li>
+<li><p>driver / add block_during_ramp parameter to AMI430_3D (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1228">#1228</a>)</p></li>
+<li><p>Fix / driver / mercury ips / firmware 2.6 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1385">#1385</a>)</p></li>
+<li><p>Homogeneous coordinates for field vectors in Mercury iPS (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1398">#1398</a>)</p></li>
+<li><p>Add simultaneous blocking ramp parameters MercuryIPS (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1467">#1467</a>)</p></li>
+<li><p>Various IPS120 driver improvements (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1402">#1402</a>)</p></li>
+<li><p>Field Vectors attributes should only be floats (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1458">#1458</a>)</p></li>
+</ul>
+</li>
+<li><p>Multi Meters:</p>
+<ul>
+<li><p>Keithley 2400 protect read commands (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1171">#1171</a>)</p></li>
+<li><p>Refactor Keysight 344xxA code and small fixes (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1169">#1169</a>)</p></li>
+<li><p>Fix keithley 2600 formatting (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1301">#1301</a>)</p></li>
+<li><p>add driver for keithley6500 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1233">#1233</a>)</p></li>
+<li><p>Driver: Keysight 344xxA - flexible measurements and modularization (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1433">#1433</a>)</p></li>
+<li><p>adds a very basic pyvisa-sim yaml for the Keithley 2600 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1465">#1465</a>)</p></li>
+<li><p>Driver/gentec maestro (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1507">#1507</a>)</p></li>
+</ul>
+</li>
+<li><p>Oscilloscopes:</p>
+<ul>
+<li><p>Driver/infiniium additional parameters (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1203">#1203</a>)</p></li>
+<li><p>Set minimum version of firmware for Rigol DS4000 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1206">#1206</a>)</p></li>
+<li><p>Extend RTO1000 driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1410">#1410</a>)</p></li>
+</ul>
+</li>
+<li><p>Signal and Waveform generators:</p>
+<ul>
+<li><p>Added support for N5183B Signal Generator (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1153">#1153</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1155">#1155</a>)</p></li>
+<li><p>Refactor awg file handling in awg5014 driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1066">#1066</a>)</p></li>
+<li><p>Rigol dg1062 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1082">#1082</a>)</p></li>
+<li><p>Hotfix/awg70000 makeseqxfile (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1213">#1213</a>)</p></li>
+<li><p>AWG5208:  Consider wait for trigger equivalent to running in wait for trigger (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1283">#1283</a>)</p></li>
+<li><p>fix: N52xx various fixes (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1299">#1299</a>)</p></li>
+<li><p>Use log instead of print in AWG70000A driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1390">#1390</a>)</p></li>
+<li><p>Driver/awg5014 upload lomentum sequence (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1381">#1381</a>)</p></li>
+<li><p>Feature/keysight 33xx pulsewidth (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1405">#1405</a>)</p></li>
+<li><p>Feature/dem 564/driver for zi hdawg8 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1331">#1331</a>)</p></li>
+<li><p>feat: add specs for model ‘33512B’ in KeysightAgilent_33XXX (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1422">#1422</a>)</p></li>
+<li><p>Remove deprecated keysight waveform drivers drivers (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1435">#1435</a>)</p></li>
+<li><p>Feature/rigol dg1062/adding duty cycle parameter (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1456">#1456</a>)</p></li>
+<li><p>[DEM-831] Compiler warnings in ZIHDAWG8 should be logged or raised. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1522">#1522</a>)</p></li>
+</ul>
+</li>
+<li><p>Spectrum and Vector Network Analyzers:</p>
+<ul>
+<li><p>Driver / signalhound use standard logging (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1154">#1154</a>)</p></li>
+<li><p>driver/Keysight N5245A (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/807">#807</a>)</p></li>
+<li><p>Remove unused function in N52xx driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1219">#1219</a>)</p></li>
+<li><p>Spectrum analyser update (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1248">#1248</a>)</p></li>
+<li><p>Signal hound a few more changes (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1318">#1318</a>)</p></li>
+<li><p>Znb read from existing channels (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1111">#1111</a>)</p></li>
+</ul>
+</li>
+<li><p>Temperature controllers:</p>
+<ul>
+<li><p>Driver/lakeshore336 and lakeshore 372 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/972">#972</a>)</p></li>
+<li><p>Extension/lakeshore read curve file (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1421">#1421</a>)</p></li>
+<li><p>Lakeshore Model 336: make runnable, add minimal test, and fixes along the way (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1526">#1526</a>)</p></li>
+</ul>
+</li>
+<li><p>Others:</p>
+<ul>
+<li><p>Change loglevel for send/recv in IPInstrument (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1146">#1146</a>)</p></li>
+<li><p>M4i: bugfix spectrum digitizer driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1145">#1145</a>)</p></li>
+<li><p>Add set_parameter_bounds to IVVI.py (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1128">#1128</a>)</p></li>
+<li><p>Reorder initialization of IVVI (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1212">#1212</a>)</p></li>
+<li><p>Add new driver for Newport AG-UC8 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1230">#1230</a>)</p></li>
+<li><p>IVVI add missing underscore in parameter name (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1246">#1246</a>)</p></li>
+<li><p>Fix decadac docstring (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1282">#1282</a>)</p></li>
+<li><p>Remove all remaining uses of get/set in instrument drivers (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1325">#1325</a>)</p></li>
+<li><p>Update CryogenicSMS driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1346">#1346</a>)</p></li>
+<li><p>MiniCircuits: wrong USB packet size resulting in error on Windows 7 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1366">#1366</a>)</p></li>
+<li><p>Minicircuits USB_SPDT catch the correct error (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1376">#1376</a>)</p></li>
+<li><p>add M2j driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1188">#1188</a>)</p></li>
+<li><p>Feature/dem 613/update s5i driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1392">#1392</a>)</p></li>
+<li><p>Driver dev/switch matrix (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1373">#1373</a>)</p></li>
+<li><p>Driver / DynaCool PPMS (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1218">#1218</a>)</p></li>
+<li><p>Driver/stahl (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1390">#1390</a>)</p></li>
+<li><p>Driver/keithley s46 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1409">#1409</a>)</p></li>
+<li><p>Added driver for Basel current preamplifier. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1327">#1327</a>)</p></li>
+<li><p>add option for pretrigger memsize to channel readout (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1461">#1461</a>)</p></li>
+<li><p>Dev/b2200 switch matrix multiple channel connect (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1480">#1480</a>)</p></li>
+<li><p>Add boxcar average option to M4i driver (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1509">#1509</a>)</p></li>
+<li><p>fix bug in averaging of m4i blockavg (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1528">#1528</a>)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Other changes:</p>
+<ul>
+<li><p>Config:</p>
+<ul>
+<li><p>allow config to update based on specified path (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1226">#1226</a>)</p></li>
+<li><p>Config cleanup (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1242">#1242</a>)</p></li>
+<li><p>Bugfix: fix __repr__ of Config (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1403">#1403</a>)</p></li>
+</ul>
+</li>
+<li><p>Dataset:</p>
+<ul>
+<li><p>Add some minor DataSet conveniences (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1211">#1211</a>)</p></li>
+<li><p>Make data saver accept numpy type floats/ints (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1225">#1225</a>)</p></li>
+<li><p>Dataset Context manager. Allow insertion of Data direcly as arrays (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1207">#1207</a>)</p></li>
+<li><p>Fix requirements of ordering of setpoints as dependencies (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1250">#1250</a>)</p></li>
+<li><p>Dataset support multiparameter (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1249">#1249</a>)</p></li>
+<li><p>String-valued parameters support (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1248">#1248</a>)</p></li>
+<li><p>Ensure that post actions are performed in some context managers (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1289">#1289</a>)</p></li>
+<li><p>Enhance run table query performance with indices (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1277">#1277</a>)</p></li>
+<li><p>DataSaver.add_result ‘array’ before ‘numeric’ now works (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1306">#1306</a>)</p></li>
+<li><p>Refactor / dataset __init__ method (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1323">#1323</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1332">#1332</a>)</p></li>
+<li><p>Feature: access snapshot of a DataSet, and docs (also, Station bug fix + tests) (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1322">#1322</a>)</p></li>
+<li><p>Meaningful exception when loading/creating dataset for non-existing run id (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1328">#1328</a>)</p></li>
+<li><p>Fix JSON-dumping of snapshots with numpy-typed values (and other) (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1328">#1328</a>)</p></li>
+<li><p>qcodes.dataset.* fool-proofing and minor fixes (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1334">#1334</a>)</p></li>
+<li><p>Development/dependencies dsl (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1227">#1227</a>)</p></li>
+<li><p>Add Subscribers from config (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1365">#1365</a>)</p></li>
+<li><p>Improvement / dataset metadata (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1382">#1382</a>)</p></li>
+<li><p>DataSet.get_data bugs with start/end arguments (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1386">#1386</a>)</p></li>
+<li><p>Add function to fix wrong descriptions (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1396">#1396</a>)</p></li>
+<li><p>Feature / let database show version without upgrading (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1395">#1395</a>)</p></li>
+<li><p>Fix bug where atomic and ConnectionPlus might not commit to database (+ fix DataSet.unsubscribe) (+ deprecate DataSet modify_results, modify_result, add_parameter_values) (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1389">#1389</a>)</p></li>
+<li><p>Feature / database extract runs (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1397">#1397</a>)</p></li>
+<li><p>Add <cite>get_parameter_data</cite> aka <cite>get_columns</cite> (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1400">#1400</a>)</p></li>
+<li><p>Ensure that partial run creation is completly rolled back (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1445">#1445</a>)</p></li>
+<li><p>Hashable and Immutable ParamSpec (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1367">#1367</a>)</p></li>
+<li><p>Don’t allow connection to db that is newer than the one we support (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1454">#1454</a>)</p></li>
+<li><p>Dataset: Fixed issue with legacy import (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1459">#1459</a>)</p></li>
+<li><p>Add Pandas exporter to dataset (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1423">#1423</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1508">#1508</a>)</p></li>
+<li><p>Fix issues with infered_from and add checks for infered_from and depends_on that are strings (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1453">#1453</a>)</p></li>
+<li><p>Document exporting of data from dataset (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1462">#1462</a>)</p></li>
+<li><p>Feature: give DataSet an explicit start method (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1482">#1482</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1486">#1486</a>)</p></li>
+<li><p>Rename mark_complete to mark_completed (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1495">#1495</a>)</p></li>
+<li><p>Cast array params to np array before inserting (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1497">#1497</a>)</p></li>
+<li><p>Remove redundant reshape (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1499">#1499</a>)</p></li>
+<li><p>fix: Handle ‘inf’ in _convert_numeric (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1449">#1449</a>)</p></li>
+<li><p>Dataset: Fix/do not retrive nulls (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1512">#1512</a>)</p></li>
+<li><p>Update Offline Plotting Tutorial with kwargs examples (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1516">#1516</a>)</p></li>
+</ul>
+</li>
+<li><p>Documentation:</p>
+<ul>
+<li><p>Build and execute notebooks with nbsphinx (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1330">#1330</a>)</p></li>
+<li><p>Documentation improvements (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1349">#1349</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1358">#1358</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1362">#1362</a>, , <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1436">#1436</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1479">#1479</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1485">#1485</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1478">#1478</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1514">#1514</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1515">#1515</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1518">#1518</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1517">#1517</a>)</p></li>
+</ul>
+</li>
+<li><p>Instruments and Parameters:</p>
+<ul>
+<li><p>Add option to remove channels from ChannelList (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1045">#1045</a>)</p></li>
+<li><p>Fix validation of steps (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1176">#1176</a>)</p></li>
+<li><p>Add paramterScaler with an usage example (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1069">#1069</a>)</p></li>
+<li><p>Bug: snapshot fails when instantiating InstrumentBase (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1209">#1209</a>)</p></li>
+<li><p>Find or create an instrument without worrying about existing instances (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1210">#1210</a>)</p></li>
+<li><p>GroupParameter and Group (for visa commands that set/get more than one parameter at once) (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1232">#1232</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1266">#1266</a>)</p></li>
+<li><p>Make Array validators shape optionally callable (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1312">#1312</a>)</p></li>
+<li><p>Ensure Parameter name is an identifer (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1326">#1326</a>)</p></li>
+<li><p>Don’t use deprecated add_parameters in tests (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1343">#1343</a>)</p></li>
+<li><p>Snapshot diff and method chaining (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1363">#1363</a>)</p></li>
+<li><p>Bugfix: removing a channel instance that was added with <cite>extend</cite> (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1368">#1368</a>)</p></li>
+<li><p>Discourage the use of QCoDeS functions (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1378">#1378</a>)</p></li>
+<li><p>Extension/dynamic module (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1353">#1353</a>)</p></li>
+<li><p>Fix unclarity about post_delay/inter_delay of Parameter, remove deprecated get/set delay and get/set step (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1387">#1387</a>)</p></li>
+<li><p>Use getattr to get ask/write from instruments (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1451">#1451</a>)</p></li>
+<li><p>New Parameter Class ParameterWithSetpoints (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1263">#1263</a>)</p></li>
+<li><p>val_mapping creator function to solve on/off/true/false issue (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1413">#1413</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1502">#1502</a>)</p></li>
+<li><p>Add origin to parameter warnings (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1481">#1481</a>)</p></li>
+</ul>
+</li>
+<li><p>Legacy dataset:</p>
+<ul>
+<li><p>fix read and write of NaN to hdf5, issue (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1180">#1180</a>)</p></li>
+<li><p>add flush option to hdf5 write_metadata (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1455">#1455</a>)</p></li>
+</ul>
+</li>
+<li><p>Logging:</p>
+<ul>
+<li><p>Log the instrument that a failed parameter update comes from (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1173">#1173</a>)</p></li>
+<li><p>Feat / logfile analysis (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1093">#1093</a>)</p></li>
+<li><p>logging module (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1309">#1309</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1364">#1364</a>)</p></li>
+</ul>
+</li>
+<li><p>Plotting:</p>
+<ul>
+<li><p>Feature / add label to plot_by_id (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1235">#1235</a>)</p></li>
+<li><p>Feature / rescale ticks and units in plot_by_id (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1239">#1239</a>)</p></li>
+<li><p>Smart color scale (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1253">#1253</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1255">#1255</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1259">#1259</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1294">#1294</a>)</p></li>
+<li><p>Format ticks for non-SI-unit axis in a more readable way (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1243">#1243</a>)</p></li>
+<li><p>plot_by_id: pass kwargs to subplots and plot function (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1258">#1258</a>)</p></li>
+<li><p>Fix potential divide_by_zero warning in scale selection (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1261">#1261</a>)</p></li>
+<li><p>Plot_by_id rasterise 2d plots for large datasets (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1305">#1305</a>)</p></li>
+<li><p>Feature: plot_by_id string-valued data for 2D plots (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1311">#1311</a>)</p></li>
+<li><p>Fix / plot by id cmap kwar (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1427">#1427</a>)</p></li>
+</ul>
+</li>
+<li><p>Other:</p>
+<ul>
+<li><p>Setup benchmarking and add simple dataset benchmark (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1202">#1202</a>)</p></li>
+<li><p>Set up CI with Azure Pipelines (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1292">#1292</a>,  <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1293">#1293</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1300">#1300</a>)</p></li>
+<li><p>Catch generic exceptions in import of dependencies. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1316">#1316</a>)</p></li>
+<li><p>Test with python 3.7 on travis (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1321">#1321</a>)</p></li>
+<li><p>Adapt workaround for spyder UMR to work with newest version of spyder (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1338">#1338</a>)</p></li>
+<li><p>Monitor: Support for new versions of Websocket (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1407">#1407</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1420">#1420</a>)</p></li>
+<li><p>Make error_caused_by more robust (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/1532">#1532</a>)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="0.2.1.html" class="btn btn-neutral float-left" title="Changelog for QCoDeS 0.2.1" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="0.1.11.html" class="btn btn-neutral float-right" title="Changelog for QCoDeS 0.1.11" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

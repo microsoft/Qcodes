@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.parameters.specialized_parameters &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.parameters.specialized_parameters</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.parameters.specialized_parameters</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module for specialized parameters. The :mod:`qcodes.instrument.parameter`</span>
+<span class="sd">module provides generic parameters for different generic cases. This module</span>
+<span class="sd">provides useful/convenient specializations of such generic parameters.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">perf_counter</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Strings</span><span class="p">,</span> <span class="n">Validator</span>
+
+<span class="kn">from</span> <span class="nn">.parameter</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">InstrumentBase</span>
+
+
+<div class="viewcode-block" id="ElapsedTimeParameter">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ElapsedTimeParameter">[docs]</a>
+<span class="k">class</span> <span class="nc">ElapsedTimeParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameter to measure elapsed time. Measures wall clock time since the</span>
+<span class="sd">    last reset of the instance&#39;s clock. The clock is reset upon creation of the</span>
+<span class="sd">    instance. The constructor passes kwargs along to the Parameter constructor.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: The local name of the parameter. See the documentation of</span>
+<span class="sd">            :class:`qcodes.parameters.Parameter` for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Elapsed time&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+
+        <span class="n">hardcoded_kwargs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="s2">&quot;get_cmd&quot;</span><span class="p">,</span> <span class="s2">&quot;set_cmd&quot;</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">hck</span> <span class="ow">in</span> <span class="n">hardcoded_kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hck</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Can not set &quot;</span><span class="si">{</span><span class="n">hck</span><span class="si">}</span><span class="s1">&quot; for an ElapsedTimeParameter.&#39;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ElapsedTimeParameter.get_raw">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ElapsedTimeParameter.get_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">t0</span></div>
+
+
+<div class="viewcode-block" id="ElapsedTimeParameter.reset_clock">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ElapsedTimeParameter.reset_clock">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_clock</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">t0</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span></div>
+
+
+
+<div class="viewcode-block" id="InstrumentRefParameter">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.InstrumentRefParameter">[docs]</a>
+<span class="k">class</span> <span class="nc">InstrumentRefParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An instrument reference parameter.</span>
+
+<span class="sd">    This parameter is useful when one needs a reference to another instrument</span>
+<span class="sd">    from within an instrument, e.g., when creating a meta instrument that</span>
+<span class="sd">    sets parameters on instruments it contains.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: The name of the parameter that one wants to add.</span>
+
+<span class="sd">        instrument: The &quot;parent&quot; instrument this</span>
+<span class="sd">            parameter is attached to, if any.</span>
+
+<span class="sd">        initial_value: Starting value, may be None even if None does not</span>
+<span class="sd">            pass the validator. None is only allowed as an initial value</span>
+<span class="sd">            and cannot be set after initiation.</span>
+
+<span class="sd">        **kwargs: Passed to InstrumentRefParameter parent class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">get_cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">set_cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">initial_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_val_age</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">vals</span><span class="p">:</span> <span class="n">Validator</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">docstring</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">vals</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vals</span> <span class="o">=</span> <span class="n">Strings</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">set_cmd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;InstrumentRefParameter does not support set_cmd.&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">get_cmd</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="n">set_cmd</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="n">initial_value</span><span class="p">,</span>
+            <span class="n">max_val_age</span><span class="o">=</span><span class="n">max_val_age</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="n">docstring</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># TODO(nulinspiratie) check class works now it&#39;s subclassed from Parameter</span>
+<div class="viewcode-block" id="InstrumentRefParameter.get_instr">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.InstrumentRefParameter.get_instr">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_instr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the instance of the instrument with the name equal to the</span>
+<span class="sd">        value of this parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ref_instrument_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="c1"># note that _instrument refers to the instrument this parameter belongs</span>
+        <span class="c1"># to, while the ref_instrument_name is the instrument that is the value</span>
+        <span class="c1"># of this parameter.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;InstrumentRefParameter is not bound to an instrument.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument</span><span class="o">.</span><span class="n">find_instrument</span><span class="p">(</span><span class="n">ref_instrument_name</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

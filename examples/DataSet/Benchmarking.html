@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dataset Benchmarking &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="DataSet class walkthrough" href="DataSet-class-walkthrough.html" />
+    <link rel="prev" title="Accessing data in a DataSet" href="Accessing-data-in-DataSet.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Dataset Benchmarking</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Setup">Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Baseline:-Generate-data">Baseline: Generate data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Add-to-dataset-inside-double-loop">Add to dataset inside double loop</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Add-the-data-in-outer-loop-and-store-as-np-array">Add the data in outer loop and store as np array</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Save-once-after-loop">Save once after loop</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Array-parameter">Array parameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Insert-many">Insert many</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Dataset Benchmarking</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/DataSet/Benchmarking.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/Benchmarking.ipynb">docs/examples/DataSet/Benchmarking.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/Benchmarking.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Dataset-Benchmarking">
+<h1>Dataset Benchmarking<a class="headerlink" href="#Dataset-Benchmarking" title="Link to this heading"></a></h1>
+<p>This notebook is a behind-the-scenes benchmarking notebook, mainly for use by developers. The recommended way for users to interact with the dataset is via the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object and its associated context manager. See the corresponding notebook for a comprehensive toturial on how to use those.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">qcodes</span> <span class="k">as</span> <span class="nn">qc</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParamSpec</span><span class="p">,</span>
+    <span class="n">initialise_or_create_database_at</span><span class="p">,</span>
+    <span class="n">load_or_create_experiment</span><span class="p">,</span>
+    <span class="n">new_data_set</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : /home/runner/.qcodes/logs/240701-17401-qcodes.log
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">db_location</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;~/experiments.db&#39;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;benchmarking.db&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Setup">
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span><span class="s2">&quot;benchmarking&quot;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s2">&quot;the sample is a lie&quot;</span><span class="p">)</span>
+<span class="n">exp</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+benchmarking#the sample is a lie#1@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/benchmarking.db
+--------------------------------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>Now we can create a dataset. Note two things:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>- if we don&#39;t specfiy a exp_id, but we have an experiment in the experiment container the dataset will go into that one.
+- dataset can be created from the experiment object
+</pre></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataSet</span> <span class="o">=</span> <span class="n">new_data_set</span><span class="p">(</span><span class="s2">&quot;benchmark_data&quot;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+<span class="n">exp</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+benchmarking#the sample is a lie#1@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/benchmarking.db
+--------------------------------------------------------------------------------------------------------
+1-benchmark_data-1-None-0
+</pre></div></div>
+</div>
+<p>In this benchmark we will assueme that we are doing a 2D loop and investigate the performance implications of writing to the dataset</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_shape</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">y_shape</span> <span class="o">=</span> <span class="mi">100</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Baseline:-Generate-data">
+<h2>Baseline: Generate data<a class="headerlink" href="#Baseline:-Generate-data" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x_shape</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y_shape</span><span class="p">):</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CPU times: user 8.08 ms, sys: 32 μs, total: 8.11 ms
+Wall time: 8.18 ms
+</pre></div></div>
+</div>
+<p>and store in memory</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+<span class="n">y_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+<span class="n">z_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x_shape</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y_shape</span><span class="p">):</span>
+        <span class="n">x_data</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">y_data</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="n">z_data</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CPU times: user 9.12 ms, sys: 0 ns, total: 9.12 ms
+Wall time: 9.06 ms
+</pre></div></div>
+</div>
+</section>
+<section id="Add-to-dataset-inside-double-loop">
+<h2>Add to dataset inside double loop<a class="headerlink" href="#Add-to-dataset-inside-double-loop" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">double_dataset</span> <span class="o">=</span> <span class="n">new_data_set</span><span class="p">(</span><span class="s2">&quot;doubledata&quot;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+                              <span class="n">specs</span><span class="o">=</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;numeric&quot;</span><span class="p">),</span>
+                                     <span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;numeric&quot;</span><span class="p">),</span>
+                                     <span class="n">ParamSpec</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s2">&quot;numeric&quot;</span><span class="p">)])</span>
+<span class="n">double_dataset</span><span class="o">.</span><span class="n">mark_started</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Note that this is so slow that we are only doing a 10th of the computation</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x_shape</span><span class="o">//</span><span class="mi">10</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y_shape</span><span class="p">):</span>
+        <span class="n">double_dataset</span><span class="o">.</span><span class="n">add_results</span><span class="p">([{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()}])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CPU times: user 175 ms, sys: 99.3 ms, total: 274 ms
+Wall time: 675 ms
+</pre></div></div>
+</div>
+</section>
+<section id="Add-the-data-in-outer-loop-and-store-as-np-array">
+<h2>Add the data in outer loop and store as np array<a class="headerlink" href="#Add-the-data-in-outer-loop-and-store-as-np-array" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">single_dataset</span> <span class="o">=</span> <span class="n">new_data_set</span><span class="p">(</span><span class="s2">&quot;singledata&quot;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+                              <span class="n">specs</span><span class="o">=</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                     <span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                     <span class="n">ParamSpec</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">)])</span>
+<span class="n">single_dataset</span><span class="o">.</span><span class="n">mark_started</span><span class="p">()</span>
+<span class="n">x_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">y_shape</span><span class="p">)</span>
+<span class="n">y_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">y_shape</span><span class="p">)</span>
+<span class="n">z_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">y_shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x_shape</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y_shape</span><span class="p">):</span>
+        <span class="n">x_data</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">y_data</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="n">z_data</span><span class="p">[</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">single_dataset</span><span class="o">.</span><span class="n">add_results</span><span class="p">([{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_data</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">y_data</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="n">z_data</span><span class="p">}])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CPU times: user 34.4 ms, sys: 8.92 ms, total: 43.3 ms
+Wall time: 57 ms
+</pre></div></div>
+</div>
+</section>
+<section id="Save-once-after-loop">
+<h2>Save once after loop<a class="headerlink" href="#Save-once-after-loop" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zero_dataset</span> <span class="o">=</span> <span class="n">new_data_set</span><span class="p">(</span><span class="s2">&quot;zerodata&quot;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+                            <span class="n">specs</span><span class="o">=</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                   <span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                   <span class="n">ParamSpec</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">)])</span>
+<span class="n">zero_dataset</span><span class="o">.</span><span class="n">mark_started</span><span class="p">()</span>
+<span class="n">x_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+<span class="n">y_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+<span class="n">z_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x_shape</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">y_shape</span><span class="p">):</span>
+        <span class="n">x_data</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="n">y_data</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span>
+        <span class="n">z_data</span><span class="p">[</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">zero_dataset</span><span class="o">.</span><span class="n">add_results</span><span class="p">([{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="n">x_data</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="n">y_data</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span><span class="n">z_data</span><span class="p">}])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+CPU times: user 32.3 ms, sys: 0 ns, total: 32.3 ms
+Wall time: 32.4 ms
+</pre></div></div>
+</div>
+</section>
+<section id="Array-parameter">
+<h2>Array parameter<a class="headerlink" href="#Array-parameter" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">array1D_dataset</span> <span class="o">=</span> <span class="n">new_data_set</span><span class="p">(</span><span class="s2">&quot;array1Ddata&quot;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+                               <span class="n">specs</span><span class="o">=</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                      <span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                      <span class="n">ParamSpec</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">)])</span>
+<span class="n">array1D_dataset</span><span class="o">.</span><span class="n">mark_started</span><span class="p">()</span>
+<span class="n">y_setpoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">y_shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>it
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x_shape</span><span class="p">):</span>
+    <span class="n">x_data</span><span class="p">[</span><span class="n">x</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">array1D_dataset</span><span class="o">.</span><span class="n">add_results</span><span class="p">([{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="n">x_data</span><span class="p">[</span><span class="n">x</span><span class="p">,:],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="n">y_setpoints</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">y_shape</span><span class="p">)}])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+40.9 ms ± 1.67 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+<span class="n">y_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+<span class="n">z_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">x_shape</span><span class="p">,</span> <span class="n">y_shape</span><span class="p">))</span>
+<span class="n">y_setpoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">y_shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">array0D_dataset</span> <span class="o">=</span> <span class="n">new_data_set</span><span class="p">(</span><span class="s2">&quot;array0Ddata&quot;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+                               <span class="n">specs</span><span class="o">=</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                      <span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">),</span>
+                                      <span class="n">ParamSpec</span><span class="p">(</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s2">&quot;array&quot;</span><span class="p">)])</span>
+<span class="n">array0D_dataset</span><span class="o">.</span><span class="n">mark_started</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>it
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x_shape</span><span class="p">):</span>
+    <span class="n">x_data</span><span class="p">[</span><span class="n">x</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">x</span>
+    <span class="n">y_data</span><span class="p">[</span><span class="n">x</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">y_setpoints</span>
+    <span class="n">z_data</span><span class="p">[</span><span class="n">x</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">y_shape</span><span class="p">)</span>
+<span class="n">array0D_dataset</span><span class="o">.</span><span class="n">add_results</span><span class="p">([{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span><span class="n">x_data</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="n">y_data</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span><span class="n">z_data</span><span class="p">}])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2.13 ms ± 61.3 μs per loop (mean ± std. dev. of 7 runs, 1,000 loops each)
+</pre></div></div>
+</div>
+</section>
+<section id="Insert-many">
+<h2>Insert many<a class="headerlink" href="#Insert-many" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span><span class="n">j</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()})</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">many_Data</span> <span class="o">=</span> <span class="n">new_data_set</span><span class="p">(</span><span class="s2">&quot;many_data&quot;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+                         <span class="n">specs</span><span class="o">=</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;numeric&quot;</span><span class="p">),</span>
+                                <span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;numeric&quot;</span><span class="p">),</span>
+                                <span class="n">ParamSpec</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;numeric&quot;</span><span class="p">)])</span>
+<span class="n">many_Data</span><span class="o">.</span><span class="n">mark_started</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%%time</span>it
+<span class="n">many_Data</span><span class="o">.</span><span class="n">add_results</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+20.5 ms ± 1.77 ms per loop (mean ± std. dev. of 7 runs, 100 loops each)
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Accessing-data-in-DataSet.html" class="btn btn-neutral float-left" title="Accessing data in a DataSet" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="DataSet-class-walkthrough.html" class="btn btn-neutral float-right" title="DataSet class walkthrough" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

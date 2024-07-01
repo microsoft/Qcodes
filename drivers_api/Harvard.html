@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harvard Drivers &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Ithaco Drivers" href="Ithaco.html" />
+    <link rel="prev" title="Hewlett Packard Drivers" href="HP.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Harvard Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac._ramp_state"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac._ramp_state</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac._ramp_time"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac._ramp_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_CHANNEL_CLASS"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.DAC_CHANNEL_CLASS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_SLOT_CLASS"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.DAC_SLOT_CLASS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.set_all"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.set_all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.ramp_all"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.ramp_all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.get_idn"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.connect_message"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.connect_message()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.__repr__"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.__repr__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.write"><code class="docutils literal notranslate"><span class="pre">HarvardDecadac.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.volt"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.volt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.lower_ramp_limit"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.lower_ramp_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.upper_ramp_limit"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.upper_ramp_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.update_period"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.update_period</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.slope"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.slope</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.enable_ramp"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.enable_ramp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ramp_rate"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.ramp_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.initial_value"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.initial_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.write"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.write()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ask"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.ask()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.parameters"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.functions"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.submodules"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.instrument_modules"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.log"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.metadata"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacChannel.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacException"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.SLOT_MODE_DEFAULT"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.SLOT_MODE_DEFAULT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.slot_mode"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.slot_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.write"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.write()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.ask"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.ask()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.parameters"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.functions"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.submodules"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.instrument_modules"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.log"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.metadata"><code class="docutils literal notranslate"><span class="pre">HarvardDecadacSlot.metadata</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">Harvard Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/Harvard.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.Harvard">
+<span id="harvard-drivers"></span><span id="harvard-api"></span><h1>Harvard Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.Harvard" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac" title="qcodes.instrument_drivers.Harvard.HarvardDecadac"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HarvardDecadac</span></code></a>(name, address[, min_val, max_val])</p></td>
+<td><p>The qcodes driver for the Decadac.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HarvardDecadacChannel</span></code></a>(parent, name, channel)</p></td>
+<td><p>A single DAC channel of the DECADAC</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HarvardDecadacSlot</span></code></a>(parent, name, slot[, ...])</p></td>
+<td><p>A single DAC Slot of the DECADAC</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exceptions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacException" title="qcodes.instrument_drivers.Harvard.HarvardDecadacException"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HarvardDecadacException</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Harvard.</span></span><span class="sig-name descname"><span class="pre">HarvardDecadac</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadac"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DacReader</span></code></p>
+<p>The qcodes driver for the Decadac.</p>
+<p>Tested with a Decadac firmware revion number 14081 (Decadac 139).</p>
+<p>The message strategy is the following: always keep the queue empty, so
+that self.visa_handle.ask(XXX) will return the answer to XXX and not
+some previous event.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac._ramp_state">
+<span class="sig-name descname"><span class="pre">_ramp_state</span></span><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac._ramp_state" title="Link to this definition"></a></dt>
+<dd><p>If True, ramp state is ON. Default False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac._ramp_time">
+<span class="sig-name descname"><span class="pre">_ramp_time</span></span><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac._ramp_time" title="Link to this definition"></a></dt>
+<dd><p>The ramp time in ms. Default 100 ms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Creates an instance of the Decadac instruments</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – What this instrument is called locally.</p></li>
+<li><p><strong>address</strong> – The address of the DAC. For a serial port this
+is ASRLn::INSTR where n is replaced with the address set in the
+VISA control panel. Baud rate and other serial parameters must
+also be set in the VISA control panel.</p></li>
+<li><p><strong>min_val</strong> – The minimum value in volts that can be output by the DAC.
+This value should correspond to the DAC code 0.</p></li>
+<li><p><strong>max_val</strong> – The maximum value in volts that can be output by the DAC.
+This value should correspond to the DAC code 65536.</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_CHANNEL_CLASS" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_CHANNEL_CLASS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DAC_CHANNEL_CLASS</span></code></a></p></td>
+<td><p>alias of <a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel" title="qcodes.instrument_drivers.Harvard.Decadac.HarvardDecadacChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">HarvardDecadacChannel</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_SLOT_CLASS" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_SLOT_CLASS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DAC_SLOT_CLASS</span></code></a></p></td>
+<td><p>alias of <a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot" title="qcodes.instrument_drivers.Harvard.Decadac.HarvardDecadacSlot"><code class="xref py py-class docutils literal notranslate"><span class="pre">HarvardDecadacSlot</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.set_all" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.set_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_all</span></code></a>(volt)</p></td>
+<td><p>Set all dac channels to a specific voltage.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.ramp_all" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.ramp_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_all</span></code></a>(volt, ramp_rate)</p></td>
+<td><p>Ramp all dac channels to a specific voltage at the given rate simultaneously.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.get_idn" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Attempt to identify the dac.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.connect_message" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.connect_message"><code class="xref py py-obj docutils literal notranslate"><span class="pre">connect_message</span></code></a>([idn_param, begin_time])</p></td>
+<td><p>Print a connect message, taking into account the lack of a standard <code class="docutils literal notranslate"><span class="pre">*IDN</span></code> on the Harvard DAC</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.__repr__" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.__repr__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__repr__</span></code></a>()</p></td>
+<td><p>Simplified repr giving just the class and name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.write" title="qcodes.instrument_drivers.Harvard.HarvardDecadac.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a>(cmd)</p></td>
+<td><p>Since all commands are echoed back, we must keep track of responses as well, otherwise commands receive the wrong response.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_CHANNEL_CLASS">
+<span class="sig-name descname"><span class="pre">DAC_CHANNEL_CLASS</span></span><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_CHANNEL_CLASS" title="Link to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel" title="qcodes.instrument_drivers.Harvard.Decadac.HarvardDecadacChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">HarvardDecadacChannel</span></code></a>
+<strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask</span></code>(cmd)</p></td>
+<td><p>Overload ask to set channel prior to operations</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(cmd)</p></td>
+<td><p>Overload write to set channel prior to any channel operations.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">volt</span></code></p></td>
+<td><p>Parameter volt</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">lower_ramp_limit</span></code></p></td>
+<td><p>Parameter lower_ramp_limit</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">upper_ramp_limit</span></code></p></td>
+<td><p>Parameter upper_ramp_limit</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_period</span></code></p></td>
+<td><p>Parameter update_period</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">slope</span></code></p></td>
+<td><p>Parameter slope</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">enable_ramp</span></code></p></td>
+<td><p>Parameter enable_ramp</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_rate</span></code></p></td>
+<td><p>Parameter ramp_rate</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">initial_value</span></code></p></td>
+<td><p>Parameter initial_value</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_SLOT_CLASS">
+<span class="sig-name descname"><span class="pre">DAC_SLOT_CLASS</span></span><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.DAC_SLOT_CLASS" title="Link to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot" title="qcodes.instrument_drivers.Harvard.Decadac.HarvardDecadacSlot"><code class="xref py py-class docutils literal notranslate"><span class="pre">HarvardDecadacSlot</span></code></a>
+<strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SLOT_MODE_DEFAULT</span></code></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">slot_mode</span></code></p></td>
+<td><p>Parameter slot_mode</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask</span></code>(cmd)</p></td>
+<td><p>Overload ask to set channel prior to operations</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code>(cmd)</p></td>
+<td><p>Overload write to set channel prior to any channel operations.</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.set_all">
+<span class="sig-name descname"><span class="pre">set_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">volt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadac.set_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.set_all" title="Link to this definition"></a></dt>
+<dd><p>Set all dac channels to a specific voltage. If channels are set to ramp
+then the ramps will occur in sequence, not simultaneously.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>volt</strong> (<a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The voltage to set all gates to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.ramp_all">
+<span class="sig-name descname"><span class="pre">ramp_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">volt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ramp_rate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadac.ramp_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.ramp_all" title="Link to this definition"></a></dt>
+<dd><p>Ramp all dac channels to a specific voltage at the given rate
+simultaneously. Note that the ramps are not synchronized due to
+communications time and DAC ramps starting as soon as the commands are
+in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>volt</strong> (<a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The voltage to ramp all channels to.</p></li>
+<li><p><strong>ramp_rate</strong> (<a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – The rate in volts per second to ramp</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadac.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Attempt to identify the dac. Since we don’t have standard SCPI
+commands, <code class="docutils literal notranslate"><span class="pre">*IDN</span></code> will do nothing on this DAC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dict containing a serial and hardware version</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.connect_message">
+<span class="sig-name descname"><span class="pre">connect_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idn_param</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'IDN'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">begin_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadac.connect_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.connect_message" title="Link to this definition"></a></dt>
+<dd><p>Print a connect message, taking into account the lack of a standard
+<code class="docutils literal notranslate"><span class="pre">*IDN</span></code> on the Harvard DAC</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>idn_param</strong> – Unused</p></li>
+<li><p><strong>begin_time</strong> – time.time() when init started.
+Default is self._t0, set at start of Instrument.__init__.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.__repr__">
+<span class="sig-name descname"><span class="pre">__repr__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadac.__repr__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.__repr__" title="Link to this definition"></a></dt>
+<dd><p>Simplified repr giving just the class and name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadac.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadac.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac.write" title="Link to this definition"></a></dt>
+<dd><p>Since all commands are echoed back, we must keep track of responses
+as well, otherwise commands receive the wrong response. Hence
+all writes must also read a response.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Harvard.</span></span><span class="sig-name descname"><span class="pre">HarvardDecadacChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot" title="qcodes.instrument_drivers.Harvard.Decadac.HarvardDecadacSlot"><span class="pre">HarvardDecadacSlot</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadacChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DacReader</span></code></p>
+<p>A single DAC channel of the DECADAC</p>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.volt" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.volt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">volt</span></code></a></p></td>
+<td><p>Parameter volt</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.lower_ramp_limit" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.lower_ramp_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lower_ramp_limit</span></code></a></p></td>
+<td><p>Parameter lower_ramp_limit</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.upper_ramp_limit" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.upper_ramp_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">upper_ramp_limit</span></code></a></p></td>
+<td><p>Parameter upper_ramp_limit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.update_period" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.update_period"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_period</span></code></a></p></td>
+<td><p>Parameter update_period</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.slope" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.slope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slope</span></code></a></p></td>
+<td><p>Parameter slope</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.enable_ramp" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.enable_ramp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enable_ramp</span></code></a></p></td>
+<td><p>Parameter enable_ramp</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ramp_rate" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ramp_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_rate</span></code></a></p></td>
+<td><p>Parameter ramp_rate</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.initial_value" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.initial_value"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initial_value</span></code></a></p></td>
+<td><p>Parameter initial_value</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.parameters" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code></a></p></td>
+<td><p>All the parameters supported by this instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.functions" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.functions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">functions</span></code></a></p></td>
+<td><p>All the functions supported by this instrument.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.submodules" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.submodules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">submodules</span></code></a></p></td>
+<td><p>All the submodules of this instrument such as channel lists or logical groupings of parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.instrument_modules" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.instrument_modules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">instrument_modules</span></code></a></p></td>
+<td><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.log" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.log"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.metadata" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">metadata</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.write" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a>(cmd)</p></td>
+<td><p>Overload write to set channel prior to any channel operations.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ask" title="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask</span></code></a>(cmd)</p></td>
+<td><p>Overload ask to set channel prior to operations</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.volt">
+<span class="sig-name descname"><span class="pre">volt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;volt&quot;,</span> <span class="pre">get_cmd=partial(self._query_address,</span> <span class="pre">self._base_addr</span> <span class="pre">+</span> <span class="pre">9,</span> <span class="pre">1),</span> <span class="pre">get_parser=self._dac_code_to_v,</span> <span class="pre">set_cmd=self._set_dac,</span> <span class="pre">set_parser=self._dac_v_to_code,</span> <span class="pre">vals=self._volt_val,</span> <span class="pre">label=f&quot;channel</span> <span class="pre">{channel+self._slot*4}&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.volt" title="Link to this definition"></a></dt>
+<dd><p>Parameter volt</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.lower_ramp_limit">
+<span class="sig-name descname"><span class="pre">lower_ramp_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;lower_ramp_limit&quot;,</span> <span class="pre">get_cmd=partial(self._query_address,</span> <span class="pre">self._base_addr</span> <span class="pre">+</span> <span class="pre">5),</span> <span class="pre">get_parser=self._dac_code_to_v,</span> <span class="pre">set_cmd=&quot;L{};&quot;,</span> <span class="pre">set_parser=self._dac_v_to_code,</span> <span class="pre">vals=self._volt_val,</span> <span class="pre">label=&quot;Lower_Ramp_Limit&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.lower_ramp_limit" title="Link to this definition"></a></dt>
+<dd><p>Parameter lower_ramp_limit</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.upper_ramp_limit">
+<span class="sig-name descname"><span class="pre">upper_ramp_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;upper_ramp_limit&quot;,</span> <span class="pre">get_cmd=partial(self._query_address,</span> <span class="pre">self._base_addr</span> <span class="pre">+</span> <span class="pre">4),</span> <span class="pre">get_parser=self._dac_code_to_v,</span> <span class="pre">set_cmd=&quot;U{};&quot;,</span> <span class="pre">set_parser=self._dac_v_to_code,</span> <span class="pre">vals=self._volt_val,</span> <span class="pre">label=&quot;Upper_Ramp_Limit&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.upper_ramp_limit" title="Link to this definition"></a></dt>
+<dd><p>Parameter upper_ramp_limit</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.update_period">
+<span class="sig-name descname"><span class="pre">update_period</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;update_period&quot;,</span> <span class="pre">get_cmd=partial(self._query_address,</span> <span class="pre">self._base_addr),</span> <span class="pre">get_parser=int,</span> <span class="pre">set_cmd=&quot;T{};&quot;,</span> <span class="pre">set_parser=int,</span> <span class="pre">vals=vals.Ints(50,</span> <span class="pre">65535),</span> <span class="pre">label=&quot;Update_Period&quot;,</span> <span class="pre">unit=&quot;us&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.update_period" title="Link to this definition"></a></dt>
+<dd><p>Parameter update_period</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.slope">
+<span class="sig-name descname"><span class="pre">slope</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;slope&quot;,</span> <span class="pre">get_cmd=partial(self._query_address,</span> <span class="pre">self._base_addr</span> <span class="pre">+</span> <span class="pre">6,</span> <span class="pre">2),</span> <span class="pre">get_parser=int,</span> <span class="pre">set_cmd=&quot;S{};&quot;,</span> <span class="pre">set_parser=int,</span> <span class="pre">vals=vals.Ints(-(2**32),</span> <span class="pre">2**32),</span> <span class="pre">label=&quot;Ramp_Slope&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.slope" title="Link to this definition"></a></dt>
+<dd><p>Parameter slope</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.enable_ramp">
+<span class="sig-name descname"><span class="pre">enable_ramp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;enable_ramp&quot;,</span> <span class="pre">get_cmd=None,</span> <span class="pre">set_cmd=None,</span> <span class="pre">initial_value=False,</span> <span class="pre">vals=vals.Bool(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.enable_ramp" title="Link to this definition"></a></dt>
+<dd><p>Parameter enable_ramp</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ramp_rate">
+<span class="sig-name descname"><span class="pre">ramp_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ramp_rate&quot;,</span> <span class="pre">get_cmd=None,</span> <span class="pre">set_cmd=None,</span> <span class="pre">initial_value=0.1,</span> <span class="pre">vals=self._ramp_val,</span> <span class="pre">unit=&quot;V/s&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ramp_rate" title="Link to this definition"></a></dt>
+<dd><p>Parameter ramp_rate</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.initial_value">
+<span class="sig-name descname"><span class="pre">initial_value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.initial_value" title="Link to this definition"></a></dt>
+<dd><p>Parameter initial_value</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadacChannel.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.write" title="Link to this definition"></a></dt>
+<dd><p>Overload write to set channel prior to any channel operations.
+Since all commands are echoed back, we must keep track of responses
+as well, otherwise commands receive the wrong response.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ask">
+<span class="sig-name descname"><span class="pre">ask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadacChannel.ask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.ask" title="Link to this definition"></a></dt>
+<dd><p>Overload ask to set channel prior to operations</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacChannel.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Harvard.</span></span><span class="sig-name descname"><span class="pre">HarvardDecadacException</span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadacException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Exception" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Harvard.</span></span><span class="sig-name descname"><span class="pre">HarvardDecadacSlot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadac" title="qcodes.instrument_drivers.Harvard.Decadac.HarvardDecadac"><span class="pre">HarvardDecadac</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">slot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_val</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadacSlot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">DacReader</span></code></p>
+<p>A single DAC Slot of the DECADAC</p>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.SLOT_MODE_DEFAULT" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.SLOT_MODE_DEFAULT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SLOT_MODE_DEFAULT</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.slot_mode" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.slot_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slot_mode</span></code></a></p></td>
+<td><p>Parameter slot_mode</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.parameters" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parameters</span></code></a></p></td>
+<td><p>All the parameters supported by this instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.functions" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.functions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">functions</span></code></a></p></td>
+<td><p>All the functions supported by this instrument.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.submodules" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.submodules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">submodules</span></code></a></p></td>
+<td><p>All the submodules of this instrument such as channel lists or logical groupings of parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.instrument_modules" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.instrument_modules"><code class="xref py py-obj docutils literal notranslate"><span class="pre">instrument_modules</span></code></a></p></td>
+<td><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.log" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.log"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.metadata" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">metadata</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.write" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.write"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write</span></code></a>(cmd)</p></td>
+<td><p>Overload write to set channel prior to any channel operations.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.ask" title="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.ask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask</span></code></a>(cmd)</p></td>
+<td><p>Overload ask to set channel prior to operations</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.SLOT_MODE_DEFAULT">
+<span class="sig-name descname"><span class="pre">SLOT_MODE_DEFAULT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Coarse'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.SLOT_MODE_DEFAULT" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.slot_mode">
+<span class="sig-name descname"><span class="pre">slot_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;slot_mode&quot;,</span> <span class="pre">get_cmd=&quot;m;&quot;,</span> <span class="pre">get_parser=self._dac_parse,</span> <span class="pre">set_cmd=&quot;M{};&quot;,</span> <span class="pre">val_mapping=slot_modes,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.slot_mode" title="Link to this definition"></a></dt>
+<dd><p>Parameter slot_mode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadacSlot.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.write" title="Link to this definition"></a></dt>
+<dd><p>Overload write to set channel prior to any channel operations.
+Since all commands are echoed back, we must keep track of responses
+as well, otherwise commands receive the wrong response.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.ask">
+<span class="sig-name descname"><span class="pre">ask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Harvard/Decadac.html#HarvardDecadacSlot.ask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.ask" title="Link to this definition"></a></dt>
+<dd><p>Overload ask to set channel prior to operations</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Harvard.HarvardDecadacSlot.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="HP.html" class="btn btn-neutral float-left" title="Hewlett Packard Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Ithaco.html" class="btn btn-neutral float-right" title="Ithaco Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,481 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# QCoDeS Example with Tektronix AWG5014\n",
+    "\n",
+    "## Table of contents\n",
+    "\n",
+    "* [Imports and initialisation](#Imports-and-initialisation)\n",
+    "* [Sending waveforms](#SENDING-WAVEFORMS)\n",
+    "  * [Via an .awg-file](#GETTING-THEM-THERE-VIA-AN-.AWG-FILE)\n",
+    "  * [Sending directly to list](#GETTING-THEM-THERE-BY-SENDING-WAVEFORMS-TO-LIST)\n",
+    "* [Running in lazy mode](#Running-the-AWG-in-lazy-mode)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Imports and initialisation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%matplotlib nbagg\n",
+    "\n",
+    "import logging\n",
+    "import os\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "\n",
+    "logger = logging.getLogger()\n",
+    "logger.setLevel(logging.WARNING)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from qcodes.instrument_drivers.tektronix import (\n",
+    "    TektronixAWG5014,  # <--- The instrument driver\n",
+    ")\n",
+    "from qcodes.instrument_drivers.tektronix.AWGFileParser import (\n",
+    "    parse_awg_file,  # <--- A helper function\n",
+    ")\n",
+    "\n",
+    "awg1 = TektronixAWG5014('AWG1', 'TCPIP0::172.20.3.57::inst0::INSTR', timeout=40)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Note: if you have had any initialisation problems, the VISA message queue of the instrument could be fouled up\n",
+    "#(e.g. if the cell above gave you back something like 'Connected to: 1.20000000E+009 ...')\n",
+    "# in that case, run the following command to reset the message queue\n",
+    "awg1.clear_message_queue()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "As with any other QCoDeS instrument, parameters can be set and get (gotten)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(awg1.ch3_state.get())\n",
+    "print(awg1.ch2_offset.get())\n",
+    "awg1.ch2_offset.set(0.1)\n",
+    "print(awg1.ch2_offset.get())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "A list of all available parameters can be found in the following manner:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "pars = np.sort(list(awg1.parameters.keys()))\n",
+    "for param in pars:\n",
+    "    print(param, ': ', awg1.parameters[param].label)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## SENDING WAVEFORMS\n",
+    "\n",
+    "There are two supported ways of sending waveforms to the AWG; by making an .awg file, sending and loading that, or by sending waveforms to the User Defined list one by one and putting them in the sequencer. The first method is generally faster."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### MAKING SOME WAVEFORMS\n",
+    "\n",
+    "First, we make a handful of pulse shapes and marker signals to send to the AWG. This should be done with numpy arrays.\n",
+    "\n",
+    "Please note that the waveforms must **not** have values exceeding -1 to 1, and that the markers must **only** have values 0 or 1. Otherwise the AWG misinterprets the signals.\n",
+    "\n",
+    "In this example, we only use two channels of the AWG, namely channel 1 and 3. Extending to one or more should be straightforward."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "noofseqelems = 6\n",
+    "noofpoints = 1200\n",
+    "waveforms = [[], []]  # one list for each channel\n",
+    "m1s = [[], []]\n",
+    "m2s = [[], []]\n",
+    "for ii in range(noofseqelems):\n",
+    "    # waveform and markers for channel 1\n",
+    "    waveforms[0].append(np.sin(np.pi*(ii+1)*np.linspace(0, 1, noofpoints))*np.hanning(noofpoints))\n",
+    "    m1 = np.zeros(noofpoints)\n",
+    "    m1[:int(noofpoints/(ii+1))] = 1\n",
+    "    m1s[0].append(m1)\n",
+    "    m2 = np.zeros(noofpoints)\n",
+    "    m2s[0].append(m2)\n",
+    "\n",
+    "    # waveform and markers for channel two\n",
+    "    wf = np.sin(np.pi*(ii+1)*np.linspace(0, 1, noofpoints))\n",
+    "    wf *= np.arctan(np.linspace(-20, 20, noofpoints))/np.pi*2\n",
+    "    waveforms[1].append(wf)\n",
+    "    m1 = np.zeros(noofpoints)\n",
+    "    m1[:int(noofpoints/(ii+1))] = 1\n",
+    "    m1s[1].append(m1)\n",
+    "    m2 = np.zeros(noofpoints)\n",
+    "    m2s[1].append(m2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "# We can visualise the waveforms and markers\n",
+    "fig = plt.figure()\n",
+    "\n",
+    "ax1 = fig.add_subplot(411)\n",
+    "ax2 = fig.add_subplot(412)\n",
+    "ax3 = fig.add_subplot(413)\n",
+    "ax4 = fig.add_subplot(414)\n",
+    "ax1.set_title('Channel 1 waveform')\n",
+    "ax1.set_ylim([-1.1, 1.1])\n",
+    "ax2.set_title('Channel 1 markers')\n",
+    "ax2.set_ylim([-0.1, 1.1])\n",
+    "ax3.set_title('Channel 3 waveform')\n",
+    "ax3.set_ylim([-1.1, 1.1])\n",
+    "ax4.set_title('Channel 3 markers')\n",
+    "ax4.set_ylim([-0.1, 1.1])\n",
+    "\n",
+    "elemnum = 2  # choose which element to plot\n",
+    "ax1.plot(waveforms[0][elemnum], lw=4, color='#e1cb66')\n",
+    "ax2.plot(m1s[0][elemnum], lw=2, color='#FF4500', alpha=0.6)\n",
+    "ax2.plot(m2s[0][elemnum], lw=2, color='#FF8C00', alpha=0.6)\n",
+    "ax3.plot(waveforms[1][elemnum], lw=4, color='#800080')\n",
+    "ax4.plot(m1s[1][elemnum], lw=2, color='#6A5ACD', alpha=0.6)\n",
+    "ax4.plot(m2s[1][elemnum], lw=2, color='#EE82EE', alpha=0.6)\n",
+    "\n",
+    "plt.tight_layout()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### GETTING THEM THERE VIA AN .AWG FILE\n",
+    "\n",
+    "The fastest way to transfer waveforms to the AWG is by using an .awg file. \n",
+    "\n",
+    "In addition to waveforms and markers, me must specify sequencing options for each sequence element.\n",
+    "\n",
+    "In this example notebook, we just put in some random numbers."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Sequencing options\n",
+    "\n",
+    "# number of repetitions\n",
+    "nreps = [2 for ii in range(noofseqelems)]\n",
+    "# Wait trigger (0 or 1)\n",
+    "trig_waits = [0]*noofseqelems\n",
+    "# Goto state\n",
+    "goto_states = [((ii+1) % noofseqelems)+1 for ii in range(noofseqelems)]\n",
+    "#goto_states = [0]*noofseqelems\n",
+    "# Event jump\n",
+    "jump_tos = [2]*noofseqelems"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Then all the magic happens in the following function call (type help(make_send_and_load_awg_file) to see all possible input parameters):"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "awg1.make_send_and_load_awg_file(waveforms, m1s, m2s,\n",
+    "                                 nreps, trig_waits,\n",
+    "                                 goto_states, jump_tos, channels=[1, 3])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "In order to build a local library of pulse sequences, one may generate and locally save the .awg file."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "filepath = os.path.join(os.getcwd(), 'test_awg_file.awg')\n",
+    "awgfile = awg1.make_and_save_awg_file(waveforms, m1s, m2s, nreps, trig_waits, goto_states,\n",
+    "                                      jump_tos, channels=[1, 3], filename=filepath)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "A saved .awg file may be loaded back into memrory using the helper function `parse_awg_file`,\n",
+    "which returns a tuple containing:\n",
+    "* A tuple matching the call signature of `awg1.make_and_save_awg_file` (see below)\n",
+    "* A dictionary with all the instrument settings of the .awg file"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "(callsig, instdict) = parse_awg_file(filepath)\n",
+    "(waveforms, m1s, m2s, nreps, trig_waits, goto_states, jump_tos, channels) = callsig"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To see how everything fits together, we may now upload the file we just parsed."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "awg1.make_send_and_load_awg_file(waveforms, m1s, m2s,\n",
+    "                                 nreps, trig_waits,\n",
+    "                                 goto_states, jump_tos, channels=channels)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### GETTING THEM THERE BY SENDING WAVEFORMS TO LIST\n",
+    "\n",
+    "An alternative way to transfer waveforms to the AWG is by sending them directly to the waveform list and then putting them into the sequencer. This method is more explicit, but slower for large waveforms."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "# First clear up the waveform list and empty the sequencer\n",
+    "awg1.delete_all_waveforms_from_list()\n",
+    "# Then set the sequence length to the correct number lest not all sequence elements get uploaded\n",
+    "awg1.sequence_length.set(noofseqelems)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#Then transfer the waveforms to the list...\n",
+    "for elnum in range(noofseqelems):\n",
+    "    for chnum in range(2):\n",
+    "        wfmname = f'wfm{elnum:03d}ch{chnum+1}'\n",
+    "        awg1.send_waveform_to_list(waveforms[chnum][elnum], m1s[chnum][elnum], m2s[chnum][elnum], wfmname)\n",
+    "#...upload them to the sequencer...\n",
+    "for elnum in range(noofseqelems):\n",
+    "    for chnum in range(2):\n",
+    "        wfmname = f'wfm{elnum:03d}ch{chnum+1}'\n",
+    "        awg1.set_sqel_waveform(wfmname, chnum+1, elnum+1)\n",
+    "#...and set the sequence elements setting\n",
+    "for elnum in range(noofseqelems):\n",
+    "    awg1.set_sqel_goto_target_index(elnum+1, goto_states[elnum])\n",
+    "    awg1.set_sqel_loopcnt(nreps[elnum], elnum+1)\n",
+    "    awg1.set_sqel_trigger_wait(elnum+1, trig_waits[elnum])\n",
+    "    awg1.set_sqel_event_target_index(elnum+1, jump_tos[elnum])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Running the AWG in lazy mode\n",
+    "\n",
+    "In \"lazy\" mode, the AWG continuously outputs a specific sequence element until the user forces a jump to another element (as opposed to running through the sequence in a particular predefined order). On the hardware side, this is still done by running the AWG in `sequence` mode, but with all sequence elements having their sequencer options set to infinite repetitions.\n",
+    "\n",
+    "Below we assume that the above awg file has been loaded into the sequencer.\n",
+    "\n",
+    "The parameter controlling the sequence element currently being run is called `sequence_pos`. Note that this is also accesible in non-lazy mode, although in that mode its return value quickly becomes obsolete."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": [
+    "from time import sleep\n",
+    "\n",
+    "# Set the corresponding sequencing options\n",
+    "for seq_elem in range(1, awg1.sequence_length.get()+1):\n",
+    "    awg1.set_sqel_loopcnt_to_inf(seq_elem, state=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Now jump around in a \"lazy\" way\n",
+    "awg1.run()\n",
+    "awg1.sequence_pos.set(1)\n",
+    "sleep(2)\n",
+    "awg1.sequence_pos.set(3)\n",
+    "sleep(1)\n",
+    "awg1.sequence_pos.set(2)\n",
+    "sleep(3)\n",
+    "awg1.stop()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "For completeness, we note that infinite repetitions of each sequence element can be achieved by setting the number of repetitions to 0 when casting the awg file."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# number of repetitions\n",
+    "nreps = [0 for ii in range(noofseqelems)]  # Infinite repetitions\n",
+    "\n",
+    "# It doesn't matter what we set the next values to, but the lists need to exist and have the right length\n",
+    "\n",
+    "# Wait trigger (0 or 1)\n",
+    "trig_waits = [0]*noofseqelems\n",
+    "# Goto state\n",
+    "goto_states = [0]*noofseqelems\n",
+    "# Event jump\n",
+    "jump_tos = [0]*noofseqelems\n",
+    "\n",
+    "awg1.make_send_and_load_awg_file(waveforms, m1s, m2s,\n",
+    "                                 nreps, trig_waits,\n",
+    "                                 goto_states, jump_tos, channels=[1, 3])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Finally, close down the instrument."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "awg1.close()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "collapsed": true
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "qcodespip310",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.8 | packaged by conda-forge | (main, Nov 24 2022, 14:07:00) [MSC v.1916 64 bit (AMD64)]"
+  },
+  "nbsphinx": {
+   "execute": "never"
+  },
+  "vscode": {
+   "interpreter": {
+    "hash": "877bdf401a755bd1ca03bfff5025f0aef86a1f0055843840ae8b9a03952abbf7"
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 1
+}

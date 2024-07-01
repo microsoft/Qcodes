@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.stahl.stahl &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.stahl.stahl</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.stahl.stahl</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This is a driver for the Stahl power supplies</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pyvisa.resources.serial</span> <span class="kn">import</span> <span class="n">SerialInstrument</span>
+<span class="kn">from</span> <span class="nn">pyvisa.resources.tcpip</span> <span class="kn">import</span> <span class="n">TCPIPSocket</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ChannelList</span><span class="p">,</span>
+    <span class="n">InstrumentBaseKWArgs</span><span class="p">,</span>
+    <span class="n">InstrumentChannel</span><span class="p">,</span>
+    <span class="n">VisaInstrument</span><span class="p">,</span>
+    <span class="n">VisaInstrumentKWArgs</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Numbers</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">chain</span><span class="p">(</span><span class="o">*</span><span class="n">functions</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The output of the first callable is piped to the input of the second, etc.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; def f():</span>
+<span class="sd">        &gt;&gt;&gt;   return &quot;1.2&quot;</span>
+<span class="sd">        &gt;&gt;&gt; chain(f, float)()  # return 1.2 as float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">make_iter</span><span class="p">(</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">args</span><span class="p">,)</span>
+        <span class="k">return</span> <span class="n">args</span>
+
+    <span class="k">def</span> <span class="nf">inner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="k">for</span> <span class="n">fun</span> <span class="ow">in</span> <span class="n">functions</span><span class="p">:</span>
+            <span class="n">new_args</span> <span class="o">=</span> <span class="n">make_iter</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">fun</span><span class="p">(</span><span class="o">*</span><span class="n">new_args</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">return</span> <span class="n">inner</span>
+
+
+<div class="viewcode-block" id="StahlChannel">
+<a class="viewcode-back" href="../../../../drivers_api/Stahl.html#qcodes.instrument_drivers.stahl.StahlChannel">[docs]</a>
+<span class="k">class</span> <span class="nc">StahlChannel</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+
+
+    <span class="n">acknowledge_reply</span> <span class="o">=</span> <span class="nb">chr</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">VisaInstrument</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">channel_number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A Stahl source channel</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent: Parent instrument</span>
+<span class="sd">            name: Name of the channel</span>
+<span class="sd">            channel_number: The channel number</span>
+<span class="sd">            **kwargs: kwargs to be passed to the base class</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel_string</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel_number</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel_number</span> <span class="o">=</span> <span class="n">channel_number</span>
+
+        <span class="n">_FLOATING_POINT_RE</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;[+\-]?(?:[.,]\d+|\d+(?:[.,]\d*)?)(?:[eE][-+]?\d+)?&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">voltage</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;voltage&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2"> U</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">chain</span><span class="p">(</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;^(</span><span class="si">{</span><span class="n">_FLOATING_POINT_RE</span><span class="si">}</span><span class="s2">)[ ]?V$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">,</span>
+                <span class="n">partial</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">),</span>
+                <span class="nb">float</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_voltage</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">voltage_range</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">voltage_range</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter voltage&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;current&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2"> I</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel_string</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">chain</span><span class="p">(</span>
+                <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;^(</span><span class="si">{</span><span class="n">_FLOATING_POINT_RE</span><span class="si">}</span><span class="s2">)[ ]?mA$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">,</span>
+                <span class="n">partial</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">),</span>
+                <span class="k">lambda</span> <span class="n">ma</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">ma</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span>  <span class="c1"># Convert mA to A</span>
+            <span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter current&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_locked</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;is_locked&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_lock_status</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter is_locked&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_set_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">voltage</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            voltage: The voltage to set.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Normalize the voltage in the range 0 to 1, where 0 is maximum negative</span>
+        <span class="c1"># voltage and 1 is maximum positive voltage</span>
+        <span class="n">voltage_normalized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
+            <span class="n">voltage</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">voltage_range</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">send_string</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2"> CH</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_channel_string</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">voltage_normalized</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">send_string</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">response</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">acknowledge_reply</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Command </span><span class="si">{</span><span class="n">send_string</span><span class="si">}</span><span class="s2"> did not produce an acknowledge reply</span><span class="se">\n</span><span class="s2">    response was: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_lock_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A lock occurs when an output is overloaded</span>
+
+<span class="sd">        Return:</span>
+<span class="sd">            lock_status: True when locked</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">send_string</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2"> LOCK&quot;</span>
+
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">visa_handle</span><span class="o">.</span><span class="n">query_binary_values</span><span class="p">(</span>
+            <span class="n">send_string</span><span class="p">,</span> <span class="n">datatype</span><span class="o">=</span><span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="n">header_fmt</span><span class="o">=</span><span class="s2">&quot;empty&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">channel_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel_number</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">channel_group</span> <span class="o">=</span> <span class="n">channel_index</span> <span class="o">//</span> <span class="mi">4</span>
+        <span class="n">lock_code_group</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="n">channel_group</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">format</span><span class="p">(</span><span class="n">lock_code_group</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">)[</span><span class="n">channel_index</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="Stahl">
+<a class="viewcode-back" href="../../../../drivers_api/Stahl.html#qcodes.instrument_drivers.stahl.Stahl">[docs]</a>
+<span class="k">class</span> <span class="nc">Stahl</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stahl driver.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: instrument name</span>
+<span class="sd">            address: A serial port or TCP/IP VISA address</span>
+<span class="sd">            **kwargs: forwarded to base class</span>
+
+<span class="sd">        The TCP/IP scenario can be used when the Stahl is connected to</span>
+<span class="sd">        a different computer, for example a Raspberry Pi running Linux,</span>
+<span class="sd">        and exposed using something like the following script:</span>
+
+<span class="sd">        ::</span>
+
+<span class="sd">            #!/bin/sh</span>
+<span class="sd">            DEVICE=/dev/ttyUSB0</span>
+<span class="sd">            PORT=8088</span>
+<span class="sd">            echo Listening...</span>
+<span class="sd">            while socat $DEVICE,echo=0,b115200,raw tcp-listen:$PORT,reuseaddr,nodelay; do</span>
+<span class="sd">                echo Restarting...</span>
+<span class="sd">            done</span>
+
+<span class="sd">        In this case the VISA address would be: ``&quot;TCPIP0::hostname::8088::SOCKET&quot;``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visa_handle</span><span class="p">,</span> <span class="n">TCPIPSocket</span><span class="p">):</span>
+            <span class="k">pass</span>  <span class="c1"># allow connection to remote serial device</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visa_handle</span><span class="p">,</span> <span class="n">SerialInstrument</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">visa_handle</span><span class="o">.</span><span class="n">baud_rate</span> <span class="o">=</span> <span class="mi">115200</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;VisaHandle must be either a &#39;SerialInstrument&#39; or a &#39;TCPIPSocket&#39;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">instrument_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_idn_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;IDN&quot;</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">instrument_info</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;channel&quot;</span><span class="p">,</span> <span class="n">StahlChannel</span><span class="p">,</span> <span class="n">snapshotable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">channel_number</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;channel</span><span class="si">{</span><span class="n">channel_number</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="n">StahlChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">channel_number</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+            <span class="n">channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;channel&quot;</span><span class="p">,</span> <span class="n">channels</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;temperature&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">identifier</span><span class="si">}</span><span class="s2"> TEMP&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">chain</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;^TEMP (.*)°C$&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">findall</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;C&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter temperature&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Stahl.ask_raw">
+<a class="viewcode-back" href="../../../../drivers_api/Stahl.html#qcodes.instrument_drivers.stahl.Stahl.ask_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sometimes the instrument returns non-ascii characters in response</span>
+<span class="sd">        strings manually adjust the encoding to latin-1</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visa_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Querying: </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visa_handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visa_handle</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;latin-1&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">visa_log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Response: </span><span class="si">{</span><span class="n">response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span></div>
+
+
+<div class="viewcode-block" id="Stahl.parse_idn_string">
+<a class="viewcode-back" href="../../../../drivers_api/Stahl.html#qcodes.instrument_drivers.stahl.Stahl.parse_idn_string">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">parse_idn_string</span><span class="p">(</span><span class="n">idn_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return:</span>
+<span class="sd">             dict: The dict contains the following keys &quot;model&quot;,</span>
+<span class="sd">             &quot;serial_number&quot;, &quot;voltage_range&quot;,&quot;n_channels&quot;, &quot;output_type&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(HV|BS)(\d</span><span class="si">{3}</span><span class="s2">) (\d</span><span class="si">{3}</span><span class="s2">) (\d</span><span class="si">{2}</span><span class="s2">) ([buqsm])&quot;</span><span class="p">,</span> <span class="n">idn_string</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Unexpected instrument response. Perhaps the model of the &quot;</span>
+                <span class="s2">&quot;instrument does not match the drivers expectation or a &quot;</span>
+                <span class="s2">&quot;firmware upgrade has taken place. Please get in touch &quot;</span>
+                <span class="s2">&quot;with a QCoDeS core developer&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">converters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                <span class="s2">&quot;serial_number&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                <span class="s2">&quot;voltage_range&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                <span class="s2">&quot;n_channels&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                <span class="s2">&quot;output_type&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="s2">&quot;bipolar&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;u&quot;</span><span class="p">:</span> <span class="s2">&quot;unipolar&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="s2">&quot;quadrupole&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;s&quot;</span><span class="p">:</span> <span class="s2">&quot;steerer&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="s2">&quot;bipolar milivolt&quot;</span><span class="p">,</span>
+                <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">converter</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">converter</span><span class="p">),</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">converters</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">result</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="Stahl.get_idn">
+<a class="viewcode-back" href="../../../../drivers_api/Stahl.html#qcodes.instrument_drivers.stahl.Stahl.get_idn">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_idn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The Stahl sends a uncommon IDN string which does not include a</span>
+<span class="sd">        firmware version.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="s2">&quot;Stahl&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span><span class="p">,</span>
+            <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">identifier</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

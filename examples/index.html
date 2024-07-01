@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Examples of using QCoDeS &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="QCoDeS config" href="Configuring_QCoDeS.html" />
+    <link rel="prev" title="15 minutes to QCoDeS" href="15_minutes_to_QCoDeS.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Examples of using QCoDeS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-examples">Basic examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Station.html">Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#parameters">Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Complex_Parameters.html">Complex Numbers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Legacy_Parameters.html">Legacy parameter examples</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Parameters.html">Parameters in QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Scaled_Parameter.html">ScaledParameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dataset">DataSet</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#plotting">Plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotting/auto_color_scale.html">Auto Color Scale</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#drivers">Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#writing-drivers">Writing Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Instruments.html">Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#logging">Logging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="logging/logfile_parsing.html">Logfile parsing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logging/logging_example.html">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Examples of using QCoDeS</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="examples-of-using-qcodes">
+<h1>Examples of using QCoDeS<a class="headerlink" href="#examples-of-using-qcodes" title="Link to this heading"></a></h1>
+<p>These are all examples based on notebooks that can be found in
+<a class="reference external" href="https://github.com/QCoDeS/Qcodes/tree/main/docs/examples">https://github.com/QCoDeS/Qcodes/tree/main/docs/examples</a> and below. To experiment with the
+examples you can download them directly from the git repository.</p>
+<section id="basic-examples">
+<h2>Basic examples<a class="headerlink" href="#basic-examples" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Module-imports">Module imports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Instruments">Instruments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Parameters">Parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Example-of-setting-and-getting-parameters">Example of setting and getting parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Stations">Stations</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Adding-instruments-to-the-station">Adding instruments to the station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Inspecting-the-station">Inspecting the station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Saving-and-loading-configurations.">Saving and loading configurations.</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Databases-and-experiments.">Databases and experiments.</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Initialize-or-create-a-database">Initialize or create a database</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Load-or-create-an-experiment">Load or create an experiment</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Measurement-Context-Manager">Measurement Context Manager</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Registering-parameters-to-measure">Registering parameters to measure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Example-measurement-loop">Example measurement loop</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Using-the-doNd-multi-dimensional-measurement-utility">Using the doNd multi-dimensional measurement utility</a></li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Exploring-datasets-and-databases">Exploring datasets and databases</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#List-all-datasets-in-a-database.">List all datasets in a database.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#List-all-the-datasets-in-an-experiment">List all the datasets in an experiment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Load-the-data-set-using-one-or-more-specifications">Load the data set using one or more specifications</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Plotting-datasets">Plotting datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#QCoDeS-measurements-live-plotting-with-Plottr">QCoDeS measurements live plotting with Plottr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Get-data-of-specific-parameter-of-a-dataset">Get data of specific parameter of a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Export-data-to-pandas-dataframe">Export data to pandas dataframe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Export-data-to-xarray">Export data to xarray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Explore-the-data-using-an-interactive-widget">Explore the data using an interactive widget</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="15_minutes_to_QCoDeS.html#Further-Reading">Further Reading</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#QCoDeS-configuration">QCoDeS configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#QCoDeS-instrument-drivers">QCoDeS instrument drivers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html#QCoDeS-logging">QCoDeS logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Configuring_QCoDeS.html">QCoDeS config</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Configuring_QCoDeS.html#Configuring-QCoDeS">Configuring QCoDeS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Configuring_QCoDeS.html#Saving-changes">Saving changes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Configuring_QCoDeS.html#Using-custom-variables-in-your-experiment:">Using custom variables in your experiment:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Configuring_QCoDeS.html#Changing-core-values">Changing core values</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Station.html">Station</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Station.html#What-is-a-Station?">What is a Station?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Station.html#How-to-create-a-Station-and-work-with-it?">How to create a Station and work with it?</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#Creating-a-Station">Creating a Station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#Accessing-Station-components">Accessing Station components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#Removing-components-from-a-Station">Removing components from a Station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#Default-Station">Default Station</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Station.html#Snapshot-of-a-Station">Snapshot of a Station</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Station.html#Configuring-the-Station-by-using-a-YAML-configuration-file">Configuring the Station by using a YAML configuration file</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#Example-of-YAML-Station-configuration">Example of YAML Station configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#QCoDeS-configuration-entries-related-to-Station">QCoDeS configuration entries related to Station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#Using-Station-with-YAML-configuration-files">Using Station with YAML configuration files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Station.html#Setting-up-Visual-Studio-Code-to-work-with-station-files">Setting up Visual Studio Code to work with station files</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Link to this heading"></a></h2>
+<p>These notebooks provide some examples of how to tweak and customize the QCoDeS parameters to achieve different ends.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="Parameters/Complex_Parameters.html">Complex Numbers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Complex_Parameters.html#Complex-valued-parameters">Complex-valued parameters</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Complex_Parameters.html#Scalar-valued-parameters">Scalar-valued parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Complex_Parameters.html#Array-valued-parameters">Array-valued parameters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Parameters/Legacy_Parameters.html">Legacy parameter examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Legacy_Parameters.html#ArrayParameter">ArrayParameter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Parameters/MultiParameter.html">MultiParameter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html">ParameterWithSetpoints with setpoints defined on another instrument.</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Parameter-With-Setpoints-defined-on-a-different-instrument.html#Measurement">Measurement</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Parameters/Parameters.html">Parameters in QCoDeS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Parameters.html#Responsibilities">Responsibilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Parameters.html#Examples">Examples</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Parameters.html#Imports">Imports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Parameters.html#Simple-parameter-subclass">Simple parameter subclass</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="Parameters/Parameters.html#Parameter-definition">Parameter definition</a></li>
+<li class="toctree-l4"><a class="reference internal" href="Parameters/Parameters.html#Demonstration-of-the-get-method">Demonstration of the get method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="Parameters/Parameters.html#Demonstration-of-the-set-method">Demonstration of the set method</a></li>
+<li class="toctree-l4"><a class="reference internal" href="Parameters/Parameters.html#Inspecting-parameter-attributes">Inspecting parameter attributes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Parameters.html#Virtual-Parameters">Virtual Parameters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="Parameters/Parameters.html#Manually-creating-a-virtual-parameter">Manually creating a virtual parameter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="Parameters/Parameters.html#Instrument-Parameters">Instrument Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Parameters/Parameters.html#Validating-parameters">Validating parameters</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Parameters/Scaled_Parameter.html">ScaledParameter</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Scaled_Parameter.html#Resistive-voltage-divider">Resistive voltage divider</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Scaled_Parameter.html#Voltage-multiplier">Voltage multiplier</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Scaled_Parameter.html#Transimpedance-amplifier">Transimpedance amplifier</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Parameters/Simple-Example-of-ParameterWithSetpoints.html">Simple Example of ParameterWithSetpoints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Simple-Example-of-ParameterWithSetpoints.html#Measurement">Measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Parameters/Simple-Example-of-ParameterWithSetpoints.html#Measure-a-ParameterWithSetpoints-while-sweeping-another-parameter">Measure a ParameterWithSetpoints while sweeping another parameter</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="dataset">
+<h2>DataSet<a class="headerlink" href="#dataset" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html">Accessing data in a DataSet</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Preparation:-a-DataSet-from-a-dummy-Measurement">Preparation: a DataSet from a dummy Measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#DataSet-indentification">DataSet indentification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Parameters-in-the-DataSet">Parameters in the DataSet</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Run-description">Run description</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Interdependencies">Interdependencies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Dependencies,-inferences,-standalones">Dependencies, inferences, standalones</a></li>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#ParamSpecBase-objects">ParamSpecBase objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Other-useful-methods-and-properties">Other useful methods and properties</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Shortcuts-to-important-parameters">Shortcuts to important parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Note-on-inferences">Note on inferences</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Note-on-ParamSpec's">Note on ParamSpec’s</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Getting-data-from-DataSet">Getting data from DataSet</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#get_parameter_data---the-powerhorse"><code class="docutils literal notranslate"><span class="pre">get_parameter_data</span></code> - the powerhorse</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Avoid-excessive-calls-to-loading-data">Avoid excessive calls to loading data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Loading-data-of-selected-parameters">Loading data of selected parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#to_pandas_dataframe_dict-and-to_pandas_dataframe---for-pandas-fans"><code class="docutils literal notranslate"><span class="pre">to_pandas_dataframe_dict</span></code> and <code class="docutils literal notranslate"><span class="pre">to_pandas_dataframe</span></code> - for <code class="docutils literal notranslate"><span class="pre">pandas</span></code> fans</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Exporting-to-other-file-formats">Exporting to other file formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Accessing-data-in-DataSet.html#Data-extraction-into-%22other%22-formats">Data extraction into “other” formats</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Benchmarking.html">Dataset Benchmarking</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Benchmarking.html#Setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Benchmarking.html#Baseline:-Generate-data">Baseline: Generate data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Benchmarking.html#Add-to-dataset-inside-double-loop">Add to dataset inside double loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Benchmarking.html#Add-the-data-in-outer-loop-and-store-as-np-array">Add the data in outer loop and store as np array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Benchmarking.html#Save-once-after-loop">Save once after loop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Benchmarking.html#Array-parameter">Array parameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Benchmarking.html#Insert-many">Insert many</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html">DataSet class walkthrough</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-DataSet-object-creation">Note on DataSet object creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Preparation:-a-DataSet-from-a-dummy-Measurement">Preparation: a DataSet from a dummy Measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-immutability-of-DataSet">Note on immutability of DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#DataSet-indentity">DataSet indentity</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#GUID">GUID</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Captured-run-ID">Captured run ID</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-run-ID">Note on run ID</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Experiment-and-sample-names">Experiment and sample names</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#DataSet-name">DataSet name</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-experiments">Note on experiments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-counter">Note on counter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#DataSet-info">DataSet info</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Database-file">Database file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Timestamps">Timestamps</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Snapshot">Snapshot</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Parent-dataset-links">Parent dataset links</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-DataSet-states">Note on DataSet states</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-metadata">Note on metadata</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Parameters-in-DataSet">Parameters in DataSet</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Interdependencies">Interdependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Shortcuts-to-important-parameters">Shortcuts to important parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Note-on-ParamSpec's">Note on ParamSpec’s</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Data-access-in-DataSet">Data access in DataSet</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#Not-recommended-data-access-methods">Not recommended data access methods</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/DataSet-class-walkthrough.html#What-about-the-rest?">What about the rest?</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Database.html">Databases</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Database.html#Imports">Imports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Database.html#Initialization,-creation-and-upgrade">Initialization, creation and upgrade</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Setup">Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Main-Module-Imports">Main Module Imports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Other-imports">Other imports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Set-up-database-and-experiment">Set up database and experiment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Dummy-Parameter-Creation">Dummy Parameter Creation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Datasaver_Builder.html#ParameterWithSetpoints-Creation">ParameterWithSetpoints Creation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Using-the-datasaver_builder">Using the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Using-dond_into">Using <code class="docutils literal notranslate"><span class="pre">dond_into</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Using-datasaver_builder-with-dond_into-and-LinSweeper">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> with <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> and <code class="docutils literal notranslate"><span class="pre">LinSweeper</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Datasaver_Builder.html#Using-datasaver_builder-and-dond_into-with-ParameterWithSetpoints">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> with <code class="docutils literal notranslate"><span class="pre">ParameterWithSetpoints</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Dataset_Performance.html">DataSet Performance</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Dataset_Performance.html#Comparison-between-numeric/array-data-and-binary-blob">Comparison between numeric/array data and binary blob</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Dataset_Performance.html#Case1:-Short-experiment-time">Case1: Short experiment time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Dataset_Performance.html#Case2:-Long-experiment-time">Case2: Long experiment time</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Dataset_Performance.html#Loading-the-data">Loading the data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Exporting-data-to-other-file-formats.html#Setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Exporting-data-to-other-file-formats.html#Exporting-data-manually">Exporting data manually</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Exporting-data-to-other-file-formats.html#Export-data-automatically">Export data automatically</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Exporting-data-to-other-file-formats.html#Automatically-post-process-exported-datasets.">Automatically post process exported datasets.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Exporting-data-to-other-file-formats.html#Importing-exported-datasets-into-a-new-database">Importing exported datasets into a new database</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Extracting-runs-from-one-DB-file-to-another.html#Setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Extracting-runs-from-one-DB-file-to-another.html#Extraction">Extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Extracting-runs-from-one-DB-file-to-another.html#Merging-data-from-2-databases">Merging data from 2 databases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Extracting-runs-from-one-DB-file-to-another.html#Uniquely-identifying-and-loading-runs">Uniquely identifying and loading runs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/InMemoryDataSet.html">In memory dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/InMemoryDataSet.html#Reloading-data-from-db-and-exported-file">Reloading data from db and exported file</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Linking%20to%20parent%20datasets.html">Linking to parent datasets</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Linking%20to%20parent%20datasets.html#Example-1:-Measuring-and-then-fitting">Example 1: Measuring and then fitting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Linking%20to%20parent%20datasets.html#Step-1:-measure-raw-data">Step 1: measure raw data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Linking%20to%20parent%20datasets.html#Step-2:-Set-up-a-fit-%22measurement%22">Step 2: Set up a fit “measurement”</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Measuring%20X%20as%20a%20function%20of%20time.html#Prepatory-footwork:-setup-database-and-experiment">Prepatory footwork: setup database and experiment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Measuring%20X%20as%20a%20function%20of%20time.html#The-measurement-itself">The measurement itself</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#A-single,-simple-1D-sweep">A single, simple 1D sweep</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Rescaling-units-and-ticks">Rescaling units and ticks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Two-interleaved-1D-sweeps">Two interleaved 1D sweeps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Regular-2D-rectangular-sweep-scan">Regular 2D rectangular sweep scan</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Customisations">Customisations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Changing-the-colormap">Changing the colormap</a></li>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Setting-the-colorscale-to-logarithmic">Setting the colorscale to logarithmic</a></li>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Setting-limits-on-the-colorscale">Setting limits on the colorscale</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Warped-2D-rectangular-sweep-scan">Warped 2D rectangular sweep scan</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Interrupted-2D-scans-(a-hole-in-the-cheese)">Interrupted 2D scans (a hole in the cheese)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Fancy-plotting">Fancy plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20Plotting%20Tutorial.html#Rasterizing">Rasterizing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#1D-plotting">1D plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Category-is-the-independent-parameter">Category is the independent parameter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Category-is-the-dependent-parameter">Category is the dependent parameter</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Both-variables-are-categorical">Both variables are categorical</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#2D-plotting">2D plotting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Categorical-data-on-the-x-axis">Categorical data on the x-axis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Categorical-data-on-the-y-axis">Categorical data on the y-axis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Categorical-data-on-the-z-axis">Categorical data on the z-axis</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Gridded-setpoints">Gridded setpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Scattered-setpoints">Scattered setpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20categorical%20data.html#Categorical-data-on-x-axis-and-z-axis">Categorical data on x-axis and z-axis</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20complex%20data.html#Case-A:-a-complex-number-as-a-function-of-a-real-number">Case A: a complex number as a function of a real number</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20complex%20data.html#Case-B:-a-complex-number-as-a-function-of-two-real-numbers">Case B: a complex number as a function of two real numbers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Offline%20plotting%20with%20complex%20data.html#Case-C:-a-real-number-as-a-function-of-a-complex-number">Case C: a real number as a function of a complex number</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Paramtypes%20explained.html">Paramtypes explained</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Paramtypes%20explained.html#Numeric">Numeric</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Paramtypes%20explained.html#Numeric-example-1">Numeric example 1</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Paramtypes%20explained.html#Array">Array</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Paramtypes%20explained.html#Array-example-1">Array example 1</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Paramtypes%20explained.html#Array-example-2">Array example 2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Paramtypes%20explained.html#Array-example-3">Array example 3</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Paramtypes%20explained.html#Text">Text</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html#Call-signature">Call signature</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html#Frequency">Frequency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html#Order">Order</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html#Example-1:-A-notification">Example 1: A notification</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html#Example-2:-ASCII-Plotter">Example 2: ASCII Plotter</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Implementing-a-measurement">Implementing a measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Accessing-and-exporting-the-measured-data">Accessing and exporting the measured data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Reloading-datasets">Reloading datasets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#DataSet-GUID">DataSet GUID</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Specifying-shape-of-measurement">Specifying shape of measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Performing-several-measuments-concurrently">Performing several measuments concurrently</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Interrupting-measurements-early">Interrupting measurements early</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#QCoDeS-Array-and-MultiParameter">QCoDeS Array and MultiParameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Avoiding-verbosity-of-the-Measurement-context-manager-for-simple-measurements">Avoiding verbosity of the Measurement context manager for simple measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Optimizing-measurement-time">Optimizing measurement time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#The-power-of-the-Measurement-context-manager-construct">The power of the Measurement context manager construct</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Finer-sampling-in-2D">Finer sampling in 2D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Simple-adaptive-2D-sweep">Simple adaptive 2D sweep</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Random-sampling">Random sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Optimiser">Optimiser</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Subscriptions">Subscriptions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Subscription-example-1:-simple-printing">Subscription example 1: simple printing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html#Subscription-example-2:-using-the-state">Subscription example 2: using the state</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Saving_data_in_the_background.html">Saving data in the background</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Saving_data_in_the_background.html#Can-I-haz-speedup?">Can I haz speedup?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Saving_data_in_the_background.html#Example-Measurement">Example Measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Saving_data_in_the_background.html#Data-saving-in-the-main-thread">Data saving in the main thread</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Saving_data_in_the_background.html#Saving-in-a-background-thread">Saving in a background thread</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Saving_data_in_the_background.html#Conclusion">Conclusion</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/The-Experiment-Container.html">The Experiment Container</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/The-Experiment-Container.html#Required-imports">Required imports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/The-Experiment-Container.html#The-experiments-inside-the-database">The experiments inside the database</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Threaded%20data%20acquisition.html">Threaded data acquisition</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Threaded%20data%20acquisition.html#Measurement-1:-Non-threaded-data-acquisition">Measurement 1: Non threaded data acquisition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Threaded%20data%20acquisition.html#Measurement-2:-Threaded-data-acquisition">Measurement 2: Threaded data acquisition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Threaded%20data%20acquisition.html#Non-threaded-and-threaded-data-acquisition-with-do1d">Non threaded and threaded data acquisition with do1d</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Threaded%20data%20acquisition.html#Measurement-3:-Non-threaded-data-acquisition-with-do1d">Measurement 3: Non threaded data acquisition with do1d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Threaded%20data%20acquisition.html#Measurement-4:-Threaded-data-acquisition-with-do1d">Measurement 4: Threaded data acquisition with do1d</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#Setup-before-measurement">Setup before measurement</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#1D-measurement">1D measurement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#Measurement">Measurement</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#do1d">do1d</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#2D-measurement">2D measurement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#id2">Measurement</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#do2d">do2d</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#Handling-plot,-experiment,-and-measurement_name-with-doNd">Handling plot, experiment, and measurement_name with doNd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#Generalized-n-dimensional-measurement-(dond)">Generalized n-dimensional measurement (<code class="docutils literal notranslate"><span class="pre">dond</span></code>)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#dond-with-multiple-measurements-(multiple-datasets)">dond with multiple measurements (multiple datasets)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#Sweep-multiple-parameters-in-parallel">Sweep multiple parameters in parallel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#Getting-a-value-after-setting-it.">Getting a value after setting it.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html#Actions-in-dond">Actions in dond</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_register_name.html#Setup">Setup</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_register_name.html#Module-Imports">Module Imports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Using_register_name.html#Database-and-Experiment-creation">Database and Experiment creation</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_register_name.html#Creating-a-Parameter-with-a-register_name">Creating a Parameter with a <code class="docutils literal notranslate"><span class="pre">register_name</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_register_name.html#Why-is-this-useful?">Why is this useful?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Using_register_name.html#ParameterWithSetpoints">ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html">Working with snapshots</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#Useful-imports">Useful imports</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#What-is-a-snapshot?">What is a snapshot?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#How-to-create-a-snapshot?">How to create a snapshot?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#Snapshot-example-for-Parameter-object">Snapshot example for Parameter object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#Snapshot-of-an-Instrument">Snapshot of an Instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#Station-and-its-snapshot">Station and its snapshot</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#Saving-snapshot-next-to-the-measurement-data">Saving snapshot next to the measurement data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#Extracting-snapshot-from-dataset">Extracting snapshot from dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working%20with%20snapshots.html#Comparing-how-two-DataSets-were-taken">Comparing how two DataSets were taken</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Working-With-Pandas-and-XArray.html#Setup">Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Working-With-Pandas-and-XArray.html#Working-with-Pandas">Working with Pandas</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Working-With-Pandas-and-XArray.html#Working-with-XArray">Working with XArray</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="DataSet/Working-With-Pandas-and-XArray.html#Working-with-XArray-on-non-gridded-data.">Working with XArray on non gridded data.</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html#Measurement-1:-Frequency-sweeps">Measurement 1: Frequency sweeps</a></li>
+<li class="toctree-l2"><a class="reference internal" href="DataSet/Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html#Measurement-2:-Triangle-Traces">Measurement 2: Triangle Traces</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l1"><a class="reference internal" href="DataSet/Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</div>
+</section>
+<section id="plotting">
+<h2>Plotting<a class="headerlink" href="#plotting" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html">How to use Plottr with QCoDeS for live plotting?</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#Mock-Set-up">Mock Set-up</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#Initialize/Create-Database">Initialize/Create Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#Launch-Plottr-Inspectr">Launch Plottr Inspectr</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#If-plottr-is-installed-in-same-environment-as-measurements-environment">If plottr is installed in same environment as measurements environment</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#Measurement">Measurement</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#Measurement-with-run-context-manager">Measurement with run context manager</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#Measurement-with-doNd">Measurement with doNd</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/How-to-use-Plottr-with-QCoDeS-for-live-plotting.html#Live-Plot">Live Plot</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="plotting/auto_color_scale.html">Auto Color Scale</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#TL;DR">TL;DR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#Table-of-contents">Table of contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#Introduction-to-the-problem-and-risks">Introduction to the problem and risks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#Using-the-automatic-color-scale">Using the automatic color scale</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="plotting/auto_color_scale.html#Example-1:-outliers-in-homogeneous-data">Example 1: outliers in homogeneous data</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#Details-of-the-calculation">Details of the calculation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#Cutoff-Percentiles">Cutoff Percentiles</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="plotting/auto_color_scale.html#Example-2:-data-on-noisy-background-with-outliers">Example 2: data on noisy background with outliers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotting/auto_color_scale.html#Asymmetric-cutoffs">Asymmetric cutoffs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#Defaults-and-customizing-the-auto-color-scaling">Defaults and customizing the auto color scaling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="plotting/auto_color_scale.html#Using-auto-color-scaling-in-custom-plotting">Using auto color scaling in custom plotting</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="drivers">
+<h2>Drivers<a class="headerlink" href="#drivers" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l1"><a class="reference internal" href="driver_examples/Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</div>
+</section>
+<section id="writing-drivers">
+<h2>Writing Drivers<a class="headerlink" href="#writing-drivers" title="Link to this heading"></a></h2>
+<p>This folder contains examples that are useful when you want to write your own driver for a new instrument.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html">A ParameterWithSetpoints Example with Dual Setpoints</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html#Measurement-1:-Time-Trace">Measurement 1: Time Trace</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html#Measurement-2:-Periodogram">Measurement 2: Periodogram</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/A-ParameterWithSetpoints-Example-with-Dual-Setpoints.html#Measurement-3:-2D-Sweeping">Measurement 3: 2D Sweeping</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html">Creating QCoDeS instrument drivers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Base-Classes">Base Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Parameters-and-Channels">Parameters and Channels</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#What's-a-Parameter?">What’s a Parameter?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Adding-a-Parameter-to-an-instrument.">Adding a Parameter to an instrument.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Functions">Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#What's-an-InstrumentModule,-then?">What’s an InstrumentModule, then?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Naming-Instruments">Naming Instruments</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Naming-the-Instrument-class">Naming the Instrument class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Naming-InstrumentModule-classes">Naming InstrumentModule classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Driver-supporting-multiple-models.">Driver supporting multiple models.</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Logging">Logging</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#VisaInstrument:-Simple-example">VisaInstrument: Simple example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#VisaInstrument:-a-more-involved-example">VisaInstrument: a more involved example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#VisaInstruments:-Simulating-the-instrument">VisaInstruments: Simulating the instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#DLL-based-instruments">DLL-based instruments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Manual-instruments">Manual instruments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Custom-Parameter-classes">Custom Parameter classes</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#On/Off-parameters">On/Off parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Dynamically-adding-and-removing-parameters">Dynamically adding and removing parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Handling-interruption-of-measurements">Handling interruption of measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Organization">Organization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Instrument-Drivers.html#Documentation">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html">Creating Simulated PyVISA Instruments</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#What?">What?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#Not!">Not!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#How?">How?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#Example:-Weinschel8320">Example: Weinschel8320</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#The-.yaml-file">The <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#The-test">The test</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#Congratulations!-That-was-it.">Congratulations! That was it.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#Bonus-example:-including-parameters-in-the-simulated-instrument">Bonus example: including parameters in the simulated instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Creating-Simulated-PyVISA-Instruments.html#That's-it!">That’s it!</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="writing_drivers/Instruments.html">Instrument</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Instruments.html#Instrument-responsibilities:">Instrument responsibilities:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Instruments.html#Instruments-can-fail:">Instruments can fail:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/Instruments.html#Example-notebooks-about-Instruments:">Example notebooks about Instruments:</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="writing_drivers/abstract_instruments.html">Abstract Instruments and parameters</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/abstract_instruments.html#We-cannot-instantiate-a-Instrument-with-abstract-parameters.">We cannot instantiate a Instrument with abstract parameters.</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writing_drivers/abstract_instruments.html#Units-of-parameters-defined-in-sub-classes-must-match-units-defined-in-the-base-class">Units of parameters defined in sub classes <em>must</em> match units defined in the base class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="writing_drivers/abstract_instruments.html#Working-subclass">Working subclass</a></li>
+</ul>
+</div>
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="logging/logfile_parsing.html">Logfile parsing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="logging/logfile_parsing.html#Get-the-query-time-for-the-SR860">Get the query time for the SR860</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logfile_parsing.html#Find-the-elapsed-times">Find the elapsed times</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="logging/logfile_parsing.html#Visualise!">Visualise!</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="logging/logging_example.html">Logging</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#TL;DR">TL;DR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Contents">Contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Instrument-communication-loggers">Instrument communication loggers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Set-up-logging-in-QCoDeS">Set up logging in QCoDeS</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="logging/logging_example.html#QCoDeS-default-handlers">QCoDeS default handlers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logging/logging_example.html#IPython-command-history">IPython command history</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Temporarily-elevating-the-logging-level">Temporarily elevating the logging level</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Filtering-log-messages-by-instrument">Filtering log messages by instrument</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Capturing-Pandas.DataFrame">Capturing Pandas.DataFrame</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging/logging_example.html#Telemetry">Telemetry</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="15_minutes_to_QCoDeS.html" class="btn btn-neutral float-left" title="15 minutes to QCoDeS" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Configuring_QCoDeS.html" class="btn btn-neutral float-right" title="QCoDeS config" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

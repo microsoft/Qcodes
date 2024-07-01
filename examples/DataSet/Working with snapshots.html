@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Working with snapshots &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Working with Pandas and XArray" href="Working-With-Pandas-and-XArray.html" />
+    <link rel="prev" title="Using the register_name kwarg to select how a parameter is saved to a dataset" href="Using_register_name.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Working with snapshots</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Useful-imports">Useful imports</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Snapshot-example-for-Parameter-object">Snapshot example for Parameter object</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Snapshot-of-an-Instrument">Snapshot of an Instrument</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Station-and-its-snapshot">Station and its snapshot</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Working with snapshots</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/DataSet/Working with snapshots.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/Working with snapshots.ipynb">docs/examples/DataSet/Working with snapshots.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/Working with snapshots.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Working-with-snapshots">
+<h1>Working with snapshots<a class="headerlink" href="#Working-with-snapshots" title="Link to this heading"></a></h1>
+<p>Here, the following topics are going to be covered:</p>
+<ul class="simple">
+<li><p>What is a snapshot</p></li>
+<li><p>How to create it</p></li>
+<li><p>How it is saved next to the measurement data</p></li>
+<li><p>How to extract snapshot from the dataset</p></li>
+</ul>
+<section id="Useful-imports">
+<h2>Useful imports<a class="headerlink" href="#Useful-imports" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">json</span>  <span class="c1"># for converting JSON data into python &#39;dict&#39;</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>  <span class="c1"># for pretty-printing python variables like &#39;dict&#39;</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Measurement</span><span class="p">,</span>
+    <span class="n">initialise_or_create_database_at</span><span class="p">,</span>
+    <span class="n">load_or_create_experiment</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.mock_instruments</span> <span class="kn">import</span> <span class="n">DummyInstrument</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+<span class="kn">from</span> <span class="nn">qcodes.station</span> <span class="kn">import</span> <span class="n">Station</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : /home/runner/.qcodes/logs/240701-18639-qcodes.log
+</pre></div></div>
+</div>
+<section id="What-is-a-snapshot?">
+<h3>What is a snapshot?<a class="headerlink" href="#What-is-a-snapshot?" title="Link to this heading"></a></h3>
+<p>Often times experiments comprise a complex network of interconnected instruments. Their numerous settings define the overall behavior of the experimental setup. Obviously, the experimental setup has a direct impact on the measured data which is of prime interest for researchers. In order to capture this link, the measured data should have metadata associated with it. An important part of that metadata is a captured state of the experimental setup. In QCoDeS terms, this is called snapshot.</p>
+</section>
+<section id="How-to-create-a-snapshot?">
+<h3>How to create a snapshot?<a class="headerlink" href="#How-to-create-a-snapshot?" title="Link to this heading"></a></h3>
+<p>All QCoDeS instruments and parameters (and some other objects too, like <code class="docutils literal notranslate"><span class="pre">InstrumentChannel</span></code>s) support snapshotting, which means that they provide a method to retrieve their state.</p>
+<p>Let’s look at snapshots of various objects.</p>
+</section>
+</section>
+<section id="Snapshot-example-for-Parameter-object">
+<h2>Snapshot example for Parameter object<a class="headerlink" href="#Snapshot-example-for-Parameter-object" title="Link to this heading"></a></h2>
+<p>Let’s create a <code class="docutils literal notranslate"><span class="pre">Parameter</span></code>, call its <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> method, and then inspect the output of that method.</p>
+<p>The returned snapshot is a python dictionary that reflects all the important properties of that parameter (check the name, label, unit, and even value).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">p</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Parameter P&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;kg&#39;</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+
+<span class="n">snapshot_of_p</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+
+<span class="n">pprint</span><span class="p">(</span><span class="n">snapshot_of_p</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+ &#39;full_name&#39;: &#39;p&#39;,
+ &#39;inter_delay&#39;: 0,
+ &#39;label&#39;: &#39;Parameter P&#39;,
+ &#39;name&#39;: &#39;p&#39;,
+ &#39;post_delay&#39;: 0,
+ &#39;raw_value&#39;: 123,
+ &#39;ts&#39;: &#39;2024-07-01 19:34:25&#39;,
+ &#39;unit&#39;: &#39;kg&#39;,
+ &#39;validators&#39;: [],
+ &#39;value&#39;: 123}
+</pre></div></div>
+</div>
+<p>In case you want to use the snapshot object in your code, you can refer to its contents in the same way as you work with python dictionaries, for example:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Value of </span><span class="si">{</span><span class="n">snapshot_of_p</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> was </span><span class="si">{</span><span class="n">snapshot_of_p</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> (when it was snapshotted).&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Value of Parameter P was 123 (when it was snapshotted).
+</pre></div></div>
+</div>
+<p>Note that the implementation of a particular QCoDeS object defines which attributes are snapshotted and how. For example, <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> implements a keyword argument <code class="docutils literal notranslate"><span class="pre">snapshot_value</span></code> which allows to choose if the value of the parameter is snapshotted (the reasons for this are out of scope of this article). (Another interesting keyword argument of <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> that is realated to snapshotting is <code class="docutils literal notranslate"><span class="pre">snapshot_get</span></code> - refer to <code class="docutils literal notranslate"><span class="pre">Parameters</span></code>’s docstring for more information.)</p>
+<p>Below is a demonstration of the <code class="docutils literal notranslate"><span class="pre">snapshot_value</span></code> keyword argument, notice that the value of the parameter is not part of the snapshot.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">q</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;q&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Parameter Q&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="n">snapshot_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">456</span><span class="p">)</span>
+
+<span class="n">snapshot_of_q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+
+<span class="n">pprint</span><span class="p">(</span><span class="n">snapshot_of_q</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+ &#39;full_name&#39;: &#39;q&#39;,
+ &#39;inter_delay&#39;: 0,
+ &#39;label&#39;: &#39;Parameter Q&#39;,
+ &#39;name&#39;: &#39;q&#39;,
+ &#39;post_delay&#39;: 0,
+ &#39;ts&#39;: None,
+ &#39;unit&#39;: &#39;A&#39;,
+ &#39;validators&#39;: []}
+</pre></div></div>
+</div>
+</section>
+<section id="Snapshot-of-an-Instrument">
+<h2>Snapshot of an Instrument<a class="headerlink" href="#Snapshot-of-an-Instrument" title="Link to this heading"></a></h2>
+<p>Now let’s have a brief look at snapshots of instruments. For the sake of exercise, we are going to use a “dummy” instrument.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># A dummy instrument with two parameters, &quot;input&quot; and &quot;output&quot;, plus a third one we&#39;ll use later.</span>
+<span class="n">instr</span> <span class="o">=</span> <span class="n">DummyInstrument</span><span class="p">(</span><span class="s1">&#39;instr&#39;</span><span class="p">,</span> <span class="n">gates</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="s1">&#39;gain&#39;</span><span class="p">])</span>
+<span class="n">instr</span><span class="o">.</span><span class="n">gain</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">snapshot_of_instr</span> <span class="o">=</span> <span class="n">instr</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+
+<span class="n">pprint</span><span class="p">(</span><span class="n">snapshot_of_instr</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{   &#39;__class__&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+    &#39;functions&#39;: {},
+    &#39;label&#39;: &#39;instr&#39;,
+    &#39;name&#39;: &#39;instr&#39;,
+    &#39;parameters&#39;: {   &#39;IDN&#39;: {   &#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                 &#39;full_name&#39;: &#39;instr_IDN&#39;,
+                                 &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                 &#39;instrument_name&#39;: &#39;instr&#39;,
+                                 &#39;inter_delay&#39;: 0,
+                                 &#39;label&#39;: &#39;IDN&#39;,
+                                 &#39;name&#39;: &#39;IDN&#39;,
+                                 &#39;post_delay&#39;: 0,
+                                 &#39;raw_value&#39;: None,
+                                 &#39;ts&#39;: None,
+                                 &#39;unit&#39;: &#39;&#39;,
+                                 &#39;validators&#39;: [&#39;&lt;Anything&gt;&#39;],
+                                 &#39;vals&#39;: &#39;&lt;Anything&gt;&#39;,
+                                 &#39;value&#39;: None},
+                      &#39;fixed_parameter&#39;: {   &#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                             &#39;full_name&#39;: &#39;instr_fixed_parameter&#39;,
+                                             &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                             &#39;instrument_name&#39;: &#39;instr&#39;,
+                                             &#39;inter_delay&#39;: 0,
+                                             &#39;label&#39;: &#39;fixed_parameter&#39;,
+                                             &#39;name&#39;: &#39;fixed_parameter&#39;,
+                                             &#39;post_delay&#39;: 0,
+                                             &#39;raw_value&#39;: 5,
+                                             &#39;ts&#39;: &#39;2024-07-01 19:34:25&#39;,
+                                             &#39;unit&#39;: &#39;&#39;,
+                                             &#39;validators&#39;: [],
+                                             &#39;value&#39;: 5},
+                      &#39;gain&#39;: {   &#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                  &#39;full_name&#39;: &#39;instr_gain&#39;,
+                                  &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                  &#39;instrument_name&#39;: &#39;instr&#39;,
+                                  &#39;inter_delay&#39;: 0,
+                                  &#39;label&#39;: &#39;Gate gain&#39;,
+                                  &#39;name&#39;: &#39;gain&#39;,
+                                  &#39;post_delay&#39;: 0,
+                                  &#39;raw_value&#39;: 11,
+                                  &#39;ts&#39;: &#39;2024-07-01 19:34:25&#39;,
+                                  &#39;unit&#39;: &#39;V&#39;,
+                                  &#39;validators&#39;: [&#39;&lt;Numbers -800&lt;=v&lt;=400&gt;&#39;],
+                                  &#39;vals&#39;: &#39;&lt;Numbers -800&lt;=v&lt;=400&gt;&#39;,
+                                  &#39;value&#39;: 11},
+                      &#39;input&#39;: {   &#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                   &#39;full_name&#39;: &#39;instr_input&#39;,
+                                   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                   &#39;instrument_name&#39;: &#39;instr&#39;,
+                                   &#39;inter_delay&#39;: 0,
+                                   &#39;label&#39;: &#39;Gate input&#39;,
+                                   &#39;name&#39;: &#39;input&#39;,
+                                   &#39;post_delay&#39;: 0,
+                                   &#39;raw_value&#39;: 0,
+                                   &#39;ts&#39;: &#39;2024-07-01 19:34:25&#39;,
+                                   &#39;unit&#39;: &#39;V&#39;,
+                                   &#39;validators&#39;: [&#39;&lt;Numbers -800&lt;=v&lt;=400&gt;&#39;],
+                                   &#39;vals&#39;: &#39;&lt;Numbers -800&lt;=v&lt;=400&gt;&#39;,
+                                   &#39;value&#39;: 0},
+                      &#39;output&#39;: {   &#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                    &#39;full_name&#39;: &#39;instr_output&#39;,
+                                    &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                    &#39;instrument_name&#39;: &#39;instr&#39;,
+                                    &#39;inter_delay&#39;: 0,
+                                    &#39;label&#39;: &#39;Gate output&#39;,
+                                    &#39;name&#39;: &#39;output&#39;,
+                                    &#39;post_delay&#39;: 0,
+                                    &#39;raw_value&#39;: 0,
+                                    &#39;ts&#39;: &#39;2024-07-01 19:34:25&#39;,
+                                    &#39;unit&#39;: &#39;V&#39;,
+                                    &#39;validators&#39;: [&#39;&lt;Numbers -800&lt;=v&lt;=400&gt;&#39;],
+                                    &#39;vals&#39;: &#39;&lt;Numbers -800&lt;=v&lt;=400&gt;&#39;,
+                                    &#39;value&#39;: 0}},
+    &#39;submodules&#39;: {}}
+</pre></div></div>
+</div>
+</section>
+<section id="Station-and-its-snapshot">
+<h2>Station and its snapshot<a class="headerlink" href="#Station-and-its-snapshot" title="Link to this heading"></a></h2>
+<p>Experimental setups are large, and instruments tend to be quite complex in that they comprise many parameters and other stateful parts. It would be very time-consuming for the user to manually go through every instrument and parameter, and collect the snapshot data.</p>
+<p>Here is where the concept of station comes into play. Instruments, parameters, and other submodules can be added to a <a class="reference internal" href="../Station.html"><span class="doc">Station object</span></a> (<a class="reference external" href="https://nbviewer.jupyter.org/github/QCoDeS/Qcodes/tree/main/docs/examples/Station.ipynb">nbviewer.jupyter.org link</a>). In turn, the station has its <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> method that allows to create a collective, single snapshot of all the instruments, parameters, and submodules.</p>
+<p>Note that in this article the focus is on the snapshot feature of the QCoDeS <code class="docutils literal notranslate"><span class="pre">Station</span></code>, while it has some other features (also some legacy once).</p>
+<p>Let’s create a station, and add a parameter, instrument, and submodule to it. Then we will print the snapshot. Notice that the station is aware of insturments and stand-alone parameters, and classifies them into dedicated lists within the snapshot.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">()</span>
+
+<span class="n">station</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="n">station</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">instr</span><span class="p">)</span>
+<span class="c1"># Note that it is also possible to add components</span>
+<span class="c1"># to a station via arguments of its constructor, like this:</span>
+<span class="c1">#     station = Station(p, instr)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;instr&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">snapshot_of_station</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+
+<span class="n">pprint</span><span class="p">(</span><span class="n">snapshot_of_station</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;components&#39;: {},
+ &#39;config&#39;: None,
+ &#39;instruments&#39;: {&#39;instr&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                           &#39;functions&#39;: {},
+                           &#39;label&#39;: &#39;instr&#39;,
+                           &#39;name&#39;: &#39;instr&#39;,
+                           &#39;parameters&#39;: {&#39;IDN&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                  &#39;full_name&#39;: &#39;instr_IDN&#39;,
+                                                  &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                  &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                  &#39;inter_delay&#39;: 0,
+                                                  &#39;label&#39;: &#39;IDN&#39;,
+                                                  &#39;name&#39;: &#39;IDN&#39;,
+                                                  &#39;post_delay&#39;: 0,
+                                                  &#39;raw_value&#39;: {&#39;firmware&#39;: &#39;NA&#39;,
+                                                                &#39;model&#39;: &#39;&lt;class &#39;
+                                                                         &#34;&#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;&gt;&#34;,
+                                                                &#39;serial&#39;: &#39;NA&#39;,
+                                                                &#39;vendor&#39;: &#39;QCoDeS&#39;},
+                                                  &#39;ts&#39;: &#39;2024-07-01 19:34:26&#39;,
+                                                  &#39;unit&#39;: &#39;&#39;,
+                                                  &#39;validators&#39;: [&#39;&lt;Anything&gt;&#39;],
+                                                  &#39;vals&#39;: &#39;&lt;Anything&gt;&#39;,
+                                                  &#39;value&#39;: {&#39;firmware&#39;: &#39;NA&#39;,
+                                                            &#39;model&#39;: &#39;&lt;class &#39;
+                                                                     &#34;&#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;&gt;&#34;,
+                                                            &#39;serial&#39;: &#39;NA&#39;,
+                                                            &#39;vendor&#39;: &#39;QCoDeS&#39;}},
+                                          &#39;fixed_parameter&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                              &#39;full_name&#39;: &#39;instr_fixed_parameter&#39;,
+                                                              &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                              &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                              &#39;inter_delay&#39;: 0,
+                                                              &#39;label&#39;: &#39;fixed_parameter&#39;,
+                                                              &#39;name&#39;: &#39;fixed_parameter&#39;,
+                                                              &#39;post_delay&#39;: 0,
+                                                              &#39;raw_value&#39;: 5,
+                                                              &#39;ts&#39;: &#39;2024-07-01 &#39;
+                                                                    &#39;19:34:26&#39;,
+                                                              &#39;unit&#39;: &#39;&#39;,
+                                                              &#39;validators&#39;: [],
+                                                              &#39;value&#39;: 5},
+                                          &#39;gain&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                   &#39;full_name&#39;: &#39;instr_gain&#39;,
+                                                   &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                   &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                   &#39;inter_delay&#39;: 0,
+                                                   &#39;label&#39;: &#39;Gate gain&#39;,
+                                                   &#39;name&#39;: &#39;gain&#39;,
+                                                   &#39;post_delay&#39;: 0,
+                                                   &#39;raw_value&#39;: 11,
+                                                   &#39;ts&#39;: &#39;2024-07-01 19:34:26&#39;,
+                                                   &#39;unit&#39;: &#39;V&#39;,
+                                                   &#39;validators&#39;: [&#39;&lt;Numbers &#39;
+                                                                  &#39;-800&lt;=v&lt;=400&gt;&#39;],
+                                                   &#39;vals&#39;: &#39;&lt;Numbers &#39;
+                                                           &#39;-800&lt;=v&lt;=400&gt;&#39;,
+                                                   &#39;value&#39;: 11},
+                                          &#39;input&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                    &#39;full_name&#39;: &#39;instr_input&#39;,
+                                                    &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                    &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                    &#39;inter_delay&#39;: 0,
+                                                    &#39;label&#39;: &#39;Gate input&#39;,
+                                                    &#39;name&#39;: &#39;input&#39;,
+                                                    &#39;post_delay&#39;: 0,
+                                                    &#39;raw_value&#39;: 0,
+                                                    &#39;ts&#39;: &#39;2024-07-01 19:34:26&#39;,
+                                                    &#39;unit&#39;: &#39;V&#39;,
+                                                    &#39;validators&#39;: [&#39;&lt;Numbers &#39;
+                                                                   &#39;-800&lt;=v&lt;=400&gt;&#39;],
+                                                    &#39;vals&#39;: &#39;&lt;Numbers &#39;
+                                                            &#39;-800&lt;=v&lt;=400&gt;&#39;,
+                                                    &#39;value&#39;: 0},
+                                          &#39;output&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                     &#39;full_name&#39;: &#39;instr_output&#39;,
+                                                     &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                     &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                     &#39;inter_delay&#39;: 0,
+                                                     &#39;label&#39;: &#39;Gate output&#39;,
+                                                     &#39;name&#39;: &#39;output&#39;,
+                                                     &#39;post_delay&#39;: 0,
+                                                     &#39;raw_value&#39;: 0,
+                                                     &#39;ts&#39;: &#39;2024-07-01 &#39;
+                                                           &#39;19:34:26&#39;,
+                                                     &#39;unit&#39;: &#39;V&#39;,
+                                                     &#39;validators&#39;: [&#39;&lt;Numbers &#39;
+                                                                    &#39;-800&lt;=v&lt;=400&gt;&#39;],
+                                                     &#39;vals&#39;: &#39;&lt;Numbers &#39;
+                                                             &#39;-800&lt;=v&lt;=400&gt;&#39;,
+                                                     &#39;value&#39;: 0}},
+                           &#39;submodules&#39;: {}}},
+ &#39;parameters&#39;: {&#39;p&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                      &#39;full_name&#39;: &#39;p&#39;,
+                      &#39;inter_delay&#39;: 0,
+                      &#39;label&#39;: &#39;Parameter P&#39;,
+                      &#39;name&#39;: &#39;p&#39;,
+                      &#39;post_delay&#39;: 0,
+                      &#39;raw_value&#39;: 456,
+                      &#39;ts&#39;: &#39;2024-07-01 19:34:26&#39;,
+                      &#39;unit&#39;: &#39;kg&#39;,
+                      &#39;validators&#39;: [],
+                      &#39;value&#39;: 456}}}
+</pre></div></div>
+</div>
+<section id="Saving-snapshot-next-to-the-measurement-data">
+<h3>Saving snapshot next to the measurement data<a class="headerlink" href="#Saving-snapshot-next-to-the-measurement-data" title="Link to this heading"></a></h3>
+<p>With the power of the station object, it is now possible to conveniently associate the snapshot information with the measured data.</p>
+<p>In order to do so, a station needs to be created, and then that station needs to be provided to the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object. If no station is explicitly provided, the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object will use the default station, <code class="docutils literal notranslate"><span class="pre">Station.default</span></code> (refer to <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> and <code class="docutils literal notranslate"><span class="pre">Station</span></code> objects docstrings for more information). At the moment the new measurement run is started, a snapshot of the whole station will be taken, and added next to the measured data.</p>
+<p>Note that the snapshot gets stored in a JSON format (an automatic convertion from python dictionary to JSON takes place). This is done in order to ensure that the snapshot can be read in environments other than python. JSON is an extemely popular data format, and all platforms/environments/languages/frameworks have means to read JSON-formatted data.</p>
+<p>Here is how it looks in the code. We will create a new experiment. Then we are going to reuse the station object created above, and create a new measurement object. Then we will perform a dummy measurement. After that we are going to extract the snapshot from the resulting dataset, and print it.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let&#39;s initialize a database to ensure that it exists</span>
+<span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;snapshot_example.db&quot;</span><span class="p">)</span>
+
+<span class="c1"># Let&#39;s create a new experiment</span>
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span><span class="s1">&#39;snapshot_experiment&#39;</span><span class="p">,</span> <span class="s1">&#39;no_sample_yet&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">measurement</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">experiment</span><span class="p">,</span> <span class="n">station</span><span class="p">)</span>
+
+<span class="n">measurement</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+<span class="n">measurement</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">[</span><span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;qcodes.dataset.measurements.Measurement at 0x7f383c2a0390&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">measurement</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">data_saver</span><span class="p">:</span>
+    <span class="n">input_value</span> <span class="o">=</span> <span class="mi">111</span>
+    <span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">input_value</span><span class="p">)</span>
+
+    <span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">222</span><span class="p">)</span>  <span class="c1"># assuming that the instrument measured this value on the output</span>
+
+    <span class="n">data_saver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">input_value</span><span class="p">),</span>
+                          <span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="p">()))</span>
+
+<span class="c1"># For convenience, let&#39;s work with the dataset object directly</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">data_saver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 1.
+</pre></div></div>
+</div>
+</section>
+<section id="Extracting-snapshot-from-dataset">
+<h3>Extracting snapshot from dataset<a class="headerlink" href="#Extracting-snapshot-from-dataset" title="Link to this heading"></a></h3>
+<p>Now we have a dataset that contains data from the measurement run. It also contains the snapshot.</p>
+<p>In order to access the snapshot, use the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>’s properties called <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> and <code class="docutils literal notranslate"><span class="pre">snapshot_raw</span></code>. As their docstrings declare, the former returns the snapshot of the run as a python dictionary, while the latter returns it as JSON string (in other words, in exactly the same format as it is stored in the experiments database).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">snapshot_of_run</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">snapshot</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">snapshot_of_run_in_json_format</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">snapshot_raw</span>
+</pre></div>
+</div>
+</div>
+<p>To prove that these snapshots are the same, use <code class="docutils literal notranslate"><span class="pre">json.loads</span></code> or <code class="docutils literal notranslate"><span class="pre">json.dumps</span></code> to assert the values of the variables:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">snapshot_of_run_in_json_format</span><span class="p">)</span> <span class="o">==</span> <span class="n">snapshot_of_run</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">snapshot_of_run</span><span class="p">)</span> <span class="o">==</span> <span class="n">snapshot_of_run_in_json_format</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, let’s pretty-print the snapshot. Notice that the values of the <code class="docutils literal notranslate"><span class="pre">input</span></code> and <code class="docutils literal notranslate"><span class="pre">output</span></code> parameters of the <code class="docutils literal notranslate"><span class="pre">instr</span></code> instrument have <code class="docutils literal notranslate"><span class="pre">0</span></code>s as values, and not <code class="docutils literal notranslate"><span class="pre">111</span></code> and <code class="docutils literal notranslate"><span class="pre">222</span></code> that were set during the measurement run.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pprint</span><span class="p">(</span><span class="n">snapshot_of_run</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;station&#39;: {&#39;components&#39;: {},
+             &#39;config&#39;: None,
+             &#39;instruments&#39;: {&#39;instr&#39;: {&#39;__class__&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                       &#39;functions&#39;: {},
+                                       &#39;label&#39;: &#39;instr&#39;,
+                                       &#39;name&#39;: &#39;instr&#39;,
+                                       &#39;parameters&#39;: {&#39;IDN&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                              &#39;full_name&#39;: &#39;instr_IDN&#39;,
+                                                              &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                              &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                              &#39;inter_delay&#39;: 0,
+                                                              &#39;label&#39;: &#39;IDN&#39;,
+                                                              &#39;name&#39;: &#39;IDN&#39;,
+                                                              &#39;post_delay&#39;: 0,
+                                                              &#39;raw_value&#39;: {&#39;firmware&#39;: &#39;NA&#39;,
+                                                                            &#39;model&#39;: &#39;&lt;class &#39;
+                                                                                     &#34;&#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;&gt;&#34;,
+                                                                            &#39;serial&#39;: &#39;NA&#39;,
+                                                                            &#39;vendor&#39;: &#39;QCoDeS&#39;},
+                                                              &#39;ts&#39;: &#39;2024-07-01 &#39;
+                                                                    &#39;19:34:26&#39;,
+                                                              &#39;unit&#39;: &#39;&#39;,
+                                                              &#39;validators&#39;: [&#39;&lt;Anything&gt;&#39;],
+                                                              &#39;vals&#39;: &#39;&lt;Anything&gt;&#39;,
+                                                              &#39;value&#39;: {&#39;firmware&#39;: &#39;NA&#39;,
+                                                                        &#39;model&#39;: &#39;&lt;class &#39;
+                                                                                 &#34;&#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;&gt;&#34;,
+                                                                        &#39;serial&#39;: &#39;NA&#39;,
+                                                                        &#39;vendor&#39;: &#39;QCoDeS&#39;}},
+                                                      &#39;fixed_parameter&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                                          &#39;full_name&#39;: &#39;instr_fixed_parameter&#39;,
+                                                                          &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                                          &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                                          &#39;inter_delay&#39;: 0,
+                                                                          &#39;label&#39;: &#39;fixed_parameter&#39;,
+                                                                          &#39;name&#39;: &#39;fixed_parameter&#39;,
+                                                                          &#39;post_delay&#39;: 0,
+                                                                          &#39;raw_value&#39;: 5,
+                                                                          &#39;ts&#39;: &#39;2024-07-01 &#39;
+                                                                                &#39;19:34:26&#39;,
+                                                                          &#39;unit&#39;: &#39;&#39;,
+                                                                          &#39;validators&#39;: [],
+                                                                          &#39;value&#39;: 5},
+                                                      &#39;gain&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                               &#39;full_name&#39;: &#39;instr_gain&#39;,
+                                                               &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                               &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                               &#39;inter_delay&#39;: 0,
+                                                               &#39;label&#39;: &#39;Gate &#39;
+                                                                        &#39;gain&#39;,
+                                                               &#39;name&#39;: &#39;gain&#39;,
+                                                               &#39;post_delay&#39;: 0,
+                                                               &#39;raw_value&#39;: 11,
+                                                               &#39;ts&#39;: &#39;2024-07-01 &#39;
+                                                                     &#39;19:34:26&#39;,
+                                                               &#39;unit&#39;: &#39;V&#39;,
+                                                               &#39;validators&#39;: [&#39;&lt;Numbers &#39;
+                                                                              &#39;-800&lt;=v&lt;=400&gt;&#39;],
+                                                               &#39;vals&#39;: &#39;&lt;Numbers &#39;
+                                                                       &#39;-800&lt;=v&lt;=400&gt;&#39;,
+                                                               &#39;value&#39;: 11},
+                                                      &#39;input&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                                &#39;full_name&#39;: &#39;instr_input&#39;,
+                                                                &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                                &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                                &#39;inter_delay&#39;: 0,
+                                                                &#39;label&#39;: &#39;Gate &#39;
+                                                                         &#39;input&#39;,
+                                                                &#39;name&#39;: &#39;input&#39;,
+                                                                &#39;post_delay&#39;: 0,
+                                                                &#39;raw_value&#39;: 0,
+                                                                &#39;ts&#39;: &#39;2024-07-01 &#39;
+                                                                      &#39;19:34:26&#39;,
+                                                                &#39;unit&#39;: &#39;V&#39;,
+                                                                &#39;validators&#39;: [&#39;&lt;Numbers &#39;
+                                                                               &#39;-800&lt;=v&lt;=400&gt;&#39;],
+                                                                &#39;vals&#39;: &#39;&lt;Numbers &#39;
+                                                                        &#39;-800&lt;=v&lt;=400&gt;&#39;,
+                                                                &#39;value&#39;: 0},
+                                                      &#39;output&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                                                 &#39;full_name&#39;: &#39;instr_output&#39;,
+                                                                 &#39;instrument&#39;: &#39;qcodes.instrument_drivers.mock_instruments.DummyInstrument&#39;,
+                                                                 &#39;instrument_name&#39;: &#39;instr&#39;,
+                                                                 &#39;inter_delay&#39;: 0,
+                                                                 &#39;label&#39;: &#39;Gate &#39;
+                                                                          &#39;output&#39;,
+                                                                 &#39;name&#39;: &#39;output&#39;,
+                                                                 &#39;post_delay&#39;: 0,
+                                                                 &#39;raw_value&#39;: 0,
+                                                                 &#39;ts&#39;: &#39;2024-07-01 &#39;
+                                                                       &#39;19:34:26&#39;,
+                                                                 &#39;unit&#39;: &#39;V&#39;,
+                                                                 &#39;validators&#39;: [&#39;&lt;Numbers &#39;
+                                                                                &#39;-800&lt;=v&lt;=400&gt;&#39;],
+                                                                 &#39;vals&#39;: &#39;&lt;Numbers &#39;
+                                                                         &#39;-800&lt;=v&lt;=400&gt;&#39;,
+                                                                 &#39;value&#39;: 0}},
+                                       &#39;submodules&#39;: {}}},
+             &#39;parameters&#39;: {&#39;p&#39;: {&#39;__class__&#39;: &#39;qcodes.parameters.parameter.Parameter&#39;,
+                                  &#39;full_name&#39;: &#39;p&#39;,
+                                  &#39;inter_delay&#39;: 0,
+                                  &#39;label&#39;: &#39;Parameter P&#39;,
+                                  &#39;name&#39;: &#39;p&#39;,
+                                  &#39;post_delay&#39;: 0,
+                                  &#39;raw_value&#39;: 456,
+                                  &#39;ts&#39;: &#39;2024-07-01 19:34:26&#39;,
+                                  &#39;unit&#39;: &#39;kg&#39;,
+                                  &#39;validators&#39;: [],
+                                  &#39;value&#39;: 456}}}}
+</pre></div></div>
+</div>
+<p>Note that the snapshot that we have just loaded from the dataset is almost the same as the snapshot that we directly obtained from the station above. The only difference is that the snapshot loaded from the dataset has a top-level <code class="docutils literal notranslate"><span class="pre">station</span></code> field. If you do not trust me, have a look at the following <code class="docutils literal notranslate"><span class="pre">assert</span></code> statement for the proof.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">assert</span> <span class="p">{</span><span class="s1">&#39;station&#39;</span><span class="p">:</span> <span class="n">snapshot_of_station</span><span class="p">}</span> <span class="o">==</span> <span class="n">snapshot_of_run</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Comparing-how-two-DataSets-were-taken">
+<h3>Comparing how two DataSets were taken<a class="headerlink" href="#Comparing-how-two-DataSets-were-taken" title="Link to this heading"></a></h3>
+<p>Suppose something went wrong in an experiment, and you’d like to compare what changed since a known-good run. QCoDeS lets you do this by taking a <em>diff</em> between the snapshots for two <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> instances.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">measurement</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">experiment</span><span class="p">,</span> <span class="n">station</span><span class="p">)</span>
+
+<span class="n">measurement</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="p">)</span>
+<span class="n">measurement</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">[</span><span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;qcodes.dataset.measurements.Measurement at 0x7f383c2afad0&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">instr</span><span class="o">.</span><span class="n">gain</span><span class="p">(</span><span class="mi">400</span><span class="p">)</span> <span class="c1"># Oops!</span>
+<span class="k">with</span> <span class="n">measurement</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">data_saver</span><span class="p">:</span>
+    <span class="n">input_value</span> <span class="o">=</span> <span class="mi">111</span>
+    <span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">input_value</span><span class="p">)</span>
+
+    <span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">222</span><span class="p">)</span>  <span class="c1"># assuming that the instrument measured this value on the output</span>
+
+    <span class="n">data_saver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">input_value</span><span class="p">),</span>
+                          <span class="p">(</span><span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">instr</span><span class="o">.</span><span class="n">output</span><span class="p">()))</span>
+
+<span class="c1"># For convenience, let&#39;s work with the dataset object directly</span>
+<span class="n">bad_dataset</span> <span class="o">=</span> <span class="n">data_saver</span><span class="o">.</span><span class="n">dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 2.
+</pre></div></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">diff_param_values</span></code> function tells us about the parameters that changed betw</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qcodes.utils.metadata</span> <span class="kn">import</span> <span class="n">diff_param_values</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diff_param_values</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">bad_dataset</span><span class="o">.</span><span class="n">snapshot</span><span class="p">)</span><span class="o">.</span><span class="n">changed</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{(&#39;instr&#39;, &#39;gain&#39;): (11, 400),
+ (&#39;instr&#39;, &#39;input&#39;): (0, 111),
+ (&#39;instr&#39;, &#39;output&#39;): (0, 222)}
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Using_register_name.html" class="btn btn-neutral float-left" title="Using the register_name kwarg to select how a parameter is saved to a dataset" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Working-With-Pandas-and-XArray.html" class="btn btn-neutral float-right" title="Working with Pandas and XArray" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

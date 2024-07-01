@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QCoDeS Example with Keysight E4980A LCR meter &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html" />
+    <link rel="prev" title="Auto Color Scale" href="../plotting/auto_color_scale.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#drivers">Drivers</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">QCoDeS Example with Keysight E4980A LCR meter</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Step-1.-Set-up-the-E4980A’s-measurement-conditions:">Step 1. Set up the E4980A’s measurement conditions:</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Step-2.-(optional)-Set-up-the-corrections-for-the-unit">Step 2. (optional) Set up the corrections for the unit</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#step-3.-Set-the-meausurement-function.">step 3. Set the meausurement function.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#To-work-with-QCoDeS-%22Measurement%22:">To work with QCoDeS “Measurement”:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">QCoDeS Example with Keysight E4980A LCR meter</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/driver_examples/QCoDeS Example with Keysight E4980A LCR meter.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/QCoDeS Example with Keysight E4980A LCR meter.ipynb">docs/examples/driver_examples/QCoDeS Example with Keysight E4980A LCR meter.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/QCoDeS Example with Keysight E4980A LCR meter.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-Example-with-Keysight-E4980A-LCR-meter">
+<h1>QCoDeS Example with Keysight E4980A LCR meter<a class="headerlink" href="#QCoDeS-Example-with-Keysight-E4980A-LCR-meter" title="Link to this heading"></a></h1>
+<p>This example is following the “Capacitor Measurements” on P215 of the user’s guide: <a class="reference external" href="https://literature.cdn.keysight.com/litweb/pdf/E4980-90230.pdf?id=789356">https://literature.cdn.keysight.com/litweb/pdf/E4980-90230.pdf?id=789356</a></p>
+<p>A 8400 pF (8E-9 F) leaded ceramic capacitor is connected to the LCR meter.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="n">Measurement</span><span class="p">,</span> <span class="n">initialise_database</span><span class="p">,</span> <span class="n">new_experiment</span><span class="p">,</span> <span class="n">plot_by_id</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.Keysight</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">KeysightE4980A</span><span class="p">,</span>
+    <span class="n">KeysightE4980AMeasurements</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span> <span class="o">=</span> <span class="n">KeysightE4980A</span><span class="p">(</span><span class="s2">&quot;lcr_e4980a&quot;</span><span class="p">,</span> <span class="s1">&#39;USB0::0x2A8D::0x2F01::MY46618801::INSTR&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to: Keysight Technologies E4980A (serial:MY46618801, firmware:B.07.05) in 0.07s
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">IDN</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;vendor&#39;: &#39;Keysight Technologies&#39;,
+ &#39;model&#39;: &#39;E4980A&#39;,
+ &#39;serial&#39;: &#39;MY46618801&#39;,
+ &#39;firmware&#39;: &#39;B.07.05&#39;}
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<section id="Step-1.-Set-up-the-E4980A’s-measurement-conditions:">
+<h2>Step 1. Set up the E4980A’s measurement conditions:<a class="headerlink" href="#Step-1.-Set-up-the-E4980A’s-measurement-conditions:" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>set frequency to be 1MHz (system default is 1kHz)</p></li>
+<li><p>set the voltage level to be 1.5 V (system default is 1V)</p></li>
+</ol>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span>
+<span class="n">freq</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The frequency for normal measurement is set to be </span><span class="si">{</span><span class="n">freq</span><span class="o">/</span><span class="mf">1e6</span><span class="si">}</span><span class="s1"> MHz.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The frequency for normal measurement is set to be 1.0 MHz.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">voltage_level</span><span class="p">(</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">volt_lv</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">voltage_level</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;the voltage for measurement signal is set to be </span><span class="si">{</span><span class="n">volt_lv</span><span class="si">}</span><span class="s1"> V.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+the voltage for measurement signal is set to be 1.5 V.
+</pre></div></div>
+</div>
+</section>
+<section id="Step-2.-(optional)-Set-up-the-corrections-for-the-unit">
+<h2>Step 2. (optional) Set up the corrections for the unit<a class="headerlink" href="#Step-2.-(optional)-Set-up-the-corrections-for-the-unit" title="Link to this heading"></a></h2>
+<p>In the “Capacitor Measurements” example, a Keysight 16047E Direct Couple Test Fixture (general purpose) was used. To compensate for its residuals and strays, an OPEN/SHORT correction is required.</p>
+<p>However, for our setup with a leaded ceramic capacitor, this step may not be necessary.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">correction</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
+<span class="n">meter</span><span class="o">.</span><span class="n">correction</span><span class="o">.</span><span class="n">open_state</span><span class="p">(</span><span class="s1">&#39;on&#39;</span><span class="p">)</span>
+<span class="n">meter</span><span class="o">.</span><span class="n">correction</span><span class="o">.</span><span class="n">short</span><span class="p">()</span>
+<span class="n">meter</span><span class="o">.</span><span class="n">correction</span><span class="o">.</span><span class="n">short_state</span><span class="p">(</span><span class="s1">&#39;on&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="step-3.-Set-the-meausurement-function.">
+<h2>step 3. Set the meausurement function.<a class="headerlink" href="#step-3.-Set-the-meausurement-function." title="Link to this heading"></a></h2>
+<p>User should chose one function from the follow list, for example “<strong>E4980AMeasurements.CPD</strong>”.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&quot;CPD&quot;: &quot;Capacitance - Dissipation factor&quot;,  (by default)
+&quot;CPQ&quot;: &quot;Capacitance - Quality factor&quot;,
+&quot;CPG&quot;: &quot;Capacitance - Conductance&quot;,
+&quot;CPRP&quot;: &quot;Capacitance - Resistance&quot;,
+&quot;CSD&quot;: &quot;Capacitance - Dissipation factor&quot;,
+&quot;CSQ&quot;: &quot;Capacitance - Quality factor&quot;,
+&quot;CSRS&quot;: &quot;Capacitance - Resistance&quot;,
+&quot;LPD&quot;: &quot;Inductance - Dissipation factor&quot;,
+&quot;LPQ&quot;: &quot;Inductance - Quality factor&quot;,
+&quot;LPG&quot;: &quot;Inductance - Conductance&quot;,
+&quot;LPRP&quot;: &quot;Inductance - Resistance&quot;,
+&quot;LPRD&quot;: &quot;Inductance - DC resistance&quot;,
+&quot;LSD&quot;: &quot;Inductance - Dissipation factor&quot;,
+&quot;LSQ&quot;: &quot;Inductance - Quality factor&quot;,
+&quot;LSRS&quot;: &quot;Inductance - Resistance&quot;,
+&quot;LSRD&quot;: &quot;Inductance - DC resistance&quot;,
+&quot;RX&quot;: &quot;Resistance - Reactance&quot;,
+&quot;ZTD&quot;: &quot;Absolute value of impedance - Theta in degree&quot;,
+&quot;ZTR&quot;: &quot;Absolute value of impedance - Theta in radiant&quot;,
+&quot;GB&quot;: &quot;Conductance - Susceptance&quot;,
+&quot;YTD&quot;: &quot;Absolute value of admittance - Theta in degree&quot;,
+&quot;YTR&quot;: &quot;Absolute value of admittance - Theta in radiant&quot;,
+&quot;VDID&quot;: &quot;DC voltage - DC current&quot;
+</pre></div>
+</div>
+<p>Note: 1. CP vs CS: <strong>P</strong> means measured using parallel equivalent circuit model, and <strong>S</strong> means measured using series equivalent circuit model. 2. Same for LP and LS 3. RP vs RS: Equivalent <strong>p</strong>arallel/<strong>s</strong>eries resistance</p>
+<p>By default, the measurement function is “CPD”, which mean “Capacitance - Dissipation factor”:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;CPD&#39;
+</pre></div></div>
+</div>
+<p>The “measurement” property will return a “MeasurementPair” class (sub class of “MultiParameter”):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">measurement</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">measurement</span>
+<span class="nb">type</span><span class="p">(</span><span class="n">measurement</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+qcodes.instrument_drivers.Keysight.keysight_e4980a.MeasurementPair
+</pre></div></div>
+</div>
+<p>which has the same name as the <strong>current</strong> “measurement_function”:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">measurement</span><span class="o">.</span><span class="n">name</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;CPD&#39;
+</pre></div></div>
+</div>
+<p>User can view the parameters to be measured, and the corresponding units as following:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The parameters to be measured are </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">names</span><span class="si">}</span><span class="s1">, with units </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">units</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The parameters to be measured are (&#39;capacitance&#39;, &#39;dissipation_factor&#39;), with units (&#39;F&#39;, &#39;&#39;)
+</pre></div></div>
+</div>
+<p>and take measurements by calling:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">measurement</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(-8.35219e-09, -0.00183439)
+</pre></div></div>
+</div>
+<p>User may also directly call the name of the physics parameters: (can’t call the unit this way though)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The capacitance is measured to be </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">capacitance</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dissipation_factor is measured to be </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">dissipation_factor</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The capacitance is measured to be -8.35219e-09
+The dissipation_factor is measured to be -0.00183439
+</pre></div></div>
+</div>
+<p>To change to another measurement function, for example, “LPD” for Inductance measurement:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">(</span><span class="n">KeysightE4980AMeasurements</span><span class="o">.</span><span class="n">LPD</span><span class="p">)</span>
+<span class="n">meter</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;LPD&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">measurement</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">measurement</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The measurement &quot;</span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">&quot; returns values </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;for parameters </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">names</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;with units </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">units</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The measurement &#34;LPD&#34; returns values (3.03277e-06, -0.00183439)
+for parameters (&#39;inductance&#39;, &#39;dissipation_factor&#39;)
+with units (&#39;H&#39;, &#39;&#39;)
+</pre></div></div>
+</div>
+<p>Any “MeasurementPair” object, when first initialized, will dynamically generate the corresponding attributes. For the LPD measurement above, the “measurement” object will have attributes “inductance” instead of “capacitance”:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">measurement</span><span class="o">.</span><span class="n">inductance</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3.03277e-06
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="n">measurement</span><span class="o">.</span><span class="n">capacitance</span>
+<span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;MeasurementPair&#39; object has no attribute &#39;capacitance&#39;
+</pre></div></div>
+</div>
+<p>To validate the measurement, we can measure the impedance, and calculate the capacitance.</p>
+<p>For a capacitor, we have Zc = - j / (2 * Pi * f * C), where Zc is the impedance of the capacitor, f is the frequency, and C is the capacitance.</p>
+<p>There are actually two methods to measure the impedance: 1. to use the “measurement_function” method as above, and choose “RX”; 2. to use the “measure_impedance()” call, which will always return impedance in complex format, Z = R + iX, where Z is impedance, R is resistance, and X is the reactance.</p>
+<p>(The results from the two methods should be the same.)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">(</span><span class="n">KeysightE4980AMeasurements</span><span class="o">.</span><span class="n">RX</span><span class="p">)</span>
+<span class="n">measurement</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">measurement</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">measurement</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">measurement</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">measurement</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#39;resistance&#39;, &#39;reactance&#39;)
+(-0.0349551, 19.0554)
+(&#39;Ohm&#39;, &#39;Ohm&#39;)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">imp</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">measure_impedance</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">imp</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">imp</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">imp</span><span class="o">.</span><span class="n">units</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#39;resistance&#39;, &#39;reactance&#39;)
+(-0.0349551, 19.0554)
+(&#39;Ohm&#39;, &#39;Ohm&#39;)
+</pre></div></div>
+</div>
+<p>To calculate the impedance: (“imp” here is also a “MeasurementPair”, so user can call the resistance/reactance directly.)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Zc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">imp</span><span class="o">.</span><span class="n">resistance</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">imp</span><span class="o">.</span><span class="n">reactance</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The impedance is </span><span class="si">{</span><span class="n">Zc</span><span class="si">}</span><span class="s2"> Ohm.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The impedance is 19.0554320606754 Ohm.
+</pre></div></div>
+</div>
+<p>and the capacitance:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">C</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">freq</span><span class="o">*</span><span class="n">Zc</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The capacitance is </span><span class="si">{</span><span class="n">C</span><span class="si">}</span><span class="s2">F.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The capacitance is -8.352208576804858e-09F.
+</pre></div></div>
+</div>
+<p>which is the same as what we got previously using the “CPD” function:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">(</span><span class="n">KeysightE4980AMeasurements</span><span class="o">.</span><span class="n">CPD</span><span class="p">)</span>
+<span class="n">measurement</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">measurement</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The capacitance  is </span><span class="si">{</span><span class="n">measurement</span><span class="o">.</span><span class="n">capacitance</span><span class="si">}</span><span class="s2"> F.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+The capacitance  is -8.35219e-09 F.
+</pre></div></div>
+</div>
+</section>
+<section id="To-work-with-QCoDeS-%22Measurement%22:">
+<h2>To work with QCoDeS “Measurement”:<a class="headerlink" href="#To-work-with-QCoDeS-%22Measurement%22:" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_database</span><span class="p">()</span>
+<span class="n">exp</span> <span class="o">=</span> <span class="n">new_experiment</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;capacitance_measurement&#39;</span><span class="p">,</span>
+    <span class="n">sample_name</span><span class="o">=</span><span class="s2">&quot;no sample&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">()</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">measurement</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">,))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;qcodes.dataset.measurements.Measurement at 0x1f356cfd3c8&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.0E6</span><span class="p">,</span> <span class="mf">1.5E6</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+        <span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">value_pair</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">measurement</span><span class="p">()</span>
+        <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">,</span> <span class="n">freq</span><span class="p">),</span>
+                             <span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">measurement</span><span class="p">,</span> <span class="n">value_pair</span><span class="p">))</span>
+    <span class="n">run_id</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">run_id</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 73.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span> <span class="o">=</span> <span class="n">plot_by_id</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_45_0.png" src="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_45_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_45_1.png" src="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_45_1.png" />
+</div>
+</div>
+<p>The dataset will have two items, one for “capacitance”, and the other for “dissipation_factor”:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+<span class="n">dataset</span><span class="o">.</span><span class="n">get_parameter_data</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;capacitance&#39;: {&#39;capacitance&#39;: array([-8.35219e-09, -8.34623e-09, -8.41993e-09, -8.45158e-09,
+         -8.63672e-09]),
+  &#39;lcr_e4980a_frequency&#39;: array([1000000, 1125000, 1250000, 1375000, 1500000])},
+ &#39;dissipation_factor&#39;: {&#39;dissipation_factor&#39;: array([-0.00183439, -0.00214259, -0.00246672, -0.00283031, -0.00317048]),
+  &#39;lcr_e4980a_frequency&#39;: array([1000000, 1125000, 1250000, 1375000, 1500000])}}
+</pre></div></div>
+</div>
+<p>To switch to another measurement function:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">(</span><span class="n">KeysightE4980AMeasurements</span><span class="o">.</span><span class="n">RX</span><span class="p">)</span>
+<span class="n">meter</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;RX&#39;
+</pre></div></div>
+</div>
+<p>which will measure the following:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">KeysightE4980AMeasurements</span><span class="o">.</span><span class="n">RX</span><span class="o">.</span><span class="n">names</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(&#39;resistance&#39;, &#39;reactance&#39;)
+</pre></div></div>
+</div>
+<p>We need to re-set the measurement, and re-register parameters so that qcodes knows the correct units:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">()</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">)</span>
+<span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">measurement</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">,))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;qcodes.dataset.measurements.Measurement at 0x1f35934db88&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">freq</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.0E6</span><span class="p">,</span> <span class="mf">1.5E6</span><span class="p">,</span> <span class="mi">5</span><span class="p">):</span>
+        <span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">(</span><span class="n">freq</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">value_pair</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">measurement</span><span class="p">()</span>
+        <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">meter</span><span class="o">.</span><span class="n">frequency</span><span class="p">,</span> <span class="n">freq</span><span class="p">),</span>
+                             <span class="p">(</span><span class="n">meter</span><span class="o">.</span><span class="n">measurement</span><span class="p">,</span> <span class="n">value_pair</span><span class="p">))</span>
+    <span class="n">run_id</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">run_id</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 74.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot</span> <span class="o">=</span> <span class="n">plot_by_id</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_55_0.png" src="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_55_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_55_1.png" src="../../_images/examples_driver_examples_QCoDeS_Example_with_Keysight_E4980A_LCR_meter_55_1.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meter</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../plotting/auto_color_scale.html" class="btn btn-neutral float-left" title="Auto Color Scale" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html" class="btn btn-neutral float-right" title="QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

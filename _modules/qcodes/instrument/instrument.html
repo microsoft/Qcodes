@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument.instrument &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument.instrument</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument.instrument</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Instrument base class.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">weakref</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">overload</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.utils</span> <span class="kn">import</span> <span class="n">strip_attrs</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Anything</span>
+
+<span class="kn">from</span> <span class="nn">.instrument_base</span> <span class="kn">import</span> <span class="n">InstrumentBase</span><span class="p">,</span> <span class="n">InstrumentBaseKWArgs</span>
+<span class="kn">from</span> <span class="nn">.instrument_meta</span> <span class="kn">import</span> <span class="n">InstrumentMeta</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.logger.instrument_logger</span> <span class="kn">import</span> <span class="n">InstrumentLoggerAdapter</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">InstrumentProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Protocol that is useful for defining mixin classes for Instrument class&quot;&quot;&quot;</span>
+
+    <span class="n">log</span><span class="p">:</span> <span class="n">InstrumentLoggerAdapter</span>  <span class="c1"># instrument logging</span>
+
+    <span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="o">...</span>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s2">&quot;Instrument&quot;</span><span class="p">)</span>
+
+<span class="c1"># a metaclass that overrides __call__ means that we lose</span>
+<span class="c1"># both the args and return type hints.</span>
+<span class="c1"># Since our metaclass does not modify the signature</span>
+<span class="c1"># is is safe simply not to use that metaclass in typechecking context.</span>
+<span class="c1"># See https://github.com/microsoft/pyright/discussions/5561 and</span>
+<span class="c1"># https://github.com/microsoft/pyright/issues/5488</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="n">instrument_meta_class</span> <span class="o">=</span> <span class="nb">type</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">instrument_meta_class</span> <span class="o">=</span> <span class="n">InstrumentMeta</span>
+
+
+<div class="viewcode-block" id="Instrument">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument">[docs]</a>
+<span class="k">class</span> <span class="nc">Instrument</span><span class="p">(</span><span class="n">InstrumentBase</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">instrument_meta_class</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for all QCodes instruments.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: an identifier for this instrument, particularly for</span>
+<span class="sd">            attaching it to a Station.</span>
+<span class="sd">        metadata: additional static metadata to add to this</span>
+<span class="sd">            instrument&#39;s JSON snapshot.</span>
+<span class="sd">        label: nicely formatted name of the instrument; if None, the</span>
+<span class="sd">            ``name`` is used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_all_instruments</span><span class="p">:</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakValueDictionary</span><span class="p">[</span>
+        <span class="nb">str</span><span class="p">,</span> <span class="n">Instrument</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakValueDictionary</span><span class="p">()</span>
+    <span class="n">_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Instrument</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">_instances</span><span class="p">:</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">[</span><span class="n">Instrument</span><span class="p">]</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">InstrumentBaseKWArgs</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s2">&quot;IDN&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_idn</span><span class="p">,</span> <span class="n">vals</span><span class="o">=</span><span class="n">Anything</span><span class="p">())</span>
+
+<div class="viewcode-block" id="Instrument.get_idn">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.get_idn">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_idn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse a standard VISA ``*IDN?`` response into an ID dict.</span>
+
+<span class="sd">        Even though this is the VISA standard, it applies to various other</span>
+<span class="sd">        types as well, such as IPInstruments, so it is included here in the</span>
+<span class="sd">        Instrument base class.</span>
+
+<span class="sd">        Override this if your instrument does not support ``*IDN?`` or</span>
+<span class="sd">        returns a nonstandard IDN string. This string is supposed to be a</span>
+<span class="sd">        comma-separated list of vendor, model, serial, and firmware, but</span>
+<span class="sd">        semicolon and colon are also common separators so we accept them here</span>
+<span class="sd">        as well.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A dict containing vendor, model, serial, and firmware.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">idstr</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># in case self.ask fails</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">idstr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;*IDN?&quot;</span><span class="p">)</span>
+            <span class="n">idparts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># form is supposed to be comma-separated, but we&#39;ve seen</span>
+            <span class="c1"># other separators occasionally</span>
+            <span class="k">for</span> <span class="n">separator</span> <span class="ow">in</span> <span class="s2">&quot;,;:&quot;</span><span class="p">:</span>
+                <span class="c1"># split into no more than 4 parts, so we don&#39;t lose info</span>
+                <span class="n">idparts</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">idstr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">separator</span><span class="p">,</span> <span class="mi">3</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idparts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">break</span>
+            <span class="c1"># in case parts at the end are missing, fill in None</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">idparts</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="n">idparts</span> <span class="o">+=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">4</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">idparts</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Error getting or interpreting *IDN?: </span><span class="si">{</span><span class="n">idstr</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="n">idparts</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+
+        <span class="c1"># some strings include the word &#39;model&#39; at the front of model</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">idparts</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">):</span>
+            <span class="n">idparts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">idparts</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">5</span><span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">((</span><span class="s2">&quot;vendor&quot;</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;serial&quot;</span><span class="p">,</span> <span class="s2">&quot;firmware&quot;</span><span class="p">),</span> <span class="n">idparts</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Instrument.connect_message">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.connect_message">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect_message</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">idn_param</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;IDN&quot;</span><span class="p">,</span> <span class="n">begin_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print a standard message on initial connection to an instrument.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            idn_param: Name of parameter that returns ID dict.</span>
+<span class="sd">                Default ``IDN``.</span>
+<span class="sd">            begin_time: ``time.time()`` when init started.</span>
+<span class="sd">                Default is ``self._t0``, set at start of ``Instrument.__init__``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># start with an empty dict, just in case an instrument doesn&#39;t</span>
+        <span class="c1"># heed our request to return all 4 fields.</span>
+        <span class="n">idn</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+        <span class="n">idn</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">idn_param</span><span class="p">))</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="p">(</span><span class="n">begin_time</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span><span class="p">)</span>
+
+        <span class="n">con_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Connected to: </span><span class="si">{vendor}</span><span class="s2"> </span><span class="si">{model}</span><span class="s2"> &quot;</span>
+            <span class="s2">&quot;(serial:</span><span class="si">{serial}</span><span class="s2">, firmware:</span><span class="si">{firmware}</span><span class="s2">) &quot;</span>
+            <span class="s2">&quot;in </span><span class="si">{t:.2f}</span><span class="s2">s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="o">**</span><span class="n">idn</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">con_msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connected to instrument: </span><span class="si">{</span><span class="n">idn</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Instrument.__repr__">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.__repr__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simplified repr giving just the class and name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&gt;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Instrument.__del__">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.__del__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the instrument and remove its instance record.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">BaseException</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Instrument.close">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.close">[docs]</a>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Irreversibly stop this instrument and free its resources.</span>
+
+<span class="sd">        Subclasses should override this if they have other specific</span>
+<span class="sd">        resources to close.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;connection&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c1"># check for the existense first since this may already</span>
+        <span class="c1"># have been striped e.g. if the instrument has been closed once before</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;instrument_modules&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument_modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">strip_attrs</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">whitelist</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_short_name&quot;</span><span class="p">,</span> <span class="s2">&quot;_parent&quot;</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_channel_lists&quot;</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">channellist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_channel_lists</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">channellist</span><span class="p">:</span>
+                    <span class="n">strip_attrs</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">whitelist</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_short_name&quot;</span><span class="p">,</span> <span class="s2">&quot;_parent&quot;</span><span class="p">])</span>
+
+        <span class="n">strip_attrs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">whitelist</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;_short_name&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">remove_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Instrument.close_all">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.close_all">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">close_all</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Try to close all instruments registered in</span>
+<span class="sd">        ``_all_instruments`` This is handy for use with atexit to</span>
+<span class="sd">        ensure that all instruments are closed when a python session is</span>
+<span class="sd">        closed.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; atexit.register(qc.Instrument.close_all())</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Closing all registered instruments&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">inststr</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_all_instruments</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">inst</span><span class="p">:</span> <span class="n">Instrument</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">find_instrument</span><span class="p">(</span><span class="n">inststr</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Closing </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">inststr</span><span class="p">)</span>
+                <span class="n">inst</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Failed to close </span><span class="si">%s</span><span class="s2">, ignored&quot;</span><span class="p">,</span> <span class="n">inststr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Instrument.record_instance">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.record_instance">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">record_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">instance</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Record (a weak ref to) an instance in a class&#39;s instance list.</span>
+
+<span class="sd">        Also records the instance in list of *all* instruments, and verifies</span>
+<span class="sd">        that there are no other instruments with the same name.</span>
+
+<span class="sd">        This method is called after initialization of the instrument is completed.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            instance: Instance to record.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If another instance with the same name is already present.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">instance</span><span class="o">.</span><span class="n">name</span>
+        <span class="c1"># First insert this instrument in the record of *all* instruments</span>
+        <span class="c1"># making sure its name is unique</span>
+        <span class="n">existing_instr</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_all_instruments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">existing_instr</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Another instrument has the name: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_all_instruments</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">instance</span>
+
+        <span class="c1"># Then add it to the record for this specific subclass, using ``_type``</span>
+        <span class="c1"># to make sure we&#39;re not recording it in a base class instance list</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">cls</span><span class="p">:</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_type</span> <span class="o">=</span> <span class="bp">cls</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span> <span class="o">=</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">()</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Instrument.instances">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.instances">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">instances</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get all currently defined instances of this instrument class.</span>
+
+<span class="sd">        You can use this to get the objects back if you lose track of them,</span>
+<span class="sd">        and it&#39;s also used by the test system to find objects to test against.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list of instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">cls</span><span class="p">:</span>
+            <span class="c1"># only instances of a superclass - we want instances of this</span>
+            <span class="c1"># exact class only</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;_instances&quot;</span><span class="p">,</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">()))</span></div>
+
+
+<div class="viewcode-block" id="Instrument.remove_instance">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.remove_instance">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">remove_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">instance</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove a particular instance from the record.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            instance: The instance to remove</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s2">&quot;_instances&quot;</span><span class="p">,</span> <span class="n">weakref</span><span class="o">.</span><span class="n">WeakSet</span><span class="p">()):</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+
+        <span class="c1"># remove from all_instruments too, but don&#39;t depend on the</span>
+        <span class="c1"># name to do it, in case name has changed or been deleted</span>
+        <span class="n">all_ins</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_all_instruments</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">ref</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">all_ins</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="n">instance</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">all_ins</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+
+    <span class="nd">@overload</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">find_instrument</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument_class</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Instrument</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">find_instrument</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="Instrument.find_instrument">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.find_instrument">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">find_instrument</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span> <span class="o">|</span> <span class="n">Instrument</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find an existing instrument by name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: Name of the instrument.</span>
+<span class="sd">            instrument_class: The type of instrument you are looking for.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The instrument found.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            KeyError: If no instrument of that name was found, or if its</span>
+<span class="sd">                reference is invalid (dead).</span>
+<span class="sd">            TypeError: If a specific class was requested but a different</span>
+<span class="sd">                type was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">internal_instrument_class</span> <span class="o">=</span> <span class="n">instrument_class</span> <span class="ow">or</span> <span class="n">Instrument</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_all_instruments</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Instrument with name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> does not exist&quot;</span><span class="p">)</span>
+        <span class="n">ins</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_all_instruments</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ins</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_all_instruments</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Instrument </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> has been removed&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ins</span><span class="p">,</span> <span class="n">internal_instrument_class</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Instrument </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">ins</span><span class="p">)</span><span class="si">}</span><span class="s2"> but &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">internal_instrument_class</span><span class="si">}</span><span class="s2"> was requested&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ins</span></div>
+
+
+<div class="viewcode-block" id="Instrument.exist">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.exist">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">exist</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Instrument</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if an instrument with a given names exists (i.e. is already</span>
+<span class="sd">        instantiated).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: Name of the instrument.</span>
+<span class="sd">            instrument_class: The type of instrument you are looking for.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">instrument_exists</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">find_instrument</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">instrument_class</span><span class="o">=</span><span class="n">instrument_class</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exception</span><span class="p">:</span>
+            <span class="n">instrument_is_not_found</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span>
+                <span class="n">str_</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">exception</span><span class="p">)</span> <span class="k">for</span> <span class="n">str_</span> <span class="ow">in</span> <span class="p">[</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;has been removed&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">instrument_is_not_found</span><span class="p">:</span>
+                <span class="n">instrument_exists</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">exception</span>
+
+        <span class="k">return</span> <span class="n">instrument_exists</span></div>
+
+
+<div class="viewcode-block" id="Instrument.is_valid">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.is_valid">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="n">instr_instance</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if a given instance of an instrument is valid: if an instrument</span>
+<span class="sd">        has been closed, its instance is not longer a &quot;valid&quot; instrument.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            instr_instance: Instance of an Instrument class or its subclass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">instr_instance</span><span class="p">,</span> <span class="n">Instrument</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">instr_instance</span> <span class="ow">in</span> <span class="n">instr_instance</span><span class="o">.</span><span class="n">instances</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="c1"># note that it is important to call `instances` on the instance</span>
+            <span class="c1"># object instead of `Instrument` class, because instances of</span>
+            <span class="c1"># Instrument subclasses are recorded inside their subclasses; see</span>
+            <span class="c1"># `instances` for more information</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+    <span class="c1"># `write_raw` and `ask_raw` are the interface to hardware                #</span>
+    <span class="c1"># `write` and `ask` are standard wrappers to help with error reporting   #</span>
+    <span class="c1">#</span>
+
+<div class="viewcode-block" id="Instrument.write">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.write">[docs]</a>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a command string with NO response to the hardware.</span>
+
+<span class="sd">        Subclasses that transform ``cmd`` should override this method, and in</span>
+<span class="sd">        it call ``super().write(new_cmd)``. Subclasses that define a new</span>
+<span class="sd">        hardware communication should instead override ``write_raw``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd: The string to send to the instrument.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Wraps any underlying exception with extra context,</span>
+<span class="sd">                including the command and the instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">inst</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;writing &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; to &quot;</span> <span class="o">+</span> <span class="n">inst</span><span class="p">,)</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="Instrument.write_raw">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.write_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">write_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Low level method to write a command string to the hardware.</span>
+
+<span class="sd">        Subclasses that define a new hardware communication should override</span>
+<span class="sd">        this method. Subclasses that transform ``cmd`` should instead</span>
+<span class="sd">        override ``write``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd: The string to send to the instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Instrument </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> has not defined a write method&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Instrument.ask">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.ask">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a command string to the hardware and return a response.</span>
+
+<span class="sd">        Subclasses that transform ``cmd`` should override this method, and in</span>
+<span class="sd">        it call ``super().ask(new_cmd)``. Subclasses that define a new</span>
+<span class="sd">        hardware communication should instead override ``ask_raw``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd: The string to send to the instrument.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            response</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Wraps any underlying exception with extra context,</span>
+<span class="sd">                including the command and the instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">answer</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">inst</span> <span class="o">=</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">args</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;asking &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; to &quot;</span> <span class="o">+</span> <span class="n">inst</span><span class="p">,)</span>
+            <span class="k">raise</span> <span class="n">e</span></div>
+
+
+<div class="viewcode-block" id="Instrument.ask_raw">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.Instrument.ask_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Low level method to write to the hardware and return a response.</span>
+
+<span class="sd">        Subclasses that define a new hardware communication should override</span>
+<span class="sd">        this method. Subclasses that transform ``cmd`` should instead</span>
+<span class="sd">        override ``ask``.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd: The string to send to the instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Instrument </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> has not defined an ask method&quot;</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="find_or_create_instrument">
+<a class="viewcode-back" href="../../../api/instrument/index.html#qcodes.instrument.find_or_create_instrument">[docs]</a>
+<span class="k">def</span> <span class="nf">find_or_create_instrument</span><span class="p">(</span>
+    <span class="n">instrument_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">T</span><span class="p">],</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">recreate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find an instrument with the given name of a given class, or create one if</span>
+<span class="sd">    it is not found. In case the instrument was found, and `recreate` is True,</span>
+<span class="sd">    the instrument will be re-instantiated.</span>
+
+<span class="sd">    Note that the class of the existing instrument has to be equal to the</span>
+<span class="sd">    instrument class of interest. For example, if an instrument with the same</span>
+<span class="sd">    name but of a different class exists, the function will raise an exception.</span>
+
+<span class="sd">    This function is very convenient because it allows not to bother about</span>
+<span class="sd">    which instruments are already instantiated and which are not.</span>
+
+<span class="sd">    If an instrument is found, a connection message is printed, as if the</span>
+<span class="sd">    instrument has just been instantiated.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        instrument_class: Class of the instrument to find or create.</span>
+<span class="sd">        name: Name of the instrument to find or create.</span>
+<span class="sd">        *args: Positional arguments passed to the instrument class.</span>
+<span class="sd">        recreate: When ``True``, the instruments gets recreated if it is found.</span>
+<span class="sd">        **kwargs: Keyword arguments passed to the instrument class.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The found or created instrument.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">exist</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">instrument_class</span><span class="o">=</span><span class="n">instrument_class</span><span class="p">):</span>
+        <span class="n">instrument</span> <span class="o">=</span> <span class="n">instrument_class</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">instrument</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">find_instrument</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">instrument_class</span><span class="o">=</span><span class="n">instrument_class</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">recreate</span><span class="p">:</span>
+            <span class="n">instrument</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">instrument</span> <span class="o">=</span> <span class="n">instrument_class</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">instrument</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>  <span class="c1"># prints the message</span>
+
+    <span class="k">return</span> <span class="n">instrument</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

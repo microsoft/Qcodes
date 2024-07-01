@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataSet Performance &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Exporting QCoDes Datasets" href="Exporting-data-to-other-file-formats.html" />
+    <link rel="prev" title="Using datasaver_builder and dond_into to streamline measurements" href="Datasaver_Builder.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">DataSet Performance</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Comparison-between-numeric/array-data-and-binary-blob">Comparison between numeric/array data and binary blob</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Loading-the-data">Loading the data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">DataSet Performance</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/DataSet/Dataset_Performance.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/Dataset_Performance.ipynb">docs/examples/DataSet/Dataset_Performance.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/Dataset_Performance.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="DataSet-Performance">
+<h1>DataSet Performance<a class="headerlink" href="#DataSet-Performance" title="Link to this heading"></a></h1>
+<p>This notebook shows the trade-off between inserting data into a database row-by-row and as binary blobs. Inserting the data row-by-row means that we have direct access to all the data and may perform queries directly on the values of the data. On the other hand, as we shall see, this is much slower than inserting the data directly as binary blobs.</p>
+<p>First, we choose a new location for the database to ensure that we don’t add a bunch of benchmarking data to the default one.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">cwd</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+<span class="kn">import</span> <span class="nn">qcodes</span> <span class="k">as</span> <span class="nn">qc</span>
+
+<span class="n">qc</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;core&quot;</span><span class="p">][</span><span class="s2">&quot;db_location&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="s1">&#39;testing.db&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : /home/runner/.qcodes/logs/240701-12875-qcodes.log
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">qcodes</span> <span class="k">as</span> <span class="nn">qc</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Measurement</span><span class="p">,</span>
+    <span class="n">initialise_or_create_database_at</span><span class="p">,</span>
+    <span class="n">load_or_create_experiment</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">ManualParameter</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;dataset_performance.db&quot;</span><span class="p">)</span>
+<span class="n">exp</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span><span class="n">experiment_name</span><span class="o">=</span><span class="s1">&#39;tutorial_exp&#39;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s2">&quot;no sample&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Here, we define a simple function to benchmark the time it takes to insert n points with either numeric or array data type. We will compare both the time used to call <code class="docutils literal notranslate"><span class="pre">add_result</span></code> and the time used for the full measurement.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">insert_data</span><span class="p">(</span><span class="n">paramtype</span><span class="p">,</span> <span class="n">npoints</span><span class="p">,</span> <span class="n">nreps</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+    <span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">ManualParameter</span><span class="p">(</span><span class="s1">&#39;x1&#39;</span><span class="p">)</span>
+    <span class="n">x2</span> <span class="o">=</span> <span class="n">ManualParameter</span><span class="p">(</span><span class="s1">&#39;x2&#39;</span><span class="p">)</span>
+    <span class="n">x3</span> <span class="o">=</span> <span class="n">ManualParameter</span><span class="p">(</span><span class="s1">&#39;x3&#39;</span><span class="p">)</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="n">ManualParameter</span><span class="p">(</span><span class="s1">&#39;y1&#39;</span><span class="p">)</span>
+    <span class="n">y2</span> <span class="o">=</span> <span class="n">ManualParameter</span><span class="p">(</span><span class="s1">&#39;y2&#39;</span><span class="p">)</span>
+
+    <span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">paramtype</span><span class="o">=</span><span class="n">paramtype</span><span class="p">)</span>
+    <span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">paramtype</span><span class="o">=</span><span class="n">paramtype</span><span class="p">)</span>
+    <span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">x3</span><span class="p">,</span> <span class="n">paramtype</span><span class="o">=</span><span class="n">paramtype</span><span class="p">)</span>
+    <span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">],</span>
+                            <span class="n">paramtype</span><span class="o">=</span><span class="n">paramtype</span><span class="p">)</span>
+    <span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">x3</span><span class="p">],</span>
+                            <span class="n">paramtype</span><span class="o">=</span><span class="n">paramtype</span><span class="p">)</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+        <span class="n">start_adding</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nreps</span><span class="p">):</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">x1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">npoints</span><span class="p">)),</span>
+                                 <span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">npoints</span><span class="p">)),</span>
+                                 <span class="p">(</span><span class="n">x3</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">npoints</span><span class="p">)),</span>
+                                 <span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">npoints</span><span class="p">)),</span>
+                                 <span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">npoints</span><span class="p">)))</span>
+        <span class="n">stop_adding</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+        <span class="n">run_id</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">run_id</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">tot_time</span> <span class="o">=</span> <span class="n">stop</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="n">add_time</span> <span class="o">=</span> <span class="n">stop_adding</span> <span class="o">-</span> <span class="n">start_adding</span>
+    <span class="k">return</span> <span class="n">tot_time</span><span class="p">,</span> <span class="n">add_time</span><span class="p">,</span> <span class="n">run_id</span>
+</pre></div>
+</div>
+</div>
+<section id="Comparison-between-numeric/array-data-and-binary-blob">
+<h2>Comparison between numeric/array data and binary blob<a class="headerlink" href="#Comparison-between-numeric/array-data-and-binary-blob" title="Link to this heading"></a></h2>
+<section id="Case1:-Short-experiment-time">
+<h3>Case1: Short experiment time<a class="headerlink" href="#Case1:-Short-experiment-time" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">500</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mi">2000</span><span class="p">,</span><span class="mi">3000</span><span class="p">,</span><span class="mi">4000</span><span class="p">,</span><span class="mi">5000</span><span class="p">]</span>
+<span class="n">t_numeric</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_numeric_add</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_array</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_array_add</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">:</span>
+    <span class="n">tn</span><span class="p">,</span> <span class="n">tna</span><span class="p">,</span> <span class="n">run_id_n</span> <span class="o">=</span>  <span class="n">insert_data</span><span class="p">(</span><span class="s1">&#39;numeric&#39;</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="n">t_numeric</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tn</span><span class="p">)</span>
+    <span class="n">t_numeric_add</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tna</span><span class="p">)</span>
+
+    <span class="n">ta</span><span class="p">,</span> <span class="n">taa</span><span class="p">,</span> <span class="n">run_id_a</span> <span class="o">=</span>  <span class="n">insert_data</span><span class="p">(</span><span class="s1">&#39;array&#39;</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+    <span class="n">t_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ta</span><span class="p">)</span>
+    <span class="n">t_array_add</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">taa</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 1.
+Starting experimental run with id: 2.
+Starting experimental run with id: 3.
+Starting experimental run with id: 4.
+Starting experimental run with id: 5.
+Starting experimental run with id: 6.
+Starting experimental run with id: 7.
+Starting experimental run with id: 8.
+Starting experimental run with id: 9.
+Starting experimental run with id: 10.
+Starting experimental run with id: 11.
+Starting experimental run with id: 12.
+Starting experimental run with id: 13.
+Starting experimental run with id: 14.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_numeric</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting row-by-row&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_numeric_add</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting row-by-row: add_result only&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_array</span><span class="p">,</span> <span class="s1">&#39;d-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting as binary blob&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_array_add</span><span class="p">,</span> <span class="s1">&#39;d-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting as binary blob: add_result only&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Array length&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Dataset_Performance_10_0.png" src="../../_images/examples_DataSet_Dataset_Performance_10_0.png" />
+</div>
+</div>
+<p>As shown in the latter figure, the time to setup and and close the experiment is approximately 0.4 sec. In case of small array sizes, the difference between inserting values of data as arrays and inserting them row-by-row is relatively unimportant. At larger array sizes, i.e. above 10000 points, the cost of writing data as individual datapoints starts to become important.</p>
+</section>
+<section id="Case2:-Long-experiment-time">
+<h3>Case2: Long experiment time<a class="headerlink" href="#Case2:-Long-experiment-time" title="Link to this heading"></a></h3>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">500</span><span class="p">,</span><span class="mi">1000</span><span class="p">,</span><span class="mi">2000</span><span class="p">,</span><span class="mi">3000</span><span class="p">,</span><span class="mi">4000</span><span class="p">,</span><span class="mi">5000</span><span class="p">]</span>
+<span class="n">nreps</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">t_numeric</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_numeric_add</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_numeric_run_ids</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_array</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_array_add</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_array_run_ids</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">:</span>
+    <span class="n">tn</span><span class="p">,</span> <span class="n">tna</span><span class="p">,</span> <span class="n">run_id_n</span> <span class="o">=</span>  <span class="n">insert_data</span><span class="p">(</span><span class="s1">&#39;numeric&#39;</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">nreps</span><span class="o">=</span><span class="n">nreps</span><span class="p">)</span>
+    <span class="n">t_numeric</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tn</span><span class="p">)</span>
+    <span class="n">t_numeric_add</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tna</span><span class="p">)</span>
+    <span class="n">t_numeric_run_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_id_n</span><span class="p">)</span>
+
+    <span class="n">ta</span><span class="p">,</span> <span class="n">taa</span><span class="p">,</span> <span class="n">run_id_a</span> <span class="o">=</span>  <span class="n">insert_data</span><span class="p">(</span><span class="s1">&#39;array&#39;</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">nreps</span><span class="o">=</span><span class="n">nreps</span><span class="p">)</span>
+    <span class="n">t_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ta</span><span class="p">)</span>
+    <span class="n">t_array_add</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">taa</span><span class="p">)</span>
+    <span class="n">t_array_run_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_id_a</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 15.
+Starting experimental run with id: 16.
+Starting experimental run with id: 17.
+Starting experimental run with id: 18.
+Starting experimental run with id: 19.
+Starting experimental run with id: 20.
+Starting experimental run with id: 21.
+Starting experimental run with id: 22.
+Starting experimental run with id: 23.
+Starting experimental run with id: 24.
+Starting experimental run with id: 25.
+Starting experimental run with id: 26.
+Starting experimental run with id: 27.
+Starting experimental run with id: 28.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_numeric</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting row-by-row&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_numeric_add</span><span class="p">,</span> <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting row-by-row: add_result only&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_array</span><span class="p">,</span> <span class="s1">&#39;d-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting as binary blob&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sizes</span><span class="p">,</span> <span class="n">t_array_add</span><span class="p">,</span> <span class="s1">&#39;d-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Inserting as binary blob: add_result only&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Array length&#39;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Dataset_Performance_14_0.png" src="../../_images/examples_DataSet_Dataset_Performance_14_0.png" />
+</div>
+</div>
+<p>However, as we increase the length of the experiment, as seen here by repeating the insertion 100 times, we see a big difference between inserting values of the data row-by-row and inserting it as a binary blob.</p>
+</section>
+</section>
+<section id="Loading-the-data">
+<h2>Loading the data<a class="headerlink" href="#Loading-the-data" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="n">load_by_id</span>
+</pre></div>
+</div>
+</div>
+<p>As usual you can load the data by using the <code class="docutils literal notranslate"><span class="pre">load_by_id</span></code> function but you will notice that the different storage methods are reflected in shape of the data as it is retrieved.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">run_id_n</span> <span class="o">=</span> <span class="n">t_numeric_run_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">run_id_a</span> <span class="o">=</span> <span class="n">t_array_run_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">load_by_id</span><span class="p">(</span><span class="n">run_id_n</span><span class="p">)</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">get_parameter_data</span><span class="p">(</span><span class="s1">&#39;x1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;x1&#39;: {&#39;x1&#39;: array([0.28189414, 0.28189414, 0.0172716 , 0.0172716 , 0.31729536,
+         0.31729536, 0.64905291, 0.64905291, 0.34843462, 0.34843462,
+         0.38938722, 0.38938722, 0.20800846, 0.20800846, 0.1838069 ,
+         0.1838069 , 0.490758  , 0.490758  , 0.59101976, 0.59101976,
+         0.17097959, 0.17097959, 0.4800182 , 0.4800182 , 0.98921527,
+         0.98921527, 0.83722189, 0.83722189, 0.53623076, 0.53623076,
+         0.0698954 , 0.0698954 , 0.21796959, 0.21796959, 0.86510715,
+         0.86510715, 0.78809594, 0.78809594, 0.66222098, 0.66222098,
+         0.88308488, 0.88308488, 0.6287137 , 0.6287137 , 0.39085918,
+         0.39085918, 0.47290296, 0.47290296, 0.79515078, 0.79515078,
+         0.13816438, 0.13816438, 0.30845564, 0.30845564, 0.32304527,
+         0.32304527, 0.46022226, 0.46022226, 0.60649911, 0.60649911,
+         0.51079508, 0.51079508, 0.31270396, 0.31270396, 0.29167295,
+         0.29167295, 0.34233704, 0.34233704, 0.15637968, 0.15637968,
+         0.61908852, 0.61908852, 0.0374666 , 0.0374666 , 0.93027773,
+         0.93027773, 0.79215348, 0.79215348, 0.62251857, 0.62251857,
+         0.46578525, 0.46578525, 0.61589695, 0.61589695, 0.99914579,
+         0.99914579, 0.11173473, 0.11173473, 0.17035559, 0.17035559,
+         0.75603511, 0.75603511, 0.11098408, 0.11098408, 0.97147214,
+         0.97147214, 0.89306717, 0.89306717, 0.98955388, 0.98955388,
+         0.76876189, 0.76876189, 0.45121932, 0.45121932, 0.8434464 ,
+         0.8434464 , 0.66272367, 0.66272367, 0.6507829 , 0.6507829 ,
+         0.21992017, 0.21992017, 0.05577738, 0.05577738, 0.90663084,
+         0.90663084, 0.14284438, 0.14284438, 0.96296067, 0.96296067,
+         0.32767855, 0.32767855, 0.96580787, 0.96580787, 0.18856935,
+         0.18856935, 0.46063543, 0.46063543, 0.69766928, 0.69766928,
+         0.042793  , 0.042793  , 0.61362267, 0.61362267, 0.19639431,
+         0.19639431, 0.21516229, 0.21516229, 0.64453674, 0.64453674,
+         0.49088871, 0.49088871, 0.72024225, 0.72024225, 0.79943355,
+         0.79943355, 0.70681894, 0.70681894, 0.0233518 , 0.0233518 ,
+         0.74456137, 0.74456137, 0.88937428, 0.88937428, 0.32642017,
+         0.32642017, 0.97988094, 0.97988094, 0.07696983, 0.07696983,
+         0.57397384, 0.57397384, 0.77470407, 0.77470407, 0.58255867,
+         0.58255867, 0.37792586, 0.37792586, 0.48585621, 0.48585621,
+         0.03611672, 0.03611672, 0.769972  , 0.769972  , 0.01426058,
+         0.01426058, 0.75658317, 0.75658317, 0.40330516, 0.40330516,
+         0.37608553, 0.37608553, 0.64658323, 0.64658323, 0.03413836,
+         0.03413836, 0.6156936 , 0.6156936 , 0.42793733, 0.42793733,
+         0.67345708, 0.67345708, 0.37874909, 0.37874909, 0.2867563 ,
+         0.2867563 , 0.74117376, 0.74117376, 0.69885445, 0.69885445])}}
+</pre></div></div>
+</div>
+<p>And a dataset stored as binary arrays</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span> <span class="o">=</span> <span class="n">load_by_id</span><span class="p">(</span><span class="n">run_id_a</span><span class="p">)</span>
+<span class="n">ds</span><span class="o">.</span><span class="n">get_parameter_data</span><span class="p">(</span><span class="s1">&#39;x1&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;x1&#39;: {&#39;x1&#39;: array([[0.76284871],
+         [0.76284871],
+         [0.68995209],
+         [0.68995209],
+         [0.26860129],
+         [0.26860129],
+         [0.33219627],
+         [0.33219627],
+         [0.38058233],
+         [0.38058233],
+         [0.58068816],
+         [0.58068816],
+         [0.58989867],
+         [0.58989867],
+         [0.50459729],
+         [0.50459729],
+         [0.72153076],
+         [0.72153076],
+         [0.48379884],
+         [0.48379884],
+         [0.29858914],
+         [0.29858914],
+         [0.49600293],
+         [0.49600293],
+         [0.52449714],
+         [0.52449714],
+         [0.95815731],
+         [0.95815731],
+         [0.63740386],
+         [0.63740386],
+         [0.39645835],
+         [0.39645835],
+         [0.47819138],
+         [0.47819138],
+         [0.02789151],
+         [0.02789151],
+         [0.28753213],
+         [0.28753213],
+         [0.76549898],
+         [0.76549898],
+         [0.53801316],
+         [0.53801316],
+         [0.85960048],
+         [0.85960048],
+         [0.79816303],
+         [0.79816303],
+         [0.21695593],
+         [0.21695593],
+         [0.85202601],
+         [0.85202601],
+         [0.35463842],
+         [0.35463842],
+         [0.3863662 ],
+         [0.3863662 ],
+         [0.13427319],
+         [0.13427319],
+         [0.14207314],
+         [0.14207314],
+         [0.56110665],
+         [0.56110665],
+         [0.28824486],
+         [0.28824486],
+         [0.01318467],
+         [0.01318467],
+         [0.66758587],
+         [0.66758587],
+         [0.22579756],
+         [0.22579756],
+         [0.09165437],
+         [0.09165437],
+         [0.00893008],
+         [0.00893008],
+         [0.92132805],
+         [0.92132805],
+         [0.70230558],
+         [0.70230558],
+         [0.60465565],
+         [0.60465565],
+         [0.68646443],
+         [0.68646443],
+         [0.08102953],
+         [0.08102953],
+         [0.75534843],
+         [0.75534843],
+         [0.55841333],
+         [0.55841333],
+         [0.10400132],
+         [0.10400132],
+         [0.24690721],
+         [0.24690721],
+         [0.92605061],
+         [0.92605061],
+         [0.35716327],
+         [0.35716327],
+         [0.91127439],
+         [0.91127439],
+         [0.8161469 ],
+         [0.8161469 ],
+         [0.42443754],
+         [0.42443754],
+         [0.63062529],
+         [0.63062529],
+         [0.70884387],
+         [0.70884387],
+         [0.46952565],
+         [0.46952565],
+         [0.19823145],
+         [0.19823145],
+         [0.10107651],
+         [0.10107651],
+         [0.07179891],
+         [0.07179891],
+         [0.34249099],
+         [0.34249099],
+         [0.94666011],
+         [0.94666011],
+         [0.04621546],
+         [0.04621546],
+         [0.23485856],
+         [0.23485856],
+         [0.37599525],
+         [0.37599525],
+         [0.941571  ],
+         [0.941571  ],
+         [0.10356733],
+         [0.10356733],
+         [0.29349117],
+         [0.29349117],
+         [0.20337402],
+         [0.20337402],
+         [0.25812891],
+         [0.25812891],
+         [0.74516936],
+         [0.74516936],
+         [0.97397068],
+         [0.97397068],
+         [0.3990392 ],
+         [0.3990392 ],
+         [0.40524904],
+         [0.40524904],
+         [0.66149876],
+         [0.66149876],
+         [0.08083859],
+         [0.08083859],
+         [0.9321003 ],
+         [0.9321003 ],
+         [0.96222383],
+         [0.96222383],
+         [0.06510671],
+         [0.06510671],
+         [0.13568799],
+         [0.13568799],
+         [0.26669413],
+         [0.26669413],
+         [0.39594568],
+         [0.39594568],
+         [0.5709342 ],
+         [0.5709342 ],
+         [0.25952641],
+         [0.25952641],
+         [0.91490805],
+         [0.91490805],
+         [0.14139333],
+         [0.14139333],
+         [0.58416352],
+         [0.58416352],
+         [0.0581231 ],
+         [0.0581231 ],
+         [0.66600161],
+         [0.66600161],
+         [0.24648198],
+         [0.24648198],
+         [0.0474144 ],
+         [0.0474144 ],
+         [0.61087965],
+         [0.61087965],
+         [0.9152312 ],
+         [0.9152312 ],
+         [0.63266268],
+         [0.63266268],
+         [0.19903459],
+         [0.19903459],
+         [0.18027618],
+         [0.18027618],
+         [0.14011366],
+         [0.14011366],
+         [0.75368902],
+         [0.75368902],
+         [0.67335593],
+         [0.67335593],
+         [0.59078642],
+         [0.59078642],
+         [0.81054398],
+         [0.81054398],
+         [0.08319969],
+         [0.08319969],
+         [0.91796534],
+         [0.91796534],
+         [0.38951467],
+         [0.38951467]])}}
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Datasaver_Builder.html" class="btn btn-neutral float-left" title="Using datasaver_builder and dond_into to streamline measurements" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Exporting-data-to-other-file-formats.html" class="btn btn-neutral float-right" title="Exporting QCoDes Datasets" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

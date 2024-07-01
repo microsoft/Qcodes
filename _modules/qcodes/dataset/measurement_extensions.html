@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.measurement_extensions &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.measurement_extensions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.measurement_extensions</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Generator</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">ExitStack</span><span class="p">,</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">opentelemetry</span> <span class="kn">import</span> <span class="n">trace</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset.dond.do_nd</span> <span class="kn">import</span> <span class="n">_Sweeper</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.dond.do_nd_utils</span> <span class="kn">import</span> <span class="n">ParamMeasT</span><span class="p">,</span> <span class="n">catch_interrupts</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.dond.sweeps</span> <span class="kn">import</span> <span class="n">AbstractSweep</span><span class="p">,</span> <span class="n">LinSweep</span><span class="p">,</span> <span class="n">TogetherSweep</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.measurements</span> <span class="kn">import</span> <span class="n">DataSaver</span><span class="p">,</span> <span class="n">Measurement</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.threading</span> <span class="kn">import</span> <span class="n">process_params_meas</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters.parameter_base</span> <span class="kn">import</span> <span class="n">ParameterBase</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">qcodes.dataset.experiment_container</span> <span class="kn">import</span> <span class="n">Experiment</span>
+
+<span class="n">TRACER</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">get_tracer</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DataSetDefinition">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.DataSetDefinition">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">DataSetDefinition</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A specification for the creation of a Dataset or Measurement object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The name to be assigned to the Measurement and dataset&quot;&quot;&quot;</span>
+    <span class="n">independent</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A sequence of independent parameters in the Measurement and dataset&quot;&quot;&quot;</span>
+    <span class="n">dependent</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A sequence of dependent parameters in the Measurement and dataset</span>
+<span class="sd">    Note: All dependent parameters will depend on all independent parameters&quot;&quot;&quot;</span>
+    <span class="n">experiment</span><span class="p">:</span> <span class="n">Experiment</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An optional argument specifying which Experiment this dataset should be</span>
+<span class="sd">    written to&quot;&quot;&quot;</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">setup_measurement_instances</span><span class="p">(</span>
+    <span class="n">dataset_definitions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DataSetDefinition</span><span class="p">],</span>
+    <span class="n">override_experiment</span><span class="p">:</span> <span class="n">Experiment</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Measurement</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a set of Measurement instances and registers parameters</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dataset_definitions: A set of DataSetDefinitions to create and register</span>
+<span class="sd">            parameters for</span>
+<span class="sd">        override_experiment: The Experiment all Measurement objects will be part of</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of Measurement objects</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">measurements</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Measurement</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ds_def</span> <span class="ow">in</span> <span class="n">dataset_definitions</span><span class="p">:</span>
+        <span class="n">ds_experiment</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">override_experiment</span>
+            <span class="k">if</span> <span class="n">override_experiment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">ds_def</span><span class="o">.</span><span class="n">experiment</span>
+        <span class="p">)</span>
+        <span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">ds_def</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">exp</span><span class="o">=</span><span class="n">ds_experiment</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">ds_def</span><span class="o">.</span><span class="n">independent</span><span class="p">:</span>
+            <span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">ds_def</span><span class="o">.</span><span class="n">dependent</span><span class="p">:</span>
+            <span class="n">meas</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="n">ds_def</span><span class="o">.</span><span class="n">independent</span><span class="p">)</span>
+        <span class="n">measurements</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meas</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">measurements</span>
+
+
+<div class="viewcode-block" id="datasaver_builder">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.datasaver_builder">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">datasaver_builder</span><span class="p">(</span>
+    <span class="n">dataset_definitions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DataSetDefinition</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">override_experiment</span><span class="p">:</span> <span class="n">Experiment</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">DataSaver</span><span class="p">],</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A utility context manager intended to simplify the creation of datasavers</span>
+
+<span class="sd">    The datasaver builder can be used to streamline the creation of multiple datasavers</span>
+<span class="sd">    where all dependent parameters depend on all independent parameters.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dataset_definitions: A set of DataSetDefinitions to create and register</span>
+<span class="sd">            parameters for</span>
+<span class="sd">        override_experiment: Sets the Experiment for all datasets to be written</span>
+<span class="sd">            to. This argument overrides any experiments provided in the</span>
+<span class="sd">            DataSetDefinition</span>
+
+<span class="sd">    Yields:</span>
+<span class="sd">        A list of generated datasavers with parameters registered</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">measurement_instances</span> <span class="o">=</span> <span class="n">setup_measurement_instances</span><span class="p">(</span>
+        <span class="n">dataset_definitions</span><span class="p">,</span> <span class="n">override_experiment</span>
+    <span class="p">)</span>
+    <span class="k">with</span> <span class="n">TRACER</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span>
+        <span class="s2">&quot;qcodes.dataset.datasaver_builder&quot;</span>
+    <span class="p">),</span> <span class="n">catch_interrupts</span><span class="p">()</span> <span class="k">as</span> <span class="n">_</span><span class="p">,</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">stack</span><span class="p">:</span>
+        <span class="n">datasaver_builder_span</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">get_current_span</span><span class="p">()</span>
+        <span class="n">datasavers</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">stack</span><span class="o">.</span><span class="n">enter_context</span><span class="p">(</span><span class="n">measurement</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">parent_span</span><span class="o">=</span><span class="n">datasaver_builder_span</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">measurement</span> <span class="ow">in</span> <span class="n">measurement_instances</span>
+        <span class="p">]</span>
+        <span class="k">yield</span> <span class="n">datasavers</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">parse_dond_into_args</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="n">AbstractSweep</span> <span class="o">|</span> <span class="n">TogetherSweep</span> <span class="o">|</span> <span class="n">ParamMeasT</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParamMeasT</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">AbstractSweep</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="n">ParamMeasT</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse supplied arguments into sweeps and measurement parameters</span>
+
+<span class="sd">    Measurement parameters may include Callables which are executed in order</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        params: Instances of n sweep classes and m measurement parameters or</span>
+<span class="sd">            callables</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sweep_instances</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">AbstractSweep</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">params_meas</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ParamMeasT</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">par</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">AbstractSweep</span><span class="p">):</span>
+            <span class="n">sweep_instances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">TogetherSweep</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dond_into does not support TogetherSweeps&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;dond_into does not support multiple datasets&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">par</span><span class="p">,</span> <span class="n">ParameterBase</span><span class="p">)</span> <span class="ow">and</span> <span class="n">par</span><span class="o">.</span><span class="n">gettable</span><span class="p">:</span>
+            <span class="n">params_meas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">par</span><span class="p">):</span>
+            <span class="n">params_meas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sweep_instances</span><span class="p">,</span> <span class="n">params_meas</span>
+
+
+<div class="viewcode-block" id="dond_into">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.dond_into">[docs]</a>
+<span class="k">def</span> <span class="nf">dond_into</span><span class="p">(</span>
+    <span class="n">datasaver</span><span class="p">:</span> <span class="n">DataSaver</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">params</span><span class="p">:</span> <span class="n">AbstractSweep</span> <span class="o">|</span> <span class="n">ParamMeasT</span><span class="p">,</span>
+    <span class="n">additional_setpoints</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A doNd-like utility function that writes gridded data to the supplied DataSaver</span>
+
+<span class="sd">    dond_into accepts AbstractSweep objects and measurement parameters or callables.</span>
+<span class="sd">    It executes the specified Sweeps, reads the measurement parameters, and stores</span>
+<span class="sd">    the resulting data in the datasaver.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        datasaver: The datasaver to write data to</span>
+<span class="sd">        params: Instances of n sweep classes and m measurement parameters,</span>
+<span class="sd">            e.g. if linear sweep is considered:</span>
+
+<span class="sd">            .. code-block:: python</span>
+
+<span class="sd">                LinSweep(param_set_1, start_1, stop_1, num_points_1, delay_1), ...,</span>
+<span class="sd">                LinSweep(param_set_n, start_n, stop_n, num_points_n, delay_n),</span>
+<span class="sd">                param_meas_1, param_meas_2, ..., param_meas_m</span>
+
+<span class="sd">        additional_setpoints: A list of setpoint parameters to be registered in the</span>
+<span class="sd">            measurement but not scanned/swept-over.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># at this stage multiple measurement context managers may be in run state</span>
+    <span class="c1"># as datasavers. Here we ensure we bind the parent span to the correct</span>
+    <span class="c1"># datasaver.</span>
+    <span class="k">if</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">_span</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">set_span_in_context</span><span class="p">(</span><span class="n">datasaver</span><span class="o">.</span><span class="n">_span</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">with</span> <span class="n">TRACER</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">&quot;qcodes.dataset.dond_into&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">):</span>
+        <span class="n">sweep_instances</span><span class="p">,</span> <span class="n">params_meas</span> <span class="o">=</span> <span class="n">parse_dond_into_args</span><span class="p">(</span><span class="o">*</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">sweeper</span> <span class="o">=</span> <span class="n">_Sweeper</span><span class="p">(</span><span class="n">sweep_instances</span><span class="p">,</span> <span class="n">additional_setpoints</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">set_events</span> <span class="ow">in</span> <span class="n">sweeper</span><span class="p">:</span>
+            <span class="n">results</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">additional_setpoints_data</span> <span class="o">=</span> <span class="n">process_params_meas</span><span class="p">(</span><span class="n">additional_setpoints</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">set_event</span> <span class="ow">in</span> <span class="n">set_events</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">set_event</span><span class="o">.</span><span class="n">should_set</span><span class="p">:</span>
+                    <span class="n">set_event</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="n">set_event</span><span class="o">.</span><span class="n">new_value</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="n">set_event</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span>
+                        <span class="n">act</span><span class="p">()</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">set_event</span><span class="o">.</span><span class="n">delay</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">set_event</span><span class="o">.</span><span class="n">get_after_set</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">set_event</span><span class="o">.</span><span class="n">parameter</span><span class="p">]</span> <span class="o">=</span> <span class="n">set_event</span><span class="o">.</span><span class="n">parameter</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">results</span><span class="p">[</span><span class="n">set_event</span><span class="o">.</span><span class="n">parameter</span><span class="p">]</span> <span class="o">=</span> <span class="n">set_event</span><span class="o">.</span><span class="n">new_value</span>
+
+            <span class="n">meas_value_pair</span> <span class="o">=</span> <span class="n">process_params_meas</span><span class="p">(</span><span class="n">params_meas</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">meas_param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">meas_value_pair</span><span class="p">:</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">meas_param</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span>
+                <span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
+                <span class="o">*</span><span class="n">additional_setpoints_data</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="LinSweeper">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.LinSweeper">[docs]</a>
+<span class="k">class</span> <span class="nc">LinSweeper</span><span class="p">(</span><span class="n">LinSweep</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An iterable version of the LinSweep class</span>
+
+<span class="sd">    Iterations of this object, set the next setpoint and then wait the delay time</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setpoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_setpoints</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_iter_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LinSweeper</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iter_index</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_points</span><span class="p">:</span>
+            <span class="n">set_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setpoints</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_iter_index</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_param</span><span class="p">(</span><span class="n">set_val</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_delay</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_iter_index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="n">set_val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

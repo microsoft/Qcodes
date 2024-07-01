@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.parameters.parameter_with_setpoints &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.parameters.parameter_with_setpoints</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.parameters.parameter_with_setpoints</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Arrays</span><span class="p">,</span> <span class="n">Validator</span>
+
+<span class="kn">from</span> <span class="nn">.parameter</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
+
+    <span class="kn">from</span> <span class="nn">.parameter_base</span> <span class="kn">import</span> <span class="n">ParamDataType</span><span class="p">,</span> <span class="n">ParameterBase</span>
+
+<span class="n">LOG</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ParameterWithSetpoints">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterWithSetpoints">[docs]</a>
+<span class="k">class</span> <span class="nc">ParameterWithSetpoints</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A parameter that has associated setpoints. The setpoints is nothing</span>
+<span class="sd">    more than a list of other parameters that describe the values, names</span>
+<span class="sd">    and units of the setpoint axis for this parameter.</span>
+
+<span class="sd">    In most cases this will probably be a parameter that returns an array.</span>
+<span class="sd">    It is expected that the setpoint arrays are 1D arrays such that the</span>
+<span class="sd">    combined shape of the parameter e.g. if parameter is of shape (m,n)</span>
+<span class="sd">    `setpoints` is a list of parameters of shape (m,) and (n,)</span>
+
+<span class="sd">    In all other ways this is identical to  :class:`Parameter`. See the</span>
+<span class="sd">    documentation of :class:`Parameter` for more details.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">vals</span><span class="p">:</span> <span class="n">Validator</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">setpoints</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">snapshot_get</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">snapshot_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">Arrays</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;A ParameterWithSetpoints must have an Arrays &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;validator got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">vals</span><span class="o">.</span><span class="n">shape_unevaluated</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;A ParameterWithSetpoints must have a shape &quot;</span>
+                <span class="s2">&quot;defined for its validator.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="p">,</span>
+            <span class="n">snapshot_get</span><span class="o">=</span><span class="n">snapshot_get</span><span class="p">,</span>
+            <span class="n">snapshot_value</span><span class="o">=</span><span class="n">snapshot_value</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">setpoints</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="n">setpoints</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_on_get</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">setpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sequence of parameters to use as setpoints for this parameter.</span>
+
+<span class="sd">        :getter: Returns a list of parameters currently used for setpoints.</span>
+<span class="sd">        :setter: Sets the parameters to be used as setpoints from a sequence.</span>
+<span class="sd">            The combined shape of the parameters supplied must be consistent</span>
+<span class="sd">            with the data shape of the data returned from get on the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_setpoints</span>
+
+    <span class="nd">@setpoints</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">setpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">setpoints</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">setpointarray</span> <span class="ow">in</span> <span class="n">setpoints</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">setpointarray</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Setpoints is of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">setpointarray</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; expected a QCoDeS parameter&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_setpoints</span> <span class="o">=</span> <span class="n">setpoints</span>
+
+<div class="viewcode-block" id="ParameterWithSetpoints.validate_consistent_shape">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterWithSetpoints.validate_consistent_shape">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate_consistent_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Verifies that the shape of the Array Validator of the parameter</span>
+<span class="sd">        is consistent with the Validator of the Setpoints. This requires that</span>
+<span class="sd">        both the setpoints and the actual parameters have validators</span>
+<span class="sd">        of type Arrays with a defined shape.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">,</span> <span class="n">Arrays</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Can only validate shapes for parameters &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;with Arrays validator. </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> does &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;not have an Arrays validator.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">output_shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="o">.</span><span class="n">shape_unevaluated</span>
+        <span class="n">setpoints_shape_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">vals</span><span class="p">,</span> <span class="n">Arrays</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Can only validate shapes for parameters &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;with Arrays validator. </span><span class="si">{</span><span class="n">sp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> is &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;a setpoint vector but does not have an &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Arrays validator&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">sp</span><span class="o">.</span><span class="n">vals</span><span class="o">.</span><span class="n">shape_unevaluated</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">setpoints_shape_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">vals</span><span class="o">.</span><span class="n">shape_unevaluated</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">setpoints_shape_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">vals</span><span class="o">.</span><span class="n">shape_unevaluated</span><span class="p">)</span>
+        <span class="n">setpoints_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">setpoints_shape_list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Trying to validate shape but parameter &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> does not define a shape&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">output_shape</span> <span class="ow">or</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">setpoints_shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;One or more dimensions have unknown shape &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;when comparing output: </span><span class="si">{</span><span class="n">output_shape</span><span class="si">}</span><span class="s2"> to &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;setpoints: </span><span class="si">{</span><span class="n">setpoints_shape</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output_shape</span> <span class="o">!=</span> <span class="n">setpoints_shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Shape of output is not consistent with &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;setpoints. Output is shape </span><span class="si">{</span><span class="n">output_shape</span><span class="si">}</span><span class="s2"> and &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;setpoints are shape </span><span class="si">{</span><span class="n">setpoints_shape</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="n">LOG</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;For parameter </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="si">}</span><span class="s2"> verified &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;that </span><span class="si">{</span><span class="n">output_shape</span><span class="si">}</span><span class="s2"> matches </span><span class="si">{</span><span class="n">setpoints_shape</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParameterWithSetpoints.validate">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ParameterWithSetpoints.validate">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overwrites the standard ``validate`` method to also check the the</span>
+<span class="sd">        parameter has consistent shape with its setpoints. This only makes</span>
+<span class="sd">        sense if the parameter has an Arrays</span>
+<span class="sd">        validator</span>
+
+<span class="sd">        Arguments are passed to the super method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vals</span><span class="p">,</span> <span class="n">Arrays</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate_consistent_shape</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="expand_setpoints_helper">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.expand_setpoints_helper">[docs]</a>
+<span class="k">def</span> <span class="nf">expand_setpoints_helper</span><span class="p">(</span>
+    <span class="n">parameter</span><span class="p">:</span> <span class="n">ParameterWithSetpoints</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="n">ParamDataType</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">,</span> <span class="n">ParamDataType</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A helper function that takes a :class:`.ParameterWithSetpoints` and</span>
+<span class="sd">    acquires the parameter along with it&#39;s setpoints. The data is returned</span>
+<span class="sd">    in a format prepared to insert into the dataset.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parameter: A :class:`.ParameterWithSetpoints` to be acquired and</span>
+<span class="sd">            expanded</span>
+<span class="sd">        results: The data for the given parameter. Typically the output of</span>
+<span class="sd">            `parameter.get()`. If None this function will call `parameter.get`</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A list of tuples of parameters and values for the specified parameter</span>
+<span class="sd">        and its setpoints.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="n">ParameterWithSetpoints</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Expanding setpoints only works for ParameterWithSetpoints. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Supplied a </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">parameter</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">setpoint_params</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">setpoint_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">setpointparam</span> <span class="ow">in</span> <span class="n">parameter</span><span class="o">.</span><span class="n">setpoints</span><span class="p">:</span>
+        <span class="n">these_setpoints</span> <span class="o">=</span> <span class="n">setpointparam</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">setpoint_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">setpointparam</span><span class="p">)</span>
+        <span class="n">setpoint_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">these_setpoints</span><span class="p">)</span>
+    <span class="n">output_grids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="n">setpoint_data</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s2">&quot;ij&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">grid</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">setpoint_params</span><span class="p">,</span> <span class="n">output_grids</span><span class="p">):</span>
+        <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">param</span><span class="p">,</span> <span class="n">grid</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">results</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">results</span>
+    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">parameter</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

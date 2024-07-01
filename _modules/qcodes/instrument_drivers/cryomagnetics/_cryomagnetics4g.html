@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.cryomagnetics._cryomagnetics4g &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.cryomagnetics._cryomagnetics4g</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.cryomagnetics._cryomagnetics4g</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">from</span> <span class="nn">pyvisa</span> <span class="kn">import</span> <span class="n">VisaIOError</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">VisaInstrument</span><span class="p">,</span> <span class="n">VisaInstrumentKWArgs</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Numbers</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+
+<div class="viewcode-block" id="CryomagneticsOperatingState">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">CryomagneticsOperatingState</span><span class="p">:</span>
+    <span class="n">ramping</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">holding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">standby</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">quench_condition_present</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">power_module_failure</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="CryomagneticsOperatingState.can_start_ramping">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.can_start_ramping">[docs]</a>
+    <span class="k">def</span> <span class="nf">can_start_ramping</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">required_checks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;ramping&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;quench_condition_present&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;power_module_failure&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">required_checks</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Cryomagnetics4GException">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException">[docs]</a>
+<span class="k">class</span> <span class="nc">Cryomagnetics4GException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Cryomagnetics4GWarning">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GWarning">[docs]</a>
+<span class="k">class</span> <span class="nc">Cryomagnetics4GWarning</span><span class="p">(</span><span class="ne">Warning</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G">[docs]</a>
+<span class="k">class</span> <span class="nc">CryomagneticsModel4G</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Driver for the Cryomagnetics Model 4G superconducting magnet power supply.</span>
+
+<span class="sd">    This driver provides an interface to control and communicate with the Cryomagnetics Model 4G</span>
+<span class="sd">    superconducting magnet power supply using the VISA protocol. It allows setting and reading</span>
+<span class="sd">    the magnetic field, ramp rate, and various other parameters of the instrument.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: The name of the instrument instance.</span>
+<span class="sd">        address: The VISA resource name of the instrument.</span>
+<span class="sd">        max_current_limits: A dictionary specifying the maximum</span>
+<span class="sd">            current limits and rates for each range. The keys are the range indices, and the values</span>
+<span class="sd">            are tuples containing the upper current limit and maximum rate for that range.</span>
+<span class="sd">        coil_constant: The coil constant of the magnet in Tesla per Amp.</span>
+<span class="sd">        **kwargs: Forwarded to base class.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">KG_TO_TESLA</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>  <span class="c1"># Constant for unit conversion</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">max_current_limits</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+        <span class="n">coil_constant</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">VisaInstrumentKWArgs</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">coil_constant</span> <span class="o">=</span> <span class="n">coil_constant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_current_limits</span> <span class="o">=</span> <span class="n">max_current_limits</span>
+
+        <span class="c1"># Initialize  rate manager based on hypothetical hardware specific limits</span>
+        <span class="c1"># Initialize rate manager based on hypothetical hardware specific limits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_max_current_limits</span><span class="p">()</span>
+
+        <span class="c1"># Adding parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;units&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;UNITS </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;UNITS?&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Enum</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;kG&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Field Units&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Field Units&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramping_state_check_interval</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;ramping_state_check_interval&quot;</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter ramping_state_check_interval&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;field&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">set_field</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_field</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mf">9.001</span><span class="p">,</span> <span class="mf">9.001</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Magnetic Field in Tesla&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Magnetic Field in Tesla&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rate</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rate&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T/min&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_rate</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_rate</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Rate for magnetic field T/min&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Rate for magnetic field T/min&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Vmag</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Vmag&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;VMAG?&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Magnet sense voltage&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Magnet sense voltage&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Vout</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Vout&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;VOUT?&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mf">12.8</span><span class="p">,</span> <span class="mf">12.8</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Magnet output voltage&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Magnet output voltage&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Iout</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Iout&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;IOUT?&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Magnet output field/current&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Magnet output field/current&quot;&quot;&quot;</span>
+
+        <span class="c1"># Set to remote mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operating_mode</span><span class="p">()</span>
+        <span class="c1">#  Set units to tesla by default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="CryomagneticsModel4G.quenched_state_reset">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.quenched_state_reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">quenched_state_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the device&#39;s quenched state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;QRESET&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G.operating_mode">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.operating_mode">[docs]</a>
+    <span class="k">def</span> <span class="nf">operating_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remote</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the device&#39;s operating mode to either remote or local.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            remote: If True, sets to remote mode, otherwise sets to local mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">remote</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;REMOTE&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;LOCAL&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G.zero_current">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.zero_current">[docs]</a>
+    <span class="k">def</span> <span class="nf">zero_current</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the device current to zero.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;SWEEP ZERO&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G.reset">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the device to its default settings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;*RST&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G.magnet_operating_state">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.magnet_operating_state">[docs]</a>
+    <span class="k">def</span> <span class="nf">magnet_operating_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CryomagneticsOperatingState</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the current operating state of the magnet.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CryomagneticsOperatingState: An object representing the current operating state of the magnet.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Cryomagnetics4GException: If the magnet is in a state that prevents ramping, such as quench condition,</span>
+<span class="sd">                                       power module failure, or already ramping.</span>
+
+<span class="sd">        The operating state is determined by querying the status byte (`*STB?`) of the instrument. The status byte is</span>
+<span class="sd">        interpreted as follows:</span>
+<span class="sd">        - Bit 0: Holding (not ramping)</span>
+<span class="sd">        - Bit 1: Ramping</span>
+<span class="sd">        - Bit 2: Standby</span>
+<span class="sd">        - Bit 4: Quench condition present</span>
+<span class="sd">        - Bit 8: Power module failure</span>
+
+<span class="sd">        If the magnet is in a state that prevents ramping (quench condition, power module failure, or already ramping),</span>
+<span class="sd">        an exception is raised with an appropriate error message. The error message is also logged using the instrument&#39;s</span>
+<span class="sd">        logger.</span>
+
+<span class="sd">        If the magnet is in a valid state for ramping, a CryomagneticsOperatingState object is returned, representing</span>
+<span class="sd">        the current operating state of the magnet.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">status_byte</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;*STB?&quot;</span><span class="p">))</span>
+
+        <span class="n">operating_state</span> <span class="o">=</span> <span class="n">CryomagneticsOperatingState</span><span class="p">(</span>
+            <span class="n">holding</span><span class="o">=</span><span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="n">ramping</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">standby</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="mi">2</span><span class="p">),</span>
+            <span class="n">quench_condition_present</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="mi">4</span><span class="p">),</span>
+            <span class="n">power_module_failure</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="mi">8</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">operating_state</span><span class="o">.</span><span class="n">quench_condition_present</span><span class="p">:</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Cannot ramp due to quench condition.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>  <span class="c1"># Log the error message</span>
+            <span class="k">raise</span> <span class="n">Cryomagnetics4GException</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">operating_state</span><span class="o">.</span><span class="n">power_module_failure</span><span class="p">:</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Cannot ramp due to power module failure.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>  <span class="c1"># Log the error message</span>
+            <span class="k">raise</span> <span class="n">Cryomagnetics4GException</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">operating_state</span><span class="o">.</span><span class="n">ramping</span><span class="p">:</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;Cannot ramp as the power supply is already ramping.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>  <span class="c1"># Log the error message</span>
+            <span class="k">raise</span> <span class="n">Cryomagnetics4GException</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">operating_state</span></div>
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G.set_field">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.set_field">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_setpoint</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the magnetic field strength in Tesla using ULIM, LLIM, and SWEEP commands.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            field_setpoint: The desired magnetic field strength in Tesla.</span>
+<span class="sd">            block: If True, the method will block until the field reaches the setpoint.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Cryo4GException: If the power supply is not in a state where it can start ramping.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert field setpoint to kG for the instrument</span>
+        <span class="n">field_setpoint_kg</span> <span class="o">=</span> <span class="n">field_setpoint</span> <span class="o">*</span> <span class="mi">10</span>
+        <span class="c1"># Determine sweep direction based on setpoint and current field</span>
+        <span class="n">current_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_field</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Current field: </span><span class="si">{</span><span class="n">current_field</span><span class="si">}</span><span class="s2">, Setpoint: </span><span class="si">{</span><span class="n">field_setpoint_kg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">field_setpoint_kg</span> <span class="o">-</span> <span class="n">current_field</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-4</span><span class="p">:</span>
+            <span class="c1"># Already at the setpoint, no need to sweep</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Magnetic field is already set to </span><span class="si">{</span><span class="n">field_setpoint</span><span class="si">}</span><span class="s2">T&quot;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Check if we can start ramping</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">magnet_operating_state</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">Cryomagnetics4GException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot set field: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># Log the specific error</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">can_start_ramping</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">field_setpoint_kg</span> <span class="o">&lt;</span> <span class="n">current_field</span><span class="p">:</span>
+                <span class="n">sweep_direction</span> <span class="o">=</span> <span class="s2">&quot;DOWN&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LLIM </span><span class="si">{</span><span class="n">field_setpoint_kg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sweep_direction</span> <span class="o">=</span> <span class="s2">&quot;UP&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ULIM </span><span class="si">{</span><span class="n">field_setpoint_kg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sweeping </span><span class="si">{</span><span class="n">sweep_direction</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">field_setpoint_kg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SWEEP </span><span class="si">{</span><span class="n">sweep_direction</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Check if we want to block</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">block</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Magnetic field is ramping but not currently blocked!&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="c1"># Otherwise, wait until no longer ramping</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Starting blocking ramp of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">field_setpoint</span><span class="si">}</span><span class="s2"> T&quot;</span>
+            <span class="p">)</span>
+            <span class="n">exit_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait_while_ramping</span><span class="p">(</span><span class="n">field_setpoint</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Finished blocking ramp&quot;</span><span class="p">)</span>
+            <span class="c1"># If we are now holding, it was successful</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">exit_state</span><span class="o">.</span><span class="n">holding</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;_set_field(</span><span class="si">{}</span><span class="s2">) failed with state: </span><span class="si">{}</span><span class="s2">&quot;</span>
+                <span class="k">raise</span> <span class="n">Cryomagnetics4GException</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">field_setpoint</span><span class="p">,</span> <span class="n">exit_state</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G.wait_while_ramping">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.wait_while_ramping">[docs]</a>
+    <span class="k">def</span> <span class="nf">wait_while_ramping</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CryomagneticsOperatingState</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Waits while the magnet is ramping, checking the status byte instead of field value.&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">status_byte</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;*STB?&quot;</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">status_byte</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">):</span>  <span class="c1"># Check if ramping bit is clear</span>
+                <span class="k">break</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ramping_state_check_interval</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;SWEEP PAUSE&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">magnet_operating_state</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_sleep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sleep for a number of seconds t. If we are or using</span>
+<span class="sd">        the PyVISA &#39;sim&#39; backend, omit this</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">simmode</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;visabackend&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;sim&quot;</span>
+
+        <span class="k">if</span> <span class="n">simmode</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_field</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">current_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;IMAG?&quot;</span><span class="p">)</span>
+        <span class="c1"># Define a regular expression to match the floating point number and the unit</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span>
+            <span class="sa">r</span><span class="s2">&quot;^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z]+)$&quot;</span><span class="p">,</span> <span class="n">current_value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid format for measurement: &#39;</span><span class="si">{</span><span class="n">current_value</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="n">raw_value</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+
+        <span class="c1"># Convert the numeric part to float</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">numeric_value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">raw_value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unable to convert &#39;</span><span class="si">{</span><span class="n">raw_value</span><span class="si">}</span><span class="s2">&#39; to float&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Validate the unit part</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="o">!=</span> <span class="s2">&quot;kG&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected unit &#39;</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">&#39;. Expected &#39;kG&#39;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Current units are set to Amperes (A). Cannot retrieve magnetic field in these units.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Return value in Tesla, only converting if necessary</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">units</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;T&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">numeric_value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">KG_TO_TESLA</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">numeric_value</span>
+
+    <span class="k">def</span> <span class="nf">_get_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the current ramp rate in Tesla per minute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get the rate from the instrument in Amps per second</span>
+        <span class="n">rate_amps_per_sec</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;RATE?&quot;</span><span class="p">))</span>
+        <span class="c1"># Convert to Tesla per minute</span>
+        <span class="n">rate_tesla_per_min</span> <span class="o">=</span> <span class="n">rate_amps_per_sec</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">coil_constant</span>
+        <span class="k">return</span> <span class="n">rate_tesla_per_min</span>
+
+    <span class="k">def</span> <span class="nf">_set_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rate_tesla_per_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the ramp rate in Tesla per minute.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert from Tesla per minute to Amps per second</span>
+        <span class="n">rate_amps_per_sec</span> <span class="o">=</span> <span class="n">rate_tesla_per_min</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">coil_constant</span> <span class="o">/</span> <span class="mi">60</span>
+        <span class="c1"># Find the appropriate range and set the rate</span>
+        <span class="n">current_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_field</span><span class="p">()</span>  <span class="c1"># Get current field in Tesla</span>
+        <span class="n">current_in_amps</span> <span class="o">=</span> <span class="n">current_field</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">coil_constant</span>  <span class="c1"># Convert to Amps</span>
+
+        <span class="c1"># (Implement a  more efficient lookup method here if needed)</span>
+        <span class="k">for</span> <span class="n">range_index</span><span class="p">,</span> <span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span> <span class="n">max_rate</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_current_limits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">current_in_amps</span> <span class="o">&lt;=</span> <span class="n">upper_limit</span><span class="p">:</span>
+                <span class="n">actual_rate</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                    <span class="n">rate_amps_per_sec</span><span class="p">,</span> <span class="n">max_rate</span>
+                <span class="p">)</span>  <span class="c1"># Ensure rate doesn&#39;t exceed maximum</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RATE </span><span class="si">{</span><span class="n">range_index</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">actual_rate</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Current field is outside of defined rate ranges&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_initialize_max_current_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the instrument with the provided current limits and rates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">range_index</span><span class="p">,</span> <span class="p">(</span><span class="n">upper_limit</span><span class="p">,</span> <span class="n">max_rate</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_current_limits</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RANGE </span><span class="si">{</span><span class="n">range_index</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">upper_limit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RATE </span><span class="si">{</span><span class="n">range_index</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">max_rate</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="CryomagneticsModel4G.write_raw">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.write_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">write_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">VisaIOError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="c1"># The ami communication has found to be unstable</span>
+            <span class="c1"># so we retry the communication here</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Got VisaIOError while writing </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s2"> to instrument.&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_WRITE_ASK</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; Will retry in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_TIME</span><span class="si">}</span><span class="s2"> sec.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_WRITE_ASK</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_TIME</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">device_clear</span><span class="p">()</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">write_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">err</span></div>
+
+
+<div class="viewcode-block" id="CryomagneticsModel4G.ask_raw">
+<a class="viewcode-back" href="../../../../drivers_api/CryoMagnetics.html#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ask_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">VisaIOError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="c1"># The communication has found to be unstable</span>
+            <span class="c1"># so we retry the communication here</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Got VisaIOError while asking the instrument: </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_WRITE_ASK</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; Will retry in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_TIME</span><span class="si">}</span><span class="s2"> sec.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_WRITE_ASK</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_RETRY_TIME</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">device_clear</span><span class="p">()</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">err</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

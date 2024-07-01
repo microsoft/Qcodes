@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stahl Drivers &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tektronix Drivers" href="Tektronix.html" />
+    <link rel="prev" title="Signal Hound Drivers" href="SignalHound.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Stahl Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl"><code class="docutils literal notranslate"><span class="pre">Stahl</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.default_terminator"><code class="docutils literal notranslate"><span class="pre">Stahl.default_terminator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.temperature"><code class="docutils literal notranslate"><span class="pre">Stahl.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.ask_raw"><code class="docutils literal notranslate"><span class="pre">Stahl.ask_raw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.visabackend"><code class="docutils literal notranslate"><span class="pre">Stahl.visabackend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.visa_handle"><code class="docutils literal notranslate"><span class="pre">Stahl.visa_handle</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.visalib"><code class="docutils literal notranslate"><span class="pre">Stahl.visalib</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.parameters"><code class="docutils literal notranslate"><span class="pre">Stahl.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.functions"><code class="docutils literal notranslate"><span class="pre">Stahl.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.submodules"><code class="docutils literal notranslate"><span class="pre">Stahl.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.instrument_modules"><code class="docutils literal notranslate"><span class="pre">Stahl.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.log"><code class="docutils literal notranslate"><span class="pre">Stahl.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.metadata"><code class="docutils literal notranslate"><span class="pre">Stahl.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.parse_idn_string"><code class="docutils literal notranslate"><span class="pre">Stahl.parse_idn_string()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.get_idn"><code class="docutils literal notranslate"><span class="pre">Stahl.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.identifier"><code class="docutils literal notranslate"><span class="pre">Stahl.identifier</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel"><code class="docutils literal notranslate"><span class="pre">StahlChannel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.acknowledge_reply"><code class="docutils literal notranslate"><span class="pre">StahlChannel.acknowledge_reply</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.voltage"><code class="docutils literal notranslate"><span class="pre">StahlChannel.voltage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.current"><code class="docutils literal notranslate"><span class="pre">StahlChannel.current</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.is_locked"><code class="docutils literal notranslate"><span class="pre">StahlChannel.is_locked</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.parameters"><code class="docutils literal notranslate"><span class="pre">StahlChannel.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.functions"><code class="docutils literal notranslate"><span class="pre">StahlChannel.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.submodules"><code class="docutils literal notranslate"><span class="pre">StahlChannel.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.instrument_modules"><code class="docutils literal notranslate"><span class="pre">StahlChannel.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.log"><code class="docutils literal notranslate"><span class="pre">StahlChannel.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.metadata"><code class="docutils literal notranslate"><span class="pre">StahlChannel.metadata</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">Stahl Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/Stahl.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.stahl">
+<span id="stahl-drivers"></span><span id="stahl-api"></span><h1>Stahl Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.stahl" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl" title="qcodes.instrument_drivers.stahl.Stahl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Stahl</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>Stahl driver.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel" title="qcodes.instrument_drivers.stahl.StahlChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StahlChannel</span></code></a>(parent, name, channel_number, ...)</p></td>
+<td><p>A Stahl source channel</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.stahl.</span></span><span class="sig-name descname"><span class="pre">Stahl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/stahl/stahl.html#Stahl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>Stahl driver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – instrument name</p></li>
+<li><p><strong>address</strong> – A serial port or TCP/IP VISA address</p></li>
+<li><p><strong>**kwargs</strong> – forwarded to base class</p></li>
+</ul>
+</dd>
+</dl>
+<p>The TCP/IP scenario can be used when the Stahl is connected to
+a different computer, for example a Raspberry Pi running Linux,
+and exposed using something like the following script:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>#!/bin/sh
+DEVICE=/dev/ttyUSB0
+PORT=8088
+echo Listening...
+while socat $DEVICE,echo=0,b115200,raw tcp-listen:$PORT,reuseaddr,nodelay; do
+    echo Restarting...
+done
+</pre></div>
+</div>
+<p>In this case the VISA address would be: <code class="docutils literal notranslate"><span class="pre">&quot;TCPIP0::hostname::8088::SOCKET&quot;</span></code></p>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.default_terminator" title="qcodes.instrument_drivers.stahl.Stahl.default_terminator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_terminator</span></code></a></p></td>
+<td><p>The default terminator to use if the terminator is not specified when creating the instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.temperature" title="qcodes.instrument_drivers.stahl.Stahl.temperature"><code class="xref py py-obj docutils literal notranslate"><span class="pre">temperature</span></code></a></p></td>
+<td><p>Parameter temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.identifier" title="qcodes.instrument_drivers.stahl.Stahl.identifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">identifier</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.ask_raw" title="qcodes.instrument_drivers.stahl.Stahl.ask_raw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask_raw</span></code></a>(cmd)</p></td>
+<td><p>Sometimes the instrument returns non-ascii characters in response strings manually adjust the encoding to latin-1</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.parse_idn_string" title="qcodes.instrument_drivers.stahl.Stahl.parse_idn_string"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_idn_string</span></code></a>(idn_string)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The dict contains the following keys &quot;model&quot;,</p>
+</dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.Stahl.get_idn" title="qcodes.instrument_drivers.stahl.Stahl.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>The Stahl sends a uncommon IDN string which does not include a firmware version.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.default_terminator">
+<span class="sig-name descname"><span class="pre">default_terminator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\r'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.default_terminator" title="Link to this definition"></a></dt>
+<dd><p>The default terminator to use if the terminator is not specified when creating the instrument.
+None means use the default terminator from PyVisa.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;temperature&quot;,</span> <span class="pre">get_cmd=f&quot;{self.identifier}</span> <span class="pre">TEMP&quot;,</span> <span class="pre">get_parser=chain(re.compile(&quot;^TEMP</span> <span class="pre">(.*)°C$&quot;).findall,</span> <span class="pre">float),</span> <span class="pre">unit=&quot;C&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.temperature" title="Link to this definition"></a></dt>
+<dd><p>Parameter temperature</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.ask_raw">
+<span class="sig-name descname"><span class="pre">ask_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/stahl/stahl.html#Stahl.ask_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.ask_raw" title="Link to this definition"></a></dt>
+<dd><p>Sometimes the instrument returns non-ascii characters in response
+strings manually adjust the encoding to latin-1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.visabackend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.14.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.visa_handle" title="Link to this definition"></a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.visalib" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.parse_idn_string">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parse_idn_string</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idn_string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/stahl/stahl.html#Stahl.parse_idn_string"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.parse_idn_string" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The dict contains the following keys “model”,
+“serial_number”, “voltage_range”,”n_channels”, “output_type”</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/stahl/stahl.html#Stahl.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.get_idn" title="Link to this definition"></a></dt>
+<dd><p>The Stahl sends a uncommon IDN string which does not include a
+firmware version.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.Stahl.identifier">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">identifier</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.Stahl.identifier" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.stahl.</span></span><span class="sig-name descname"><span class="pre">StahlChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><span class="pre">VisaInstrument</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/stahl/stahl.html#StahlChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<p>A Stahl source channel</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – Parent instrument</p></li>
+<li><p><strong>name</strong> – Name of the channel</p></li>
+<li><p><strong>channel_number</strong> – The channel number</p></li>
+<li><p><strong>**kwargs</strong> – kwargs to be passed to the base class</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.acknowledge_reply" title="qcodes.instrument_drivers.stahl.StahlChannel.acknowledge_reply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">acknowledge_reply</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.voltage" title="qcodes.instrument_drivers.stahl.StahlChannel.voltage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">voltage</span></code></a></p></td>
+<td><p>Parameter voltage</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.current" title="qcodes.instrument_drivers.stahl.StahlChannel.current"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current</span></code></a></p></td>
+<td><p>Parameter current</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.stahl.StahlChannel.is_locked" title="qcodes.instrument_drivers.stahl.StahlChannel.is_locked"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_locked</span></code></a></p></td>
+<td><p>Parameter is_locked</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.acknowledge_reply">
+<span class="sig-name descname"><span class="pre">acknowledge_reply</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\x06'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.acknowledge_reply" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.voltage">
+<span class="sig-name descname"><span class="pre">voltage</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;voltage&quot;,</span> <span class="pre">get_cmd=f&quot;{self.parent.identifier}</span> <span class="pre">U{self._channel_string}&quot;,</span> <span class="pre">get_parser=chain(</span> <span class="pre">re.compile(f&quot;^({_FLOATING_POINT_RE})[</span> <span class="pre">]?V$&quot;).findall,</span> <span class="pre">partial(re.sub,</span> <span class="pre">&quot;,&quot;,</span> <span class="pre">&quot;.&quot;),</span> <span class="pre">float,</span> <span class="pre">),</span> <span class="pre">set_cmd=self._set_voltage,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">vals=Numbers(-self.parent.voltage_range,</span> <span class="pre">self.parent.voltage_range),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.voltage" title="Link to this definition"></a></dt>
+<dd><p>Parameter voltage</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.current">
+<span class="sig-name descname"><span class="pre">current</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current&quot;,</span> <span class="pre">get_cmd=f&quot;{self.parent.identifier}</span> <span class="pre">I{self._channel_string}&quot;,</span> <span class="pre">get_parser=chain(</span> <span class="pre">re.compile(f&quot;^({_FLOATING_POINT_RE})[</span> <span class="pre">]?mA$&quot;).findall,</span> <span class="pre">partial(re.sub,</span> <span class="pre">&quot;,&quot;,</span> <span class="pre">&quot;.&quot;),</span> <span class="pre">lambda</span> <span class="pre">ma:</span> <span class="pre">float(ma)</span> <span class="pre">/</span> <span class="pre">1000,</span> <span class="pre">#</span> <span class="pre">Convert</span> <span class="pre">mA</span> <span class="pre">to</span> <span class="pre">A</span> <span class="pre">),</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.current" title="Link to this definition"></a></dt>
+<dd><p>Parameter current</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.is_locked">
+<span class="sig-name descname"><span class="pre">is_locked</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;is_locked&quot;,</span> <span class="pre">get_cmd=self._get_lock_status</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.is_locked" title="Link to this definition"></a></dt>
+<dd><p>Parameter is_locked</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.stahl.StahlChannel.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.stahl.StahlChannel.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="SignalHound.html" class="btn btn-neutral float-left" title="Signal Hound Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Tektronix.html" class="btn btn-neutral float-right" title="Tektronix Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

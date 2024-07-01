@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Lakeshore.Lakeshore_model_325 &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Lakeshore.Lakeshore_model_325</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Lakeshore.Lakeshore_model_325</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">IntFlag</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">takewhile</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Literal</span><span class="p">,</span>
+    <span class="n">SupportsBytes</span><span class="p">,</span>
+    <span class="n">SupportsIndex</span><span class="p">,</span>
+    <span class="n">TextIO</span><span class="p">,</span>
+    <span class="n">cast</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ChannelList</span><span class="p">,</span>
+    <span class="n">InstrumentBaseKWArgs</span><span class="p">,</span>
+    <span class="n">InstrumentChannel</span><span class="p">,</span>
+    <span class="n">VisaInstrument</span><span class="p">,</span>
+    <span class="n">VisaInstrumentKWArgs</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Group</span><span class="p">,</span> <span class="n">GroupParameter</span><span class="p">,</span> <span class="n">Parameter</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Numbers</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Buffer</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">Unpack</span>
+
+
+<span class="k">def</span> <span class="nf">_read_curve_file</span><span class="p">(</span><span class="n">curve_file</span><span class="p">:</span> <span class="n">TextIO</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read a curve file with extension .330</span>
+<span class="sd">    The file format of this file is shown in test_lakeshore_file_parser.py</span>
+<span class="sd">    in the test module</span>
+
+<span class="sd">    The output is a dictionary with keys: &quot;metadata&quot; and &quot;data&quot;.</span>
+<span class="sd">    The metadata dictionary contains the first n lines of the curve file which</span>
+<span class="sd">    are in the format &quot;item: value&quot;. The data dictionary contains the actual</span>
+<span class="sd">    curve data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">split_data_line</span><span class="p">(</span><span class="n">line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parser</span><span class="p">:</span> <span class="nb">type</span> <span class="o">=</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">parser</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;  &quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">strip</span><span class="p">(</span><span class="n">strings</span><span class="p">:</span> <span class="s2">&quot;Iterable[str]&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">strings</span><span class="p">)</span>
+
+    <span class="n">lines</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">curve_file</span><span class="o">.</span><span class="n">readlines</span><span class="p">())</span>
+    <span class="c1"># Meta data lines contain a colon</span>
+    <span class="n">metadata_lines</span> <span class="o">=</span> <span class="n">takewhile</span><span class="p">(</span><span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="s2">&quot;:&quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+    <span class="c1"># Data from the file is collected in the following dict</span>
+    <span class="n">file_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="c1"># Capture meta data</span>
+    <span class="n">parsed_lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">strip</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">metadata_lines</span><span class="p">]</span>
+    <span class="n">file_data</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">parsed_lines</span><span class="p">}</span>
+    <span class="c1"># After meta data we have a data header</span>
+    <span class="n">header_items</span> <span class="o">=</span> <span class="n">strip</span><span class="p">(</span><span class="n">split_data_line</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">lines</span><span class="p">)))</span>
+    <span class="c1"># After that we have the curve data</span>
+    <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">split_data_line</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span>
+    <span class="p">]</span>
+    <span class="n">file_data</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">header_items</span><span class="p">,</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">data</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">file_data</span>
+
+
+<span class="k">def</span> <span class="nf">_get_sanitize_data</span><span class="p">(</span><span class="n">file_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Data as found in the curve files are slightly different from</span>
+<span class="sd">    the dictionary as expected by the &#39;upload_curve&#39; method of the</span>
+<span class="sd">    driver</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">file_data</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">])</span>
+    <span class="c1"># We do not need the index column</span>
+    <span class="k">del</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;No.&quot;</span><span class="p">]</span>
+    <span class="c1"># Rename the &#39;Units&#39; column to the appropriate name</span>
+    <span class="c1"># Look up under the &#39;Data Format&#39; entry to find what units we have</span>
+    <span class="n">data_format</span> <span class="o">=</span> <span class="n">file_data</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">][</span><span class="s2">&quot;Data Format&quot;</span><span class="p">]</span>
+    <span class="c1"># This is a string in the form &#39;4      (Log Ohms/Kelvin)&#39;</span>
+    <span class="n">data_format_int</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data_format</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">correct_name</span> <span class="o">=</span> <span class="n">LakeshoreModel325Curve</span><span class="o">.</span><span class="n">valid_sensor_units</span><span class="p">[</span><span class="n">data_format_int</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># Rename the column</span>
+    <span class="n">data_dict</span><span class="p">[</span><span class="n">correct_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;Units&quot;</span><span class="p">]</span>
+    <span class="k">del</span> <span class="n">data_dict</span><span class="p">[</span><span class="s2">&quot;Units&quot;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">data_dict</span>
+
+
+<div class="viewcode-block" id="LakeshoreModel325Status">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Status">[docs]</a>
+<span class="k">class</span> <span class="nc">LakeshoreModel325Status</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    IntFlag that defines status codes for Lakeshore Model 325</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sensor_units_overrang</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">sensor_units_zero</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">temp_overrange</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">temp_underrange</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">invalid_reading</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># we reimplement from_bytes and to_bytes in order to fix docstrings that are incorrectly formatted</span>
+    <span class="c1"># this in turn will enable us to build docs with warnings as errors.</span>
+    <span class="c1"># This can be removed for python versions where https://github.com/python/cpython/pull/117847</span>
+    <span class="c1"># is merged</span>
+<div class="viewcode-block" id="LakeshoreModel325Status.from_bytes">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Status.from_bytes">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_bytes</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">:</span> <span class="s2">&quot;type[Self]&quot;</span><span class="p">,</span>
+        <span class="nb">bytes</span><span class="p">:</span> <span class="s2">&quot;Iterable[SupportsIndex] | SupportsBytes | Buffer&quot;</span><span class="p">,</span>
+        <span class="n">byteorder</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;big&quot;</span><span class="p">,</span> <span class="s2">&quot;little&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;big&quot;</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">signed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Self&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the integer represented by the given array of bytes.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bytes: Holds the array of bytes to convert.  The argument must either</span>
+<span class="sd">                support the buffer protocol or be an iterable object producing bytes.</span>
+<span class="sd">                Bytes and bytearray are examples of built-in objects that support the</span>
+<span class="sd">                buffer protocol.</span>
+<span class="sd">            byteorder: The byte order used to represent the integer.  If byteorder is &#39;big&#39;,</span>
+<span class="sd">                the most significant byte is at the beginning of the byte array.  If</span>
+<span class="sd">                byteorder is &#39;little&#39;, the most significant byte is at the end of the</span>
+<span class="sd">                byte array.  To request the native byte order of the host system, use</span>
+<span class="sd">                `sys.byteorder` as the byte order value.  Default is to use &#39;big&#39;.</span>
+<span class="sd">            signed: Indicates whether two\&#39;s complement is used to represent the integer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">from_bytes</span><span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">byteorder</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="n">signed</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LakeshoreModel325Status.to_bytes">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Status.to_bytes">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_bytes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">length</span><span class="p">:</span> <span class="n">SupportsIndex</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">byteorder</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;little&quot;</span><span class="p">,</span> <span class="s2">&quot;big&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;big&quot;</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">signed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return an array of bytes representing an integer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            length: Length of bytes object to use.  An OverflowError is raised if the</span>
+<span class="sd">                integer is not representable with the given number of bytes.  Default</span>
+<span class="sd">                is length 1.</span>
+<span class="sd">            byteorder: The byte order used to represent the integer.  If byteorder is \&#39;big\&#39;,</span>
+<span class="sd">                the most significant byte is at the beginning of the byte array.  If</span>
+<span class="sd">                byteorder is \&#39;little\&#39;, the most significant byte is at the end of the</span>
+<span class="sd">                byte array. To request the native byte order of the host system, use</span>
+<span class="sd">                `sys.byteorder` as the byte order value.  Default is to use \&#39;big\&#39;.</span>
+<span class="sd">            signed: Determines whether two\&#39;s complement is used to represent the integer.</span>
+<span class="sd">                If signed is False and a negative integer is given, an OverflowError</span>
+<span class="sd">                is raised.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="n">length</span><span class="p">,</span> <span class="n">byteorder</span><span class="p">,</span> <span class="n">signed</span><span class="o">=</span><span class="n">signed</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LakeshoreModel325Curve">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Curve">[docs]</a>
+<span class="k">class</span> <span class="nc">LakeshoreModel325Curve</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An InstrumentChannel representing a curve on a Lakeshore Model 325</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">valid_sensor_units</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;mV&quot;</span><span class="p">,</span> <span class="s2">&quot;V&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">,</span> <span class="s2">&quot;log Ohm&quot;</span><span class="p">)</span>
+    <span class="n">temperature_key</span> <span class="o">=</span> <span class="s2">&quot;Temperature (K)&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;LakeshoreModel325&quot;</span><span class="p">,</span>
+        <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_index</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;curve_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;serial_number&quot;</span><span class="p">,</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter serial_number&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;format&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">unt</span><span class="si">}</span><span class="s2">/K&quot;</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">unt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_sensor_units</span><span class="p">)</span>
+            <span class="p">},</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter format&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit_value</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;limit_value&quot;</span><span class="p">,</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter limit_value&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">coefficient</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;coefficient&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;negative&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;positive&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter coefficient&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">curve_name</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;curve_name&quot;</span><span class="p">,</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter curve_name&quot;&quot;&quot;</span>
+
+        <span class="n">Group</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">curve_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">serial_number</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">limit_value</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">coefficient</span><span class="p">,</span>
+            <span class="p">],</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CRVHDR </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="si">}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">curve_name</span><span class="se">}}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">{{</span><span class="s2">serial_number</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">format</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">limit_value</span><span class="se">}}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">{{</span><span class="s2">coefficient</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CRVHDR? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="LakeshoreModel325Curve.get_data">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Curve.get_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">curve</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">point_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CRVPT? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">point_index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">temperature_key</span><span class="p">:</span> <span class="n">curve</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]}</span>
+        <span class="n">sensor_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">d</span><span class="p">[</span><span class="n">sensor_unit</span><span class="p">]</span> <span class="o">=</span> <span class="n">curve</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="LakeshoreModel325Curve.validate_datadict">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Curve.validate_datadict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate_datadict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A data dict has two keys, one of which is &#39;Temperature (K)&#39;. The other</span>
+<span class="sd">        contains the units in which the curve is defined and must be one of:</span>
+<span class="sd">        &#39;mV&#39;, &#39;V&#39;, &#39;Ohm&#39; or &#39;log Ohm&#39;</span>
+
+<span class="sd">        This method validates this and returns the sensor unit encountered in</span>
+<span class="sd">        the data dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">temperature_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;At least </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">temperature_key</span><span class="si">}</span><span class="s2"> needed in the data dictionary&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">sensor_units</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">temperature_key</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sensor_units</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Data dictionary should have one other key, other then &quot;</span>
+                <span class="s2">&quot;&#39;Temperature (K)&#39;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">sensor_unit</span> <span class="o">=</span> <span class="n">sensor_units</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">sensor_unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">valid_sensor_units</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Sensor unit </span><span class="si">{</span><span class="n">sensor_unit</span><span class="si">}</span><span class="s2"> invalid. This needs to be one of &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">valid_sensor_units</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">data_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_dict</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">temperature_key</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">data_size</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_dict</span><span class="p">[</span><span class="n">sensor_unit</span><span class="p">])</span> <span class="ow">or</span> <span class="n">data_size</span> <span class="o">&gt;</span> <span class="mi">200</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The length of the temperature axis should be &quot;</span>
+                <span class="s2">&quot;the same as the length of the sensor axis and &quot;</span>
+                <span class="s2">&quot;should not exceed 200 in size&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sensor_unit</span></div>
+
+
+<div class="viewcode-block" id="LakeshoreModel325Curve.set_data">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Curve.set_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">sensor_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the curve data according to the values found the the dictionary.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data_dict (dict): See `validate_datadict` to see the format of this</span>
+<span class="sd">                                dictionary</span>
+<span class="sd">            sensor_unit (str): If None, the data dict is validated and the</span>
+<span class="sd">                                units are extracted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">sensor_unit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sensor_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_datadict</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
+
+        <span class="n">temperature_values</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">temperature_key</span><span class="p">]</span>
+        <span class="n">sensor_values</span> <span class="o">=</span> <span class="n">data_dict</span><span class="p">[</span><span class="n">sensor_unit</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">value_index</span><span class="p">,</span> <span class="p">(</span><span class="n">temperature_value</span><span class="p">,</span> <span class="n">sensor_value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span><span class="n">temperature_values</span><span class="p">,</span> <span class="n">sensor_values</span><span class="p">)</span>
+        <span class="p">):</span>
+
+            <span class="n">cmd_str</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;CRVPT </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_index</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">value_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sensor_value</span><span class="si">:</span><span class="s2">3.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">temperature_value</span><span class="si">:</span><span class="s2">3.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">cmd_str</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LakeshoreModel325Sensor">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Sensor">[docs]</a>
+<span class="k">class</span> <span class="nc">LakeshoreModel325Sensor</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    InstrumentChannel for a single sensor of a Lakeshore Model 325.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parent (LakeshoreModel325): The instrument this heater belongs to</span>
+<span class="sd">        name (str)</span>
+<span class="sd">        inp (str): Either &quot;A&quot; or &quot;B&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;LakeshoreModel325&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">inp</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">inp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please either specify input &#39;A&#39; or &#39;B&#39;&quot;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input</span> <span class="o">=</span> <span class="n">inp</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;temperature&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;KRDG? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Temperature&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;K&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter temperature&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;RDGST? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="k">lambda</span> <span class="n">status</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_sensor_status</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">status</span><span class="p">)),</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Sensor_Status&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter status&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;Silicon diode&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">&quot;GaAlAs diode&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s2">&quot;100 Ohm platinum/250&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+                <span class="s2">&quot;100 Ohm platinum/500&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+                <span class="s2">&quot;1000 Ohm platinum&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+                <span class="s2">&quot;NTC RTD&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                <span class="s2">&quot;Thermocouple 25mV&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+                <span class="s2">&quot;Thermocouple 50 mV&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+                <span class="s2">&quot;2.5 V, 1 mA&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+                <span class="s2">&quot;7.5 V, 1 mA&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter type&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compensation</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;compensation&quot;</span><span class="p">,</span> <span class="n">vals</span><span class="o">=</span><span class="n">Enum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter compensation&quot;&quot;&quot;</span>
+
+        <span class="n">Group</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compensation</span><span class="p">],</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;INTYPE </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input</span><span class="si">}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">type</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">compensation</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;INTYPE? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">curve_index</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;curve_index&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;INCRV </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input</span><span class="si">}</span><span class="s2">, </span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;INCRV? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_input</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">35</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter curve_index&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LakeshoreModel325Sensor.decode_sensor_status">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Sensor.decode_sensor_status">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">decode_sensor_status</span><span class="p">(</span><span class="n">sum_of_codes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">total_status</span> <span class="o">=</span> <span class="n">LakeshoreModel325Status</span><span class="p">(</span><span class="n">sum_of_codes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sum_of_codes</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;OK&quot;</span>
+        <span class="n">status_messages</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">LakeshoreModel325Status</span>
+            <span class="k">if</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">total_status</span> <span class="ow">and</span> <span class="n">st</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">status_messages</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">curve</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LakeshoreModel325Curve</span><span class="p">:</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">LakeshoreModel325</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">LakeshoreModel325Curve</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">curve_index</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="LakeshoreModel325Heater">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325Heater">[docs]</a>
+<span class="k">class</span> <span class="nc">LakeshoreModel325Heater</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;LakeshoreModel325&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">loop</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        InstrumentChannel for heater control on a Lakeshore Model 325.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent: The instrument this heater belongs to</span>
+<span class="sd">            name: Name of the Channel</span>
+<span class="sd">            loop: Either 1 or 2</span>
+<span class="sd">            **kwargs: Forwarded to baseclass.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">loop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please either specify loop 1 or 2&quot;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">control_mode</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;control_mode&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CMODE? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CMODE </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">,</span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;Manual PID&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Zone&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Open Loop&quot;</span><span class="p">:</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;AutoTune PID&quot;</span><span class="p">:</span> <span class="s2">&quot;4&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;AutoTune PI&quot;</span><span class="p">:</span> <span class="s2">&quot;5&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;AutoTune P&quot;</span><span class="p">:</span> <span class="s2">&quot;6&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter control_mode&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_channel</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;input_channel&quot;</span><span class="p">,</span> <span class="n">vals</span><span class="o">=</span><span class="n">Enum</span><span class="p">(</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">),</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter input_channel&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;unit&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Kelvin&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;Celsius&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span> <span class="s2">&quot;Sensor Units&quot;</span><span class="p">:</span> <span class="s2">&quot;3&quot;</span><span class="p">},</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter unit&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">powerup_enable</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;powerup_enable&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter powerup_enable&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_metric</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;output_metric&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;current&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;power&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter output_metric&quot;&quot;&quot;</span>
+
+        <span class="n">Group</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">powerup_enable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_metric</span><span class="p">],</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CSET </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">input_channel</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">unit</span><span class="se">}}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="se">{{</span><span class="s2">powerup_enable</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">output_metric</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CSET? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;P&quot;</span><span class="p">,</span> <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span> <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter P&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span> <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter I&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">),</span> <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter D&quot;&quot;&quot;</span>
+
+        <span class="n">Group</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">],</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;PID </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">P</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">I</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">D</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;PID? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">valid_output_ranges</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">valid_output_ranges</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_range</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;output_range&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">valid_output_ranges</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;RANGE </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">, </span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;RANGE? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;Off&quot;</span><span class="p">:</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;Low (2.5W)&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;High (25W)&quot;</span><span class="p">:</span> <span class="s2">&quot;2&quot;</span><span class="p">},</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter output_range&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoint</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;setpoint&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">400</span><span class="p">),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SETP </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">, </span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SETP? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter setpoint&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_state</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;ramp_state&quot;</span><span class="p">,</span> <span class="n">vals</span><span class="o">=</span><span class="n">Enum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter ramp_state&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;ramp_rate&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span> <span class="o">/</span> <span class="mi">60</span> <span class="o">*</span> <span class="mf">1e3</span><span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;mK/s&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="mi">60</span> <span class="o">*</span> <span class="mf">1e3</span><span class="p">,</span>  <span class="c1"># We get values in K/min,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mf">1e-3</span><span class="p">,</span>  <span class="c1"># Convert to K/min</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter ramp_rate&quot;&quot;&quot;</span>
+
+        <span class="n">Group</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ramp_state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">],</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;RAMP </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">ramp_state</span><span class="se">}}</span><span class="s2">, </span><span class="se">{{</span><span class="s2">ramp_rate</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;RAMP? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_ramping</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;is_ramping&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;RAMPST? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter is_ramping&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resistance</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;resistance&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HTRRES? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HTRRES </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">, </span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="mi">25</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="mi">50</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Resistance&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Ohm&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter resistance&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">heater_output</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;heater_output&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HTR? </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Heater Output&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;%&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter heater_output&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="LakeshoreModel325">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325">[docs]</a>
+<span class="k">class</span> <span class="nc">LakeshoreModel325</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    QCoDeS driver for Lakeshore Model 325 Temperature Controller.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">sensors</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;sensor&quot;</span><span class="p">,</span> <span class="n">LakeshoreModel325Sensor</span><span class="p">,</span> <span class="n">snapshotable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">inp</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">]:</span>
+            <span class="n">sensor</span> <span class="o">=</span> <span class="n">LakeshoreModel325Sensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">inp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">inp</span><span class="p">)</span>
+            <span class="n">sensors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sensor</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sensor_</span><span class="si">{</span><span class="n">inp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">sensor</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;sensor&quot;</span><span class="p">,</span> <span class="n">sensors</span><span class="o">.</span><span class="n">to_channel_tuple</span><span class="p">())</span>
+
+        <span class="n">heaters</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;heater&quot;</span><span class="p">,</span> <span class="n">LakeshoreModel325Heater</span><span class="p">,</span> <span class="n">snapshotable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">loop</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]:</span>
+            <span class="n">heater</span> <span class="o">=</span> <span class="n">LakeshoreModel325Heater</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;heater_</span><span class="si">{</span><span class="n">loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">loop</span><span class="p">)</span>
+            <span class="n">heaters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">heater</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;heater_</span><span class="si">{</span><span class="n">loop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">heater</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;heater&quot;</span><span class="p">,</span> <span class="n">heaters</span><span class="o">.</span><span class="n">to_channel_tuple</span><span class="p">())</span>
+
+        <span class="n">curves</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;curve&quot;</span><span class="p">,</span> <span class="n">LakeshoreModel325Curve</span><span class="p">,</span> <span class="n">snapshotable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">curve_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">35</span><span class="p">):</span>
+            <span class="n">curve</span> <span class="o">=</span> <span class="n">LakeshoreModel325Curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">curve_index</span><span class="p">)</span>
+            <span class="n">curves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curve</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;curve&quot;</span><span class="p">,</span> <span class="n">curves</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="LakeshoreModel325.upload_curve">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325.upload_curve">[docs]</a>
+    <span class="k">def</span> <span class="nf">upload_curve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">serial_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Upload a curve to the given index</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">             index: The index to upload the curve to. We can only use</span>
+<span class="sd">                indices reserved for user defined curves, 21-35</span>
+<span class="sd">             name: Name of the curve</span>
+<span class="sd">             serial_number: Serial number of the curve</span>
+<span class="sd">             data_dict: A dictionary containing the curve data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">21</span><span class="p">,</span> <span class="mi">36</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;index value should be between 21 and 35&quot;</span><span class="p">)</span>
+
+        <span class="n">sensor_unit</span> <span class="o">=</span> <span class="n">LakeshoreModel325Curve</span><span class="o">.</span><span class="n">validate_datadict</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
+
+        <span class="n">curve</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">curve</span><span class="p">[</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">curve</span><span class="o">.</span><span class="n">curve_name</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">curve</span><span class="o">.</span><span class="n">serial_number</span><span class="p">(</span><span class="n">serial_number</span><span class="p">)</span>
+        <span class="n">curve</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sensor_unit</span><span class="si">}</span><span class="s2">/K&quot;</span><span class="p">)</span>
+        <span class="n">curve</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">data_dict</span><span class="p">,</span> <span class="n">sensor_unit</span><span class="o">=</span><span class="n">sensor_unit</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LakeshoreModel325.upload_curve_from_file">
+<a class="viewcode-back" href="../../../../drivers_api/Lakeshore.html#qcodes.instrument_drivers.Lakeshore.LakeshoreModel325.upload_curve_from_file">[docs]</a>
+    <span class="k">def</span> <span class="nf">upload_curve_from_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Upload a curve from a curve file. Note that we only support</span>
+<span class="sd">        curve files with extension .330</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">file_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.330&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only curve files with extension .330 are supported&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">curve_file</span><span class="p">:</span>
+            <span class="n">file_data</span> <span class="o">=</span> <span class="n">_read_curve_file</span><span class="p">(</span><span class="n">curve_file</span><span class="p">)</span>
+
+        <span class="n">data_dict</span> <span class="o">=</span> <span class="n">_get_sanitize_data</span><span class="p">(</span><span class="n">file_data</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">file_data</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">][</span><span class="s2">&quot;Sensor Model&quot;</span><span class="p">]</span>
+        <span class="n">serial_number</span> <span class="o">=</span> <span class="n">file_data</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">][</span><span class="s2">&quot;Serial Number&quot;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">upload_curve</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">serial_number</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

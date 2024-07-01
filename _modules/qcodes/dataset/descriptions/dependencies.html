@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.descriptions.dependencies &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.descriptions.dependencies</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.descriptions.dependencies</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module holds the objects that describe the intra-run relationships</span>
+<span class="sd">between the parameters of that run. Most importantly, the information about</span>
+<span class="sd">which parameters depend on each other is handled here.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.param_spec</span> <span class="kn">import</span> <span class="n">ParamSpec</span><span class="p">,</span> <span class="n">ParamSpecBase</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
+
+    <span class="kn">from</span> <span class="nn">.versioning.rundescribertypes</span> <span class="kn">import</span> <span class="n">InterDependencies_Dict</span>
+
+<span class="n">ParamSpecTree</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+<span class="n">ParamNameTree</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+<span class="n">ErrorTuple</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="ne">Exception</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">DependencyError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">missing_params</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_param_name</span> <span class="o">=</span> <span class="n">param_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_missing_params</span> <span class="o">=</span> <span class="n">missing_params</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_name</span><span class="si">}</span><span class="s1"> has the following dependencies that are &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;missing: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_missing_params</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">InferenceError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">missing_params</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_param_name</span> <span class="o">=</span> <span class="n">param_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_missing_params</span> <span class="o">=</span> <span class="n">missing_params</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_name</span><span class="si">}</span><span class="s1"> has the following inferences that are &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;missing: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_missing_params</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="InterDependencies_">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.InterDependencies_">[docs]</a>
+<span class="k">class</span> <span class="nc">InterDependencies_</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Object containing a group of ParamSpecs and the information about their</span>
+<span class="sd">    internal relations to each other</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dependencies</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">inferences</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">standalones</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="p">):</span>
+
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="n">dependencies</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">inferences</span> <span class="o">=</span> <span class="n">inferences</span> <span class="ow">or</span> <span class="p">{}</span>
+
+        <span class="n">deps_error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_paramspectree</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">deps_error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">deps_error</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">deps_error</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">old_error</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid dependencies&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">old_error</span>
+
+        <span class="n">inffs_error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_paramspectree</span><span class="p">(</span><span class="n">inferences</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">inffs_error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">inffs_error</span><span class="p">[</span><span class="mi">0</span><span class="p">](</span><span class="n">inffs_error</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">old_error</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid inferences&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">old_error</span>
+
+        <span class="n">link_error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_double_links</span><span class="p">(</span><span class="n">dependencies</span><span class="p">,</span> <span class="n">inferences</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">link_error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">error</span><span class="p">,</span> <span class="n">mssg</span> <span class="o">=</span> <span class="n">link_error</span>
+            <span class="k">raise</span> <span class="n">error</span><span class="p">(</span><span class="n">mssg</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">standalones</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="n">ParamSpecBase</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Standalones must be a sequence of ParamSpecs&quot;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">base_error</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid standalones&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">base_error</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remove_duplicates</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remove_duplicates</span><span class="p">(</span><span class="n">inferences</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">=</span> <span class="n">dependencies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">=</span> <span class="n">inferences</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">:</span> <span class="nb">frozenset</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">standalones</span><span class="p">)</span>
+
+        <span class="c1"># The object is now complete, but for convenience, we form some more</span>
+        <span class="c1"># private attributes for easy look-up</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParamSpecBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">tree</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">ps</span><span class="p">,</span> <span class="n">ps_tup</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">ps</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">pst</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">pst</span>
+                                              <span class="k">for</span> <span class="n">pst</span> <span class="ow">in</span> <span class="n">ps_tup</span><span class="p">})</span>
+        <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">ps</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_paramspec_to_id</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies_inv</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invert_tree</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_inferences_inv</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invert_tree</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">)</span>
+
+        <span class="c1"># Set operations are ~2x (or more) faster on strings than on hashable</span>
+        <span class="c1"># ParamSpecBase objects, hence the need for use of the following</span>
+        <span class="c1"># representation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_deps_names</span><span class="p">:</span> <span class="n">ParamNameTree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_of_names</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_infs_names</span><span class="p">:</span> <span class="n">ParamNameTree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tree_of_names</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_tree_of_names</span><span class="p">(</span><span class="n">tree</span><span class="p">:</span> <span class="n">ParamSpecTree</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamNameTree</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper function to convert a ParamSpecTree-kind of tree where all</span>
+<span class="sd">        ParamSpecBases are substituted with their ``.name`` s.</span>
+<span class="sd">        Will turn {A: (B, C)} into {A.name: (B.name, C.name)}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">name_tree</span><span class="p">:</span> <span class="n">ParamNameTree</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ps</span><span class="p">,</span> <span class="n">ps_tuple</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">name_tree</span><span class="p">[</span><span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">ps_tuple</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">name_tree</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_invert_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">:</span> <span class="n">ParamSpecTree</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamSpecTree</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper function to invert a ParamSpecTree. Will turn {A: (B, C)} into</span>
+<span class="sd">        {B: (A,), C: (A,)}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indeps</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">indep_tup</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">indeps</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">indep_tup</span><span class="p">)</span>
+
+        <span class="n">inverted</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">indep</span> <span class="ow">in</span> <span class="n">indeps</span><span class="p">:</span>
+            <span class="n">deps</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ps</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">tree</span> <span class="k">if</span> <span class="n">indep</span> <span class="ow">in</span> <span class="n">tree</span><span class="p">[</span><span class="n">ps</span><span class="p">])</span>
+            <span class="n">inverted</span><span class="p">[</span><span class="n">indep</span><span class="p">]</span> <span class="o">=</span> <span class="n">deps</span>
+
+        <span class="k">return</span> <span class="n">inverted</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_remove_duplicates</span><span class="p">(</span><span class="n">tree</span><span class="p">:</span> <span class="n">ParamSpecTree</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper function to remove duplicate entries from a ParamSpecTree while</span>
+<span class="sd">        preserving order. Will turn {A: (B, B, C)} into {A: (B, C)}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ps</span><span class="p">,</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">specs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">tup</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+                    <span class="n">specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">tree</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="InterDependencies_.validate_paramspectree">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.InterDependencies_.validate_paramspectree">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">validate_paramspectree</span><span class="p">(</span><span class="n">paramspectree</span><span class="p">:</span> <span class="n">ParamSpecTree</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ErrorTuple</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate a ParamSpecTree. Apart from adhering to the type, a</span>
+<span class="sd">        ParamSpecTree must not have any cycles.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A tuple with an exception type and an error message or None, if</span>
+<span class="sd">            the paramtree is valid</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Validate the type</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">paramspectree</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="s1">&#39;ParamSpecTree must be a dict&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">paramspectree</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">ParamSpecBase</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="s1">&#39;ParamSpecTree must have ParamSpecs as keys&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="s1">&#39;ParamSpecTree must have tuple values&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">ParamSpecBase</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span>
+                            <span class="p">(</span><span class="s1">&#39;ParamSpecTree can only have tuples of &#39;</span>
+                             <span class="s1">&#39;ParamSpecs as values&#39;</span><span class="p">))</span>
+
+        <span class="c1"># check for cycles</span>
+
+        <span class="n">roots</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">paramspectree</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">leafs</span> <span class="o">=</span> <span class="p">{</span><span class="n">ps</span> <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">paramspectree</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">tup</span><span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">roots</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">leafs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">():</span>
+            <span class="k">return</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="s1">&#39;ParamSpecTree can not have cycles&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_validate_double_links</span><span class="p">(</span>
+        <span class="n">tree1</span><span class="p">:</span> <span class="n">ParamSpecTree</span><span class="p">,</span> <span class="n">tree2</span><span class="p">:</span> <span class="n">ParamSpecTree</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ErrorTuple</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate that two trees do not contain double links. A double link</span>
+<span class="sd">        is a link between two nodes that exists in both trees. E.g. if the</span>
+<span class="sd">        first tree has {A: (B, C)}, the second may not have {B: (A,)} etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">ps</span><span class="p">,</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">tree1</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">tup</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">tree2</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="p">()):</span>
+                    <span class="n">mssg</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid dependencies/inferences. </span><span class="si">{</span><span class="n">ps</span><span class="si">}</span><span class="s2"> and &quot;</span>
+                            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> have an ill-defined relationship.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">mssg</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="InterDependencies_.what_depends_on">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.InterDependencies_.what_depends_on">[docs]</a>
+    <span class="k">def</span> <span class="nf">what_depends_on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">:</span> <span class="n">ParamSpecBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple of the parameters that depend on the given parameter.</span>
+<span class="sd">        Returns an empty tuple if nothing depends on the given parameter</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ps: the parameter to look up</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError if the parameter is not part of this object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ps</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown parameter: </span><span class="si">{</span><span class="n">ps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies_inv</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="InterDependencies_.what_is_inferred_from">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.InterDependencies_.what_is_inferred_from">[docs]</a>
+    <span class="k">def</span> <span class="nf">what_is_inferred_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">:</span> <span class="n">ParamSpecBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return a tuple of the parameters thatare inferred from the given</span>
+<span class="sd">        parameter. Returns an empty tuple if nothing is inferred from the given</span>
+<span class="sd">        parameter</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ps: the parameter to look up</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError if the parameter is not part of this object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ps</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown parameter: </span><span class="si">{</span><span class="n">ps</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inferences_inv</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ps</span><span class="p">,</span> <span class="p">())</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InterDependencies_Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write out this object as a dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="o">.</span><span class="n">_to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_subdict</span><span class="p">(</span><span class="s1">&#39;dependencies&#39;</span><span class="p">)</span>
+        <span class="n">inferences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_construct_subdict</span><span class="p">(</span><span class="s1">&#39;inferences&#39;</span><span class="p">)</span>
+        <span class="n">standalones</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_paramspec_to_id</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">]</span>
+        <span class="n">output</span><span class="p">:</span> <span class="n">InterDependencies_Dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">parameters</span><span class="p">,</span>
+                                          <span class="s2">&quot;dependencies&quot;</span><span class="p">:</span> <span class="n">dependencies</span><span class="p">,</span>
+                                          <span class="s2">&quot;inferences&quot;</span><span class="p">:</span> <span class="n">inferences</span><span class="p">,</span>
+                                          <span class="s2">&quot;standalones&quot;</span><span class="p">:</span> <span class="n">standalones</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="k">def</span> <span class="nf">_empty_data_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an dictionary with empty numpy arrays as values</span>
+<span class="sd">        matching the expected output of ``DataSet``&#39;s ``get_parameter_data`` /</span>
+<span class="sd">        ``cache.data`` so that the order of keys in the returned dictionary</span>
+<span class="sd">        is the same as the order of parameters in the interdependencies</span>
+<span class="sd">        in this class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">output</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">dependent</span><span class="p">,</span> <span class="n">independents</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dependent_name</span> <span class="o">=</span> <span class="n">dependent</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">output</span><span class="p">[</span><span class="n">dependent_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">dependent_name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])}</span>
+            <span class="k">for</span> <span class="n">independent</span> <span class="ow">in</span> <span class="n">independents</span><span class="p">:</span>
+                <span class="n">output</span><span class="p">[</span><span class="n">dependent_name</span><span class="p">][</span><span class="n">independent</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="k">for</span> <span class="n">standalone</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">):</span>
+            <span class="n">output</span><span class="p">[</span><span class="n">standalone</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">output</span><span class="p">[</span><span class="n">standalone</span><span class="p">][</span><span class="n">standalone</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="k">def</span> <span class="nf">_construct_subdict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">treename</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">ps_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paramspec_to_id</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">ps_ids</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_paramspec_to_id</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">value</span><span class="p">]</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">ps_id</span><span class="p">:</span> <span class="n">ps_ids</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">paramspecs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the ParamSpecBase objects of this instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_paramspec_to_id</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">non_dependencies</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return all parameters that are not dependencies of other parameters,</span>
+<span class="sd">        i.e. return the top level parameters. Returned tuple is sorted by</span>
+<span class="sd">        parameter names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">non_dependencies</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">)</span> \
+                         <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">non_dependencies_sorted_by_name</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">non_dependencies</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ps</span><span class="p">:</span> <span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">non_dependencies_sorted_by_name</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return all the names of the parameters of this instance</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">_extend_with_paramspec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">:</span> <span class="n">ParamSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InterDependencies_</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new InterDependencies_ object extended with the provided</span>
+<span class="sd">        ParamSpec. A helper function for DataSet&#39;s add_parameter function.</span>
+<span class="sd">        Note that this function will only work as expected if the ParamSpecs</span>
+<span class="sd">        are extended into the InterDependencies_ in the &quot;logical order&quot;, i.e.</span>
+<span class="sd">        independent ParamSpecs before dependent ones.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">base_ps</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">base_version</span><span class="p">()</span>
+
+        <span class="n">old_standalones</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">new_standalones</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">depends_on_</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">deps_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ps</span><span class="o">.</span><span class="n">depends_on_</span><span class="p">]</span>
+            <span class="n">new_deps</span> <span class="o">=</span> <span class="p">{</span><span class="n">base_ps</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">deps_list</span><span class="p">)}</span>
+            <span class="n">old_standalones</span> <span class="o">=</span> <span class="n">old_standalones</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">deps_list</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_deps</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">inferred_from_</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">inffs_list</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                          <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ps</span><span class="o">.</span><span class="n">inferred_from_</span><span class="p">]</span>
+            <span class="n">new_inffs</span> <span class="o">=</span> <span class="p">{</span><span class="n">base_ps</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">inffs_list</span><span class="p">)}</span>
+            <span class="n">old_standalones</span> <span class="o">=</span> <span class="n">old_standalones</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">inffs_list</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_inffs</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">new_deps</span> <span class="o">==</span> <span class="n">new_inffs</span> <span class="o">==</span> <span class="p">{}:</span>
+            <span class="n">new_standalones</span> <span class="o">=</span> <span class="p">(</span><span class="n">base_ps</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">old_standalones</span> <span class="o">=</span> <span class="n">old_standalones</span><span class="o">.</span><span class="n">difference</span><span class="p">({</span><span class="n">base_ps</span><span class="p">})</span>
+            <span class="n">new_standalones</span> <span class="o">=</span> <span class="p">()</span>
+
+        <span class="n">new_deps</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">new_inffs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="n">new_standalones</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">new_standalones</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">old_standalones</span><span class="p">))</span>
+
+        <span class="n">new_idps</span> <span class="o">=</span> <span class="n">InterDependencies_</span><span class="p">(</span><span class="n">dependencies</span><span class="o">=</span><span class="n">new_deps</span><span class="p">,</span>
+                                      <span class="n">inferences</span><span class="o">=</span><span class="n">new_inffs</span><span class="p">,</span>
+                                      <span class="n">standalones</span><span class="o">=</span><span class="n">new_standalones</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_idps</span>
+
+<div class="viewcode-block" id="InterDependencies_.extend">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.InterDependencies_.extend">[docs]</a>
+    <span class="k">def</span> <span class="nf">extend</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">dependencies</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">inferences</span><span class="p">:</span> <span class="n">ParamSpecTree</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">standalones</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InterDependencies_</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new :class:`InterDependencies_` object</span>
+<span class="sd">        that is an extension of this instance with the provided input</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">dependencies</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">dependencies</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">dependencies</span>
+        <span class="n">inferences</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">inferences</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">inferences</span>
+
+        <span class="c1"># first step: remove parameters from standalones if they no longer</span>
+        <span class="c1"># stand alone</span>
+
+        <span class="n">depended_on</span> <span class="o">=</span> <span class="p">(</span><span class="n">ps</span> <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">dependencies</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">tup</span><span class="p">)</span>
+        <span class="n">inferred_from</span> <span class="o">=</span> <span class="p">(</span><span class="n">ps</span> <span class="k">for</span> <span class="n">tup</span> <span class="ow">in</span> <span class="n">inferences</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">tup</span><span class="p">)</span>
+
+        <span class="n">standalones_mut</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">))</span>
+        <span class="n">standalones_mut</span> <span class="o">=</span> <span class="p">(</span><span class="n">standalones_mut</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">dependencies</span><span class="p">))</span>
+                                          <span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">inferences</span><span class="p">))</span>
+                                          <span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">depended_on</span><span class="p">))</span>
+                                          <span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">inferred_from</span><span class="p">)))</span>
+
+        <span class="c1"># then update deps and inffs</span>
+        <span class="n">new_deps</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">new_deps</span><span class="p">)):</span>
+            <span class="n">new_deps</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">new_deps</span><span class="p">[</span><span class="n">ps</span><span class="p">])</span> <span class="o">+</span>
+                                     <span class="nb">list</span><span class="p">(</span><span class="n">dependencies</span><span class="p">[</span><span class="n">ps</span><span class="p">])))</span>
+        <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">dependencies</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">new_deps</span><span class="p">)):</span>
+            <span class="n">new_deps</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">ps</span><span class="p">):</span> <span class="n">dependencies</span><span class="p">[</span><span class="n">ps</span><span class="p">]})</span>
+
+        <span class="n">new_inffs</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">inferences</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">new_inffs</span><span class="p">)):</span>
+            <span class="n">new_inffs</span><span class="p">[</span><span class="n">ps</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">new_inffs</span><span class="p">[</span><span class="n">ps</span><span class="p">])</span> <span class="o">+</span>
+                                      <span class="nb">list</span><span class="p">(</span><span class="n">inferences</span><span class="p">[</span><span class="n">ps</span><span class="p">])))</span>
+        <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">inferences</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">new_inffs</span><span class="p">)):</span>
+            <span class="n">new_inffs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">ps</span><span class="p">):</span> <span class="n">inferences</span><span class="p">[</span><span class="n">ps</span><span class="p">]})</span>
+
+        <span class="c1"># add new standalones</span>
+        <span class="n">new_standalones</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">standalones_mut</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">standalones</span><span class="p">)))</span>
+
+        <span class="n">new_idps</span> <span class="o">=</span> <span class="n">InterDependencies_</span><span class="p">(</span><span class="n">dependencies</span><span class="o">=</span><span class="n">new_deps</span><span class="p">,</span>
+                                      <span class="n">inferences</span><span class="o">=</span><span class="n">new_inffs</span><span class="p">,</span>
+                                      <span class="n">standalones</span><span class="o">=</span><span class="n">new_standalones</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_idps</span></div>
+
+
+<div class="viewcode-block" id="InterDependencies_.remove">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.InterDependencies_.remove">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">ParamSpecBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InterDependencies_</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new :class:`InterDependencies_` object that is similar</span>
+<span class="sd">        to this instance, but has the given parameter removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown parameter: </span><span class="si">{</span><span class="n">parameter</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies_inv</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot remove </span><span class="si">{</span><span class="n">parameter</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">, other &#39;</span>
+                             <span class="s1">&#39;parameters depend on it.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inferences_inv</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot remove </span><span class="si">{</span><span class="n">parameter</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">, other &#39;</span>
+                             <span class="s1">&#39;parameters are inferred from it.&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">:</span>
+            <span class="n">new_standalones</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">)</span><span class="o">.</span>
+                                    <span class="n">difference</span><span class="p">({</span><span class="n">parameter</span><span class="p">}))</span>
+            <span class="n">new_deps</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
+            <span class="n">new_inffs</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span> <span class="ow">or</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">:</span>
+            <span class="n">new_deps</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">)</span>
+            <span class="n">new_inffs</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">)</span>
+            <span class="c1"># figure out whether removing this parameter will make any other</span>
+            <span class="c1"># parameters standalone</span>
+            <span class="n">new_standalones_l</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">old_standalones</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">indep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">indep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inferences_inv</span> <span class="ow">or</span>
+                       <span class="n">indep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="p">):</span>
+                    <span class="n">new_standalones_l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indep</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">basis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="k">if</span> <span class="ow">not</span><span class="p">(</span><span class="n">basis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dependencies_inv</span> <span class="ow">or</span>
+                       <span class="n">basis</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="p">):</span>
+                    <span class="n">new_standalones_l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">basis</span><span class="p">)</span>
+            <span class="n">new_deps</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">new_inffs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">new_standalones</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">new_standalones_l</span><span class="p">)</span>
+                                    <span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">old_standalones</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Inconsistent InterDependencies_ object &#39;</span>
+                             <span class="sa">f</span><span class="s1">&#39;parameter: </span><span class="si">{</span><span class="n">parameter</span><span class="si">}</span><span class="s1"> is in list of&#39;</span>
+                             <span class="sa">f</span><span class="s1">&#39;parameters but is neither a &quot;standalone&quot;, &#39;</span>
+                             <span class="sa">f</span><span class="s1">&#39;&quot;dependency&quot; or &quot;inference&quot;&#39;</span><span class="p">)</span>
+
+        <span class="n">idps</span> <span class="o">=</span> <span class="n">InterDependencies_</span><span class="p">(</span><span class="n">dependencies</span><span class="o">=</span><span class="n">new_deps</span><span class="p">,</span> <span class="n">inferences</span><span class="o">=</span><span class="n">new_inffs</span><span class="p">,</span>
+                                  <span class="n">standalones</span><span class="o">=</span><span class="n">new_standalones</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">idps</span></div>
+
+
+<div class="viewcode-block" id="InterDependencies_.validate_subset">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.InterDependencies_.validate_subset">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate_subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validate that the given parameters form a valid subset of the</span>
+<span class="sd">        parameters of this instance, meaning that all the given parameters are</span>
+<span class="sd">        actually found in this instance and that there are no missing</span>
+<span class="sd">        dependencies/inferences.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parameters: The collection of ParamSpecBases to validate</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            DependencyError, if a dependency is missing</span>
+<span class="sd">            InferenceError, if an inference is missing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="n">ps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown parameter: </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+            <span class="n">deps</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deps_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="p">()))</span>
+            <span class="n">missing_deps</span> <span class="o">=</span> <span class="n">deps</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_deps</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">DependencyError</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">missing_deps</span><span class="p">)</span>
+
+            <span class="n">inffs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_infs_names</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="p">()))</span>
+            <span class="n">missing_inffs</span> <span class="o">=</span> <span class="n">inffs</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">missing_inffs</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InferenceError</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">missing_inffs</span><span class="p">)</span></div>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">ser</span><span class="p">:</span> <span class="n">InterDependencies_Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InterDependencies_</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct an InterDependencies_ object from a dictionary</span>
+<span class="sd">        representation of such an object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">ser</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">]</span>
+        <span class="n">deps</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_extract_deps_from_dict</span><span class="p">(</span><span class="n">ser</span><span class="p">)</span>
+
+        <span class="n">inffs</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_extract_inffs_from_dict</span><span class="p">(</span><span class="n">ser</span><span class="p">)</span>
+
+        <span class="n">stdls</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ParamSpecBase</span><span class="o">.</span><span class="n">_from_dict</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">ps_id</span><span class="p">])</span> <span class="k">for</span>
+                      <span class="n">ps_id</span> <span class="ow">in</span> <span class="n">ser</span><span class="p">[</span><span class="s1">&#39;standalones&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">dependencies</span><span class="o">=</span><span class="n">deps</span><span class="p">,</span> <span class="n">inferences</span><span class="o">=</span><span class="n">inffs</span><span class="p">,</span> <span class="n">standalones</span><span class="o">=</span><span class="n">stdls</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_extract_inffs_from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                                 <span class="n">ser</span><span class="p">:</span> <span class="n">InterDependencies_Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamSpecTree</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">ser</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">]</span>
+        <span class="n">inffs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ser</span><span class="p">[</span><span class="s1">&#39;inferences&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">inffs_key</span> <span class="o">=</span> <span class="n">ParamSpecBase</span><span class="o">.</span><span class="n">_from_dict</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="n">inffs_vals</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ParamSpecBase</span><span class="o">.</span><span class="n">_from_dict</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">val</span><span class="p">])</span> <span class="k">for</span>
+                               <span class="n">val</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">inffs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">inffs_key</span><span class="p">:</span> <span class="n">inffs_vals</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">inffs</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_extract_deps_from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                                <span class="n">ser</span><span class="p">:</span> <span class="n">InterDependencies_Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamSpecTree</span><span class="p">:</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">ser</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">]</span>
+        <span class="n">deps</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">ser</span><span class="p">[</span><span class="s1">&#39;dependencies&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">deps_key</span> <span class="o">=</span> <span class="n">ParamSpecBase</span><span class="o">.</span><span class="n">_from_dict</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+            <span class="n">deps_vals</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ParamSpecBase</span><span class="o">.</span><span class="n">_from_dict</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">val</span><span class="p">])</span> <span class="k">for</span>
+                              <span class="n">val</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span>
+            <span class="n">deps</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">deps_key</span><span class="p">:</span> <span class="n">deps_vals</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">deps</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">rep</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;InterDependencies_(dependencies=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dependencies</span><span class="si">}</span><span class="s2">, &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;inferences=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inferences</span><span class="si">}</span><span class="s2">, &quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;standalones=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">standalones</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rep</span>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+
+        <span class="k">def</span> <span class="nf">sorter</span><span class="p">(</span><span class="n">inp</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ParamSpecBase</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ps</span><span class="p">:</span> <span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">InterDependencies_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">dic</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;dependencies&#39;</span><span class="p">,</span> <span class="s1">&#39;inferences&#39;</span><span class="p">]:</span>
+            <span class="n">our_keys</span> <span class="o">=</span> <span class="n">sorter</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dic</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="n">their_keys</span> <span class="o">=</span> <span class="n">sorter</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">dic</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">our_keys</span> <span class="o">!=</span> <span class="n">their_keys</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">our_keys</span><span class="p">:</span>
+                <span class="n">our_values</span> <span class="o">=</span> <span class="n">sorter</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dic</span><span class="p">)[</span><span class="n">key</span><span class="p">])</span>
+                <span class="n">their_values</span> <span class="o">=</span> <span class="n">sorter</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">dic</span><span class="p">)[</span><span class="n">key</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">our_values</span> <span class="o">!=</span> <span class="n">their_values</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">standalones</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">standalones</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span> <span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ps</span><span class="p">:</span> <span class="n">ParamSpecBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ps</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_paramspec_to_id</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamSpecBase</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_id_to_paramspec</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

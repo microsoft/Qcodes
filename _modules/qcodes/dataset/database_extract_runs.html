@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.database_extract_runs &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.database_extract_runs</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.database_extract_runs</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset.data_set</span> <span class="kn">import</span> <span class="n">DataSet</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.dataset_helpers</span> <span class="kn">import</span> <span class="n">_add_run_to_runs_table</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.experiment_container</span> <span class="kn">import</span> <span class="n">_create_exp_if_needed</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.connection</span> <span class="kn">import</span> <span class="n">ConnectionPlus</span><span class="p">,</span> <span class="n">atomic</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.database</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">connect</span><span class="p">,</span>
+    <span class="n">get_db_version_and_newest_available_version</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.queries</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_populate_results_table</span><span class="p">,</span>
+    <span class="n">get_exp_ids_from_run_ids</span><span class="p">,</span>
+    <span class="n">get_experiment_attributes_by_exp_id</span><span class="p">,</span>
+    <span class="n">get_runid_from_guid</span><span class="p">,</span>
+    <span class="n">is_run_id_in_database</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+
+<div class="viewcode-block" id="extract_runs_into_db">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.extract_runs_into_db">[docs]</a>
+<span class="k">def</span> <span class="nf">extract_runs_into_db</span><span class="p">(</span>
+    <span class="n">source_db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">target_db_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">run_ids</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">upgrade_source_db</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">upgrade_target_db</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract a selection of runs into another DB file. All runs must come from</span>
+<span class="sd">    the same experiment. They will be added to an experiment with the same name</span>
+<span class="sd">    and ``sample_name`` in the target db. If such an experiment does not exist, it</span>
+<span class="sd">    will be created.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        source_db_path: Path to the source DB file</span>
+<span class="sd">        target_db_path: Path to the target DB file. The target DB file will be</span>
+<span class="sd">          created if it does not exist.</span>
+<span class="sd">        run_ids: The ``run_id``&#39;s of the runs to copy into the target DB file</span>
+<span class="sd">        upgrade_source_db: If the source DB is found to be in a version that is</span>
+<span class="sd">          not the newest, should it be upgraded?</span>
+<span class="sd">        upgrade_target_db: If the target DB is found to be in a version that is</span>
+<span class="sd">          not the newest, should it be upgraded?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check for versions</span>
+    <span class="p">(</span><span class="n">s_v</span><span class="p">,</span> <span class="n">new_v</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_db_version_and_newest_available_version</span><span class="p">(</span><span class="n">source_db_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">s_v</span> <span class="o">&lt;</span> <span class="n">new_v</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">upgrade_source_db</span><span class="p">:</span>
+        <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Source DB version is </span><span class="si">{</span><span class="n">s_v</span><span class="si">}</span><span class="s1">, but this function needs it to be&#39;</span>
+             <span class="sa">f</span><span class="s1">&#39; in version </span><span class="si">{</span><span class="n">new_v</span><span class="si">}</span><span class="s1">. Run this function again with &#39;</span>
+             <span class="s1">&#39;upgrade_source_db=True to auto-upgrade the source DB file.&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">target_db_path</span><span class="p">):</span>
+        <span class="p">(</span><span class="n">t_v</span><span class="p">,</span> <span class="n">new_v</span><span class="p">)</span> <span class="o">=</span> <span class="n">get_db_version_and_newest_available_version</span><span class="p">(</span><span class="n">target_db_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">t_v</span> <span class="o">&lt;</span> <span class="n">new_v</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">upgrade_target_db</span><span class="p">:</span>
+            <span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Target DB version is </span><span class="si">{</span><span class="n">t_v</span><span class="si">}</span><span class="s1">, but this function needs it to &#39;</span>
+                 <span class="sa">f</span><span class="s1">&#39;be in version </span><span class="si">{</span><span class="n">new_v</span><span class="si">}</span><span class="s1">. Run this function again with &#39;</span>
+                 <span class="s1">&#39;upgrade_target_db=True to auto-upgrade the target DB file.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+    <span class="n">source_conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">source_db_path</span><span class="p">)</span>
+
+    <span class="c1"># Validate that all runs are in the source database</span>
+    <span class="n">do_runs_exist</span> <span class="o">=</span> <span class="n">is_run_id_in_database</span><span class="p">(</span><span class="n">source_conn</span><span class="p">,</span> <span class="o">*</span><span class="n">run_ids</span><span class="p">)</span>
+    <span class="k">if</span> <span class="kc">False</span> <span class="ow">in</span> <span class="n">do_runs_exist</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">source_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">non_existing_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">rid</span> <span class="k">for</span> <span class="n">rid</span> <span class="ow">in</span> <span class="n">run_ids</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">do_runs_exist</span><span class="p">[</span><span class="n">rid</span><span class="p">]]</span>
+        <span class="n">err_mssg</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;Error: not all run_ids exist in the source database. &quot;</span>
+                    <span class="s2">&quot;The following run(s) is/are not present: &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">non_existing_ids</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">err_mssg</span><span class="p">)</span>
+
+    <span class="c1"># Validate that all runs are from the same experiment</span>
+
+    <span class="n">source_exp_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">get_exp_ids_from_run_ids</span><span class="p">(</span><span class="n">source_conn</span><span class="p">,</span> <span class="n">run_ids</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">source_exp_ids</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">source_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Did not receive runs from a single experiment. &#39;</span>
+                         <span class="sa">f</span><span class="s1">&#39;Got runs from experiments </span><span class="si">{</span><span class="n">source_exp_ids</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Fetch the attributes of the runs&#39; experiment</span>
+    <span class="c1"># hopefully, this is enough to uniquely identify the experiment</span>
+    <span class="n">exp_attrs</span> <span class="o">=</span> <span class="n">get_experiment_attributes_by_exp_id</span><span class="p">(</span><span class="n">source_conn</span><span class="p">,</span> <span class="n">source_exp_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Massage the target DB file to accommodate the runs</span>
+    <span class="c1"># (create new experiment if needed)</span>
+
+    <span class="n">target_conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">target_db_path</span><span class="p">)</span>
+
+    <span class="c1"># this function raises if the target DB file has several experiments</span>
+    <span class="c1"># matching both the name and sample_name</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">atomic</span><span class="p">(</span><span class="n">target_conn</span><span class="p">)</span> <span class="k">as</span> <span class="n">target_conn</span><span class="p">:</span>
+
+            <span class="n">target_exp_id</span> <span class="o">=</span> <span class="n">_create_exp_if_needed</span><span class="p">(</span><span class="n">target_conn</span><span class="p">,</span>
+                                                  <span class="n">exp_attrs</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                                                  <span class="n">exp_attrs</span><span class="p">[</span><span class="s1">&#39;sample_name&#39;</span><span class="p">],</span>
+                                                  <span class="n">exp_attrs</span><span class="p">[</span><span class="s1">&#39;format_string&#39;</span><span class="p">],</span>
+                                                  <span class="n">exp_attrs</span><span class="p">[</span><span class="s1">&#39;start_time&#39;</span><span class="p">],</span>
+                                                  <span class="n">exp_attrs</span><span class="p">[</span><span class="s1">&#39;end_time&#39;</span><span class="p">])</span>
+
+            <span class="c1"># Finally insert the runs</span>
+            <span class="k">for</span> <span class="n">run_id</span> <span class="ow">in</span> <span class="n">run_ids</span><span class="p">:</span>
+                <span class="n">_extract_single_dataset_into_db</span><span class="p">(</span><span class="n">DataSet</span><span class="p">(</span><span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span>
+                                                        <span class="n">conn</span><span class="o">=</span><span class="n">source_conn</span><span class="p">),</span>
+                                                <span class="n">target_conn</span><span class="p">,</span>
+                                                <span class="n">target_exp_id</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">source_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">target_conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_extract_single_dataset_into_db</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="n">DataSet</span><span class="p">,</span>
+                                    <span class="n">target_conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span><span class="p">,</span>
+                                    <span class="n">target_exp_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    NB: This function should only be called from within</span>
+<span class="sd">    meth:`extract_runs_into_db`</span>
+
+<span class="sd">    Insert the given dataset into the specified database file as the latest</span>
+<span class="sd">    run.</span>
+
+<span class="sd">    Trying to insert a run already in the DB is a NOOP.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dataset: A dataset representing the run to be copied</span>
+<span class="sd">        target_conn: connection to the DB. Must be atomically guarded</span>
+<span class="sd">        target_exp_id: The ``exp_id`` of the (target DB) experiment in which to</span>
+<span class="sd">          insert the run</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dataset</span><span class="o">.</span><span class="n">completed</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Dataset not completed. An incomplete dataset &#39;</span>
+                         <span class="s1">&#39;can not be copied. The incomplete dataset has &#39;</span>
+                         <span class="sa">f</span><span class="s1">&#39;GUID: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">guid</span><span class="si">}</span><span class="s1"> and run_id: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">source_conn</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">conn</span>
+
+    <span class="n">run_id</span> <span class="o">=</span> <span class="n">get_runid_from_guid</span><span class="p">(</span><span class="n">target_conn</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">guid</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">run_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">target_table_name</span> <span class="o">=</span> <span class="n">_add_run_to_runs_table</span><span class="p">(</span>
+        <span class="n">dataset</span><span class="p">,</span> <span class="n">target_conn</span><span class="p">,</span> <span class="n">target_exp_id</span>
+    <span class="p">)</span>
+    <span class="k">assert</span> <span class="n">target_table_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">_populate_results_table</span><span class="p">(</span>
+        <span class="n">source_conn</span><span class="p">,</span> <span class="n">target_conn</span><span class="p">,</span> <span class="n">dataset</span><span class="o">.</span><span class="n">table_name</span><span class="p">,</span> <span class="n">target_table_name</span>
+    <span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

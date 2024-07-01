@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.monitor &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="qcodes.parameters" href="../parameters/index.html" />
+    <link rel="prev" title="qcodes.metadatable" href="../metadatable/index.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">QCoDes API documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#qcodes-api">QCoDeS API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">qcodes.monitor</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.monitor.Monitor"><code class="docutils literal notranslate"><span class="pre">Monitor</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../station.html">qcodes.station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">QCoDes API documentation</a></li>
+      <li class="breadcrumb-item active">qcodes.monitor</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/monitor/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.monitor">
+<span id="qcodes-monitor"></span><span id="monitor-api"></span><h1>qcodes.monitor<a class="headerlink" href="#module-qcodes.monitor" title="Link to this heading"></a></h1>
+<p>Monitor a set of parameters in a background thread
+stream output over websocket.</p>
+<p>To start monitor, run this file, or if qcodes is installed as a module:</p>
+<p><code class="docutils literal notranslate"><span class="pre">%</span> <span class="pre">python</span> <span class="pre">-m</span> <span class="pre">qcodes.monitor.monitor</span></code></p>
+<p>Add parameters to monitor in your measurement by creating a new monitor with a
+list of parameters to monitor:</p>
+<p><code class="docutils literal notranslate"><span class="pre">monitor</span> <span class="pre">=</span> <span class="pre">qcodes.Monitor(param1,</span> <span class="pre">param2,</span> <span class="pre">param3,</span> <span class="pre">...)</span></code></p>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor" title="qcodes.monitor.Monitor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Monitor</span></code></a>(*parameters[, interval, ...])</p></td>
+<td><p>QCodes Monitor - WebSockets server to monitor qcodes parameters.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.monitor.</span></span><span class="sig-name descname"><span class="pre">Monitor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.parameter.Parameter"><span class="pre">Parameter</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_root_instrument</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/monitor/monitor.html#Monitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.monitor.Monitor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/threading.html#threading.Thread" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Thread</span></code></a></p>
+<p>QCodes Monitor - WebSockets server to monitor qcodes parameters.</p>
+<p>Monitor qcodes parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*parameters</strong> – Parameters to monitor.</p></li>
+<li><p><strong>interval</strong> – How often one wants to refresh the values.</p></li>
+<li><p><strong>use_root_instrument</strong> – Defines if parameters are grouped according to
+parameter.root_instrument or parameter.instrument</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.running" title="qcodes.monitor.Monitor.running"><code class="xref py py-obj docutils literal notranslate"><span class="pre">running</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.daemon" title="qcodes.monitor.Monitor.daemon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">daemon</span></code></a></p></td>
+<td><p>A boolean value indicating whether this thread is a daemon thread.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.ident" title="qcodes.monitor.Monitor.ident"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ident</span></code></a></p></td>
+<td><p>Thread identifier of this thread or None if it has not been started.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.name" title="qcodes.monitor.Monitor.name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></a></p></td>
+<td><p>A string used for identification purposes only.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.native_id" title="qcodes.monitor.Monitor.native_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">native_id</span></code></a></p></td>
+<td><p>Native integral thread ID of this thread, or None if it has not been started.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.run" title="qcodes.monitor.Monitor.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>()</p></td>
+<td><p>Start the event loop and run forever.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.update_all" title="qcodes.monitor.Monitor.update_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_all</span></code></a>()</p></td>
+<td><p>Update all parameters in the monitor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.stop" title="qcodes.monitor.Monitor.stop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stop</span></code></a>()</p></td>
+<td><p>Shutdown the server, close the event loop and join the thread.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.join" title="qcodes.monitor.Monitor.join"><code class="xref py py-obj docutils literal notranslate"><span class="pre">join</span></code></a>([timeout])</p></td>
+<td><p>Overwrite <code class="docutils literal notranslate"><span class="pre">Thread.join</span></code> to make sure server is stopped before joining avoiding a potential deadlock.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.show" title="qcodes.monitor.Monitor.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>()</p></td>
+<td><p>Overwrite this method to show/raise your monitor GUI F.ex.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.getName" title="qcodes.monitor.Monitor.getName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getName</span></code></a>()</p></td>
+<td><p>Return a string used for identification purposes only.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.isDaemon" title="qcodes.monitor.Monitor.isDaemon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">isDaemon</span></code></a>()</p></td>
+<td><p>Return whether this thread is a daemon.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.is_alive" title="qcodes.monitor.Monitor.is_alive"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_alive</span></code></a>()</p></td>
+<td><p>Return whether the thread is alive.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.setDaemon" title="qcodes.monitor.Monitor.setDaemon"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setDaemon</span></code></a>(daemonic)</p></td>
+<td><p>Set whether this thread is a daemon.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.setName" title="qcodes.monitor.Monitor.setName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setName</span></code></a>(name)</p></td>
+<td><p>Set the name string for this thread.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.monitor.Monitor.start" title="qcodes.monitor.Monitor.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a>()</p></td>
+<td><p>Start the thread's activity.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.running">
+<span class="sig-name descname"><span class="pre">running</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.monitor.Monitor" title="qcodes.monitor.monitor.Monitor"><span class="pre">Monitor</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#qcodes.monitor.Monitor.running" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.loop">
+<span class="sig-name descname"><span class="pre">loop</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">AbstractEventLoop</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><a class="headerlink" href="#qcodes.monitor.Monitor.loop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/monitor/monitor.html#Monitor.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.monitor.Monitor.run" title="Link to this definition"></a></dt>
+<dd><p>Start the event loop and run forever.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.update_all">
+<span class="sig-name descname"><span class="pre">update_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/monitor/monitor.html#Monitor.update_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.monitor.Monitor.update_all" title="Link to this definition"></a></dt>
+<dd><p>Update all parameters in the monitor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/monitor/monitor.html#Monitor.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.monitor.Monitor.stop" title="Link to this definition"></a></dt>
+<dd><p>Shutdown the server, close the event loop and join the thread.
+Setting active Monitor to <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.join">
+<span class="sig-name descname"><span class="pre">join</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/monitor/monitor.html#Monitor.join"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.monitor.Monitor.join" title="Link to this definition"></a></dt>
+<dd><p>Overwrite <code class="docutils literal notranslate"><span class="pre">Thread.join</span></code> to make sure server is stopped before
+joining avoiding a potential deadlock.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.show">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/monitor/monitor.html#Monitor.show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.monitor.Monitor.show" title="Link to this definition"></a></dt>
+<dd><p>Overwrite this method to show/raise your monitor GUI
+F.ex.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">webbrowser</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;localhost:3000&quot;</span>
+<span class="c1"># Open URL in new window, raising the window if possible.</span>
+<span class="n">webbrowser</span><span class="o">.</span><span class="n">open_new</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.daemon">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">daemon</span></span><a class="headerlink" href="#qcodes.monitor.Monitor.daemon" title="Link to this definition"></a></dt>
+<dd><p>A boolean value indicating whether this thread is a daemon thread.</p>
+<p>This must be set before start() is called, otherwise RuntimeError is
+raised. Its initial value is inherited from the creating thread; the
+main thread is not a daemon thread and therefore all threads created in
+the main thread default to daemon = False.</p>
+<p>The entire Python program exits when only daemon threads are left.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.getName">
+<span class="sig-name descname"><span class="pre">getName</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.monitor.Monitor.getName" title="Link to this definition"></a></dt>
+<dd><p>Return a string used for identification purposes only.</p>
+<p>This method is deprecated, use the name attribute instead.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.ident">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ident</span></span><a class="headerlink" href="#qcodes.monitor.Monitor.ident" title="Link to this definition"></a></dt>
+<dd><p>Thread identifier of this thread or None if it has not been started.</p>
+<p>This is a nonzero integer. See the get_ident() function. Thread
+identifiers may be recycled when a thread exits and another thread is
+created. The identifier is available even after the thread has exited.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.isDaemon">
+<span class="sig-name descname"><span class="pre">isDaemon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.monitor.Monitor.isDaemon" title="Link to this definition"></a></dt>
+<dd><p>Return whether this thread is a daemon.</p>
+<p>This method is deprecated, use the daemon attribute instead.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.is_alive">
+<span class="sig-name descname"><span class="pre">is_alive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.monitor.Monitor.is_alive" title="Link to this definition"></a></dt>
+<dd><p>Return whether the thread is alive.</p>
+<p>This method returns True just before the run() method starts until just
+after the run() method terminates. See also the module function
+enumerate().</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#qcodes.monitor.Monitor.name" title="Link to this definition"></a></dt>
+<dd><p>A string used for identification purposes only.</p>
+<p>It has no semantics. Multiple threads may be given the same name. The
+initial name is set by the constructor.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.native_id">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">native_id</span></span><a class="headerlink" href="#qcodes.monitor.Monitor.native_id" title="Link to this definition"></a></dt>
+<dd><p>Native integral thread ID of this thread, or None if it has not been started.</p>
+<p>This is a non-negative integer. See the get_native_id() function.
+This represents the Thread ID as reported by the kernel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.setDaemon">
+<span class="sig-name descname"><span class="pre">setDaemon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">daemonic</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.monitor.Monitor.setDaemon" title="Link to this definition"></a></dt>
+<dd><p>Set whether this thread is a daemon.</p>
+<p>This method is deprecated, use the .daemon property instead.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.setName">
+<span class="sig-name descname"><span class="pre">setName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.monitor.Monitor.setName" title="Link to this definition"></a></dt>
+<dd><p>Set the name string for this thread.</p>
+<p>This method is deprecated, use the name attribute instead.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.monitor.Monitor.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.monitor.Monitor.start" title="Link to this definition"></a></dt>
+<dd><p>Start the thread’s activity.</p>
+<p>It must be called at most once per thread object. It arranges for the
+object’s run() method to be invoked in a separate thread of control.</p>
+<p>This method will raise a RuntimeError if called more than once on the
+same thread object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../metadatable/index.html" class="btn btn-neutral float-left" title="qcodes.metadatable" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../parameters/index.html" class="btn btn-neutral float-right" title="qcodes.parameters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

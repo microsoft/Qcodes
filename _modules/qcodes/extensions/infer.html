@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.extensions.infer &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.extensions.infer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.extensions.infer</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">ClassVar</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">Instrument</span><span class="p">,</span> <span class="n">InstrumentBase</span><span class="p">,</span> <span class="n">InstrumentModule</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">DelegateParameter</span><span class="p">,</span> <span class="n">Parameter</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+
+<span class="n">DOES_NOT_EXIST</span> <span class="o">=</span> <span class="s2">&quot;Does not exist&quot;</span>
+
+
+<div class="viewcode-block" id="InferError">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.InferError">[docs]</a>
+<span class="k">class</span> <span class="nc">InferError</span><span class="p">(</span><span class="ne">AttributeError</span><span class="p">):</span> <span class="o">...</span></div>
+
+
+
+<div class="viewcode-block" id="InferAttrs">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.InferAttrs">[docs]</a>
+<span class="k">class</span> <span class="nc">InferAttrs</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Holds a global set of attribute name that will be inferred&quot;&quot;&quot;</span>
+
+    <span class="n">_known_attrs</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<div class="viewcode-block" id="InferAttrs.add">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.InferAttrs.add">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attrs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attrs</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">attrs</span> <span class="o">=</span> <span class="p">(</span><span class="n">attrs</span><span class="p">,)</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_known_attrs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">attrs</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="InferAttrs.known_attrs">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.InferAttrs.known_attrs">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">known_attrs</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_known_attrs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InferAttrs.discard">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.InferAttrs.discard">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">discard</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">attr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_known_attrs</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InferAttrs.clear">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.InferAttrs.clear">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">cls</span><span class="o">.</span><span class="n">_known_attrs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="get_root_parameter">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.get_root_parameter">[docs]</a>
+<span class="k">def</span> <span class="nf">get_root_parameter</span><span class="p">(</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">alt_source_attrs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the root parameter in a chain of DelegateParameters or other linking Parameters</span>
+
+<span class="sd">    This method calls get_parameter_chain and then checks for various error conditions</span>
+<span class="sd">    Args:</span>
+<span class="sd">        param: The DelegateParameter or other linking parameter to find the root parameter from</span>
+<span class="sd">        alt_source_attrs: The attribute names for custom linking parameters</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        InferError: If the linking parameters do not end with a non-linking parameter</span>
+<span class="sd">        InferError: If the chain of linking parameters loops on itself</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">parameter_chain</span> <span class="o">=</span> <span class="n">get_parameter_chain</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">alt_source_attrs</span><span class="p">)</span>
+    <span class="n">root_param</span> <span class="o">=</span> <span class="n">parameter_chain</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">root_param</span> <span class="ow">is</span> <span class="n">parameter_chain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameter_chain</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">InferError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> generated a loop of linking parameters&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">root_param</span><span class="p">,</span> <span class="n">DelegateParameter</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">InferError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> is not attached to a source&quot;</span><span class="p">)</span>
+
+    <span class="n">alt_source_attrs_set</span> <span class="o">=</span> <span class="n">_merge_user_and_class_attrs</span><span class="p">(</span><span class="n">alt_source_attrs</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">alt_source_attr</span> <span class="ow">in</span> <span class="n">alt_source_attrs_set</span><span class="p">:</span>
+        <span class="n">alt_source</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">alt_source_attr</span><span class="p">,</span> <span class="n">DOES_NOT_EXIST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">alt_source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InferError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> is not attached to a source on attribute </span><span class="si">{</span><span class="n">alt_source_attr</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">root_param</span></div>
+
+
+
+<div class="viewcode-block" id="infer_instrument">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.infer_instrument">[docs]</a>
+<span class="k">def</span> <span class="nf">infer_instrument</span><span class="p">(</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">alt_source_attrs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the instrument that owns a parameter or delegate parameter.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        param: The DelegateParameter or other linking parameter to find the instrument from</span>
+<span class="sd">        alt_source_attrs: The attribute names for custom linking parameters</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        InferError: If the linking parameters do not end with a non-linking parameter</span>
+<span class="sd">        InferError: If the instrument of the root parameter is None</span>
+<span class="sd">        InferError: If the instrument of the root parameter is not an instance of Instrument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">root_param</span> <span class="o">=</span> <span class="n">get_root_parameter</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">alt_source_attrs</span><span class="o">=</span><span class="n">alt_source_attrs</span><span class="p">)</span>
+    <span class="n">instrument</span> <span class="o">=</span> <span class="n">get_instrument_from_param</span><span class="p">(</span><span class="n">root_param</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="n">InstrumentModule</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">instrument</span><span class="o">.</span><span class="n">root_instrument</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="n">Instrument</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">instrument</span>
+
+    <span class="k">raise</span> <span class="n">InferError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not determine source instrument for parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="infer_instrument_module">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.infer_instrument_module">[docs]</a>
+<span class="k">def</span> <span class="nf">infer_instrument_module</span><span class="p">(</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">alt_source_attrs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentModule</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find the instrument module that owns a parameter or delegate parameter</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        param: The DelegateParameter or other linking parameter to find the instrument module from</span>
+<span class="sd">        alt_source_attrs: The attribute names for custom linking parameters</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        InferError: If the linking parameters do not end with a non-linking parameter</span>
+<span class="sd">        InferError: If the instrument module of the root parameter is None</span>
+<span class="sd">        InferError: If the instrument module of the root parameter is not an instance of InstrumentModule</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">root_param</span> <span class="o">=</span> <span class="n">get_root_parameter</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">alt_source_attrs</span><span class="o">=</span><span class="n">alt_source_attrs</span><span class="p">)</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">get_instrument_from_param</span><span class="p">(</span><span class="n">root_param</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">InstrumentModule</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">channel</span>
+    <span class="k">raise</span> <span class="n">InferError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Could not determine a root instrument channel for parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="infer_channel">
+<a class="viewcode-back" href="../../../api/extensions/index.html#qcodes.extensions.infer_channel">[docs]</a>
+<span class="k">def</span> <span class="nf">infer_channel</span><span class="p">(</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">alt_source_attrs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentModule</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An alias for infer_instrument_module&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">infer_instrument_module</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">alt_source_attrs</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">get_instrument_from_param</span><span class="p">(</span>
+    <span class="n">param</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">InstrumentBase</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the instrument attribute from a parameter</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        param: The parameter to get the instrument module from</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        InferError: If the parameter does not have an instrument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">param</span><span class="o">.</span><span class="n">instrument</span>
+    <span class="k">raise</span> <span class="n">InferError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> has no instrument&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_parameter_chain</span><span class="p">(</span>
+    <span class="n">param_chain</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Parameter</span><span class="p">],</span>
+    <span class="n">alt_source_attrs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Parameter</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the chain of DelegateParameters or other linking Parameters</span>
+
+<span class="sd">    This method traverses singly-linked parameters and returns the resulting chain</span>
+<span class="sd">    If the parameters loop, then the first and last linking parameters in the chain</span>
+<span class="sd">    will be identical. Otherwise, the chain starts with the initial argument passed</span>
+<span class="sd">    and ends when the chain terminates in either a non-linking parameter or a</span>
+<span class="sd">    linking parameter that links to None</span>
+
+<span class="sd">    The search prioritizes the `source` attribute of DelegateParameters first, and</span>
+<span class="sd">    then looks for other linking attributes in undetermined order.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        param_chain: The initial linking parameter or a List linking parameters</span>
+<span class="sd">            from which to return the chain</span>
+<span class="sd">        alt_source_attrs: The attribute names for custom linking parameters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">alt_source_attrs_set</span> <span class="o">=</span> <span class="n">_merge_user_and_class_attrs</span><span class="p">(</span><span class="n">alt_source_attrs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param_chain</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+        <span class="n">param_chain</span> <span class="o">=</span> <span class="p">(</span><span class="n">param_chain</span><span class="p">,)</span>
+
+    <span class="n">param</span> <span class="o">=</span> <span class="n">param_chain</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">mutable_param_chain</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">param_chain</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">DelegateParameter</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">param_chain</span><span class="p">)</span>
+        <span class="n">mutable_param_chain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="o">.</span><span class="n">source</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">source</span> <span class="ow">in</span> <span class="n">param_chain</span><span class="p">:</span>  <span class="c1"># There is a loop in the links</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">mutable_param_chain</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">get_parameter_chain</span><span class="p">(</span>
+            <span class="n">mutable_param_chain</span><span class="p">,</span>
+            <span class="n">alt_source_attrs</span><span class="o">=</span><span class="n">alt_source_attrs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">alt_source_attr</span> <span class="ow">in</span> <span class="n">alt_source_attrs_set</span><span class="p">:</span>
+        <span class="n">alt_source</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">alt_source_attr</span><span class="p">,</span> <span class="n">DOES_NOT_EXIST</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">alt_source</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Valid linking attribute, but no link parameter</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">param_chain</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alt_source</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">):</span>
+            <span class="n">mutable_param_chain</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">alt_source</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">alt_source</span> <span class="ow">in</span> <span class="n">param_chain</span><span class="p">:</span>  <span class="c1"># There is a loop in the links</span>
+                <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">mutable_param_chain</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">get_parameter_chain</span><span class="p">(</span>
+                <span class="n">mutable_param_chain</span><span class="p">,</span>
+                <span class="n">alt_source_attrs</span><span class="o">=</span><span class="n">alt_source_attrs</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">param_chain</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_merge_user_and_class_attrs</span><span class="p">(</span>
+    <span class="n">alt_source_attrs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Merges user-supplied linking attributes with attributes from InferAttrs&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">alt_source_attrs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">InferAttrs</span><span class="o">.</span><span class="n">known_attrs</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">alt_source_attrs</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">((</span><span class="n">alt_source_attrs</span><span class="p">,)),</span> <span class="nb">set</span><span class="p">(</span><span class="n">InferAttrs</span><span class="o">.</span><span class="n">known_attrs</span><span class="p">()))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">alt_source_attrs</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">InferAttrs</span><span class="o">.</span><span class="n">known_attrs</span><span class="p">()))</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

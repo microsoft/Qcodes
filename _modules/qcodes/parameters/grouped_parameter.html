@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.parameters.grouped_parameter &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.parameters.grouped_parameter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.parameters.grouped_parameter</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">.delegate_parameter</span> <span class="kn">import</span> <span class="n">DelegateParameter</span>
+<span class="kn">from</span> <span class="nn">.group_parameter</span> <span class="kn">import</span> <span class="n">Group</span><span class="p">,</span> <span class="n">GroupParameter</span>
+<span class="kn">from</span> <span class="nn">.parameter_base</span> <span class="kn">import</span> <span class="n">ParamDataType</span><span class="p">,</span> <span class="n">ParameterBase</span><span class="p">,</span> <span class="n">ParamRawDataType</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.instrument.base</span> <span class="kn">import</span> <span class="n">InstrumentBase</span>
+
+    <span class="kn">from</span> <span class="nn">.parameter</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+
+<span class="n">_log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DelegateGroupParameter">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.DelegateGroupParameter">[docs]</a>
+<span class="k">class</span> <span class="nc">DelegateGroupParameter</span><span class="p">(</span><span class="n">DelegateParameter</span><span class="p">,</span> <span class="n">GroupParameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">source</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">initial_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="n">initial_value</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DelegateGroup">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.DelegateGroup">[docs]</a>
+<span class="k">class</span> <span class="nc">DelegateGroup</span><span class="p">(</span><span class="n">Group</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The DelegateGroup combines :class:`.DelegateParameter` s that</span>
+<span class="sd">    are to be gotten or set using one :class:`.GroupedParameter`.</span>
+<span class="sd">    Each :class:`.DelegateParameter` maps to one source parameter</span>
+<span class="sd">    that is individually set or gotten on an instrument. These</span>
+<span class="sd">    parameters can originate from the same or different instruments.</span>
+
+<span class="sd">    The class :class:`.DelegateGroup` is used within the</span>
+<span class="sd">    :class:`GroupedParameter` class in order to get and set the</span>
+<span class="sd">    :class:`.DelegateParameter` s either via their default get and set</span>
+<span class="sd">    methods or via a custom get or set method.</span>
+
+<span class="sd">    The value to be set can be passed to the set method either via a</span>
+<span class="sd">    dictionary, where the keys are the names of the</span>
+<span class="sd">    :class:`.DelegateParameter` s contained in the :class:`DelegateGroup`,</span>
+<span class="sd">    or a single value, if a custom setter is defined or if the group</span>
+<span class="sd">    only contains a single :class:`.DelegateParameter`.</span>
+
+<span class="sd">    The value returned by the get method is passed through a formatter.</span>
+<span class="sd">    By default, the formatter returns the :class:`.DelegateParameter`</span>
+<span class="sd">    values in a namedtuple, where the keys are the names of the</span>
+<span class="sd">    :class:`.DelegateParameter` s. In the special case where the</span>
+<span class="sd">    :class:`.DelegateGroup` only contains one :class:`.DelegateParameter`,</span>
+<span class="sd">    the formatter simply returns the individual value. Optionally,</span>
+<span class="sd">    the formatter can be customized and specified via the constructor.</span>
+<span class="sd">    The formatter takes as input the values of the :class:`.DelegateParameter` s</span>
+<span class="sd">    as positional arguments in the order at which the</span>
+<span class="sd">    :class:`.DelegateParameter` s are specified.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: Name of the DelegateGroup</span>
+<span class="sd">        parameters: DelegateParameters to group together</span>
+<span class="sd">        parameter_names: Optional names of parameters, defaults to the</span>
+<span class="sd">            parameter `name` attributes</span>
+<span class="sd">        setter: Optional function to call for setting the grouped parameters,</span>
+<span class="sd">            should take one argument `value`. Defaults to set_parameters(),</span>
+<span class="sd">            which sets each parameter using its .set() method.</span>
+<span class="sd">        getter: Optional function to call for getting the grouped parameters.</span>
+<span class="sd">            Defaults to .get_parameters(), which runs the get() method for each</span>
+<span class="sd">            parameter.</span>
+<span class="sd">        formatter: Optional formatter for value returned by get_parameters(),</span>
+<span class="sd">            defaults to a namedtuple with the parameter names as keys.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DelegateGroupParameter</span><span class="p">],</span>
+        <span class="n">parameter_names</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">setter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">getter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">formatter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span> <span class="n">single_instrument</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameter_names</span> <span class="o">=</span> <span class="n">parameter_names</span> <span class="ow">or</span> <span class="p">[</span><span class="n">_e</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">_e</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_fn</span> <span class="o">=</span> <span class="n">setter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_get_fn</span> <span class="o">=</span> <span class="n">getter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parameter_names</span><span class="p">,</span> <span class="n">parameters</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">formatter</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_formatter</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">result</span><span class="p">:</span> <span class="n">result</span>
+        <span class="k">elif</span> <span class="n">formatter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_formatter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_namedtuple</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_formatter</span> <span class="o">=</span> <span class="n">formatter</span>
+
+    <span class="k">def</span> <span class="nf">_namedtuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">namedtuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameter_names</span><span class="p">)(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DelegateGroup.set">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.DelegateGroup.set">[docs]</a>
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParamDataType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_fn</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameter_names</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DelegateGroup.get">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.DelegateGroup.get">[docs]</a>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_fn</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DelegateGroup.get_parameters">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.DelegateGroup.get_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formatter</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">_p</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">_p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_set_from_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calling_dict</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParamRawDataType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">calling_dict</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">source_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Parameter</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get source parameters of each DelegateParameter&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">source</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="GroupedParameter">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.GroupedParameter">[docs]</a>
+<span class="k">class</span> <span class="nc">GroupedParameter</span><span class="p">(</span><span class="n">ParameterBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The GroupedParameter wraps one or more :class:`.DelegateParameter` s,</span>
+<span class="sd">    such that those parameters can be accessed as if they were one</span>
+<span class="sd">    parameter.</span>
+
+<span class="sd">    The :class:`GroupedParameter` uses a :class:`DelegateGroup` to keep</span>
+<span class="sd">    track of the :class:`.DelegateParameter` s. Mainly, this class is a</span>
+<span class="sd">    thin wrapper around the :class:`DelegateGroup`, and mainly exists</span>
+<span class="sd">    in order to allow for it to be used as a :class:`ParameterBase`.</span>
+
+<span class="sd">    This class can be seen as the opposite of a :class:`GroupParameter`,</span>
+<span class="sd">    which is a class to create parameters that are set with a single get</span>
+<span class="sd">    and set string command on *the same* instrument but need to be accessed</span>
+<span class="sd">    separately. In contrast, the :class:`GroupedParameter` allows grouped</span>
+<span class="sd">    access to parameters that are normally separate, and can be associated</span>
+<span class="sd">    with *different* instruments.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: Grouped parameter name.</span>
+<span class="sd">        group: Group that contains the target parameter(s).</span>
+<span class="sd">        unit: The unit of measure. Use ``&#39;&#39;`` for unitless.</span>
+<span class="sd">        label: Optional label, defaults to parameter name.</span>
+<span class="sd">        default set method(s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">group</span><span class="p">:</span> <span class="n">DelegateGroup</span><span class="p">,</span>
+        <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_group</span> <span class="o">=</span> <span class="n">group</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">group</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DelegateGroup</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The group that contains the target parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GroupParameter</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get delegate parameters wrapped by this GroupedParameter&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">parameters</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">source_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Parameter</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get source parameters of each DelegateParameter&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">source_parameters</span>
+
+<div class="viewcode-block" id="GroupedParameter.get_raw">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.GroupedParameter.get_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamDataType</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParamDataType</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get parameter raw value&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="GroupedParameter.set_raw">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.GroupedParameter.set_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParamDataType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set parameter raw value</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Parameter value to set</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: Returns the parameter value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;GroupedParameter(name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_parameters</span><span class="p">:</span>
+            <span class="n">source_parameters</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">_</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_parameters</span><span class="p">)</span>
+            <span class="n">output</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, source_parameters=(</span><span class="si">{</span><span class="n">source_parameters</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">output</span> <span class="o">+=</span> <span class="s2">&quot;)&quot;</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

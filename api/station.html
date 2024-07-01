@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.station &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="qcodes.utils" href="utils/index.html" />
+    <link rel="prev" title="qcodes.plotting" href="plotting/index.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">QCoDes API documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#qcodes-api">QCoDeS API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">qcodes.station</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.get_config_enable_forced_reconnect"><code class="docutils literal notranslate"><span class="pre">get_config_enable_forced_reconnect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.get_config_default_folder"><code class="docutils literal notranslate"><span class="pre">get_config_default_folder()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.get_config_default_file"><code class="docutils literal notranslate"><span class="pre">get_config_default_file()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.get_config_use_monitor"><code class="docutils literal notranslate"><span class="pre">get_config_use_monitor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.ValidationWarning"><code class="docutils literal notranslate"><span class="pre">ValidationWarning</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.StationConfig"><code class="docutils literal notranslate"><span class="pre">StationConfig</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.Station"><code class="docutils literal notranslate"><span class="pre">Station</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.station.update_config_schema"><code class="docutils literal notranslate"><span class="pre">update_config_schema()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">QCoDes API documentation</a></li>
+      <li class="breadcrumb-item active">qcodes.station</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/station.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.station">
+<span id="qcodes-station"></span><span id="station-api"></span><h1>qcodes.station<a class="headerlink" href="#module-qcodes.station" title="Link to this heading"></a></h1>
+<p>Station objects - collect all the equipment you use to do an experiment.</p>
+<p><strong>Functions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.get_config_enable_forced_reconnect" title="qcodes.station.get_config_enable_forced_reconnect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_config_enable_forced_reconnect</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.get_config_default_folder" title="qcodes.station.get_config_default_folder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_config_default_folder</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.get_config_default_file" title="qcodes.station.get_config_default_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_config_default_file</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.get_config_use_monitor" title="qcodes.station.get_config_use_monitor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_config_use_monitor</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.update_config_schema" title="qcodes.station.update_config_schema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_config_schema</span></code></a>([...])</p></td>
+<td><p>Update the json schema file 'station.schema.json'.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exceptions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.ValidationWarning" title="qcodes.station.ValidationWarning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidationWarning</span></code></a></p></td>
+<td><p>Replacement for jsonschema.error.ValidationError as warning.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.StationConfig" title="qcodes.station.StationConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StationConfig</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station" title="qcodes.station.Station"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Station</span></code></a>(*components[, config_file, ...])</p></td>
+<td><p>A representation of the entire physical setup.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.station.get_config_enable_forced_reconnect">
+<span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">get_config_enable_forced_reconnect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#get_config_enable_forced_reconnect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.get_config_enable_forced_reconnect" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.station.get_config_default_folder">
+<span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">get_config_default_folder</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#get_config_default_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.get_config_default_folder" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.station.get_config_default_file">
+<span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">get_config_default_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#get_config_default_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.get_config_default_file" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.station.get_config_use_monitor">
+<span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">get_config_use_monitor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#get_config_use_monitor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.get_config_use_monitor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.station.ValidationWarning">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">ValidationWarning</span></span><a class="reference internal" href="../_modules/qcodes/station.html#ValidationWarning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.ValidationWarning" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Warning" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Warning</span></code></a></p>
+<p>Replacement for jsonschema.error.ValidationError as warning.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.ValidationWarning.add_note">
+<span class="sig-name descname"><span class="pre">add_note</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.station.ValidationWarning.add_note" title="Link to this definition"></a></dt>
+<dd><p>Exception.add_note(note) –
+add a note to the exception</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.ValidationWarning.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#qcodes.station.ValidationWarning.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.ValidationWarning.with_traceback">
+<span class="sig-name descname"><span class="pre">with_traceback</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.station.ValidationWarning.with_traceback" title="Link to this definition"></a></dt>
+<dd><p>Exception.with_traceback(tb) –
+set self.__traceback__ to tb and return self.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">StationConfig</span></span><a class="reference internal" href="../_modules/qcodes/station.html#StationConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.StationConfig" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Any</span></code></a>, <a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Any</span></code></a>]</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.snapshot" title="qcodes.station.StationConfig.snapshot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">snapshot</span></code></a>([update])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.clear" title="qcodes.station.StationConfig.clear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.copy" title="qcodes.station.StationConfig.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.fromkeys" title="qcodes.station.StationConfig.fromkeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fromkeys</span></code></a>([value])</p></td>
+<td><p>Create a new dictionary with keys from iterable and values set to value.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.get" title="qcodes.station.StationConfig.get"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code></a>(key[, default])</p></td>
+<td><p>Return the value for key if key is in the dictionary, else default.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.items" title="qcodes.station.StationConfig.items"><code class="xref py py-obj docutils literal notranslate"><span class="pre">items</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.keys" title="qcodes.station.StationConfig.keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">keys</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.pop" title="qcodes.station.StationConfig.pop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code></a>(k[,d])</p></td>
+<td><p>If the key is not found, return the default if given; otherwise, raise a KeyError.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.popitem" title="qcodes.station.StationConfig.popitem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">popitem</span></code></a>()</p></td>
+<td><p>Remove and return a (key, value) pair as a 2-tuple.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.setdefault" title="qcodes.station.StationConfig.setdefault"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setdefault</span></code></a>(key[, default])</p></td>
+<td><p>Insert key with a value of default if key is not in the dictionary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.update" title="qcodes.station.StationConfig.update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update</span></code></a>([E, ]**F)</p></td>
+<td><p>If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k] If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v In either case, this is followed by: for k in F:  D[k] = F[k]</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.StationConfig.values" title="qcodes.station.StationConfig.values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.snapshot">
+<span class="sig-name descname"><span class="pre">snapshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#qcodes.station.StationConfig" title="qcodes.station.StationConfig"><span class="pre">StationConfig</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#StationConfig.snapshot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.StationConfig.snapshot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Remove</span> <span class="pre">all</span> <span class="pre">items</span> <span class="pre">from</span> <span class="pre">D.</span></span></span><a class="headerlink" href="#qcodes.station.StationConfig.clear" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">shallow</span> <span class="pre">copy</span> <span class="pre">of</span> <span class="pre">D</span></span></span><a class="headerlink" href="#qcodes.station.StationConfig.copy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.fromkeys">
+<span class="sig-name descname"><span class="pre">fromkeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.station.StationConfig.fromkeys" title="Link to this definition"></a></dt>
+<dd><p>Create a new dictionary with keys from iterable and values set to value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.station.StationConfig.get" title="Link to this definition"></a></dt>
+<dd><p>Return the value for key if key is in the dictionary, else default.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.items">
+<span class="sig-name descname"><span class="pre">items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">items</span></span></span><a class="headerlink" href="#qcodes.station.StationConfig.items" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.keys">
+<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">a</span> <span class="pre">set-like</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">keys</span></span></span><a class="headerlink" href="#qcodes.station.StationConfig.keys" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.pop">
+<span class="sig-name descname"><span class="pre">pop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">k</span></span></em><span class="optional">[</span>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="optional">]</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">v,</span> <span class="pre">remove</span> <span class="pre">specified</span> <span class="pre">key</span> <span class="pre">and</span> <span class="pre">return</span> <span class="pre">the</span> <span class="pre">corresponding</span> <span class="pre">value.</span></span></span><a class="headerlink" href="#qcodes.station.StationConfig.pop" title="Link to this definition"></a></dt>
+<dd><p>If the key is not found, return the default if given; otherwise,
+raise a KeyError.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.popitem">
+<span class="sig-name descname"><span class="pre">popitem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.station.StationConfig.popitem" title="Link to this definition"></a></dt>
+<dd><p>Remove and return a (key, value) pair as a 2-tuple.</p>
+<p>Pairs are returned in LIFO (last-in, first-out) order.
+Raises KeyError if the dict is empty.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.setdefault">
+<span class="sig-name descname"><span class="pre">setdefault</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#qcodes.station.StationConfig.setdefault" title="Link to this definition"></a></dt>
+<dd><p>Insert key with a value of default if key is not in the dictionary.</p>
+<p>Return the value for key if key is in the dictionary, else default.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param"><span class="n"><span class="pre">E</span></span></em>, <span class="optional">]</span><em class="sig-param"><span class="n"><span class="pre">**F</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None.</span>&#160; <span class="pre">Update</span> <span class="pre">D</span> <span class="pre">from</span> <span class="pre">dict/iterable</span> <span class="pre">E</span> <span class="pre">and</span> <span class="pre">F.</span></span></span><a class="headerlink" href="#qcodes.station.StationConfig.update" title="Link to this definition"></a></dt>
+<dd><p>If E is present and has a .keys() method, then does:  for k in E: D[k] = E[k]
+If E is present and lacks a .keys() method, then does:  for k, v in E: D[k] = v
+In either case, this is followed by: for k in F:  D[k] = F[k]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.StationConfig.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">an</span> <span class="pre">object</span> <span class="pre">providing</span> <span class="pre">a</span> <span class="pre">view</span> <span class="pre">on</span> <span class="pre">D's</span> <span class="pre">values</span></span></span><a class="headerlink" href="#qcodes.station.StationConfig.values" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.station.Station">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">Station</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="metadatable/index.html#qcodes.metadatable.MetadatableWithName" title="qcodes.metadatable.MetadatableWithName"><span class="pre">MetadatableWithName</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_monitor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/station.html#Station"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="metadatable/index.html#qcodes.metadatable.Metadatable" title="qcodes.metadatable.metadatable_base.Metadatable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Metadatable</span></code></a>, <a class="reference internal" href="utils/index.html#qcodes.utils.DelegateAttributes" title="qcodes.utils.attribute_helpers.DelegateAttributes"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelegateAttributes</span></code></a></p>
+<p>A representation of the entire physical setup.</p>
+<p>Lists all the connected Components and the current default
+measurement (a list of actions).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>*components</strong> – components to add immediately to the
+Station. Can be added later via <code class="docutils literal notranslate"><span class="pre">self.add_component</span></code>.</p></li>
+<li><p><strong>config_file</strong> – <p>Path to YAML files to load the station config from.</p>
+<ul>
+<li><p>If only one yaml file needed to be loaded, it should be passed
+as a string, e.g., ‘~/station.yaml’</p></li>
+<li><p>If more than one yaml file needed, they should be supplied as
+a sequence of strings, e.g. [‘~/station1.yaml’, ‘~/station2.yaml’]</p></li>
+</ul>
+</p></li>
+<li><p><strong>use_monitor</strong> – Should the QCoDeS monitor be activated for this station.</p></li>
+<li><p><strong>default</strong> – Is this station the default?</p></li>
+<li><p><strong>update_snapshot</strong> – Immediately update the snapshot of each
+component as it is added to the Station.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.default" title="qcodes.station.Station.default"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default</span></code></a></p></td>
+<td><p>Class attribute to store the default station.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.delegate_attr_dicts" title="qcodes.station.Station.delegate_attr_dicts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delegate_attr_dicts</span></code></a></p></td>
+<td><p>A list of names (strings) of dictionaries which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>, whose keys should be treated as attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.config" title="qcodes.station.Station.config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">config</span></code></a></p></td>
+<td><p>A user dict representing the YAML file that the station was loaded from</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.delegate_attr_objects" title="qcodes.station.Station.delegate_attr_objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delegate_attr_objects</span></code></a></p></td>
+<td><p>A list of names (strings) of objects which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>, whose attributes should be passed through to <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.omit_delegate_attrs" title="qcodes.station.Station.omit_delegate_attrs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">omit_delegate_attrs</span></code></a></p></td>
+<td><p>A list of attribute names (strings) to <em>not</em> delegate to any other dictionary or object.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.snapshot_base" title="qcodes.station.Station.snapshot_base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">snapshot_base</span></code></a>([update, params_to_skip_update])</p></td>
+<td><p>State of the station as a JSON-compatible dictionary (everything that the custom JSON encoder class <a class="reference internal" href="utils/index.html#qcodes.utils.NumpyJSONEncoder" title="qcodes.utils.NumpyJSONEncoder"><code class="xref py py-class docutils literal notranslate"><span class="pre">NumpyJSONEncoder</span></code></a> supports).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.add_component" title="qcodes.station.Station.add_component"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_component</span></code></a>(component[, name, update_snapshot])</p></td>
+<td><p>Record one component as part of this Station.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.remove_component" title="qcodes.station.Station.remove_component"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_component</span></code></a>(name)</p></td>
+<td><p>Remove a component with a given name from this Station.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.get_component" title="qcodes.station.Station.get_component"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_component</span></code></a>(full_name)</p></td>
+<td><p>Get a (sub)component with a given name from this Station.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.__getitem__" title="qcodes.station.Station.__getitem__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__getitem__</span></code></a>(key)</p></td>
+<td><p>Shortcut to components dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.close_all_registered_instruments" title="qcodes.station.Station.close_all_registered_instruments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">close_all_registered_instruments</span></code></a>()</p></td>
+<td><p>Closes all instruments that are registered to this <cite>Station</cite> object by calling the <code class="xref py py-meth docutils literal notranslate"><span class="pre">base.Instrument.close()</span></code>-method on each one.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.load_config_file" title="qcodes.station.Station.load_config_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_config_file</span></code></a>([filename])</p></td>
+<td><p>Loads a configuration from a YAML file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.load_config_files" title="qcodes.station.Station.load_config_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_config_files</span></code></a>(*filenames)</p></td>
+<td><p>Loads configuration from multiple YAML files after merging them into one.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.load_config" title="qcodes.station.Station.load_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_config</span></code></a>(config)</p></td>
+<td><p>Loads a configuration from a supplied string or file/stream handle.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.close_and_remove_instrument" title="qcodes.station.Station.close_and_remove_instrument"><code class="xref py py-obj docutils literal notranslate"><span class="pre">close_and_remove_instrument</span></code></a>(instrument)</p></td>
+<td><p>Safely close instrument and remove from station and monitor list.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.load_metadata" title="qcodes.station.Station.load_metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_metadata</span></code></a>(metadata)</p></td>
+<td><p>Load metadata into this classes metadata dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.snapshot" title="qcodes.station.Station.snapshot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">snapshot</span></code></a>([update])</p></td>
+<td><p>Decorate a snapshot dictionary with metadata.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.station.Station.load_instrument" title="qcodes.station.Station.load_instrument"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_instrument</span></code></a>(identifier[, ...])</p></td>
+<td><p>Creates an <a class="reference internal" href="instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.Instrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instrument</span></code></a> instance as described by the loaded configuration file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.station.Station.load_all_instruments" title="qcodes.station.Station.load_all_instruments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_all_instruments</span></code></a>()</p></td>
+<td><p>Load all instruments specified in the loaded YAML station configuration.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.Station.default">
+<span class="sig-name descname"><span class="pre">default</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.station.Station" title="qcodes.station.Station"><span class="pre">Station</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#qcodes.station.Station.default" title="Link to this definition"></a></dt>
+<dd><p>Class attribute to store the default station.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.Station.delegate_attr_dicts">
+<span class="sig-name descname"><span class="pre">delegate_attr_dicts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.ClassVar" title="(in Python v3.10)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">['components']</span></em><a class="headerlink" href="#qcodes.station.Station.delegate_attr_dicts" title="Link to this definition"></a></dt>
+<dd><p>A list of names (strings) of dictionaries
+which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>,
+whose keys should be treated as attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.Station.config">
+<span class="sig-name descname"><span class="pre">config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#qcodes.station.StationConfig" title="qcodes.station.StationConfig"><span class="pre">StationConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#qcodes.station.Station.config" title="Link to this definition"></a></dt>
+<dd><p>A user dict representing the YAML file that the station was loaded from</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.Station.components">
+<span class="sig-name descname"><span class="pre">components</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="metadatable/index.html#qcodes.metadatable.MetadatableWithName" title="qcodes.metadatable.metadatable_base.MetadatableWithName"><span class="pre">MetadatableWithName</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#qcodes.station.Station.components" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.snapshot_base">
+<span class="sig-name descname"><span class="pre">snapshot_base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_to_skip_update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.snapshot_base"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.snapshot_base" title="Link to this definition"></a></dt>
+<dd><p>State of the station as a JSON-compatible dictionary (everything that
+the custom JSON encoder class <a class="reference internal" href="utils/index.html#qcodes.utils.NumpyJSONEncoder" title="qcodes.utils.NumpyJSONEncoder"><code class="xref py py-class docutils literal notranslate"><span class="pre">NumpyJSONEncoder</span></code></a>
+supports).</p>
+<p>Note: If the station contains an instrument that has already been
+closed, not only will it not be snapshotted, it will also be removed
+from the station during the execution of this function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>update</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, update the state by querying the
+all the children: f.ex. instruments, parameters,
+components, etc. If None only update if the state
+is known to be invalid.
+If <code class="docutils literal notranslate"><span class="pre">False</span></code>, just use the latest
+values in memory and never update the state.</p></li>
+<li><p><strong>params_to_skip_update</strong> – Not used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Base snapshot.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.add_component">
+<span class="sig-name descname"><span class="pre">add_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="metadatable/index.html#qcodes.metadatable.MetadatableWithName" title="qcodes.metadatable.metadatable_base.MetadatableWithName"><span class="pre">MetadatableWithName</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.add_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.add_component" title="Link to this definition"></a></dt>
+<dd><p>Record one component as part of this Station.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component</strong> – Components to add to the Station.</p></li>
+<li><p><strong>name</strong> – Name of the component.</p></li>
+<li><p><strong>update_snapshot</strong> – Immediately update the snapshot
+of each component as it is added to the Station.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The name assigned this component, which may have been changed</dt><dd><p>to make it unique among previously added components.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.remove_component">
+<span class="sig-name descname"><span class="pre">remove_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="metadatable/index.html#qcodes.metadatable.MetadatableWithName" title="qcodes.metadatable.metadatable_base.MetadatableWithName"><span class="pre">MetadatableWithName</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.remove_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.remove_component" title="Link to this definition"></a></dt>
+<dd><p>Remove a component with a given name from this Station.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – Name of the component.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The component that has been removed (this behavior is the same as
+for Python dictionaries).</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#KeyError" title="(in Python v3.10)"><strong>KeyError</strong></a> – If a component with the given name is not part of this
+    station.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.get_component">
+<span class="sig-name descname"><span class="pre">get_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">full_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="metadatable/index.html#qcodes.metadatable.MetadatableWithName" title="qcodes.metadatable.metadatable_base.MetadatableWithName"><span class="pre">MetadatableWithName</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.get_component"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.get_component" title="Link to this definition"></a></dt>
+<dd><p>Get a (sub)component with a given name from this Station.
+The name may be of a component that is a sub-component of another
+component, e.g. a parameter on an instrument, an instrument module
+or an top-level instrument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>full_name</strong> – Name of the component.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The component with the given name.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#KeyError" title="(in Python v3.10)"><strong>KeyError</strong></a> – If a component with the given name is not part of this
+    station.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="metadatable/index.html#qcodes.metadatable.Metadatable" title="qcodes.metadatable.metadatable_base.Metadatable"><span class="pre">Metadatable</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.__getitem__" title="Link to this definition"></a></dt>
+<dd><p>Shortcut to components dictionary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.close_all_registered_instruments">
+<span class="sig-name descname"><span class="pre">close_all_registered_instruments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.close_all_registered_instruments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.close_all_registered_instruments" title="Link to this definition"></a></dt>
+<dd><p>Closes all instruments that are registered to this <cite>Station</cite>
+object by calling the <code class="xref py py-meth docutils literal notranslate"><span class="pre">base.Instrument.close()</span></code>-method on
+each one.
+The instruments will be removed from the station and from the
+QCoDeS monitor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.load_config_file">
+<span class="sig-name descname"><span class="pre">load_config_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.load_config_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.load_config_file" title="Link to this definition"></a></dt>
+<dd><p>Loads a configuration from a YAML file. If <cite>filename</cite> is not specified
+the default file name from the qcodes configuration will be used.</p>
+<p>Loading of a configuration will update the snapshot of the station and
+make the instruments described in the config file available for
+instantiation with the <a class="reference internal" href="#qcodes.station.Station.load_instrument" title="qcodes.station.Station.load_instrument"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_instrument()</span></code></a> method.</p>
+<p>Additionally the shortcut methods <code class="docutils literal notranslate"><span class="pre">load_&lt;instrument_name&gt;</span></code> will be
+updated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.load_config_files">
+<span class="sig-name descname"><span class="pre">load_config_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">filenames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.load_config_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.load_config_files" title="Link to this definition"></a></dt>
+<dd><p>Loads configuration from multiple YAML files after merging them
+into one. If <cite>filenames</cite> are not specified the default file name from
+the qcodes configuration will be used.</p>
+<p>Loading of configuration will update the snapshot of the station and
+make the instruments described in the config files available for
+instantiation with the <a class="reference internal" href="#qcodes.station.Station.load_instrument" title="qcodes.station.Station.load_instrument"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_instrument()</span></code></a> method.</p>
+<p>Additionally the shortcut methods <code class="docutils literal notranslate"><span class="pre">load_&lt;instrument_name&gt;</span></code> will be
+updated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.load_config">
+<span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.IO" title="(in Python v3.10)"><span class="pre">IO</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.load_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.load_config" title="Link to this definition"></a></dt>
+<dd><p>Loads a configuration from a supplied string or file/stream handle.
+The string or file/stream is expected to be YAML formatted</p>
+<p>Loading of a configuration will update the snapshot of the station and
+make the instruments described in the config file available for
+instantiation with the <a class="reference internal" href="#qcodes.station.Station.load_instrument" title="qcodes.station.Station.load_instrument"><code class="xref py py-meth docutils literal notranslate"><span class="pre">load_instrument()</span></code></a> method.</p>
+<p>Additionally the shortcut methods <code class="docutils literal notranslate"><span class="pre">load_&lt;instrument_name&gt;</span></code> will be
+updated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.close_and_remove_instrument">
+<span class="sig-name descname"><span class="pre">close_and_remove_instrument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><span class="pre">Instrument</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.close_and_remove_instrument"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.close_and_remove_instrument" title="Link to this definition"></a></dt>
+<dd><p>Safely close instrument and remove from station and monitor list.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.Station.delegate_attr_objects">
+<span class="sig-name descname"><span class="pre">delegate_attr_objects</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.ClassVar" title="(in Python v3.10)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#qcodes.station.Station.delegate_attr_objects" title="Link to this definition"></a></dt>
+<dd><p>A list of names (strings) of objects
+which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>, whose attributes
+should be passed through to <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.load_metadata">
+<span class="sig-name descname"><span class="pre">load_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#qcodes.station.Station.load_metadata" title="Link to this definition"></a></dt>
+<dd><p>Load metadata into this classes metadata dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>metadata</strong> – Metadata to load.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.Station.omit_delegate_attrs">
+<span class="sig-name descname"><span class="pre">omit_delegate_attrs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.ClassVar" title="(in Python v3.10)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#qcodes.station.Station.omit_delegate_attrs" title="Link to this definition"></a></dt>
+<dd><p>A list of attribute names (strings)
+to <em>not</em> delegate to any other dictionary or object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.snapshot">
+<span class="sig-name descname"><span class="pre">snapshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#qcodes.station.Station.snapshot" title="Link to this definition"></a></dt>
+<dd><p>Decorate a snapshot dictionary with metadata.
+DO NOT override this method if you want metadata in the snapshot
+instead, override <a class="reference internal" href="#qcodes.station.Station.snapshot_base" title="qcodes.station.Station.snapshot_base"><code class="xref py py-meth docutils literal notranslate"><span class="pre">snapshot_base()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>update</strong> – Passed to snapshot_base.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Base snapshot.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.station.Station.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#qcodes.station.Station.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.load_instrument">
+<span class="sig-name descname"><span class="pre">load_instrument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">identifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">revive_instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><span class="pre">Instrument</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.load_instrument"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.load_instrument" title="Link to this definition"></a></dt>
+<dd><p>Creates an <a class="reference internal" href="instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.Instrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instrument</span></code></a> instance as described by the
+loaded configuration file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>identifier</strong> – The identifying string that is looked up in the yaml
+configuration file, which identifies the instrument to be added.</p></li>
+<li><p><strong>revive_instance</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, try to return an instrument with the
+specified name instead of closing it and creating a new one.</p></li>
+<li><p><strong>update_snapshot</strong> – Immediately update the snapshot
+of the instrument as it is added to the Station.</p></li>
+<li><p><strong>**kwargs</strong> – Additional keyword arguments that get passed on to the
+<code class="docutils literal notranslate"><span class="pre">__init__</span></code>-method of the instrument to be added.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.station.Station.load_all_instruments">
+<span class="sig-name descname"><span class="pre">load_all_instruments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">only_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/station.html#Station.load_all_instruments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.Station.load_all_instruments" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">load_all_instruments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">only_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">load_all_instruments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">only_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">load_all_instruments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">only_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.NoReturn" title="(in Python v3.10)"><span class="pre">NoReturn</span></a></span></span></dt>
+<dd><p>Load all instruments specified in the loaded YAML station
+configuration.</p>
+<p>Optionally, the instruments to be loaded can be filtered by their
+names or types, use <code class="docutils literal notranslate"><span class="pre">only_names</span></code> and <code class="docutils literal notranslate"><span class="pre">only_types</span></code>
+arguments for that. It is an error to supply both <code class="docutils literal notranslate"><span class="pre">only_names</span></code>
+and <code class="docutils literal notranslate"><span class="pre">only_types</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>only_names</strong> – List of instrument names to load from the config.
+If left as None, then all instruments are loaded.</p></li>
+<li><p><strong>only_types</strong> – List of instrument types e.g. the class names
+of the instruments to load. If left as None, then all
+instruments are loaded.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The names of the loaded instruments</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.station.update_config_schema">
+<span class="sig-prename descclassname"><span class="pre">qcodes.station.</span></span><span class="sig-name descname"><span class="pre">update_config_schema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">additional_instrument_modules</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><span class="pre">ModuleType</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/station.html#update_config_schema"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.station.update_config_schema" title="Link to this definition"></a></dt>
+<dd><p>Update the json schema file ‘station.schema.json’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>additional_instrument_modules</strong> – python modules that contain
+<code class="xref py py-class docutils literal notranslate"><span class="pre">qcodes.instrument.base.InstrumentBase</span></code> definitions
+(and subclasses thereof) to be included as
+values for instrument definition in the station definition
+yaml files.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="plotting/index.html" class="btn btn-neutral float-left" title="qcodes.plotting" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="utils/index.html" class="btn btn-neutral float-right" title="qcodes.utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

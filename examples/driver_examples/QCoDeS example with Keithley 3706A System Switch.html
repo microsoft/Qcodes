@@ -1,0 +1,2193 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QCoDeS example with Keithley 3706A System Switch &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="QCoDeS Example with Tektronix Keithley S46" href="QCodes%20example%20with%20Keithley%20S46.html" />
+    <link rel="prev" title="Qcodes example with InstrumentGroup driver" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#drivers">Drivers</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">QCoDeS example with Keithley 3706A System Switch</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Basic-Operation">Basic Operation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Channel-Control-and-Manipulations">Channel Control and Manipulations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Exceptions">Exceptions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">QCoDeS example with Keithley 3706A System Switch</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/driver_examples/QCoDeS example with Keithley 3706A System Switch.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/QCoDeS example with Keithley 3706A System Switch.ipynb">docs/examples/driver_examples/QCoDeS example with Keithley 3706A System Switch.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/QCoDeS example with Keithley 3706A System Switch.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-example-with-Keithley-3706A-System-Switch">
+<h1>QCoDeS example with Keithley 3706A System Switch<a class="headerlink" href="#QCoDeS-example-with-Keithley-3706A-System-Switch" title="Link to this heading"></a></h1>
+<p>This is the example notebook that presents the features of the QCoDeS driver for Keithley 3706A-SNFP System Switch with 3730 6x16 High Density Matrix. The model 3706A-SNFP has no DMM capabilities. However, users who are in possession of models with DMM capabilities can use the present driver for switch operations.</p>
+<section id="Basic-Operation">
+<h2>Basic Operation<a class="headerlink" href="#Basic-Operation" title="Link to this heading"></a></h2>
+<p>Let us, first, import QCoDeS driver for the Keithley System Switch:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">qcodes</span> <span class="k">as</span> <span class="nn">qc</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.Keithley</span> <span class="kn">import</span> <span class="n">Keithley3706A</span>
+</pre></div>
+</div>
+</div>
+<p>Now, we create a station to hold our instrument:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">Station</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>We finalize the initialization of the instrument by instantiation and then adding it to the station:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span> <span class="o">=</span> <span class="n">Keithley3706A</span><span class="p">(</span><span class="s1">&#39;smatrix&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="s2">&quot;USB0::0x05E6::0x3706::04447336::INSTR&quot;</span><span class="p">)</span>
+<span class="n">station</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">smatrix</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to: KEITHLEY INSTRUMENTS INC. 3706A-SNFP SYSTEM SWITCH (serial:04447336, firmware:01.56a)
+Slot 1- Model:3730, Matrix Type:6x16 High Density Matrix, Firmware:01.40h, Serial:4447332
+Slot 2- Model:3730, Matrix Type:6x16 High Density Matrix, Firmware:01.40h, Serial:4398982
+Slot 3- Model:3730, Matrix Type:6x16 High Density Matrix, Firmware:01.40h, Serial:4447333
+Interlock is disengaged in Slot 1.
+Interlock is disengaged in Slot 2.
+Interlock is disengaged in Slot 3.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;smatrix&#39;
+</pre></div></div>
+</div>
+<p>Here, the driver not only shows information about the hardware specifications we have, but also reminds us about the interlocks. The channel relays can continue to operate even if the interlock in the corresponding slot is disengaged, however, one cannot perform measurements through the switching card, as the analog backplanes cannot be energized. Specific warnings shall be issued in related function calls as well. Now, let us continue to examine the properties of our instrument via its
+snapshot:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">print_readable_snapshot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+smatrix:
+        parameter           value
+--------------------------------------------------------------------------------
+IDN                  :  {&#39;vendor&#39;: &#39;KEITHLEY INSTRUMENTS INC.&#39;, &#39;model&#39;: &#39;3706...
+channel_connect_rule :  BREAK_BEFORE_MAKE
+gpib_address         :  12
+gpib_enabled         :  True
+lan_enabled          :  True
+timeout              :  5 (s)
+</pre></div></div>
+</div>
+<section id="Connection-types">
+<h3>Connection types<a class="headerlink" href="#Connection-types" title="Link to this heading"></a></h3>
+<p>System switch can be connected to a setup through USB, LAN as well as GPIB. Depending on the needs, one can enable (disable) LAN and/or GPIB connections.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">gpib_enabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">lan_enabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">print_readable_snapshot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+smatrix:
+        parameter           value
+--------------------------------------------------------------------------------
+IDN                  :  {&#39;vendor&#39;: &#39;KEITHLEY INSTRUMENTS INC.&#39;, &#39;model&#39;: &#39;3706...
+channel_connect_rule :  BREAK_BEFORE_MAKE
+gpib_address         :  12
+gpib_enabled         :  False
+lan_enabled          :  False
+timeout              :  5 (s)
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">gpib_enabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">lan_enabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>GPIB connection address can be changed at will. An integer value in between <code class="docutils literal notranslate"><span class="pre">1</span></code> and <code class="docutils literal notranslate"><span class="pre">30</span></code> can be assigned via:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">gpib_address</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">print_readable_snapshot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+smatrix:
+        parameter           value
+--------------------------------------------------------------------------------
+IDN                  :  {&#39;vendor&#39;: &#39;KEITHLEY INSTRUMENTS INC.&#39;, &#39;model&#39;: &#39;3706...
+channel_connect_rule :  BREAK_BEFORE_MAKE
+gpib_address         :  12
+gpib_enabled         :  True
+lan_enabled          :  True
+timeout              :  5 (s)
+</pre></div></div>
+</div>
+<p>If an invalid address is passed as an argument, QCoDeS shall rise an error and the present address shall be preserved.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">gpib_address</span><span class="p">(</span><span class="mi">31</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-red-intense-fg ansi-bold">---------------------------------------------------------------------------</span>
+<span class="ansi-red-intense-fg ansi-bold">ValueError</span>                                Traceback (most recent call last)
+<span class="ansi-green-intense-fg ansi-bold">&lt;ipython-input-12-a8e26381bdb1&gt;</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-intense-fg ansi-bold">----&gt; 1</span><span class="ansi-yellow-intense-fg ansi-bold"> </span>smatrix<span class="ansi-yellow-intense-fg ansi-bold">.</span>gpib_address<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-cyan-intense-fg ansi-bold">31</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
+
+<span class="ansi-green-intense-fg ansi-bold">c:\users\a-alhard\repos\qcodes\qcodes\instrument\parameter.py</span> in <span class="ansi-cyan-fg">__call__</span><span class="ansi-blue-intense-fg ansi-bold">(self, *args, **kwargs)</span>
+<span class="ansi-green-fg">    408</span>         <span class="ansi-green-intense-fg ansi-bold">else</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-fg">    409</span>             <span class="ansi-green-intense-fg ansi-bold">if</span> hasattr<span class="ansi-yellow-intense-fg ansi-bold">(</span>self<span class="ansi-yellow-intense-fg ansi-bold">,</span> <span class="ansi-blue-intense-fg ansi-bold">&#39;set&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 410</span><span class="ansi-yellow-intense-fg ansi-bold">                 </span>self<span class="ansi-yellow-intense-fg ansi-bold">.</span>set<span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-yellow-intense-fg ansi-bold">*</span>args<span class="ansi-yellow-intense-fg ansi-bold">,</span> <span class="ansi-yellow-intense-fg ansi-bold">**</span>kwargs<span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">    411</span>                 <span class="ansi-green-intense-fg ansi-bold">return</span> <span class="ansi-green-intense-fg ansi-bold">None</span>
+<span class="ansi-green-fg">    412</span>             <span class="ansi-green-intense-fg ansi-bold">else</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+
+<span class="ansi-green-intense-fg ansi-bold">c:\users\a-alhard\repos\qcodes\qcodes\instrument\parameter.py</span> in <span class="ansi-cyan-fg">set_wrapper</span><span class="ansi-blue-intense-fg ansi-bold">(value, **kwargs)</span>
+<span class="ansi-green-fg">    646</span>             <span class="ansi-green-intense-fg ansi-bold">except</span> Exception <span class="ansi-green-intense-fg ansi-bold">as</span> e<span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-fg">    647</span>                 e<span class="ansi-yellow-intense-fg ansi-bold">.</span>args <span class="ansi-yellow-intense-fg ansi-bold">=</span> e<span class="ansi-yellow-intense-fg ansi-bold">.</span>args <span class="ansi-yellow-intense-fg ansi-bold">+</span> <span class="ansi-yellow-intense-fg ansi-bold">(</span><span class="ansi-blue-intense-fg ansi-bold">&#39;setting {} to {}&#39;</span><span class="ansi-yellow-intense-fg ansi-bold">.</span>format<span class="ansi-yellow-intense-fg ansi-bold">(</span>self<span class="ansi-yellow-intense-fg ansi-bold">,</span> value<span class="ansi-yellow-intense-fg ansi-bold">)</span><span class="ansi-yellow-intense-fg ansi-bold">,</span><span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 648</span><span class="ansi-yellow-intense-fg ansi-bold">                 </span><span class="ansi-green-intense-fg ansi-bold">raise</span> e
+<span class="ansi-green-fg">    649</span>
+<span class="ansi-green-fg">    650</span>         <span class="ansi-green-intense-fg ansi-bold">return</span> set_wrapper
+
+<span class="ansi-green-intense-fg ansi-bold">c:\users\a-alhard\repos\qcodes\qcodes\instrument\parameter.py</span> in <span class="ansi-cyan-fg">set_wrapper</span><span class="ansi-blue-intense-fg ansi-bold">(value, **kwargs)</span>
+<span class="ansi-green-fg">    606</span>         <span class="ansi-green-intense-fg ansi-bold">def</span> set_wrapper<span class="ansi-yellow-intense-fg ansi-bold">(</span>value<span class="ansi-yellow-intense-fg ansi-bold">:</span> ParamDataType<span class="ansi-yellow-intense-fg ansi-bold">,</span> <span class="ansi-yellow-intense-fg ansi-bold">**</span>kwargs<span class="ansi-yellow-intense-fg ansi-bold">:</span> Any<span class="ansi-yellow-intense-fg ansi-bold">)</span> <span class="ansi-yellow-intense-fg ansi-bold">-&gt;</span> <span class="ansi-green-intense-fg ansi-bold">None</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-fg">    607</span>             <span class="ansi-green-intense-fg ansi-bold">try</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 608</span><span class="ansi-yellow-intense-fg ansi-bold">                 </span>self<span class="ansi-yellow-intense-fg ansi-bold">.</span>validate<span class="ansi-yellow-intense-fg ansi-bold">(</span>value<span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">    609</span>
+<span class="ansi-green-fg">    610</span>                 <span class="ansi-red-intense-fg ansi-bold"># In some cases intermediate sweep values must be used.</span>
+
+<span class="ansi-green-intense-fg ansi-bold">c:\users\a-alhard\repos\qcodes\qcodes\instrument\parameter.py</span> in <span class="ansi-cyan-fg">validate</span><span class="ansi-blue-intense-fg ansi-bold">(self, value)</span>
+<span class="ansi-green-fg">    705</span>             context <span class="ansi-yellow-intense-fg ansi-bold">=</span> self<span class="ansi-yellow-intense-fg ansi-bold">.</span>name
+<span class="ansi-green-fg">    706</span>         <span class="ansi-green-intense-fg ansi-bold">if</span> self<span class="ansi-yellow-intense-fg ansi-bold">.</span>vals <span class="ansi-green-intense-fg ansi-bold">is</span> <span class="ansi-green-intense-fg ansi-bold">not</span> <span class="ansi-green-intense-fg ansi-bold">None</span><span class="ansi-yellow-intense-fg ansi-bold">:</span>
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 707</span><span class="ansi-yellow-intense-fg ansi-bold">             </span>self<span class="ansi-yellow-intense-fg ansi-bold">.</span>vals<span class="ansi-yellow-intense-fg ansi-bold">.</span>validate<span class="ansi-yellow-intense-fg ansi-bold">(</span>value<span class="ansi-yellow-intense-fg ansi-bold">,</span> <span class="ansi-blue-intense-fg ansi-bold">&#39;Parameter: &#39;</span> <span class="ansi-yellow-intense-fg ansi-bold">+</span> context<span class="ansi-yellow-intense-fg ansi-bold">)</span>
+<span class="ansi-green-fg">    708</span>
+<span class="ansi-green-fg">    709</span>     <span class="ansi-yellow-intense-fg ansi-bold">@</span>property
+
+<span class="ansi-green-intense-fg ansi-bold">c:\users\a-alhard\repos\qcodes\qcodes\utils\validators.py</span> in <span class="ansi-cyan-fg">validate</span><span class="ansi-blue-intense-fg ansi-bold">(self, value, context)</span>
+<span class="ansi-green-fg">    340</span>                 <span class="ansi-blue-intense-fg ansi-bold">&#39;{} is invalid: must be between &#39;</span>
+<span class="ansi-green-fg">    341</span>                 &#39;{} and {} inclusive; {}&#39;.format(
+<span class="ansi-green-intense-fg ansi-bold">--&gt; 342</span><span class="ansi-yellow-intense-fg ansi-bold">                     repr(value), self._min_value, self._max_value, context))
+</span><span class="ansi-green-fg">    343</span>
+<span class="ansi-green-fg">    344</span>     is_numeric <span class="ansi-yellow-intense-fg ansi-bold">=</span> <span class="ansi-green-intense-fg ansi-bold">True</span>
+
+<span class="ansi-red-intense-fg ansi-bold">ValueError</span>: (&#39;31 is invalid: must be between 1 and 30 inclusive; Parameter: smatrix.gpib_address&#39;, &#39;setting smatrix_gpib_address to 31&#39;)
+</pre></div></div>
+</div>
+<p>If the preferred connection method is LAN, one can querry the IP address of the instrument through the driver.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_ip_address</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;0.0.0.0&#39;
+</pre></div></div>
+</div>
+<p>Here, the returned address is the default value if there is no LAN connection; indeed in this example we are connected to the instrument via USB. In cases where a reset to the LAN is required, a simple function call is sufficient:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">reset_local_network</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Identifications">
+<h3>Identifications<a class="headerlink" href="#Identifications" title="Link to this heading"></a></h3>
+<p>While QCoDeS prints out the instrument identifications including the installed matrix types upon a successfull connection, these metadata can be queried later on, as well.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;vendor&#39;: &#39;KEITHLEY INSTRUMENTS INC.&#39;,
+ &#39;model&#39;: &#39;3706A-SNFP&#39;,
+ &#39;serial&#39;: &#39;04447336&#39;,
+ &#39;firmware&#39;: &#39;01.56a&#39;}
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_switch_cards</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+({&#39;slot_no&#39;: &#39;1&#39;,
+  &#39;model&#39;: &#39;3730&#39;,
+  &#39;mtype&#39;: &#39;6x16 High Density Matrix&#39;,
+  &#39;firmware&#39;: &#39;01.40h&#39;,
+  &#39;serial&#39;: &#39;4447332&#39;},
+ {&#39;slot_no&#39;: &#39;2&#39;,
+  &#39;model&#39;: &#39;3730&#39;,
+  &#39;mtype&#39;: &#39;6x16 High Density Matrix&#39;,
+  &#39;firmware&#39;: &#39;01.40h&#39;,
+  &#39;serial&#39;: &#39;4398982&#39;},
+ {&#39;slot_no&#39;: &#39;3&#39;,
+  &#39;model&#39;: &#39;3730&#39;,
+  &#39;mtype&#39;: &#39;6x16 High Density Matrix&#39;,
+  &#39;firmware&#39;: &#39;01.40h&#39;,
+  &#39;serial&#39;: &#39;4447333&#39;})
+</pre></div></div>
+</div>
+</section>
+<section id="Save-and-load-setups,-memory-management">
+<h3>Save and load setups, memory management<a class="headerlink" href="#Save-and-load-setups,-memory-management" title="Link to this heading"></a></h3>
+<p>The system switch provides an option for the users to save their current setups to be used later. One can save a configuration either to the non-volatile memory of the instrument or to a USB drive. To this end, we use <code class="docutils literal notranslate"><span class="pre">save_setup()</span></code> function which either takes no arguments or a string which represents the path and the file name to which the setup shall be saved on an external drive. If no arguments provided, the setup shall be saved to the intstument. Note that, in the latter case, any
+existing saved configurations shall be overwritten.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">save_setup</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>We can recall saved setups via <code class="docutils literal notranslate"><span class="pre">load_setup()</span></code> function. It takes a single argument: If it is <code class="docutils literal notranslate"><span class="pre">0</span></code>, factory defaults load, if it is <code class="docutils literal notranslate"><span class="pre">1</span></code>, the saved setup from the nonvolatile memory is recalled. Otherwise, a string specifying the relative path to the saved setup on a USB drive should be passed in.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">load_setup</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">load_setup</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The system switch has limited memory which can be queried via:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_available_memory</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;System Memory  (%)&#39;: &#39;89.64&#39;,
+ &#39;Script Memory  (%)&#39;: &#39;100.00&#39;,
+ &#39;Pattern Memory (%)&#39;: &#39;100.00&#39;,
+ &#39;Config Memory  (%)&#39;: &#39;100.00&#39;}
+</pre></div></div>
+</div>
+<p>The memory usage of a saved setup is depicted by the <code class="docutils literal notranslate"><span class="pre">Config</span> <span class="pre">Memory</span></code>. User given channel patterns occupy the <code class="docutils literal notranslate"><span class="pre">Pattern</span> <span class="pre">Memory</span></code>. The system switch is capable of storing and running Lua scripts. This functionality is not explicitly implemented by the QCoDeS driver. However, if desired, one can still send, save and execute Lua scripts through <code class="docutils literal notranslate"><span class="pre">write()</span></code> and <code class="docutils literal notranslate"><span class="pre">ask()</span></code> methods of the <code class="docutils literal notranslate"><span class="pre">InstrumentBase</span></code> class of QCoDeS which is inherited by every instrument driver. If this is the case, the saved
+Lua scripts occupy the <code class="docutils literal notranslate"><span class="pre">Script</span> <span class="pre">Memory</span></code>.</p>
+</section>
+</section>
+<section id="Channel-Control-and-Manipulations">
+<h2>Channel Control and Manipulations<a class="headerlink" href="#Channel-Control-and-Manipulations" title="Link to this heading"></a></h2>
+<section id="Channel-Specifiers">
+<h3>Channel Specifiers<a class="headerlink" href="#Channel-Specifiers" title="Link to this heading"></a></h3>
+<p>First, let us call the installed switch cards again:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_switch_cards</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+({&#39;slot_no&#39;: &#39;1&#39;,
+  &#39;model&#39;: &#39;3730&#39;,
+  &#39;mtype&#39;: &#39;6x16 High Density Matrix&#39;,
+  &#39;firmware&#39;: &#39;01.40h&#39;,
+  &#39;serial&#39;: &#39;4447332&#39;},
+ {&#39;slot_no&#39;: &#39;2&#39;,
+  &#39;model&#39;: &#39;3730&#39;,
+  &#39;mtype&#39;: &#39;6x16 High Density Matrix&#39;,
+  &#39;firmware&#39;: &#39;01.40h&#39;,
+  &#39;serial&#39;: &#39;4398982&#39;},
+ {&#39;slot_no&#39;: &#39;3&#39;,
+  &#39;model&#39;: &#39;3730&#39;,
+  &#39;mtype&#39;: &#39;6x16 High Density Matrix&#39;,
+  &#39;firmware&#39;: &#39;01.40h&#39;,
+  &#39;serial&#39;: &#39;4447333&#39;})
+</pre></div></div>
+</div>
+<p>The system switch has six available slots from which three are currently occupied by <code class="docutils literal notranslate"><span class="pre">6x16</span></code> high density matrices. As implied, these matrices have <code class="docutils literal notranslate"><span class="pre">6</span></code> rows and <code class="docutils literal notranslate"><span class="pre">16</span></code> columns, hence, in total, <code class="docutils literal notranslate"><span class="pre">96</span></code> available channels, each.</p>
+<p>Each channel has identical properties but unique names. The properties of the channels can be manipulated via calling them individually, as a group or as a whole slot. The naming of the channels follows a general pattern. In particular, here for the model <code class="docutils literal notranslate"><span class="pre">3730</span></code> which has no <code class="docutils literal notranslate"><span class="pre">bank</span></code>, the names starts with the slot number, then the row number and finally follows the cloumn number which should always be two characters. For example, <code class="docutils literal notranslate"><span class="pre">1101</span></code> represents the channel at <code class="docutils literal notranslate"><span class="pre">Slot</span> <span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">Row</span> <span class="pre">1</span></code> and
+<code class="docutils literal notranslate"><span class="pre">Column</span> <span class="pre">1</span></code>. For other models, users should refer to the corresponding instrument manual.</p>
+<p>In certain cases manual deduction of the name of the channel could be more efficient. On the other hand, user can easily query the available channels as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_channels</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;1101&#39;,
+ &#39;1102&#39;,
+ &#39;1103&#39;,
+ &#39;1104&#39;,
+ &#39;1105&#39;,
+ &#39;1106&#39;,
+ &#39;1107&#39;,
+ &#39;1108&#39;,
+ &#39;1109&#39;,
+ &#39;1110&#39;,
+ &#39;1111&#39;,
+ &#39;1112&#39;,
+ &#39;1113&#39;,
+ &#39;1114&#39;,
+ &#39;1115&#39;,
+ &#39;1116&#39;,
+ &#39;1201&#39;,
+ &#39;1202&#39;,
+ &#39;1203&#39;,
+ &#39;1204&#39;,
+ &#39;1205&#39;,
+ &#39;1206&#39;,
+ &#39;1207&#39;,
+ &#39;1208&#39;,
+ &#39;1209&#39;,
+ &#39;1210&#39;,
+ &#39;1211&#39;,
+ &#39;1212&#39;,
+ &#39;1213&#39;,
+ &#39;1214&#39;,
+ &#39;1215&#39;,
+ &#39;1216&#39;,
+ &#39;1301&#39;,
+ &#39;1302&#39;,
+ &#39;1303&#39;,
+ &#39;1304&#39;,
+ &#39;1305&#39;,
+ &#39;1306&#39;,
+ &#39;1307&#39;,
+ &#39;1308&#39;,
+ &#39;1309&#39;,
+ &#39;1310&#39;,
+ &#39;1311&#39;,
+ &#39;1312&#39;,
+ &#39;1313&#39;,
+ &#39;1314&#39;,
+ &#39;1315&#39;,
+ &#39;1316&#39;,
+ &#39;1401&#39;,
+ &#39;1402&#39;,
+ &#39;1403&#39;,
+ &#39;1404&#39;,
+ &#39;1405&#39;,
+ &#39;1406&#39;,
+ &#39;1407&#39;,
+ &#39;1408&#39;,
+ &#39;1409&#39;,
+ &#39;1410&#39;,
+ &#39;1411&#39;,
+ &#39;1412&#39;,
+ &#39;1413&#39;,
+ &#39;1414&#39;,
+ &#39;1415&#39;,
+ &#39;1416&#39;,
+ &#39;1501&#39;,
+ &#39;1502&#39;,
+ &#39;1503&#39;,
+ &#39;1504&#39;,
+ &#39;1505&#39;,
+ &#39;1506&#39;,
+ &#39;1507&#39;,
+ &#39;1508&#39;,
+ &#39;1509&#39;,
+ &#39;1510&#39;,
+ &#39;1511&#39;,
+ &#39;1512&#39;,
+ &#39;1513&#39;,
+ &#39;1514&#39;,
+ &#39;1515&#39;,
+ &#39;1516&#39;,
+ &#39;1601&#39;,
+ &#39;1602&#39;,
+ &#39;1603&#39;,
+ &#39;1604&#39;,
+ &#39;1605&#39;,
+ &#39;1606&#39;,
+ &#39;1607&#39;,
+ &#39;1608&#39;,
+ &#39;1609&#39;,
+ &#39;1610&#39;,
+ &#39;1611&#39;,
+ &#39;1612&#39;,
+ &#39;1613&#39;,
+ &#39;1614&#39;,
+ &#39;1615&#39;,
+ &#39;1616&#39;,
+ &#39;2101&#39;,
+ &#39;2102&#39;,
+ &#39;2103&#39;,
+ &#39;2104&#39;,
+ &#39;2105&#39;,
+ &#39;2106&#39;,
+ &#39;2107&#39;,
+ &#39;2108&#39;,
+ &#39;2109&#39;,
+ &#39;2110&#39;,
+ &#39;2111&#39;,
+ &#39;2112&#39;,
+ &#39;2113&#39;,
+ &#39;2114&#39;,
+ &#39;2115&#39;,
+ &#39;2116&#39;,
+ &#39;2201&#39;,
+ &#39;2202&#39;,
+ &#39;2203&#39;,
+ &#39;2204&#39;,
+ &#39;2205&#39;,
+ &#39;2206&#39;,
+ &#39;2207&#39;,
+ &#39;2208&#39;,
+ &#39;2209&#39;,
+ &#39;2210&#39;,
+ &#39;2211&#39;,
+ &#39;2212&#39;,
+ &#39;2213&#39;,
+ &#39;2214&#39;,
+ &#39;2215&#39;,
+ &#39;2216&#39;,
+ &#39;2301&#39;,
+ &#39;2302&#39;,
+ &#39;2303&#39;,
+ &#39;2304&#39;,
+ &#39;2305&#39;,
+ &#39;2306&#39;,
+ &#39;2307&#39;,
+ &#39;2308&#39;,
+ &#39;2309&#39;,
+ &#39;2310&#39;,
+ &#39;2311&#39;,
+ &#39;2312&#39;,
+ &#39;2313&#39;,
+ &#39;2314&#39;,
+ &#39;2315&#39;,
+ &#39;2316&#39;,
+ &#39;2401&#39;,
+ &#39;2402&#39;,
+ &#39;2403&#39;,
+ &#39;2404&#39;,
+ &#39;2405&#39;,
+ &#39;2406&#39;,
+ &#39;2407&#39;,
+ &#39;2408&#39;,
+ &#39;2409&#39;,
+ &#39;2410&#39;,
+ &#39;2411&#39;,
+ &#39;2412&#39;,
+ &#39;2413&#39;,
+ &#39;2414&#39;,
+ &#39;2415&#39;,
+ &#39;2416&#39;,
+ &#39;2501&#39;,
+ &#39;2502&#39;,
+ &#39;2503&#39;,
+ &#39;2504&#39;,
+ &#39;2505&#39;,
+ &#39;2506&#39;,
+ &#39;2507&#39;,
+ &#39;2508&#39;,
+ &#39;2509&#39;,
+ &#39;2510&#39;,
+ &#39;2511&#39;,
+ &#39;2512&#39;,
+ &#39;2513&#39;,
+ &#39;2514&#39;,
+ &#39;2515&#39;,
+ &#39;2516&#39;,
+ &#39;2601&#39;,
+ &#39;2602&#39;,
+ &#39;2603&#39;,
+ &#39;2604&#39;,
+ &#39;2605&#39;,
+ &#39;2606&#39;,
+ &#39;2607&#39;,
+ &#39;2608&#39;,
+ &#39;2609&#39;,
+ &#39;2610&#39;,
+ &#39;2611&#39;,
+ &#39;2612&#39;,
+ &#39;2613&#39;,
+ &#39;2614&#39;,
+ &#39;2615&#39;,
+ &#39;2616&#39;,
+ &#39;3101&#39;,
+ &#39;3102&#39;,
+ &#39;3103&#39;,
+ &#39;3104&#39;,
+ &#39;3105&#39;,
+ &#39;3106&#39;,
+ &#39;3107&#39;,
+ &#39;3108&#39;,
+ &#39;3109&#39;,
+ &#39;3110&#39;,
+ &#39;3111&#39;,
+ &#39;3112&#39;,
+ &#39;3113&#39;,
+ &#39;3114&#39;,
+ &#39;3115&#39;,
+ &#39;3116&#39;,
+ &#39;3201&#39;,
+ &#39;3202&#39;,
+ &#39;3203&#39;,
+ &#39;3204&#39;,
+ &#39;3205&#39;,
+ &#39;3206&#39;,
+ &#39;3207&#39;,
+ &#39;3208&#39;,
+ &#39;3209&#39;,
+ &#39;3210&#39;,
+ &#39;3211&#39;,
+ &#39;3212&#39;,
+ &#39;3213&#39;,
+ &#39;3214&#39;,
+ &#39;3215&#39;,
+ &#39;3216&#39;,
+ &#39;3301&#39;,
+ &#39;3302&#39;,
+ &#39;3303&#39;,
+ &#39;3304&#39;,
+ &#39;3305&#39;,
+ &#39;3306&#39;,
+ &#39;3307&#39;,
+ &#39;3308&#39;,
+ &#39;3309&#39;,
+ &#39;3310&#39;,
+ &#39;3311&#39;,
+ &#39;3312&#39;,
+ &#39;3313&#39;,
+ &#39;3314&#39;,
+ &#39;3315&#39;,
+ &#39;3316&#39;,
+ &#39;3401&#39;,
+ &#39;3402&#39;,
+ &#39;3403&#39;,
+ &#39;3404&#39;,
+ &#39;3405&#39;,
+ &#39;3406&#39;,
+ &#39;3407&#39;,
+ &#39;3408&#39;,
+ &#39;3409&#39;,
+ &#39;3410&#39;,
+ &#39;3411&#39;,
+ &#39;3412&#39;,
+ &#39;3413&#39;,
+ &#39;3414&#39;,
+ &#39;3415&#39;,
+ &#39;3416&#39;,
+ &#39;3501&#39;,
+ &#39;3502&#39;,
+ &#39;3503&#39;,
+ &#39;3504&#39;,
+ &#39;3505&#39;,
+ &#39;3506&#39;,
+ &#39;3507&#39;,
+ &#39;3508&#39;,
+ &#39;3509&#39;,
+ &#39;3510&#39;,
+ &#39;3511&#39;,
+ &#39;3512&#39;,
+ &#39;3513&#39;,
+ &#39;3514&#39;,
+ &#39;3515&#39;,
+ &#39;3516&#39;,
+ &#39;3601&#39;,
+ &#39;3602&#39;,
+ &#39;3603&#39;,
+ &#39;3604&#39;,
+ &#39;3605&#39;,
+ &#39;3606&#39;,
+ &#39;3607&#39;,
+ &#39;3608&#39;,
+ &#39;3609&#39;,
+ &#39;3610&#39;,
+ &#39;3611&#39;,
+ &#39;3612&#39;,
+ &#39;3613&#39;,
+ &#39;3614&#39;,
+ &#39;3615&#39;,
+ &#39;3616&#39;]
+</pre></div></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">get_channels()</span></code> function returns an array of strings each being the name of an available channel in all occupied slots. The return type being <code class="docutils literal notranslate"><span class="pre">string</span></code> is intentional as the instrument accepts the channel names as strings and not integers during any manipulation. Thus, any element(s) of this list can be safely passed as an argument to another function which specifies a channel property.</p>
+<p>If desired, the available channels in a given slot can be queried, as well.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_channels_by_slot</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;1101&#39;,
+ &#39;1102&#39;,
+ &#39;1103&#39;,
+ &#39;1104&#39;,
+ &#39;1105&#39;,
+ &#39;1106&#39;,
+ &#39;1107&#39;,
+ &#39;1108&#39;,
+ &#39;1109&#39;,
+ &#39;1110&#39;,
+ &#39;1111&#39;,
+ &#39;1112&#39;,
+ &#39;1113&#39;,
+ &#39;1114&#39;,
+ &#39;1115&#39;,
+ &#39;1116&#39;,
+ &#39;1201&#39;,
+ &#39;1202&#39;,
+ &#39;1203&#39;,
+ &#39;1204&#39;,
+ &#39;1205&#39;,
+ &#39;1206&#39;,
+ &#39;1207&#39;,
+ &#39;1208&#39;,
+ &#39;1209&#39;,
+ &#39;1210&#39;,
+ &#39;1211&#39;,
+ &#39;1212&#39;,
+ &#39;1213&#39;,
+ &#39;1214&#39;,
+ &#39;1215&#39;,
+ &#39;1216&#39;,
+ &#39;1301&#39;,
+ &#39;1302&#39;,
+ &#39;1303&#39;,
+ &#39;1304&#39;,
+ &#39;1305&#39;,
+ &#39;1306&#39;,
+ &#39;1307&#39;,
+ &#39;1308&#39;,
+ &#39;1309&#39;,
+ &#39;1310&#39;,
+ &#39;1311&#39;,
+ &#39;1312&#39;,
+ &#39;1313&#39;,
+ &#39;1314&#39;,
+ &#39;1315&#39;,
+ &#39;1316&#39;,
+ &#39;1401&#39;,
+ &#39;1402&#39;,
+ &#39;1403&#39;,
+ &#39;1404&#39;,
+ &#39;1405&#39;,
+ &#39;1406&#39;,
+ &#39;1407&#39;,
+ &#39;1408&#39;,
+ &#39;1409&#39;,
+ &#39;1410&#39;,
+ &#39;1411&#39;,
+ &#39;1412&#39;,
+ &#39;1413&#39;,
+ &#39;1414&#39;,
+ &#39;1415&#39;,
+ &#39;1416&#39;,
+ &#39;1501&#39;,
+ &#39;1502&#39;,
+ &#39;1503&#39;,
+ &#39;1504&#39;,
+ &#39;1505&#39;,
+ &#39;1506&#39;,
+ &#39;1507&#39;,
+ &#39;1508&#39;,
+ &#39;1509&#39;,
+ &#39;1510&#39;,
+ &#39;1511&#39;,
+ &#39;1512&#39;,
+ &#39;1513&#39;,
+ &#39;1514&#39;,
+ &#39;1515&#39;,
+ &#39;1516&#39;,
+ &#39;1601&#39;,
+ &#39;1602&#39;,
+ &#39;1603&#39;,
+ &#39;1604&#39;,
+ &#39;1605&#39;,
+ &#39;1606&#39;,
+ &#39;1607&#39;,
+ &#39;1608&#39;,
+ &#39;1609&#39;,
+ &#39;1610&#39;,
+ &#39;1611&#39;,
+ &#39;1612&#39;,
+ &#39;1613&#39;,
+ &#39;1614&#39;,
+ &#39;1615&#39;,
+ &#39;1616&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Backplane-Specifiers">
+<h3>Backplane Specifiers<a class="headerlink" href="#Backplane-Specifiers" title="Link to this heading"></a></h3>
+<p>Each matrix has typically six analog backplane relays which can be associated which a channel(s). The naming scheme of the relays are similar to that of the channels. Each name start with the slot number, continues with <code class="docutils literal notranslate"><span class="pre">9</span></code>, which is the unique backplane number, and then finishes with backplane relay identifier which can take the values <code class="docutils literal notranslate"><span class="pre">11</span></code>, <code class="docutils literal notranslate"><span class="pre">12</span></code>, …, <code class="docutils literal notranslate"><span class="pre">16</span></code>. That is, we can select the backplane relay <code class="docutils literal notranslate"><span class="pre">12</span></code> on <code class="docutils literal notranslate"><span class="pre">Slot</span> <span class="pre">3</span></code> via <code class="docutils literal notranslate"><span class="pre">3912</span></code>.</p>
+<p>Unless a backplane is associated with a channel, the instrument does not return the names of the relays. This is overcomed within the QCoDeS driver, so that user can list the available analog backplane relays.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_analog_backplane_specifiers</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;1911&#39;,
+ &#39;1912&#39;,
+ &#39;1913&#39;,
+ &#39;1914&#39;,
+ &#39;1915&#39;,
+ &#39;1916&#39;,
+ &#39;2911&#39;,
+ &#39;2912&#39;,
+ &#39;2913&#39;,
+ &#39;2914&#39;,
+ &#39;2915&#39;,
+ &#39;2916&#39;,
+ &#39;3911&#39;,
+ &#39;3912&#39;,
+ &#39;3913&#39;,
+ &#39;3914&#39;,
+ &#39;3915&#39;,
+ &#39;3916&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Control-and-manipulations">
+<h3>Control and manipulations<a class="headerlink" href="#Control-and-manipulations" title="Link to this heading"></a></h3>
+<p>The switch channels as well as the analog backplane relays can be controlled via a set of well defined functions. First, a channel can be opened and closed, as expected.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">open_channel</span><span class="p">(</span><span class="s2">&quot;1101&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can provide a list of channels as an argument. In this case, channel names should be provided as a single string, seperated with a comma and no blank spaces.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">open_channel</span><span class="p">(</span><span class="s2">&quot;1103,2111&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can provide a channel range via slicing. The following call opens the channels from <code class="docutils literal notranslate"><span class="pre">3101</span></code> to <code class="docutils literal notranslate"><span class="pre">3116</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">open_channel</span><span class="p">(</span><span class="s2">&quot;3101:3116&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can open all the channels in a slot by passing <code class="docutils literal notranslate"><span class="pre">slotX</span></code> where <code class="docutils literal notranslate"><span class="pre">X=1,...,6</span></code> representing the slot id. In our case, <code class="docutils literal notranslate"><span class="pre">X</span></code> can be <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">2</span></code> or <code class="docutils literal notranslate"><span class="pre">3</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">open_channel</span><span class="p">(</span><span class="s2">&quot;slot2&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Finally, we can open all channels in all slots via:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">open_channel</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Let us reset everything to factory defaults.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">reset_channel</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">reset_channel()</span></code> function can take the name of a single channel, a channel list, range or a slot, as well.</p>
+<p>We continue with closing the desired channels. In this case, one cannot pass slot ids or <code class="docutils literal notranslate"><span class="pre">allslots</span></code> as the argument; it is not possible to close slots all together, simultaneously.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">close_channel</span><span class="p">(</span><span class="s2">&quot;1101&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">close_channel</span><span class="p">(</span><span class="s2">&quot;2111,3216&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can query the closed channels.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_closed_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;1101&#39;, &#39;2111&#39;, &#39;3216&#39;]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_closed_channels</span><span class="p">(</span><span class="s2">&quot;slot2&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;2111&#39;]
+</pre></div></div>
+</div>
+<p>We can exclusively close channels, as well. In one of the two ways to achieve exclusive close of channels, we specify channels to be closed in such a way that any presently closed channels in all slots open if they are not included to list.</p>
+<p>Currently we know that the channels <code class="docutils literal notranslate"><span class="pre">1101</span></code>, <code class="docutils literal notranslate"><span class="pre">2111</span></code> and <code class="docutils literal notranslate"><span class="pre">3216</span></code> are closed. Now, let us close the channel <code class="docutils literal notranslate"><span class="pre">3101</span></code> exclusively and then query close channels. We expect to only see the latter and the former channels should be opened.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">exclusive_close</span><span class="p">(</span><span class="s2">&quot;3101&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_closed_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;3101&#39;]
+</pre></div></div>
+</div>
+<p>Second way to exclusively close channels is similar to that of our previous example. We now exclusively close the specified channels on the associated slots. Other channels are opened if they are not specified by the parameter within the same slot, while the other slots remain untouched. Currently the only closed channel is <code class="docutils literal notranslate"><span class="pre">3101</span></code>. Let close, exclusively, <code class="docutils literal notranslate"><span class="pre">2101</span></code> and <code class="docutils literal notranslate"><span class="pre">2216</span></code>. Also, let us close the channel <code class="docutils literal notranslate"><span class="pre">2111</span></code> genericaly. We expect the channel <code class="docutils literal notranslate"><span class="pre">2111</span></code> opens while the channel <code class="docutils literal notranslate"><span class="pre">3101</span></code>
+remains closed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">close_channel</span><span class="p">(</span><span class="s2">&quot;2111&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">exclusive_slot_close</span><span class="p">(</span><span class="s2">&quot;2101,2216&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_closed_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;2101&#39;, &#39;2216&#39;, &#39;3101&#39;]
+</pre></div></div>
+</div>
+<p>We can control connection rules for closing and opening channels when using the <code class="docutils literal notranslate"><span class="pre">exclusive_close()</span></code> and <code class="docutils literal notranslate"><span class="pre">exlusive_slot_close()</span></code> functions. The three valid rules are <code class="docutils literal notranslate"><span class="pre">BREAK_BEFORE_MAKE</span></code>, <code class="docutils literal notranslate"><span class="pre">MAKE_BEFORE_BREAK</span></code> and <code class="docutils literal notranslate"><span class="pre">OFF</span></code>. The default rule is <code class="docutils literal notranslate"><span class="pre">BREAK_BEFORE_MAKE</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;BREAK_BEFORE_MAKE&#39;
+</pre></div></div>
+</div>
+<p>If the connection rule is set to <code class="docutils literal notranslate"><span class="pre">BREAK_BEFORE_MAKE</span></code>, it is ensured that all channels open before any channels close. If it is set to <code class="docutils literal notranslate"><span class="pre">MAKE_BEFORE_BREAK</span></code>, it is ensured that all channels close before any channels open. Finally, if it is set to <code class="docutils literal notranslate"><span class="pre">OFF</span></code>, channels open and close, simultaneously.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">(</span><span class="s2">&quot;MAKE_BEFORE_BREAK&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;MAKE_BEFORE_BREAK&#39;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">(</span><span class="s2">&quot;OFF&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;OFF&#39;
+</pre></div></div>
+</div>
+<p>Note that, resetting channels to factory defaults will not change the connection rule:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">reset_channel</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;OFF&#39;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">(</span><span class="s2">&quot;BREAK_BEFORE_MAKE&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;BREAK_BEFORE_MAKE&#39;
+</pre></div></div>
+</div>
+<p>In certain cases, we may want to keep certain channels always open. We can achieve desired behavior by setting the specified channels (and analog backplane relays) as <code class="docutils literal notranslate"><span class="pre">forbidden</span></code> to close.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">set_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;1101:1105&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;1101,1102,1103,1104,1105&#39;
+</pre></div></div>
+</div>
+<p>These channels cannot be closed:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[51]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">close_channel</span><span class="p">(</span><span class="s2">&quot;1101&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+C:\Users\a-alhard\anaconda3\envs\qcodes\lib\site-packages\ipykernel_launcher.py:1: UserWarning: You are attempting to close channels that are forbidden to close.
+  &#34;&#34;&#34;Entry point for launching an IPython kernel.
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_closed_channels</span><span class="p">(</span><span class="s2">&quot;slot1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We can forbid entire slots to be closed. In this case, the analog backplane relays of the corresponding slot shall be flagged as forbidden, as well.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">set_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;slot2&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;1101,1102,1103,1104,1105,2101,2102,2103,2104,2105,2106,2107,2108,2109,2110,2111,2112,2113,2114,2115,2116,2201,2202,2203,2204,2205,2206,2207,2208,2209,2210,2211,2212,2213,2214,2215,2216,2301,2302,2303,2304,2305,2306,2307,2308,2309,2310,2311,2312,2313,2314,2315,2316,2401,2402,2403,2404,2405,2406,2407,2408,2409,2410,2411,2412,2413,2414,2415,2416,2501,2502,2503,2504,2505,2506,2507,2508,2509,2510,2511,2512,2513,2514,2515,2516,2601,2602,2603,2604,2605,2606,2607,2608,2609,2610,2611,2612,2613,2614,2615,2616,2911,2912,2913,2914,2915,2916&#39;
+</pre></div></div>
+</div>
+<p>We can clear the forbidden list when we desire to do so.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[55]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">clear_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;slot1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[56]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[56]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;2101,2102,2103,2104,2105,2106,2107,2108,2109,2110,2111,2112,2113,2114,2115,2116,2201,2202,2203,2204,2205,2206,2207,2208,2209,2210,2211,2212,2213,2214,2215,2216,2301,2302,2303,2304,2305,2306,2307,2308,2309,2310,2311,2312,2313,2314,2315,2316,2401,2402,2403,2404,2405,2406,2407,2408,2409,2410,2411,2412,2413,2414,2415,2416,2501,2502,2503,2504,2505,2506,2507,2508,2509,2510,2511,2512,2513,2514,2515,2516,2601,2602,2603,2604,2605,2606,2607,2608,2609,2610,2611,2612,2613,2614,2615,2616,2911,2912,2913,2914,2915,2916&#39;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[57]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">clear_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;2911,2912,2916&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[58]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;slot2&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[58]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;2101,2102,2103,2104,2105,2106,2107,2108,2109,2110,2111,2112,2113,2114,2115,2116,2201,2202,2203,2204,2205,2206,2207,2208,2209,2210,2211,2212,2213,2214,2215,2216,2301,2302,2303,2304,2305,2306,2307,2308,2309,2310,2311,2312,2313,2314,2315,2316,2401,2402,2403,2404,2405,2406,2407,2408,2409,2410,2411,2412,2413,2414,2415,2416,2501,2502,2503,2504,2505,2506,2507,2508,2509,2510,2511,2512,2513,2514,2515,2516,2601,2602,2603,2604,2605,2606,2607,2608,2609,2610,2611,2612,2613,2614,2615,2616,2913,2914,2915&#39;
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[59]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">clear_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;slot2&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;nil&#39;
+</pre></div></div>
+</div>
+<p>Finally, we can set additional delay times to specified channels. The delays should be provided in seconds.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[61]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">set_delay</span><span class="p">(</span><span class="s2">&quot;1101&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[62]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_delay</span><span class="p">(</span><span class="s2">&quot;1101&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[62]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[1.0]
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[63]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">set_delay</span><span class="p">(</span><span class="s2">&quot;slot2&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[64]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_delay</span><span class="p">(</span><span class="s1">&#39;slot2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[64]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0,
+ 2.0]
+</pre></div></div>
+</div>
+<p>We can use <code class="docutils literal notranslate"><span class="pre">reset_channel()</span></code> function to set delay times to defalult value of <code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[65]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">reset_channel</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[66]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_delay</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[66]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0,
+ 0.0]
+</pre></div></div>
+</div>
+<p>We can, conveniently, connect (disconnect) given rows (columns) of a slot to a column (row) of the same slot via the functions <code class="docutils literal notranslate"><span class="pre">connect_or_disconnect_row_to_columns()</span></code> and <code class="docutils literal notranslate"><span class="pre">connect_or_disconnect_column_to_rows()</span></code>. Each function takes an action as its first argument. The action should be either <code class="docutils literal notranslate"><span class="pre">connect</span></code> or <code class="docutils literal notranslate"><span class="pre">disconnect</span></code>. The slot id is provided as the second argument. The <code class="docutils literal notranslate"><span class="pre">connect_or_disconnect_row_to_columns()</span></code> takes the row number as the third argument to which the desired cloumns,
+specified by the final argument as a list, will be connected. Likewise, the <code class="docutils literal notranslate"><span class="pre">connect_or_disconnect_column_to_rows()</span></code> takes the column number as the third argument to which the desired rows, specified by the final argument as a list, will be connected.</p>
+<p>Both functions opens (closes) the formed channels automatically and returns their list which can be used for later use, if desired. Let us, first, connect <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">2</span></code> and <code class="docutils literal notranslate"><span class="pre">13</span></code> columns of <code class="docutils literal notranslate"><span class="pre">slot2</span></code> to the row <code class="docutils literal notranslate"><span class="pre">3</span></code> of the same slot.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[67]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">channels</span> <span class="o">=</span> <span class="n">smatrix</span><span class="o">.</span><span class="n">connect_or_disconnect_row_to_columns</span><span class="p">(</span><span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">13</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[68]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">channels</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[68]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;2301&#39;, &#39;2302&#39;, &#39;2313&#39;]
+</pre></div></div>
+</div>
+<p>The channels of the matrix returned are now opened. Let us flag these channels as forbidden to close:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[69]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">channels</span><span class="p">:</span>
+    <span class="n">smatrix</span><span class="o">.</span><span class="n">set_forbidden_channels</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[70]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[70]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;2301,2302,2313&#39;
+</pre></div></div>
+</div>
+<p>Similarly, let us disconnect the rows <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">2</span></code> and <code class="docutils literal notranslate"><span class="pre">4</span></code> of <code class="docutils literal notranslate"><span class="pre">slot1</span></code> to the column <code class="docutils literal notranslate"><span class="pre">16</span></code> of the same slot:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[71]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">channels</span> <span class="o">=</span> <span class="n">smatrix</span><span class="o">.</span><span class="n">connect_or_disconnect_column_to_rows</span><span class="p">(</span><span class="s2">&quot;disconnect&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[72]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">channels</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[72]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;1116&#39;, &#39;1216&#39;, &#39;1416&#39;]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_closed_channels</span><span class="p">(</span><span class="s2">&quot;slot1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[73]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;1116&#39;, &#39;1216&#39;, &#39;1416&#39;]
+</pre></div></div>
+</div>
+</section>
+<section id="Association-of-Backplanes">
+<h3>Association of Backplanes<a class="headerlink" href="#Association-of-Backplanes" title="Link to this heading"></a></h3>
+<p>We can set specific analog backplane relays to desired channels so that they can be utilized in switching applications. Note that the driver will correctly warn us as the slots are disengaged.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[74]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">set_backplane</span><span class="p">(</span><span class="s2">&quot;1101:1109&quot;</span><span class="p">,</span> <span class="s2">&quot;1916&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+C:\Users\a-alhard\anaconda3\envs\qcodes\lib\site-packages\ipykernel_launcher.py:1: UserWarning: The hardware interlock in Slot 1 is disengaged. The corresponding analog backplane relays cannot be energized.
+  &#34;&#34;&#34;Entry point for launching an IPython kernel.
+C:\Users\a-alhard\anaconda3\envs\qcodes\lib\site-packages\ipykernel_launcher.py:1: UserWarning: The hardware interlock in Slot 2 is disengaged. The corresponding analog backplane relays cannot be energized.
+  &#34;&#34;&#34;Entry point for launching an IPython kernel.
+C:\Users\a-alhard\anaconda3\envs\qcodes\lib\site-packages\ipykernel_launcher.py:1: UserWarning: The hardware interlock in Slot 3 is disengaged. The corresponding analog backplane relays cannot be energized.
+  &#34;&#34;&#34;Entry point for launching an IPython kernel.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[75]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_backplane</span><span class="p">(</span><span class="s2">&quot;1101&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[75]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;1916&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_backplane</span><span class="p">(</span><span class="s2">&quot;slot1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[76]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;1916;1916;1916;1916;1916;1916;1916;1916;1916&#39;
+</pre></div></div>
+</div>
+<p>We can clear the association via resetting the corresponding channels (or all channels).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[77]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">reset_channel</span><span class="p">(</span><span class="s2">&quot;1101:1109&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[78]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smatrix</span><span class="o">.</span><span class="n">get_backplane</span><span class="p">(</span><span class="s2">&quot;slot1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[78]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;nil&#39;
+</pre></div></div>
+</div>
+</section>
+</section>
+<section id="Exceptions">
+<h2>Exceptions<a class="headerlink" href="#Exceptions" title="Link to this heading"></a></h2>
+<p>The instrument itself does not return any error messages if it encounters an exception, but, rather silently handles such situations. Thus, QCoDeS driver is equipped with validation and exception handling with informative error messages for probable scenerios.</p>
+<p>Here, we note some important cases where errors are generated if:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-  A non existing channel or slot passed as an argument to a function
+-  Slots are passed as arguments of `close_channel()`, `exclusive_close()` and `exclusive_slot_close()`
+-  A delay time is tried to be set for analog backplane relays
+-  A channel name is used to set as a backplane instead of a backplane name in `set_backplane()` and vice versa
+</pre></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html" class="btn btn-neutral float-left" title="Qcodes example with InstrumentGroup driver" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="QCodes%20example%20with%20Keithley%20S46.html" class="btn btn-neutral float-right" title="QCoDeS Example with Tektronix Keithley S46" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

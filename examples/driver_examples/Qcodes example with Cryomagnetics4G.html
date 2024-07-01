@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cryomagnetics 4G QCoDeS Driver Example &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="QCoDeS Example with DynaCool PPMS" href="Qcodes%20example%20with%20DynaCool%20PPMS.html" />
+    <link rel="prev" title="Qcodes example with Basel SP983c Preamp and its Remote SP983a" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#drivers">Drivers</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Cryomagnetics 4G QCoDeS Driver Example</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Setup">Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Basic-Operations">Basic Operations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Range-and-Rate-Settings">Range and Rate Settings</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Cryomagnetics 4G QCoDeS Driver Example</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/driver_examples/Qcodes example with Cryomagnetics4G.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/Qcodes example with Cryomagnetics4G.ipynb">docs/examples/driver_examples/Qcodes example with Cryomagnetics4G.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/Qcodes example with Cryomagnetics4G.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Cryomagnetics-4G-QCoDeS-Driver-Example">
+<h1>Cryomagnetics 4G QCoDeS Driver Example<a class="headerlink" href="#Cryomagnetics-4G-QCoDeS-Driver-Example" title="Link to this heading"></a></h1>
+<p>This notebook showcases how to interfacing with a Cryomagnetics 4G power supply using the QCoDeS. The Cryomagnetics 4G power supply is commonly used in research settings for precise magnetic field control in experiments that include superconductivity studies and material science.</p>
+<section id="Setup">
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading"></a></h2>
+<p>First, ensure you have the required drivers and QCoDeS installed. The connection to the instrument is assumed to be via GPIB. Let’s establish the connection and set up the initial parameters for the magnetic field control.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.cryomagnetics</span> <span class="kn">import</span> <span class="n">CryomagneticsModel4G</span>
+
+<span class="n">max_current_limits</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="p">(</span><span class="mf">45.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">(</span><span class="mf">67.24</span><span class="p">,</span> <span class="mf">0.0138</span><span class="p">),</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">),</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="p">(</span><span class="mi">95</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">coil_constant</span> <span class="o">=</span> <span class="mf">0.13385</span>  <span class="c1"># T/A</span>
+
+<span class="n">cryo_instrument</span> <span class="o">=</span> <span class="n">CryomagneticsModel4G</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;cryo_4g&#39;</span><span class="p">,</span>
+    <span class="n">address</span><span class="o">=</span><span class="s1">&#39;GPIB::1::INSTR&#39;</span><span class="p">,</span>
+    <span class="n">max_current_limits</span><span class="o">=</span><span class="n">max_current_limits</span><span class="p">,</span>
+    <span class="n">coil_constant</span><span class="o">=</span><span class="n">coil_constant</span><span class="p">,</span>
+    <span class="n">pyvisa_sim_file</span><span class="o">=</span><span class="s2">&quot;cryo4g.yaml&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : /home/runner/.qcodes/logs/240701-9635-qcodes.log
+Connected to:  None (serial:None, firmware:None) in 0.02s
+</pre></div></div>
+</div>
+</section>
+<section id="Basic-Operations">
+<h2>Basic Operations<a class="headerlink" href="#Basic-Operations" title="Link to this heading"></a></h2>
+<p>The following sections demonstrate how to perform basic operations with the Cryomagnetics 4G instrument. We will cover setting and measuring the magnetic field, checking the magnet’s operational state, and modifying the ramp rate for adjusting the magnetic field.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Checking the coil constant</span>
+<span class="n">coil_constant</span> <span class="o">=</span> <span class="n">cryo_instrument</span><span class="o">.</span><span class="n">coil_constant</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Coil constant = </span><span class="si">{</span><span class="n">coil_constant</span><span class="si">}</span><span class="s1"> T/A&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Coil constant = 0.13385 T/A
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+
+<span class="c1"># Function to plot magnetic field over time</span>
+<span class="k">def</span> <span class="nf">plot_field_over_time</span><span class="p">(</span><span class="n">cryo_instr</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">duration</span><span class="p">):</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">duration</span><span class="p">:</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cryo_instr</span><span class="o">.</span><span class="n">field</span><span class="p">())</span>
+        <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Time (s)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Magnetic Field (T)&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Time vs Magnetic Field towards </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s1"> T&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># Example usage:</span>
+<span class="c1"># plot_field_over_time(cryo_instrument, 1.0, 60)  # plot for 60 seconds while setting the field to 1 T</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Range-and-Rate-Settings">
+<h2>Range and Rate Settings<a class="headerlink" href="#Range-and-Rate-Settings" title="Link to this heading"></a></h2>
+<p>The Cryomagnetics4G.py driver provides functionality to manage the current ranges and ramp rates of the Cryomagnetics 4G superconducting magnet power supply. These settings are crucial for ensuring safe and efficient operation of the magnet within its specified limits.</p>
+<section id="Current-Ranges">
+<h3>Current Ranges<a class="headerlink" href="#Current-Ranges" title="Link to this heading"></a></h3>
+<p>The power supply has multiple current ranges, each with its own upper current limit. The <code class="docutils literal notranslate"><span class="pre">max_current_limits</span></code> parameter in the <code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G</span></code> class constructor allows you to specify these ranges and their corresponding limits. It is a dictionary where the keys represent the range indices, and the values are tuples containing the upper current limit and maximum rate for that range.</p>
+<p>For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">max_current_limits</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="p">(</span><span class="mf">45.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="p">(</span><span class="mf">67.24</span><span class="p">,</span> <span class="mf">0.0138</span><span class="p">),</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="p">(</span><span class="mi">85</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">),</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="p">(</span><span class="mi">95</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">),</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>In this example, there are four current ranges defined: - Range 1: Upper current limit of 45.0 A and a maximum rate of 0.01 A/s. - Range 2: Upper current limit of 67.24 A and a maximum rate of 0.0138 A/s. - Range 3: Upper current limit of 85 A and a maximum rate of 0.0001 A/s. - Range 4: Upper current limit of 95 A and a maximum rate of 0.0001 A/s.</p>
+<p>The driver automatically handles the selection of the appropriate range based on the current field value when setting the ramp rate.</p>
+</section>
+<section id="Ramp-Rates">
+<h3>Ramp Rates<a class="headerlink" href="#Ramp-Rates" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">rate</span></code> parameter in the driver represents the ramp rate of the magnetic field in Tesla per minute. When setting the ramp rate, the driver ensures that it does not exceed the maximum rate specified for the corresponding current range.</p>
+<p>If an attempt is made to set a ramp rate that is outside the defined rate ranges, a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> is raised.</p>
+</section>
+<section id="Initializing-Range-and-Rate-Settings">
+<h3>Initializing Range and Rate Settings<a class="headerlink" href="#Initializing-Range-and-Rate-Settings" title="Link to this heading"></a></h3>
+<p>During initialization, the driver sets up the current limits and maximum rates for each range on the instrument based on the provided <code class="docutils literal notranslate"><span class="pre">max_current_limits</span></code> parameter. This ensures that the instrument is properly configured with the specified limits.</p>
+<p>By carefully defining the current ranges and ramp rates, you can ensure that the magnet operates within its safe limits and optimize its performance based on your specific requirements.</p>
+<p>It is important to consult the manufacturer’s documentation and specifications when determining the appropriate current limits and ramp rates for your specific magnet and experimental setup.</p>
+</section>
+<section id="Note-on-Safety">
+<h3>Note on Safety<a class="headerlink" href="#Note-on-Safety" title="Link to this heading"></a></h3>
+<p>Always ensure the input parameters remain within the safe operating bounds of your instrument. Manual cross-checking and regular maintenance schedules are recommended to avoid equipment damage or accidents.</p>
+<p>For further information, consult the official documentation and user manuals provided by the manufacturer. Always prioritize safe operating practices and maintain the instrument according to the recommended guidelines.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html" class="btn btn-neutral float-left" title="Qcodes example with Basel SP983c Preamp and its Remote SP983a" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Qcodes%20example%20with%20DynaCool%20PPMS.html" class="btn btn-neutral float-right" title="QCoDeS Example with DynaCool PPMS" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

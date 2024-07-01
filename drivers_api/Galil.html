@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Galil Drivers &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Hewlett Packard Drivers" href="HP.html" />
+    <link rel="prev" title="Cryomagnetics Drivers" href="CryoMagnetics.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Galil Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_row"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.current_row</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_pad"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.current_pad</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_bottom_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.left_bottom_position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_top_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.left_top_position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.right_top_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.right_top_position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.arm_pick_up_distance"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.arm_pick_up_distance</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.speed"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.speed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.acceleration"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.acceleration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.deceleration"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.deceleration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_arm_kinematics"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_arm_kinematics()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_pick_up_distance"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_pick_up_distance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_bottom_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_left_bottom_position()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_top_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_left_top_position()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_right_top_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_right_top_position()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_a_by"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_motor_a_by()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_b_by"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_motor_b_by()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_c_by"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_motor_c_by()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_towards_left_bottom_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_towards_left_bottom_position()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_next_row"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_to_next_row()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_begin_row_pad_from_end_row_last_pad"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_to_begin_row_pad_from_end_row_last_pad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_row"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_to_row()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_pad"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.move_to_pad()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_forward_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_motor_a_forward_limit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_reverse_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_motor_a_reverse_limit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_forward_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_motor_b_forward_limit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_reverse_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_motor_b_reverse_limit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_forward_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_motor_c_forward_limit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_reverse_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Arm.set_motor_c_reverse_limit()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.position_format_decimals"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.position_format_decimals</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.absolute_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.absolute_position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.wait</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.end_program"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.end_program()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.define_position_as_origin"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.define_position_as_origin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.tell_error"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.tell_error()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.stop"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.stop()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.abort"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.abort()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.motors_off"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.motors_off()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.begin_motors"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.begin_motors()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait_till_motion_complete"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.wait_till_motion_complete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.parameters"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.functions"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.submodules"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.instrument_modules"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.log"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.metadata"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Controller.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.relative_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.relative_position</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.speed"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.speed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.acceleration"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.acceleration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.deceleration"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.deceleration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off_when_error_occurs"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.off_when_error_occurs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.reverse_sw_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.reverse_sw_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.forward_sw_limit"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.forward_sw_limit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.off()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.on_off_status"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.on_off_status()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.servo_here"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.servo_here()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.begin"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.begin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.is_in_motion"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.is_in_motion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.wait_till_motor_motion_complete"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.wait_till_motor_motion_complete()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.error_magnitude"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.error_magnitude()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.parameters"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.functions"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.submodules"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.instrument_modules"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.log"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.metadata"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133Motor.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.coordinate_system"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.coordinate_system</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_acceleration"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.vector_acceleration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_deceleration"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.vector_deceleration</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_speed"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.vector_speed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.activate"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.activate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_position"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.vector_position()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_seq_end"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.vector_seq_end()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.begin_seq"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.begin_seq()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.after_seq_motion"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.after_seq_motion()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.clear_sequence"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.clear_sequence()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.parameters"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.functions"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.submodules"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.instrument_modules"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.log"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.metadata"><code class="docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode.metadata</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">Galil Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/Galil.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.Galil">
+<span id="galil-drivers"></span><span id="galil-api"></span><h1>Galil Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.Galil" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GalilDMC4133Arm</span></code></a>(controller)</p></td>
+<td><p>Module to control probe arm. It is assumed that the chip to be probed has one or more rows with each row having one or more pads. Design of the chip to be probed should resemble the following::.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GalilDMC4133Controller</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>Driver for Galil DMC-4133 Controller</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GalilDMC4133Motor</span></code></a>(parent, name, **kwargs)</p></td>
+<td><p>Class to control a single motor (independent of possible other motors)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GalilDMC4133VectorMode</span></code></a>(parent, name, **kwargs)</p></td>
+<td><p>Class to control motors in vector mode</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Galil.</span></span><span class="sig-name descname"><span class="pre">GalilDMC4133Arm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">controller</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller" title="qcodes.instrument_drivers.Galil.dmc_41x3.GalilDMC4133Controller"><span class="pre">GalilDMC4133Controller</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Module to control probe arm. It is assumed that the chip to be probed has
+one or more rows with each row having one or more pads. Design of the
+chip to be probed should resemble the following:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">|--------------------------|</span>
+<span class="o">|--------------------------|</span>
+<span class="o">|--------------------------|</span>
+<span class="o">|--------------------------|</span>
+<span class="o">|--------------------------|</span>
+</pre></div>
+</div>
+<p>Needle head for the arm in assumed to have rows of needles which is a
+divisor of the number of rows in the chip and number of needles in each
+row of the needle head is a divisor for the number of pads in each row
+of the chip.</p>
+<p>Initializes the arm class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>controller</strong> – an instance of DMC4133Controller</p>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_row" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_row"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_row</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_pad" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_pad</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_bottom_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_bottom_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">left_bottom_position</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_top_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_top_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">left_top_position</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.right_top_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.right_top_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">right_top_position</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.arm_pick_up_distance" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.arm_pick_up_distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">arm_pick_up_distance</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.speed" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.speed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">speed</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.acceleration" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.acceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">acceleration</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.deceleration" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.deceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deceleration</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_arm_kinematics" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_arm_kinematics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_arm_kinematics</span></code></a>([speed, acceleration, ...])</p></td>
+<td><p>sets the arm kinematics values for speed, acceleration and deceleration in micro meters/sec and micro meters/sec^2 respectively</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_pick_up_distance" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_pick_up_distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_pick_up_distance</span></code></a>([distance])</p></td>
+<td><p>sets pick up distance in micrometers for the arm</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_bottom_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_bottom_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_left_bottom_position</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_top_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_top_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_left_top_position</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_right_top_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_right_top_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_right_top_position</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_a_by" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_a_by"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_motor_a_by</span></code></a>(distance)</p></td>
+<td><p>Moves motor A by distance given in micro meters</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_b_by" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_b_by"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_motor_b_by</span></code></a>(distance)</p></td>
+<td><p>Moves motor B by distance given in micro meters</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_c_by" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_c_by"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_motor_c_by</span></code></a>(distance)</p></td>
+<td><p>Moves motor B by distance given in micro meters</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_towards_left_bottom_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_towards_left_bottom_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_towards_left_bottom_position</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_next_row" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_next_row"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_to_next_row</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_begin_row_pad_from_end_row_last_pad" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_begin_row_pad_from_end_row_last_pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_to_begin_row_pad_from_end_row_last_pad</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_row" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_row"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_to_row</span></code></a>(num)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_pad" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">move_to_pad</span></code></a>(num)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_forward_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_forward_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_motor_a_forward_limit</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_reverse_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_reverse_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_motor_a_reverse_limit</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_forward_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_forward_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_motor_b_forward_limit</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_reverse_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_reverse_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_motor_b_reverse_limit</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_forward_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_forward_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_motor_c_forward_limit</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_reverse_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_reverse_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_motor_c_reverse_limit</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_row">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">current_row</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_row" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_pad">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">current_pad</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.current_pad" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_bottom_position">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">left_bottom_position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_bottom_position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_top_position">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">left_top_position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.left_top_position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.right_top_position">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">right_top_position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.right_top_position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.arm_pick_up_distance">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">arm_pick_up_distance</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.arm_pick_up_distance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.speed">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">speed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.speed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.acceleration">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">acceleration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.acceleration" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.deceleration">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deceleration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.deceleration" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_arm_kinematics">
+<span class="sig-name descname"><span class="pre">set_arm_kinematics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">speed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acceleration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deceleration</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2048</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_arm_kinematics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_arm_kinematics" title="Link to this definition"></a></dt>
+<dd><p>sets the arm kinematics values for speed, acceleration and
+deceleration in micro meters/sec and micro meters/sec^2 respectively</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_pick_up_distance">
+<span class="sig-name descname"><span class="pre">set_pick_up_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_pick_up_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_pick_up_distance" title="Link to this definition"></a></dt>
+<dd><p>sets pick up distance in micrometers for the arm</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_bottom_position">
+<span class="sig-name descname"><span class="pre">set_left_bottom_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_left_bottom_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_bottom_position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_top_position">
+<span class="sig-name descname"><span class="pre">set_left_top_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_left_top_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_left_top_position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_right_top_position">
+<span class="sig-name descname"><span class="pre">set_right_top_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_right_top_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_right_top_position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_a_by">
+<span class="sig-name descname"><span class="pre">move_motor_a_by</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_motor_a_by"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_a_by" title="Link to this definition"></a></dt>
+<dd><p>Moves motor A by distance given in micro meters</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_b_by">
+<span class="sig-name descname"><span class="pre">move_motor_b_by</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_motor_b_by"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_b_by" title="Link to this definition"></a></dt>
+<dd><p>Moves motor B by distance given in micro meters</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_c_by">
+<span class="sig-name descname"><span class="pre">move_motor_c_by</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_motor_c_by"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_motor_c_by" title="Link to this definition"></a></dt>
+<dd><p>Moves motor B by distance given in micro meters</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_towards_left_bottom_position">
+<span class="sig-name descname"><span class="pre">move_towards_left_bottom_position</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_towards_left_bottom_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_towards_left_bottom_position" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_next_row">
+<span class="sig-name descname"><span class="pre">move_to_next_row</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_to_next_row"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_next_row" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_begin_row_pad_from_end_row_last_pad">
+<span class="sig-name descname"><span class="pre">move_to_begin_row_pad_from_end_row_last_pad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_to_begin_row_pad_from_end_row_last_pad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_begin_row_pad_from_end_row_last_pad" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_row">
+<span class="sig-name descname"><span class="pre">move_to_row</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_to_row"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_row" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_pad">
+<span class="sig-name descname"><span class="pre">move_to_pad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.move_to_pad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.move_to_pad" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_forward_limit">
+<span class="sig-name descname"><span class="pre">set_motor_a_forward_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_motor_a_forward_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_forward_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_reverse_limit">
+<span class="sig-name descname"><span class="pre">set_motor_a_reverse_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_motor_a_reverse_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_a_reverse_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_forward_limit">
+<span class="sig-name descname"><span class="pre">set_motor_b_forward_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_motor_b_forward_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_forward_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_reverse_limit">
+<span class="sig-name descname"><span class="pre">set_motor_b_reverse_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_motor_b_reverse_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_b_reverse_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_forward_limit">
+<span class="sig-name descname"><span class="pre">set_motor_c_forward_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_motor_c_forward_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_forward_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_reverse_limit">
+<span class="sig-name descname"><span class="pre">set_motor_c_reverse_limit</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Arm.set_motor_c_reverse_limit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Arm.set_motor_c_reverse_limit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Galil.</span></span><span class="sig-name descname"><span class="pre">GalilDMC4133Controller</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">GalilMotionController</span></code></p>
+<p>Driver for Galil DMC-4133 Controller</p>
+<p>Initializes the DMC4133Controller class</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – name for the instance</p></li>
+<li><p><strong>address</strong> – address of the controller burned in</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.position_format_decimals" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.position_format_decimals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">position_format_decimals</span></code></a></p></td>
+<td><p>sets number of decimals in the format of the position</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.absolute_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.absolute_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">absolute_position</span></code></a></p></td>
+<td><p>gets absolute position of the motors from the set origin</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wait</span></code></a></p></td>
+<td><p>controller will wait for the amount of time specified before executing the next command</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.end_program" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.end_program"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_program</span></code></a>()</p></td>
+<td><p>ends the program</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.define_position_as_origin" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.define_position_as_origin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">define_position_as_origin</span></code></a>()</p></td>
+<td><p>defines current motors position as origin</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.tell_error" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.tell_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tell_error</span></code></a>()</p></td>
+<td><p>reads error</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.stop" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.stop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stop</span></code></a>()</p></td>
+<td><p>stop the motion of all motors</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.abort" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.abort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">abort</span></code></a>()</p></td>
+<td><p>aborts motion and the program operation</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.motors_off" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.motors_off"><code class="xref py py-obj docutils literal notranslate"><span class="pre">motors_off</span></code></a>()</p></td>
+<td><p>turn all motors off</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.begin_motors" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.begin_motors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">begin_motors</span></code></a>()</p></td>
+<td><p>begin motion of all motors simultaneously</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait_till_motion_complete" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait_till_motion_complete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wait_till_motion_complete</span></code></a>()</p></td>
+<td><p>this method waits for the motion on all motors to complete</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.position_format_decimals">
+<span class="sig-name descname"><span class="pre">position_format_decimals</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;position_format_decimals&quot;,</span> <span class="pre">get_cmd=None,</span> <span class="pre">set_cmd=&quot;PF</span> <span class="pre">10.{}&quot;,</span> <span class="pre">vals=Ints(0,</span> <span class="pre">4),</span> <span class="pre">docstring=&quot;sets</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">decimals</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">format</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">position&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.position_format_decimals" title="Link to this definition"></a></dt>
+<dd><p>sets number of decimals in the format of the position</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.absolute_position">
+<span class="sig-name descname"><span class="pre">absolute_position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;absolute_position&quot;,</span> <span class="pre">get_cmd=self._get_absolute_position,</span> <span class="pre">set_cmd=None,</span> <span class="pre">unit=&quot;quadrature</span> <span class="pre">counts&quot;,</span> <span class="pre">docstring=&quot;gets</span> <span class="pre">absolute</span> <span class="pre">position</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">motors</span> <span class="pre">from</span> <span class="pre">the</span> <span class="pre">set</span> <span class="pre">origin&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.absolute_position" title="Link to this definition"></a></dt>
+<dd><p>gets absolute position of the motors from the set origin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait">
+<span class="sig-name descname"><span class="pre">wait</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;wait&quot;,</span> <span class="pre">get_cmd=None,</span> <span class="pre">set_cmd=&quot;WT</span> <span class="pre">{}&quot;,</span> <span class="pre">unit=&quot;ms&quot;,</span> <span class="pre">vals=Multiples(min_value=2,</span> <span class="pre">max_value=2147483646,</span> <span class="pre">divisor=2),</span> <span class="pre">docstring=&quot;controller</span> <span class="pre">will</span> <span class="pre">wait</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">amount</span> <span class="pre">of</span> <span class="pre">&quot;</span> <span class="pre">&quot;time</span> <span class="pre">specified</span> <span class="pre">before</span> <span class="pre">executing</span> <span class="pre">the</span> <span class="pre">next</span> <span class="pre">&quot;</span> <span class="pre">&quot;command&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait" title="Link to this definition"></a></dt>
+<dd><p>controller will wait for the amount of time specified before executing the next command</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.end_program">
+<span class="sig-name descname"><span class="pre">end_program</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.end_program"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.end_program" title="Link to this definition"></a></dt>
+<dd><p>ends the program</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.define_position_as_origin">
+<span class="sig-name descname"><span class="pre">define_position_as_origin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.define_position_as_origin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.define_position_as_origin" title="Link to this definition"></a></dt>
+<dd><p>defines current motors position as origin</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.tell_error">
+<span class="sig-name descname"><span class="pre">tell_error</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.tell_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.tell_error" title="Link to this definition"></a></dt>
+<dd><p>reads error</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.stop" title="Link to this definition"></a></dt>
+<dd><p>stop the motion of all motors</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.abort">
+<span class="sig-name descname"><span class="pre">abort</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.abort"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.abort" title="Link to this definition"></a></dt>
+<dd><p>aborts motion and the program operation</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.motors_off">
+<span class="sig-name descname"><span class="pre">motors_off</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.motors_off"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.motors_off" title="Link to this definition"></a></dt>
+<dd><p>turn all motors off</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.begin_motors">
+<span class="sig-name descname"><span class="pre">begin_motors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.begin_motors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.begin_motors" title="Link to this definition"></a></dt>
+<dd><p>begin motion of all motors simultaneously</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait_till_motion_complete">
+<span class="sig-name descname"><span class="pre">wait_till_motion_complete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Controller.wait_till_motion_complete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.wait_till_motion_complete" title="Link to this definition"></a></dt>
+<dd><p>this method waits for the motion on all motors to complete</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Controller.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Galil.</span></span><span class="sig-name descname"><span class="pre">GalilDMC4133Motor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller"><span class="pre">GalilDMC4133Controller</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<p>Class to control a single motor (independent of possible other motors)</p>
+<p>Initializes individual motor submodules</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – an instance of DMC4133Controller</p></li>
+<li><p><strong>name</strong> – name of the motor to be controlled</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.relative_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.relative_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">relative_position</span></code></a></p></td>
+<td><p>sets relative position for the motor's move</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.speed" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.speed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">speed</span></code></a></p></td>
+<td><p>speed for motor's motion</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.acceleration" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.acceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">acceleration</span></code></a></p></td>
+<td><p>acceleration for motor's motion</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.deceleration" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.deceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deceleration</span></code></a></p></td>
+<td><p>deceleration for motor's motion</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off_when_error_occurs" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off_when_error_occurs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">off_when_error_occurs</span></code></a></p></td>
+<td><p>enables or disables the motor to automatically turn off when error occurs</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.reverse_sw_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.reverse_sw_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reverse_sw_limit</span></code></a></p></td>
+<td><p>can be used to set software reverse limit for the motor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.forward_sw_limit" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.forward_sw_limit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward_sw_limit</span></code></a></p></td>
+<td><p>can be used to set software forward limit for the motor.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off"><code class="xref py py-obj docutils literal notranslate"><span class="pre">off</span></code></a>()</p></td>
+<td><p>turns motor off</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.on_off_status" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.on_off_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">on_off_status</span></code></a>()</p></td>
+<td><p>tells motor on off status</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.servo_here" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.servo_here"><code class="xref py py-obj docutils literal notranslate"><span class="pre">servo_here</span></code></a>()</p></td>
+<td><p>servo at the motor</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.begin" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.begin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">begin</span></code></a>()</p></td>
+<td><p>begins motion of the motor (returns immediately)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.is_in_motion" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.is_in_motion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_in_motion</span></code></a>()</p></td>
+<td><p>checks if the motor is in motion or not.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.wait_till_motor_motion_complete" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.wait_till_motor_motion_complete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wait_till_motor_motion_complete</span></code></a>()</p></td>
+<td><p>wait for motion on the motor to complete</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.error_magnitude" title="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.error_magnitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_magnitude</span></code></a>()</p></td>
+<td><p>gives the magnitude of error, in quadrature counts, for this motor a count is directly proportional to the micro-stepping resolution of the stepper drive.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.relative_position">
+<span class="sig-name descname"><span class="pre">relative_position</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;relative_position&quot;,</span> <span class="pre">unit=&quot;quadrature</span> <span class="pre">counts&quot;,</span> <span class="pre">get_cmd=f&quot;MG</span> <span class="pre">_PR{self._axis}&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=self._set_relative_position,</span> <span class="pre">vals=Ints(-2147483648,</span> <span class="pre">2147483647),</span> <span class="pre">docstring=&quot;sets</span> <span class="pre">relative</span> <span class="pre">position</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">motor's</span> <span class="pre">move&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.relative_position" title="Link to this definition"></a></dt>
+<dd><p>sets relative position for the motor’s move</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.speed">
+<span class="sig-name descname"><span class="pre">speed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;speed&quot;,</span> <span class="pre">unit=&quot;counts/sec&quot;,</span> <span class="pre">get_cmd=f&quot;MG</span> <span class="pre">_SP{self._axis}&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=self._set_speed,</span> <span class="pre">vals=Multiples(min_value=0,</span> <span class="pre">max_value=3000000,</span> <span class="pre">divisor=2),</span> <span class="pre">docstring=&quot;speed</span> <span class="pre">for</span> <span class="pre">motor's</span> <span class="pre">motion&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.speed" title="Link to this definition"></a></dt>
+<dd><p>speed for motor’s motion</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.acceleration">
+<span class="sig-name descname"><span class="pre">acceleration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;acceleration&quot;,</span> <span class="pre">unit=&quot;counts/sec2&quot;,</span> <span class="pre">get_cmd=f&quot;MG</span> <span class="pre">_AC{self._axis}&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=self._set_acceleration,</span> <span class="pre">vals=Multiples(min_value=1024,</span> <span class="pre">max_value=1073740800,</span> <span class="pre">divisor=1024),</span> <span class="pre">docstring=&quot;acceleration</span> <span class="pre">for</span> <span class="pre">motor's</span> <span class="pre">motion&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.acceleration" title="Link to this definition"></a></dt>
+<dd><p>acceleration for motor’s motion</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.deceleration">
+<span class="sig-name descname"><span class="pre">deceleration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;deceleration&quot;,</span> <span class="pre">unit=&quot;counts/sec2&quot;,</span> <span class="pre">get_cmd=f&quot;MG</span> <span class="pre">_DC{self._axis}&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=self._set_deceleration,</span> <span class="pre">vals=Multiples(min_value=1024,</span> <span class="pre">max_value=1073740800,</span> <span class="pre">divisor=1024),</span> <span class="pre">docstring=&quot;deceleration</span> <span class="pre">for</span> <span class="pre">motor's</span> <span class="pre">motion&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.deceleration" title="Link to this definition"></a></dt>
+<dd><p>deceleration for motor’s motion</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off_when_error_occurs">
+<span class="sig-name descname"><span class="pre">off_when_error_occurs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;off_when_error_occurs&quot;,</span> <span class="pre">get_cmd=self._get_off_when_error_occurs,</span> <span class="pre">set_cmd=self._set_off_when_error_occurs,</span> <span class="pre">val_mapping={</span> <span class="pre">&quot;disable&quot;:</span> <span class="pre">0,</span> <span class="pre">&quot;enable</span> <span class="pre">for</span> <span class="pre">position,</span> <span class="pre">amp</span> <span class="pre">error</span> <span class="pre">or</span> <span class="pre">abort&quot;:</span> <span class="pre">1,</span> <span class="pre">&quot;enable</span> <span class="pre">for</span> <span class="pre">hw</span> <span class="pre">limit</span> <span class="pre">switch&quot;:</span> <span class="pre">2,</span> <span class="pre">&quot;enable</span> <span class="pre">for</span> <span class="pre">all&quot;:</span> <span class="pre">3,</span> <span class="pre">},</span> <span class="pre">docstring=&quot;enables</span> <span class="pre">or</span> <span class="pre">disables</span> <span class="pre">the</span> <span class="pre">motor</span> <span class="pre">to</span> <span class="pre">&quot;</span> <span class="pre">&quot;automatically</span> <span class="pre">turn</span> <span class="pre">off</span> <span class="pre">when</span> <span class="pre">error</span> <span class="pre">occurs&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off_when_error_occurs" title="Link to this definition"></a></dt>
+<dd><p>enables or disables the motor to automatically turn off when error occurs</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.reverse_sw_limit">
+<span class="sig-name descname"><span class="pre">reverse_sw_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;reverse_sw_limit&quot;,</span> <span class="pre">unit=&quot;quadrature</span> <span class="pre">counts&quot;,</span> <span class="pre">get_cmd=f&quot;MG</span> <span class="pre">_BL{self._axis}&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=self._set_reverse_sw_limit,</span> <span class="pre">vals=Ints(-2147483648,</span> <span class="pre">2147483647),</span> <span class="pre">docstring=&quot;can</span> <span class="pre">be</span> <span class="pre">used</span> <span class="pre">to</span> <span class="pre">set</span> <span class="pre">software</span> <span class="pre">reverse</span> <span class="pre">limit</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">motor.&quot;</span> <span class="pre">&quot;</span> <span class="pre">motor</span> <span class="pre">motion</span> <span class="pre">will</span> <span class="pre">stop</span> <span class="pre">beyond</span> <span class="pre">this</span> <span class="pre">limit</span> <span class="pre">automatically.&quot;</span> <span class="pre">&quot;</span> <span class="pre">default</span> <span class="pre">value</span> <span class="pre">is</span> <span class="pre">-2147483648.</span> <span class="pre">this</span> <span class="pre">value</span> <span class="pre">effectively</span> <span class="pre">&quot;</span> <span class="pre">&quot;disables</span> <span class="pre">the</span> <span class="pre">reverse</span> <span class="pre">limit.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.reverse_sw_limit" title="Link to this definition"></a></dt>
+<dd><p>can be used to set software reverse limit for the motor. motor motion will stop beyond this limit automatically. default value is -2147483648. this value effectively disables the reverse limit.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.forward_sw_limit">
+<span class="sig-name descname"><span class="pre">forward_sw_limit</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;forward_sw_limit&quot;,</span> <span class="pre">unit=&quot;quadrature</span> <span class="pre">counts&quot;,</span> <span class="pre">get_cmd=f&quot;MG</span> <span class="pre">_FL{self._axis}&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=self._set_forward_sw_limit,</span> <span class="pre">vals=Ints(-2147483648,</span> <span class="pre">2147483647),</span> <span class="pre">docstring=&quot;can</span> <span class="pre">be</span> <span class="pre">used</span> <span class="pre">to</span> <span class="pre">set</span> <span class="pre">software</span> <span class="pre">forward</span> <span class="pre">limit</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">motor.&quot;</span> <span class="pre">&quot;</span> <span class="pre">motor</span> <span class="pre">motion</span> <span class="pre">will</span> <span class="pre">stop</span> <span class="pre">beyond</span> <span class="pre">this</span> <span class="pre">limit</span> <span class="pre">automatically.&quot;</span> <span class="pre">&quot;</span> <span class="pre">default</span> <span class="pre">value</span> <span class="pre">is</span> <span class="pre">2147483647.</span> <span class="pre">this</span> <span class="pre">value</span> <span class="pre">effectively</span> <span class="pre">&quot;</span> <span class="pre">&quot;disables</span> <span class="pre">the</span> <span class="pre">forward</span> <span class="pre">limit.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.forward_sw_limit" title="Link to this definition"></a></dt>
+<dd><p>can be used to set software forward limit for the motor. motor motion will stop beyond this limit automatically. default value is 2147483647. this value effectively disables the forward limit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off">
+<span class="sig-name descname"><span class="pre">off</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor.off"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.off" title="Link to this definition"></a></dt>
+<dd><p>turns motor off</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.on_off_status">
+<span class="sig-name descname"><span class="pre">on_off_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor.on_off_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.on_off_status" title="Link to this definition"></a></dt>
+<dd><p>tells motor on off status</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.servo_here">
+<span class="sig-name descname"><span class="pre">servo_here</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor.servo_here"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.servo_here" title="Link to this definition"></a></dt>
+<dd><p>servo at the motor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.begin">
+<span class="sig-name descname"><span class="pre">begin</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor.begin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.begin" title="Link to this definition"></a></dt>
+<dd><p>begins motion of the motor (returns immediately)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.is_in_motion">
+<span class="sig-name descname"><span class="pre">is_in_motion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor.is_in_motion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.is_in_motion" title="Link to this definition"></a></dt>
+<dd><p>checks if the motor is in motion or not. return 1, if motor is in
+motion otherwise 0</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.wait_till_motor_motion_complete">
+<span class="sig-name descname"><span class="pre">wait_till_motor_motion_complete</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor.wait_till_motor_motion_complete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.wait_till_motor_motion_complete" title="Link to this definition"></a></dt>
+<dd><p>wait for motion on the motor to complete</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.error_magnitude">
+<span class="sig-name descname"><span class="pre">error_magnitude</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133Motor.error_magnitude"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.error_magnitude" title="Link to this definition"></a></dt>
+<dd><p>gives the magnitude of error, in quadrature counts, for this motor
+a count is directly proportional to the micro-stepping
+resolution of the stepper drive.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133Motor.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Motor.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Galil.</span></span><span class="sig-name descname"><span class="pre">GalilDMC4133VectorMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133Controller" title="qcodes.instrument_drivers.Galil.GalilDMC4133Controller"><span class="pre">GalilDMC4133Controller</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133VectorMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<p>Class to control motors in vector mode</p>
+<p>Initializes the vector mode submodule for the controller</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – an instance of DMC4133Controller</p></li>
+<li><p><strong>name</strong> – name of the vector mode plane</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.coordinate_system" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.coordinate_system"><code class="xref py py-obj docutils literal notranslate"><span class="pre">coordinate_system</span></code></a></p></td>
+<td><p>activates coordinate system for the motion.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_acceleration" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_acceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_acceleration</span></code></a></p></td>
+<td><p>sets and gets the defined vector's acceleration</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_deceleration" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_deceleration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_deceleration</span></code></a></p></td>
+<td><p>sets and gets the defined vector's deceleration</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_speed" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_speed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_speed</span></code></a></p></td>
+<td><p>sets and gets defined vector's speed</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.activate" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.activate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">activate</span></code></a>()</p></td>
+<td><p>activate plane of motion</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_position" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_position</span></code></a>(first_coord, second_coord)</p></td>
+<td><p>sets the final vector position for the motion considering current position as the origin</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_seq_end" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_seq_end"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vector_seq_end</span></code></a>()</p></td>
+<td><p>indicates to the controller that the end of the vector is coming up.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.begin_seq" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.begin_seq"><code class="xref py py-obj docutils literal notranslate"><span class="pre">begin_seq</span></code></a>()</p></td>
+<td><p>begins motion of the motor</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.after_seq_motion" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.after_seq_motion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">after_seq_motion</span></code></a>()</p></td>
+<td><p>wait till motion ends</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.clear_sequence" title="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.clear_sequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear_sequence</span></code></a>(coord_sys)</p></td>
+<td><p>clears vectors specified in the given coordinate system</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.coordinate_system">
+<span class="sig-name descname"><span class="pre">coordinate_system</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;coordinate_system&quot;,</span> <span class="pre">get_cmd=&quot;CA</span> <span class="pre">?&quot;,</span> <span class="pre">get_parser=self._parse_coordinate_system_active,</span> <span class="pre">set_cmd=&quot;CA</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=Enum(&quot;S&quot;,</span> <span class="pre">&quot;T&quot;),</span> <span class="pre">docstring=&quot;activates</span> <span class="pre">coordinate</span> <span class="pre">system</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">motion.</span> <span class="pre">Two</span> <span class="pre">&quot;</span> <span class="pre">&quot;</span> <span class="pre">coordinate</span> <span class="pre">systems</span> <span class="pre">are</span> <span class="pre">possible</span> <span class="pre">with</span> <span class="pre">values</span> <span class="pre">&quot;</span> <span class="pre">&quot;'S'</span> <span class="pre">and</span> <span class="pre">'T'.</span> <span class="pre">All</span> <span class="pre">vector</span> <span class="pre">mode</span> <span class="pre">commands</span> <span class="pre">will</span> <span class="pre">apply</span> <span class="pre">to</span> <span class="pre">&quot;</span> <span class="pre">&quot;the</span> <span class="pre">active</span> <span class="pre">coordinate</span> <span class="pre">system.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.coordinate_system" title="Link to this definition"></a></dt>
+<dd><p>activates coordinate system for the motion. Two  coordinate systems are possible with values ‘S’ and ‘T’. All vector mode commands will apply to the active coordinate system.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_acceleration">
+<span class="sig-name descname"><span class="pre">vector_acceleration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;vector_acceleration&quot;,</span> <span class="pre">get_cmd=&quot;VA</span> <span class="pre">?&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=&quot;VA</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=Multiples(min_value=1024,</span> <span class="pre">max_value=1073740800,</span> <span class="pre">divisor=1024),</span> <span class="pre">unit=&quot;counts/sec2&quot;,</span> <span class="pre">docstring=&quot;sets</span> <span class="pre">and</span> <span class="pre">gets</span> <span class="pre">the</span> <span class="pre">defined</span> <span class="pre">vector's</span> <span class="pre">acceleration&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_acceleration" title="Link to this definition"></a></dt>
+<dd><p>sets and gets the defined vector’s acceleration</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_deceleration">
+<span class="sig-name descname"><span class="pre">vector_deceleration</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;vector_deceleration&quot;,</span> <span class="pre">get_cmd=&quot;VD</span> <span class="pre">?&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=&quot;VD</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=Multiples(min_value=1024,</span> <span class="pre">max_value=1073740800,</span> <span class="pre">divisor=1024),</span> <span class="pre">unit=&quot;counts/sec2&quot;,</span> <span class="pre">docstring=&quot;sets</span> <span class="pre">and</span> <span class="pre">gets</span> <span class="pre">the</span> <span class="pre">defined</span> <span class="pre">vector's</span> <span class="pre">deceleration&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_deceleration" title="Link to this definition"></a></dt>
+<dd><p>sets and gets the defined vector’s deceleration</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_speed">
+<span class="sig-name descname"><span class="pre">vector_speed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;vector_speed&quot;,</span> <span class="pre">get_cmd=&quot;VS</span> <span class="pre">?&quot;,</span> <span class="pre">get_parser=lambda</span> <span class="pre">s:</span> <span class="pre">int(float(s)),</span> <span class="pre">set_cmd=&quot;VS</span> <span class="pre">{}&quot;,</span> <span class="pre">vals=Multiples(min_value=2,</span> <span class="pre">max_value=15000000,</span> <span class="pre">divisor=2),</span> <span class="pre">unit=&quot;counts/sec&quot;,</span> <span class="pre">docstring=&quot;sets</span> <span class="pre">and</span> <span class="pre">gets</span> <span class="pre">defined</span> <span class="pre">vector's</span> <span class="pre">speed&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_speed" title="Link to this definition"></a></dt>
+<dd><p>sets and gets defined vector’s speed</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.activate">
+<span class="sig-name descname"><span class="pre">activate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133VectorMode.activate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.activate" title="Link to this definition"></a></dt>
+<dd><p>activate plane of motion</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_position">
+<span class="sig-name descname"><span class="pre">vector_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first_coord</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">second_coord</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133VectorMode.vector_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_position" title="Link to this definition"></a></dt>
+<dd><p>sets the final vector position for the motion considering current
+position as the origin</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_seq_end">
+<span class="sig-name descname"><span class="pre">vector_seq_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133VectorMode.vector_seq_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.vector_seq_end" title="Link to this definition"></a></dt>
+<dd><p>indicates to the controller that the end of the vector is coming up.
+is required to exit the vector mode gracefully</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.begin_seq">
+<span class="sig-name descname"><span class="pre">begin_seq</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133VectorMode.begin_seq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.begin_seq" title="Link to this definition"></a></dt>
+<dd><p>begins motion of the motor</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.after_seq_motion">
+<span class="sig-name descname"><span class="pre">after_seq_motion</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133VectorMode.after_seq_motion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.after_seq_motion" title="Link to this definition"></a></dt>
+<dd><p>wait till motion ends</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.clear_sequence">
+<span class="sig-name descname"><span class="pre">clear_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coord_sys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Galil/dmc_41x3.html#GalilDMC4133VectorMode.clear_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.clear_sequence" title="Link to this definition"></a></dt>
+<dd><p>clears vectors specified in the given coordinate system</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Galil.GalilDMC4133VectorMode.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="CryoMagnetics.html" class="btn btn-neutral float-left" title="Cryomagnetics Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="HP.html" class="btn btn-neutral float-right" title="Hewlett Packard Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

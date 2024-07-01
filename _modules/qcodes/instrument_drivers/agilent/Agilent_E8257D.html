@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.agilent.Agilent_E8257D &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.agilent.Agilent_E8257D</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.agilent.Agilent_E8257D</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">qcodes.validators</span> <span class="k">as</span> <span class="nn">vals</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">VisaInstrument</span><span class="p">,</span> <span class="n">VisaInstrumentKWArgs</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">create_on_off_val_mapping</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+<div class="viewcode-block" id="AgilentE8257D">
+<a class="viewcode-back" href="../../../../drivers_api/Agilent.html#qcodes.instrument_drivers.agilent.AgilentE8257D">[docs]</a>
+<span class="k">class</span> <span class="nc">AgilentE8257D</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the QCoDeS driver for the Agilent E8257D signal generator.</span>
+<span class="sd">    This driver will most likely work for multiple Agilent sources.</span>
+<span class="sd">    This driver does not contain all commands available for the E8257D but</span>
+<span class="sd">    only the ones most commonly used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">step_attenuator</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">step_attenuator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;step_attenuator argument to E8257D is deprecated &quot;</span>
+                <span class="s2">&quot;and has no effect. It will be removed in the &quot;</span>
+                <span class="s2">&quot;future.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Query installed options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="s2">&quot;DIAG:CPU:INFO:OPT:DET?&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Determine installed frequency option</span>
+        <span class="n">frequency_option</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">f_option</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;513&quot;</span><span class="p">,</span> <span class="s2">&quot;520&quot;</span><span class="p">,</span> <span class="s2">&quot;521&quot;</span><span class="p">,</span> <span class="s2">&quot;532&quot;</span><span class="p">,</span> <span class="s2">&quot;540&quot;</span><span class="p">,</span> <span class="s2">&quot;550&quot;</span><span class="p">,</span> <span class="s2">&quot;567&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">f_option</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">:</span>
+                <span class="n">frequency_option</span> <span class="o">=</span> <span class="n">f_option</span>
+        <span class="k">if</span> <span class="n">frequency_option</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not determine the frequency option&quot;</span><span class="p">)</span>
+
+        <span class="c1"># convert installed frequency option to frequency ranges, based on:</span>
+        <span class="c1"># https://www.keysight.com/us/en/assets/7018-01233/configuration-guides</span>
+        <span class="c1"># /5989-1325.pdf</span>
+        <span class="c1"># the frequency range here is the max range and not the specified</span>
+        <span class="c1"># (calibrated) one</span>
+        <span class="n">f_options_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;513&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">100e3</span><span class="p">,</span> <span class="mf">13e9</span><span class="p">),</span>
+            <span class="s2">&quot;520&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">100e3</span><span class="p">,</span> <span class="mf">20e9</span><span class="p">),</span>
+            <span class="s2">&quot;521&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">10e6</span><span class="p">,</span> <span class="mf">20e9</span><span class="p">),</span>
+            <span class="s2">&quot;532&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">100e3</span><span class="p">,</span> <span class="mf">31.8e9</span><span class="p">),</span>
+            <span class="s2">&quot;540&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">100e3</span><span class="p">,</span> <span class="mf">40e9</span><span class="p">),</span>
+            <span class="s2">&quot;550&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">100e3</span><span class="p">,</span> <span class="mf">50e9</span><span class="p">),</span>
+            <span class="s2">&quot;567&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">100e3</span><span class="p">,</span> <span class="mf">70e9</span><span class="p">),</span>
+        <span class="p">}</span>
+
+        <span class="c1"># assign min and max frequencies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_freq</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_freq</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_freq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_freq</span> <span class="o">=</span> <span class="n">f_options_dict</span><span class="p">[</span><span class="n">frequency_option</span><span class="p">]</span>
+
+        <span class="c1"># Based on installed frequency option and presence/absence of step</span>
+        <span class="c1"># attenuator (option &#39;1E1&#39;) determine power range based on:</span>
+        <span class="c1"># https://www.keysight.com/us/en/assets/7018-01211/data-sheets</span>
+        <span class="c1"># /5989-0698.pdf</span>
+
+        <span class="c1"># assign min and max powers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_power</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_power</span><span class="p">:</span> <span class="nb">float</span>
+
+        <span class="k">if</span> <span class="s2">&quot;1E1&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">frequency_option</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;513&quot;</span><span class="p">,</span> <span class="s2">&quot;520&quot;</span><span class="p">,</span> <span class="s2">&quot;521&quot;</span><span class="p">,</span> <span class="s2">&quot;532&quot;</span><span class="p">,</span> <span class="s2">&quot;540&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_min_power</span> <span class="o">=</span> <span class="o">-</span><span class="mi">135</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_max_power</span> <span class="o">=</span> <span class="mi">10</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_min_power</span> <span class="o">=</span> <span class="o">-</span><span class="mi">110</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_max_power</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="k">elif</span> <span class="n">frequency_option</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;513&quot;</span><span class="p">,</span> <span class="s2">&quot;520&quot;</span><span class="p">,</span> <span class="s2">&quot;521&quot;</span><span class="p">,</span> <span class="s2">&quot;532&quot;</span><span class="p">,</span> <span class="s2">&quot;540&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_min_power</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_power</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># default minimal power is -20 dBm</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_min_power</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_max_power</span> <span class="o">=</span> <span class="mi">5</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;frequency&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Frequency&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;FREQ:CW?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;FREQ:CW&quot;</span> <span class="o">+</span> <span class="s2">&quot; </span><span class="si">{:.4f}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_freq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_freq</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter frequency&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;phase&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Phase&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;deg&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;PHASE?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;PHASE&quot;</span> <span class="o">+</span> <span class="s2">&quot; </span><span class="si">{:.8f}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rad_to_deg</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">deg_to_rad</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter phase&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;power&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Power&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;dBm&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;POW:AMPL?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;POW:AMPL&quot;</span> <span class="o">+</span> <span class="s2">&quot; </span><span class="si">{:.4f}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_power</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_power</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter power&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;output_enabled&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:OUTP?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;OUTP </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter output_enabled&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="AgilentE8257D.on">
+<a class="viewcode-back" href="../../../../drivers_api/Agilent.html#qcodes.instrument_drivers.agilent.AgilentE8257D.on">[docs]</a>
+    <span class="k">def</span> <span class="nf">on</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_enabled</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;on&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AgilentE8257D.off">
+<a class="viewcode-back" href="../../../../drivers_api/Agilent.html#qcodes.instrument_drivers.agilent.AgilentE8257D.off">[docs]</a>
+    <span class="k">def</span> <span class="nf">off</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_enabled</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span></div>
+
+
+    <span class="c1"># functions to convert between rad and deg</span>
+<div class="viewcode-block" id="AgilentE8257D.deg_to_rad">
+<a class="viewcode-back" href="../../../../drivers_api/Agilent.html#qcodes.instrument_drivers.agilent.AgilentE8257D.deg_to_rad">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">deg_to_rad</span><span class="p">(</span>
+        <span class="n">angle_deg</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;np.floating[Any]&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">angle_deg</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="AgilentE8257D.rad_to_deg">
+<a class="viewcode-back" href="../../../../drivers_api/Agilent.html#qcodes.instrument_drivers.agilent.AgilentE8257D.rad_to_deg">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">rad_to_deg</span><span class="p">(</span>
+        <span class="n">angle_rad</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;np.floating[Any]&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">rad2deg</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">angle_rad</span><span class="p">))</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

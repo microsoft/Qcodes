@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QCoDeS Example with AMI430 &mdash; QCoDeS 0.46.0.dev545 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=88a173da"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="QCoDeS Example with Agilent 34400A" href="Qcodes%20example%20with%20Agilent%2034400A.html" />
+    <link rel="prev" title="QCoDeS example with Textronix DPO 7200xx scopes" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.46.0.dev545+main.g23d928405
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#drivers">Drivers</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">QCoDeS Example with AMI430</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Summary-of-automated-tests-that-the-driver-goes-through">Summary of automated tests that the driver goes through</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Connecting-to-the-individual-axis-instruments">Connecting to the individual axis instruments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Working-with-a-single-axis">Working with a single axis</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Working-with-the-3D-driver,-controlling-all-3-axes">Working with the 3D driver, controlling all 3 axes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Dond-while-ramping">Dond while ramping</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG70002A.html">QCoDeS Example with Tektronix AWG70002A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">QCoDeS Example with AMI430</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/driver_examples/Qcodes example with AMI430.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/Qcodes example with AMI430.ipynb">docs/examples/driver_examples/Qcodes example with AMI430.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/Qcodes example with AMI430.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-Example-with-AMI430">
+<h1>QCoDeS Example with AMI430<a class="headerlink" href="#QCoDeS-Example-with-AMI430" title="Link to this heading"></a></h1>
+<section id="Summary-of-automated-tests-that-the-driver-goes-through">
+<h2>Summary of automated tests that the driver goes through<a class="headerlink" href="#Summary-of-automated-tests-that-the-driver-goes-through" title="Link to this heading"></a></h2>
+<p>We have performed a lot of stand alone tests (tests with mocked hardware) in <code class="docutils literal notranslate"><span class="pre">tests/test_ami430_visa.py</span></code>. In particular, we have tested: - If the driver remembers the internal setpoints if these are given in cartesian, spherical and cylindrical coordinates - Check that we send to correct setpoint instructions to the individual instruments if inputs are cartesian, spherical or cylindrical coordinates - Test that we can call the measured parameters (e.g. cartesian_measured) without exceptions
+occurring. - Check that instruments which need to ramp down are given adjustment instructions first - Check that field limit exceptions are raised properly - Check that the driver remembers theta and phi coordinates even if the vector norm is zero. - Test that a warning is issued when the maximum ramp rate is increased - Test that an exception is raised when we try to set a ramp rate which is higher then the maximum allowed value.</p>
+<p>Furthermore, in <code class="docutils literal notranslate"><span class="pre">tests/test_field_vector.py</span></code> we have tested if the cartesian to spherical/cylindrical coordinate transformations and visa-versa has been correctly implemented by asserting symmetry rules.</p>
+</section>
+<section id="Connecting-to-the-individual-axis-instruments">
+<h2>Connecting to the individual axis instruments<a class="headerlink" href="#Connecting-to-the-individual-axis-instruments" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.american_magnetics</span> <span class="kn">import</span> <span class="n">AMIModel430</span><span class="p">,</span> <span class="n">AMIModel4303D</span>
+<span class="kn">from</span> <span class="nn">qcodes.math_utils.field_vector</span> <span class="kn">import</span> <span class="n">FieldVector</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check if we can establish communication with the power sources</span>
+<span class="n">ix</span> <span class="o">=</span> <span class="n">AMIModel430</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="s2">&quot;TCPIP0::169.254.146.116::7180::SOCKET&quot;</span><span class="p">)</span>
+<span class="n">iy</span> <span class="o">=</span> <span class="n">AMIModel430</span><span class="p">(</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="s2">&quot;TCPIP0::169.254.136.91::7180::SOCKET&quot;</span><span class="p">)</span>
+<span class="n">iz</span> <span class="o">=</span> <span class="n">AMIModel430</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="s2">&quot;TCPIP0::169.254.21.127::7180::SOCKET&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to: AMERICAN MAGNETICS INC. 430 (serial:2.01, firmware:None) in 0.60s
+Connected to: AMERICAN MAGNETICS INC. 430 (serial:2.01, firmware:None) in 0.62s
+Connected to: AMERICAN MAGNETICS INC. 430 (serial:2.01, firmware:None) in 0.57s
+</pre></div></div>
+</div>
+</section>
+<section id="Working-with-a-single-axis">
+<h2>Working with a single axis<a class="headerlink" href="#Working-with-a-single-axis" title="Link to this heading"></a></h2>
+<p>On individual instruments (individual axes), we:</p>
+<ul class="simple">
+<li><p>Test that we can correctly set current values of individual sources</p></li>
+<li><p>Test that we can correctly measure current values of individual sources</p></li>
+<li><p>Test that we can put the sources in paused mode</p></li>
+<li><p>Test that the ramp rates are properly set</p></li>
+</ul>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># lets test an individual instrument first. We select the z axis.</span>
+<span class="n">instrument</span> <span class="o">=</span> <span class="n">iz</span>
+
+<span class="c1"># Since the set method of the driver only excepts fields in Tesla and we want to check if the correct</span>
+<span class="c1"># currents are applied, we need to convert target currents to target fields. For this reason we need</span>
+<span class="c1"># the coil constant.</span>
+<span class="n">coil_const</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">_coil_constant</span>
+<span class="n">current_rating</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">_current_rating</span>
+<span class="n">current_ramp_limit</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">_current_ramp_limit</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;coil constant = </span><span class="si">{</span><span class="n">coil_const</span><span class="si">}</span><span class="s2"> T/A&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;current rating = </span><span class="si">{</span><span class="n">current_rating</span><span class="si">}</span><span class="s2"> A&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;current ramp rate limit = </span><span class="si">{</span><span class="n">current_ramp_limit</span><span class="si">}</span><span class="s2"> A/s&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+coil constant = 0.076 T/A
+current rating = 79.1 A
+current ramp rate limit = 0.06 A/s
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let see if we can set and get the field in Tesla</span>
+<span class="n">target_current</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># [A]  The current we want to set</span>
+<span class="n">target_field</span> <span class="o">=</span> <span class="n">coil_const</span> <span class="o">*</span> <span class="n">target_current</span>  <span class="c1"># [T]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Target field is </span><span class="si">{</span><span class="n">target_field</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+<span class="n">instrument</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">target_field</span><span class="p">)</span>
+
+<span class="n">field</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">field</span><span class="p">()</span>  <span class="c1"># This gives us the measured field</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Measured field is </span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+<span class="c1"># The current should be</span>
+<span class="n">current</span> <span class="o">=</span> <span class="n">field</span> <span class="o">/</span> <span class="n">coil_const</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Measured current is = </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2"> A&quot;</span><span class="p">)</span>
+<span class="c1"># We have verified with manual inspection that the current has indeed ben reached</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Target field is 0.076 T
+Measured field is 0.07604 T
+Measured current is = 1.0005263157894737 A
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Verify that the ramp rate is indeed how it is specified</span>
+<span class="n">ramp_rate</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">()</span>  <span class="c1"># get the ramp rate</span>
+<span class="n">instrument</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># make sure we are back at zero amps</span>
+
+<span class="n">target_fields</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]</span>  <span class="c1"># [T]</span>
+<span class="n">t_setting</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">t_actual</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">target_field</span> <span class="ow">in</span> <span class="n">target_fields</span><span class="p">:</span>
+
+    <span class="n">current_field</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">field</span><span class="p">()</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">target_field</span> <span class="o">-</span> <span class="n">current_field</span><span class="p">)</span> <span class="o">/</span> <span class="n">ramp_rate</span>
+    <span class="n">t_setting</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span>
+
+    <span class="n">tb</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">instrument</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">target_field</span><span class="p">)</span>
+    <span class="n">te</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">ta</span> <span class="o">=</span> <span class="n">te</span> <span class="o">-</span> <span class="n">tb</span>
+    <span class="n">t_actual</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ta</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t_setting</span><span class="p">,</span> <span class="n">t_actual</span><span class="p">,</span> <span class="s2">&quot;.-&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;ramp time calculated from settings [s]&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;measured ramp time [s]&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">slope</span><span class="p">,</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">t_setting</span><span class="p">,</span> <span class="n">t_actual</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;slope = </span><span class="si">{</span><span class="n">slope</span><span class="si">}</span><span class="s2">. A value close to one means the correct ramp times are used&quot;</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;offset = </span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2">. An offset indicates that there is a fixed delay is added to a ramp request&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_Qcodes_example_with_AMI430_8_0.png" src="../../_images/examples_driver_examples_Qcodes_example_with_AMI430_8_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+slope = 0.9993355432517128. A value close to one means the correct ramp times are used
+offset = 7.364001916301564. An offset indicates that there is a fixed delay is added to a ramp request
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Lets move back to zero Amp</span>
+<span class="n">instrument</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Note-on-maximum-current-ramp-rate">
+<h3>Note on maximum current ramp rate<a class="headerlink" href="#Note-on-maximum-current-ramp-rate" title="Link to this heading"></a></h3>
+<p>The maximum current ramp rate can be increased to a desired value via setting the <code class="docutils literal notranslate"><span class="pre">current_ramp_limit</span></code> parameter. However, this should be done conservatively to avoid quenching the magnet. We strongly recommend to consult to the manual of your particular magnet before making any changes.</p>
+</section>
+</section>
+<section id="Working-with-the-3D-driver,-controlling-all-3-axes">
+<h2>Working with the 3D driver, controlling all 3 axes<a class="headerlink" href="#Working-with-the-3D-driver,-controlling-all-3-axes" title="Link to this heading"></a></h2>
+<p>With the 3D driver, we:</p>
+<ul class="simple">
+<li><p>Test that the correct set points are reached if we give inputs in cartesian, spherical or cylindrical coordinates</p></li>
+<li><p>Test that we can set theta and phi to non-zero values which are remembered if r is ramped from zero to r &gt; 0.</p></li>
+<li><p>Test that instruments are ramped up and down in the correct order, with ramp downs occuring before ramp ups.</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">field_is_along_z_and_less_that_3_t</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+    <span class="c1"># We can have higher field along the z-axis if x and y are zero.</span>
+    <span class="k">return</span>  <span class="n">x</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">y</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="mi">3</span>
+<span class="k">def</span> <span class="nf">field_is_less_than_2_t</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">2</span>
+<span class="c1"># Lets test the 3D driver now.</span>
+<span class="n">field_limit</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">[</span>  <span class="c1"># If any of the field limit functions are satisfied we are in the safe zone.</span>
+        <span class="n">field_is_along_z_and_less_that_3_t</span><span class="p">,</span>
+        <span class="n">field_is_less_than_2_t</span><span class="p">,</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">i3d</span> <span class="o">=</span> <span class="n">AMIModel4303D</span><span class="p">(</span><span class="s2">&quot;AMI430_3D&quot;</span><span class="p">,</span> <span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">,</span> <span class="n">iz</span><span class="p">,</span> <span class="n">field_limit</span><span class="o">=</span><span class="n">field_limit</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">current_to_field</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">current</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;We cannot set currents directly, so we need to calculate what fields need to be generated for</span>
+<span class="sd">    the desired currents&quot;&quot;&quot;</span>
+    <span class="n">instrument</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">ix</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">iy</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="n">iz</span><span class="p">}[</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">coil_constant</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">_coil_constant</span>  <span class="c1">#  [T/A]</span>
+    <span class="n">field</span> <span class="o">=</span> <span class="n">current</span> <span class="o">*</span> <span class="n">coil_constant</span>
+    <span class="k">return</span> <span class="n">field</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Lets see if we can set a certain current using cartesian coordinates</span>
+<span class="n">current_target</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]</span>
+<span class="c1"># calculate the fields needed</span>
+<span class="n">field_target</span> <span class="o">=</span> <span class="p">[</span><span class="n">current_to_field</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">],</span> <span class="n">current_target</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field target = </span><span class="si">{</span><span class="n">field_target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">cartesian</span><span class="p">(</span><span class="n">field_target</span><span class="p">)</span>
+<span class="n">field_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">cartesian_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field measured = </span><span class="si">{</span><span class="n">field_measured</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+field target = [0.0386, 0.0121, 0.11399999999999999]
+field measured = [0.03816, 0.01211, 0.11384]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Lets move back to 0,0,0</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">cartesian</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+<span class="c1"># Lets see if we can set a certain current using spherical coordinates</span>
+<span class="n">current_target</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]</span>
+<span class="c1"># calculate the fields needed</span>
+<span class="n">field_target_cartesian</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">current_to_field</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">],</span> <span class="n">current_target</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="c1"># calculate the field target in spherical coordinates</span>
+<span class="n">field_target_spherical</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">(</span><span class="o">*</span><span class="n">field_target_cartesian</span><span class="p">)</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span>
+    <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;phi&quot;</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field target = </span><span class="si">{</span><span class="n">field_target_spherical</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">spherical</span><span class="p">(</span><span class="n">field_target_spherical</span><span class="p">)</span>
+<span class="n">field_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">spherical_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field measured = </span><span class="si">{</span><span class="n">field_measured</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Like before, we see that the current target of 1.0, 0.5, 1.5 A for x, y and z have indeed been reached</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+field target = [0.1209643335863923, 19.536859161547078, 17.404721375291402]
+field measured = [0.12077462481829535, 19.424782613847988, 17.532727661391853]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Lets move back to 0,0,0</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">cartesian</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+<span class="c1"># Lets see if we can set a certain current using cylindrical coordinates</span>
+<span class="n">current_target</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]</span>
+<span class="c1"># calculate the fields needed</span>
+<span class="n">field_target_cartesian</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">current_to_field</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">],</span> <span class="n">current_target</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="c1"># calculate the field target in cylindrical coordinates</span>
+<span class="n">field_target_cylindrical</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">(</span><span class="o">*</span><span class="n">field_target_cartesian</span><span class="p">)</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span>
+    <span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="s2">&quot;phi&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field target = </span><span class="si">{</span><span class="n">field_target_cylindrical</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">cylindrical</span><span class="p">(</span><span class="n">field_target_cylindrical</span><span class="p">)</span>
+<span class="n">field_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">cylindrical_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field measured = </span><span class="si">{</span><span class="n">field_measured</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># Like before, we see that the current target of 1.0, 0.5, 1.5 A for x, y and z have indeed been reached</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+field target = [0.040452070404368677, 17.404721375291402, 0.11399999999999999]
+field measured = [0.040235668255914431, 17.51627743673798, 0.11365]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test that ramping up and down occurs in the right order,</span>
+<span class="c1"># that is, first, ramp axes that have ramp down,</span>
+<span class="c1"># and only then ramp axes that have to ramp up.</span>
+<span class="n">current_target</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.75</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>  <span class="c1"># We ramp down the z, ramp up y and keep x the same</span>
+<span class="c1"># We should see that z is adjusted first, then y.</span>
+<span class="c1"># calculate the fields needed</span>
+<span class="n">field_target</span> <span class="o">=</span> <span class="p">[</span><span class="n">current_to_field</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">([</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">],</span> <span class="n">current_target</span><span class="p">)]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;field target = </span><span class="si">{</span><span class="n">field_target</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">cartesian</span><span class="p">(</span><span class="n">field_target</span><span class="p">)</span>
+<span class="c1"># Manual inspection has shown that z is indeed ramped down before y is ramped up</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+field target = [0.0386, 0.01815, 0.076]
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># check that an exception is raised when we try to set a field which is out side of the safety limits</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">i3d</span><span class="o">.</span><span class="n">cartesian</span><span class="p">([</span><span class="mf">2.1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;something went wrong... we should not be able to do this :-(&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;error successfully raised. The driver does not let you do stupid stuff&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+error successfully raised. The driver does not let you do stupid stuff
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check that the driver remembers theta/phi values if the set point norm is zero</span>
+
+<span class="c1"># lets go back to zero field</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">cartesian</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="c1"># Lets set theta and phi to a non zero value but keep the field magnitude at zero</span>
+<span class="n">field_target_spherical</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">40.0</span><span class="p">]</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">spherical</span><span class="p">(</span><span class="n">field_target_spherical</span><span class="p">)</span>
+<span class="n">field_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">cartesian_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;1: Measured field = </span><span class="si">{</span><span class="n">field_measured</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+
+<span class="c1"># Note that theta_measured and phi_measured will give random values based on noisy current reading</span>
+<span class="c1"># close to zero (this cannot be avoided)</span>
+<span class="n">theta_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">theta_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;1: Theta measured = </span><span class="si">{</span><span class="n">theta_measured</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">phi_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">phi_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;1: Phi measured = </span><span class="si">{</span><span class="n">phi_measured</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># now lets set the r value</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+
+<span class="n">field_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">cartesian_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;2: Measured field = </span><span class="si">{</span><span class="n">field_measured</span><span class="si">}</span><span class="s2"> T&quot;</span><span class="p">)</span>
+<span class="c1"># Now the measured angles should be as we intended</span>
+<span class="n">theta_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">theta_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;2: Theta measured = </span><span class="si">{</span><span class="n">theta_measured</span><span class="si">}</span><span class="s2">. We see that the input theta of </span><span class="si">{</span><span class="n">field_target_spherical</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> has been &quot;</span>
+    <span class="s2">&quot;remembered&quot;</span>
+<span class="p">)</span>
+
+<span class="n">phi_measured</span> <span class="o">=</span> <span class="n">i3d</span><span class="o">.</span><span class="n">phi_measured</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;2: Phi measured = </span><span class="si">{</span><span class="n">phi_measured</span><span class="si">}</span><span class="s2">. We see that the input phi of </span><span class="si">{</span><span class="n">field_target_spherical</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> has been &quot;</span>
+    <span class="s2">&quot;remembered&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1: Measured field = [-0.00013, -1e-05, 3e-05] T
+1: Theta measured = 98.72079692816342
+1: Phi measured = 180.0
+2: Measured field = [0.10484, -0.08797, 0.37558] T
+2: Theta measured = 20.032264760097508. We see that the input theta of 20.0 has been remembered
+2: Phi measured = -40.007172479040996. We see that the input phi of -40.0 has been remembered
+</pre></div></div>
+</div>
+<section id="Simultaneous-ramping-mode">
+<h3>Simultaneous ramping mode<a class="headerlink" href="#Simultaneous-ramping-mode" title="Link to this heading"></a></h3>
+<p>The 3D driver has a <code class="docutils literal notranslate"><span class="pre">ramp_mode</span></code> parameter whose default value is <code class="docutils literal notranslate"><span class="pre">&quot;default&quot;</span></code>. In this mode, the ramping of all the 3 axes is sequential e.g. first X axis is ramped until its setpoint, then Y axis, then Z axis. In order to ramp all the three axis together, simultaneously, there exists another ramp mode called <code class="docutils literal notranslate"><span class="pre">&quot;simultaneous&quot;</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">ramp_mode</span><span class="p">(</span><span class="s2">&quot;simultaneous&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Thanks to all there axes instruments being swept together, the magnetic field changes along the vector from the current/initial field value towards the setpoint value. Use the simultaneous mode either by setting <code class="docutils literal notranslate"><span class="pre">vector_ramp_rate</span></code> parameter, or by calling <code class="docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code> convenience method.</p>
+<p>To return to the default ramp mode, set the ramp mode parameter to <code class="docutils literal notranslate"><span class="pre">&quot;default&quot;</span></code>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">ramp_mode</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">vector_ramp_rate</span></code> parameter corresponds to the desired ramp rate along the vector from the current magnetic field value to the setpoint value. To initiate the ramp, use any of the already familiar parameters that set the field setpoint value, e.g. <code class="docutils literal notranslate"><span class="pre">i3d.cartesian([0.1,</span> <span class="pre">0.2,</span> <span class="pre">0.3])</span></code>. Use the <code class="docutils literal notranslate"><span class="pre">vector_ramp_rate</span></code> approach if you would like to sweep all axes simultaneously <em>at a given ramp rate along the vector towards the setpoint value</em>:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">ramp_mode</span><span class="p">(</span><span class="s2">&quot;simultaneous&quot;</span><span class="p">)</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">vector_ramp_rate</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>  <span class="c1"># requires all axes to have same ramp rate units!!!</span>
+<span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">y</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">z</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">cartesian</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">))</span>  <span class="c1"># or any other parameter call that initiates a ramp</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">vector_ramp_rate</span></code> parameter assumes that the given value is in the same ramp units as the units of all the three individual axis instruments. If not all axis instruments have the same ramp rate units, an exception will be raised.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code> method takes the sweep duration as it’s argument, and uses it to calculate the corresponding vector ramp rate, and initiate the ramp. Use the <code class="docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code> approach if you would like to sweep all axes simultaneously <em>in a given time</em> along the vector towards the setpoint value:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">ramp_simultaneously</span><span class="p">(</span><span class="n">setpoint</span><span class="o">=</span><span class="n">FieldVector</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="n">duration</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1"># See the docstring of this method for details</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code> method assumes that the given setpoint value as well as the given duration are in the same units as the units of all the three individual axis instruments. If not all axis instruments have the same units for ramp rate and field, an exception will be raised.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">block_during_ramp</span></code> parameter is set to <code class="docutils literal notranslate"><span class="pre">False</span></code>, then the call that initiated the ramp (either <code class="docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code> or call to a field setpoint parameter) will return right after the ramp is initiated. Otherwise, the calls will block until the ramp is complete (that is, until all 3 axes stopped ramping).</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">block_during_ramp</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The driver comes with convenient methods that can be used in the measurement code to implement checks for completion of the ramping process (e.g. for waiting until the ramping is complete): <code class="docutils literal notranslate"><span class="pre">i3d.wait_while_all_axes_ramping</span></code> that blocks until the ramping is complete (check that ramping state every <code class="docutils literal notranslate"><span class="pre">i3d.ramping_state_check_interval</span></code> seconds), and <code class="docutils literal notranslate"><span class="pre">i3d.any_axis_is_ramping</span></code> that returns <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code> based on whether the ramping is still in process or completed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">any_axis_is_ramping</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">wait_while_all_axes_ramping</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">ramping_state_check_interval</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><strong>NOTE</strong> that ramping with the <code class="docutils literal notranslate"><span class="pre">&quot;simultaneous&quot;</span></code> mode changes the ramp rates of the individual magnet axes. The implementation is such that, given the current and the setpoint magnetic field vectors together with either vector ramp rate (<code class="docutils literal notranslate"><span class="pre">vector_ramp_rate</span></code> parameter) or the desired ramp duration (<code class="docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code> method), the required ramp rates of the individual axes are calculated and then set via the <code class="docutils literal notranslate"><span class="pre">ramp_rate</span></code> parameters of the individual magnet axes. Once the individual ramp
+rates are set to new values, the ramping is initiated on all axes (almost) at the same time. However, the values of the individual ramp rates can be <strong>restored</strong> by calling <code class="docutils literal notranslate"><span class="pre">wait_while_all_axes_ramping</span></code>. It is advised to call <code class="docutils literal notranslate"><span class="pre">wait_while_all_axes_ramping</span></code> especially for non-blocking ramps (<code class="docutils literal notranslate"><span class="pre">block_during_ramp</span></code> parameter set to <code class="docutils literal notranslate"><span class="pre">False</span></code>) as not only your code waits for the ramp to finish but also ensures that the magnet is in a known good (original) state before doing the next operation.
+Note that if <code class="docutils literal notranslate"><span class="pre">block_during_ramp</span></code> parameter is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">wait_while_all_axes_ramping</span></code> method is called automatically by the ramping logic, thus the ramp rates of the individual magnet axes are <strong>restored</strong> after the ramp is finished. Below is an example of performing a non-blocking simultaneous ramp (with <code class="docutils literal notranslate"><span class="pre">block_during_ramp</span></code> parameter set to <code class="docutils literal notranslate"><span class="pre">False</span></code>) and using <code class="docutils literal notranslate"><span class="pre">wait_while_all_axes_ramping</span></code> to wait for the ramp to finish and also to restore the ramp rates of the individual magnet
+axes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let&#39;s assume that these are the original values</span>
+<span class="c1"># of the ramp rates of the individual axes</span>
+<span class="n">ix</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+<span class="n">iy</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">(</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="n">iz</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">(</span><span class="mf">0.03</span><span class="p">)</span>
+
+<span class="c1"># And let&#39;s assume that for this measurement we</span>
+<span class="c1"># don&#39;t want the ramp calls to block, but we DO</span>
+<span class="c1"># want to restore the original values of the ramp</span>
+<span class="c1"># rates of the inidividual axes</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">block_during_ramp</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Starting the ramp will change the values of the ramp rates</span>
+<span class="c1"># of the individual axes</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">ramp_simultaneously</span><span class="p">(</span><span class="n">setpoint</span><span class="o">=</span><span class="n">FieldVector</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">),</span> <span class="n">duration</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># .. or initiate the ramp using ``vector_ramp_rate`` with</span>
+<span class="c1"># a field setpoint parameter</span>
+<span class="c1"># i3d.vector_ramp_rate(0.34)</span>
+<span class="c1"># i3d.cartesian((0.5, 1.0, 0.01))</span>
+
+<span class="c1"># ...</span>
+<span class="c1"># Here comes your code of the measurement that you&#39;d like to do</span>
+<span class="c1"># while the magnet ramping</span>
+<span class="c1"># ...</span>
+
+<span class="c1"># Here the ramp rates of the individual axes are still different</span>
+<span class="c1"># from their original values</span>
+<span class="k">assert</span> <span class="n">ix</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">()</span> <span class="o">!=</span> <span class="mf">0.01</span>
+<span class="k">assert</span> <span class="n">iy</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">()</span> <span class="o">!=</span> <span class="mf">0.02</span>
+<span class="k">assert</span> <span class="n">iz</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">()</span> <span class="o">!=</span> <span class="mf">0.03</span>
+
+<span class="c1"># And now, let&#39;s wait for the ramping to finish which will also</span>
+<span class="c1"># restore the ramp rates of the individual magnet axes to their</span>
+<span class="c1"># original values</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">wait_while_all_axes_ramping</span><span class="p">()</span>
+
+<span class="c1"># So here, the ramp rates of the individual axes are already</span>
+<span class="c1"># restored to their original/initial values</span>
+<span class="k">assert</span> <span class="n">ix</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.01</span>
+<span class="k">assert</span> <span class="n">iy</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.02</span>
+<span class="k">assert</span> <span class="n">iz</span><span class="o">.</span><span class="n">ramp_rate</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.03</span>
+</pre></div>
+</div>
+<p>For user convenience, the calculation methods between vactor ramp rate, sweep duration, and individual ramp rates for axes are exposed: see <code class="docutils literal notranslate"><span class="pre">i3d.calculate_axes_ramp_rates_from_vector_ramp_rate</span></code>, <code class="docutils literal notranslate"><span class="pre">i3d.calculate_vector_ramp_rate_from_duration</span></code>, <code class="docutils literal notranslate"><span class="pre">i3d.calculate_axes_ramp_rates_for</span></code> methods.</p>
+<p>Use the <code class="docutils literal notranslate"><span class="pre">i3d.pause</span></code> method to request all three axes instruments to pause ramping:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">i3d</span><span class="o">.</span><span class="n">pause</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Note that the results of testing on the real instruments show that: - if the requested field change is 0 for one/two/all-three axes, ramping still “simply works”, e.g. the instrument attempts to ramp, finds that it’s already in the right place, and stops ramping - if the requested field change for a given axis results in a ramp rate that is less than minimal ramp rate, the instrument still ramps to the corresponding setpoint value at some small ramp rate - when a ramp rate of an individual
+magnet axis is changed during an ongoing ramp (started without blocking), the ramp rate is in fact changed on the fly for the active ramp</p>
+</section>
+</section>
+<section id="Dond-while-ramping">
+<h2>Dond while ramping<a class="headerlink" href="#Dond-while-ramping" title="Link to this heading"></a></h2>
+<p>Lets now look at how the simultaneous ramp mode can be integrated with a typical measurement. The idea is to start the ramp and then do a dond scan with a fixed delay until the ramp is completed.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="n">LinSweep</span><span class="p">,</span> <span class="n">dond</span><span class="p">,</span> <span class="n">load_or_create_experiment</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.mock_instruments</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DummyInstrument</span><span class="p">,</span>
+    <span class="n">DummyInstrumentWithMeasurement</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">ElapsedTimeParameter</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># preparatory mocking of physical setup</span>
+<span class="n">dac</span> <span class="o">=</span> <span class="n">DummyInstrument</span><span class="p">(</span><span class="s2">&quot;dac&quot;</span><span class="p">,</span> <span class="n">gates</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ch1&quot;</span><span class="p">,</span> <span class="s2">&quot;ch2&quot;</span><span class="p">])</span>
+<span class="n">dmm</span> <span class="o">=</span> <span class="n">DummyInstrumentWithMeasurement</span><span class="p">(</span><span class="s2">&quot;dmm&quot;</span><span class="p">,</span> <span class="n">setter_instr</span><span class="o">=</span><span class="n">dac</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tutorial_exp</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span><span class="s2">&quot;doNd_while_ramping&quot;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s2">&quot;no sample&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sweep_1</span> <span class="o">=</span> <span class="n">LinSweep</span><span class="p">(</span><span class="n">dac</span><span class="o">.</span><span class="n">ch1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">sweep_2</span> <span class="o">=</span> <span class="n">LinSweep</span><span class="p">(</span><span class="n">dac</span><span class="o">.</span><span class="n">ch2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">time_p</span> <span class="o">=</span> <span class="n">ElapsedTimeParameter</span><span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">zero_field</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+<span class="n">zero_field</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+FieldVector(x=0.0, y=0.0, z=0.0)
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">setpoint</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
+<span class="n">setpoint</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+FieldVector(x=0.02, y=0.02, z=0.02)
+</pre></div></div>
+</div>
+<p>First we start with a example that is independent of the magnets but shows how we can measure a 2D scan as a function of time. Note that we keep the timing logic minimal, so the points may not be equidistant in time. This can be extended if needed.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">elapsed_time</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">timed_datasets</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">time_p</span><span class="o">.</span><span class="n">reset_clock</span><span class="p">()</span>
+
+<span class="k">while</span> <span class="n">elapsed_time</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+    <span class="n">ds</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">dond</span><span class="p">(</span><span class="n">sweep_1</span><span class="p">,</span> <span class="n">sweep_2</span><span class="p">,</span> <span class="n">dmm</span><span class="o">.</span><span class="n">v1</span><span class="p">,</span> <span class="n">additional_setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">time_p</span><span class="p">,))</span>
+    <span class="n">timed_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time_p</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 205. Using &#39;qcodes.utils.dataset.doNd.dond&#39;
+Starting experimental run with id: 206. Using &#39;qcodes.utils.dataset.doNd.dond&#39;
+Starting experimental run with id: 207. Using &#39;qcodes.utils.dataset.doNd.dond&#39;
+Starting experimental run with id: 208. Using &#39;qcodes.utils.dataset.doNd.dond&#39;
+</pre></div></div>
+</div>
+<p>To visualize this lets merge the datasets using xarray</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">timed_xarray_datasets</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span><span class="o">.</span><span class="n">to_xarray_dataset</span><span class="p">()</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">timed_datasets</span><span class="p">]</span>
+<span class="n">merged_dataset</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">timed_xarray_datasets</span><span class="p">)</span>
+<span class="n">merged_dataset</span><span class="o">.</span><span class="n">dmm_v1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">col</span><span class="o">=</span><span class="s2">&quot;time&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;xarray.plot.facetgrid.FacetGrid at 0x21280446f08&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_driver_examples_Qcodes_example_with_AMI430_55_1.png" src="../../_images/examples_driver_examples_Qcodes_example_with_AMI430_55_1.png" />
+</div>
+</div>
+<p>Now, let’s do the same but while also ramping the magnetic field. We’ll use the <code class="docutils literal notranslate"><span class="pre">ramp_simultaneously</span></code> method here:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ramp_datasets</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="c1"># Required for ``ramp_simultaneously`` to return</span>
+<span class="c1"># immediately after initiating a ramp</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">block_during_ramp</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Assuming the field is in T and time in minutes</span>
+<span class="n">i3d</span><span class="o">.</span><span class="n">ramp_simultaneously</span><span class="p">(</span><span class="n">setpoint</span><span class="o">=</span><span class="n">setpoint</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+
+<span class="n">time_p</span><span class="o">.</span><span class="n">reset_clock</span><span class="p">()</span>  <span class="c1"># Let&#39;s also store the elapsed time</span>
+
+<span class="k">while</span> <span class="n">i3d</span><span class="o">.</span><span class="n">any_axis_is_ramping</span><span class="p">():</span>  <span class="c1"># Should be clear without additional explanation ;)</span>
+
+    <span class="c1"># Run the 2D scan measurement</span>
+    <span class="n">ds</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">dond</span><span class="p">(</span>
+        <span class="n">sweep_1</span><span class="p">,</span>
+        <span class="n">sweep_2</span><span class="p">,</span>
+        <span class="n">dmm</span><span class="o">.</span><span class="n">v1</span><span class="p">,</span>
+        <span class="n">additional_setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">time_p</span><span class="p">,</span> <span class="n">ix</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">iy</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">iy</span><span class="o">.</span><span class="n">field</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Collect the dataset for later processing</span>
+    <span class="n">ramp_datasets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+
+    <span class="c1"># Optionally, wait until the field changed sufficiently</span>
+    <span class="c1"># enough for this measurement</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now the resulting <code class="docutils literal notranslate"><span class="pre">ramp_datasets</span></code> can be merged along time/field-x/field-y/field-z axes, as desired (see above), and used further, e.g. plotted.</p>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {}, "version_major": 2, "version_minor": 0}
+</script></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html" class="btn btn-neutral float-left" title="QCoDeS example with Textronix DPO 7200xx scopes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Qcodes%20example%20with%20Agilent%2034400A.html" class="btn btn-neutral float-right" title="QCoDeS Example with Agilent 34400A" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
