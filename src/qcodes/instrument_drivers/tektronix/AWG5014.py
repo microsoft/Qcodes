@@ -64,33 +64,33 @@ class TektronixAWG5014(VisaInstrument):
     """
 
     AWG_FILE_FORMAT_HEAD: ClassVar[dict[str, str]] = {
-        'SAMPLING_RATE': 'd',    # d
-        'REPETITION_RATE': 'd',    # # NAME?
-        'HOLD_REPETITION_RATE': 'h',    # True | False
-        'CLOCK_SOURCE': 'h',    # Internal | External
-        'REFERENCE_SOURCE': 'h',    # Internal | External
-        'EXTERNAL_REFERENCE_TYPE': 'h',    # Fixed | Variable
-        'REFERENCE_CLOCK_FREQUENCY_SELECTION': 'h',
-        'REFERENCE_MULTIPLIER_RATE': 'h',
-        'DIVIDER_RATE': 'h',   # 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256
-        'TRIGGER_SOURCE': 'h',    # Internal | External
-        'INTERNAL_TRIGGER_RATE': 'd',
-        'TRIGGER_INPUT_IMPEDANCE': 'h',    # 50 ohm | 1 kohm
-        'TRIGGER_INPUT_SLOPE': 'h',    # Positive | Negative
-        'TRIGGER_INPUT_POLARITY': 'h',    # Positive | Negative
-        'TRIGGER_INPUT_THRESHOLD': 'd',
-        'EVENT_INPUT_IMPEDANCE': 'h',    # 50 ohm | 1 kohm
-        'EVENT_INPUT_POLARITY': 'h',    # Positive | Negative
-        'EVENT_INPUT_THRESHOLD': 'd',
-        'JUMP_TIMING': 'h',    # Sync | Async
-        'INTERLEAVE': 'h',    # On |  This setting is stronger than .
-        'ZEROING': 'h',    # On | Off
-        'COUPLING': 'h',    # The Off | Pair | All setting is weaker than .
-        'RUN_MODE': 'h',    # Continuous | Triggered | Gated | Sequence
-        'WAIT_VALUE': 'h',    # First | Last
-        'RUN_STATE': 'h',    # On | Off
-        'INTERLEAVE_ADJ_PHASE': 'd',
-        'INTERLEAVE_ADJ_AMPLITUDE': 'd',
+        "SAMPLING_RATE": "d",  # d
+        "REPETITION_RATE": "d",  # # NAME?
+        "HOLD_REPETITION_RATE": "h",  # True | False
+        "CLOCK_SOURCE": "h",  # Internal | External
+        "REFERENCE_SOURCE": "h",  # Internal | External
+        "EXTERNAL_REFERENCE_TYPE": "h",  # Fixed | Variable
+        "REFERENCE_CLOCK_FREQUENCY_SELECTION": "h",
+        "REFERENCE_MULTIPLIER_RATE": "h",
+        "DIVIDER_RATE": "h",  # 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256
+        "TRIGGER_SOURCE": "h",  # Internal | External
+        "INTERNAL_TRIGGER_RATE": "d",
+        "TRIGGER_INPUT_IMPEDANCE": "h",  # 50 ohm | 1 kohm
+        "TRIGGER_INPUT_SLOPE": "h",  # Positive | Negative
+        "TRIGGER_INPUT_POLARITY": "h",  # Positive | Negative
+        "TRIGGER_INPUT_THRESHOLD": "d",
+        "EVENT_INPUT_IMPEDANCE": "h",  # 50 ohm | 1 kohm
+        "EVENT_INPUT_POLARITY": "h",  # Positive | Negative
+        "EVENT_INPUT_THRESHOLD": "d",
+        "JUMP_TIMING": "h",  # Sync | Async
+        "INTERLEAVE": "h",  # On |  This setting is stronger than .
+        "ZEROING": "h",  # On | Off
+        "COUPLING": "h",  # The Off | Pair | All setting is weaker than .
+        "RUN_MODE": "h",  # Continuous | Triggered | Gated | Sequence
+        "WAIT_VALUE": "h",  # First | Last
+        "RUN_STATE": "h",  # On | Off
+        "INTERLEAVE_ADJ_PHASE": "d",
+        "INTERLEAVE_ADJ_AMPLITUDE": "d",
     }
     AWG_FILE_FORMAT_CHANNEL: ClassVar[dict[str, str]] = {
         # Include NULL.(Output Waveform Name for Non-Sequence mode)
