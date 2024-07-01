@@ -1224,12 +1224,12 @@ class Measurement:
 
             setpoints_lists.append(my_setpoints)
 
-        for i, setpoints in enumerate(setpoints_lists):
+        for i, expanded_setpoints in enumerate(setpoints_lists):
             self._register_parameter(
                 multiparameter.full_names[i],
                 multiparameter.labels[i],
                 multiparameter.units[i],
-                setpoints,
+                expanded_setpoints,
                 basis,
                 paramtype,
             )

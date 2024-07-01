@@ -59,7 +59,7 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> dict[str, int]:
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
     no_of_runs = no_of_runs or 0
 
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
 
         pbar = tqdm(range(1, no_of_runs+1))
         pbar.set_description("Fixing database")
@@ -73,8 +73,7 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> dict[str, int]:
                           'standalones']
 
         for run_id in pbar:
-
-            desc_str = get_run_description(conn, run_id)
+            desc_str = get_run_description(atomic_conn, run_id)
             desc_ser = json.loads(desc_str)
             idps_ser = desc_ser['interdependencies']
 
@@ -85,7 +84,7 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> dict[str, int]:
                     _convert_run_describer_v1_like_dict_to_v0_like_dict(
                         desc_ser)
                 json_str = json.dumps(old_desc_ser)
-                _update_run_description(conn, run_id, json_str)
+                _update_run_description(atomic_conn, run_id, json_str)
                 runs_fixed += 1
             else:
                 raise RuntimeError(f'Invalid runs_description for run_id: '

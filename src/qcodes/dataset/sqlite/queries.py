@@ -1054,16 +1054,16 @@ def get_runs(conn: ConnectionPlus, exp_id: int | None = None) -> list[int]:
     Returns:
         list of rows
     """
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
         if exp_id:
             sql = """
             SELECT run_id FROM runs
             WHERE exp_id = ?
             """
-            c = transaction(conn, sql, exp_id)
+            c = transaction(atomic_conn, sql, exp_id)
         else:
             sql = "SELECT run_id FROM runs"
-            c = transaction(conn, sql)
+            c = transaction(atomic_conn, sql)
 
     return [run_id for run_id, in c.fetchall()]
 
@@ -1160,7 +1160,7 @@ def _insert_run(
     run_counter += 1
     if captured_counter is None:
         newly_created_run = True
-        with atomic(conn) as conn:
+        with atomic(conn) as atomic_conn:
             query = """
             SELECT
                 max(result_counter)
@@ -1168,7 +1168,7 @@ def _insert_run(
                 runs
             WHERE
                 exp_id = ?"""
-            curr = transaction(conn, query, exp_id)
+            curr = transaction(atomic_conn, query, exp_id)
             existing_captured_counter = one(curr, 0)
             if existing_captured_counter is not None:
                 captured_counter = existing_captured_counter + 1
@@ -1176,13 +1176,13 @@ def _insert_run(
                 captured_counter = run_counter
 
     if captured_run_id is None:
-        with atomic(conn) as conn:
+        with atomic(conn) as atomic_conn:
             query = """
             SELECT
                 max(run_id)
             FROM
                 runs"""
-            curr = transaction(conn, query)
+            curr = transaction(atomic_conn, query)
             existing_captured_run_id = one(curr, 0)
         if existing_captured_run_id is not None:
             captured_run_id = existing_captured_run_id + 1
@@ -1202,7 +1202,7 @@ def _insert_run(
     # specifically dependencies should come before the dependent parameters for links
     # in the layout table to work correctly
 
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
 
         if legacy_param_specs:
             query = f"""
@@ -1223,7 +1223,7 @@ def _insert_run(
                 (?,?,?,?,?,?,?,?,?,?,?,?)
             """
             curr = transaction(
-                conn,
+                atomic_conn,
                 query,
                 name,
                 exp_id,
@@ -1242,7 +1242,7 @@ def _insert_run(
             if run_id is None:
                 raise RuntimeError(f"Creation of run with guid: {guid} failed")
 
-            _add_parameters_to_layout_and_deps(conn, run_id, *legacy_param_specs)
+            _add_parameters_to_layout_and_deps(atomic_conn, run_id, *legacy_param_specs)
 
         else:
             query = f"""
@@ -1420,8 +1420,8 @@ def _update_run_description(conn: ConnectionPlus, run_id: int,
           SET run_description = ?
           WHERE run_id = ?
           """
-    with atomic(conn) as conn:
-        conn.cursor().execute(sql, (description, run_id))
+    with atomic(conn) as atomic_conn:
+        atomic_conn.cursor().execute(sql, (description, run_id))
 
 
 def update_parent_datasets(conn: ConnectionPlus,
@@ -1437,8 +1437,8 @@ def update_parent_datasets(conn: ConnectionPlus,
           SET parent_datasets = ?
           WHERE run_id = ?
           """
-    with atomic(conn) as conn:
-        conn.cursor().execute(sql, (links_str, run_id))
+    with atomic(conn) as atomic_conn:
+        atomic_conn.cursor().execute(sql, (links_str, run_id))
 
 
 def set_run_timestamp(
@@ -1466,8 +1466,8 @@ def set_run_timestamp(
           WHERE run_id = ?
           """
 
-    with atomic(conn) as conn:
-        c = conn.cursor()
+    with atomic(conn) as atomic_conn:
+        c = atomic_conn.cursor()
         old_timestamp = one(c.execute(query, (run_id,)), "run_timestamp")
         if old_timestamp is not None:
             raise RuntimeError(
@@ -1501,34 +1501,34 @@ def add_parameter(
            results table?
         parameter: the list of ParamSpecs for parameters to add
     """
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
 
         sql = "SELECT result_table_name FROM runs WHERE run_id=?"
-        formatted_name = one(transaction(conn, sql, run_id), "result_table_name")
+        formatted_name = one(transaction(atomic_conn, sql, run_id), "result_table_name")
 
         p_names = []
         for p in parameter:
             if insert_into_results_table:
-                insert_column(conn, formatted_name, p.name, p.type)
+                insert_column(atomic_conn, formatted_name, p.name, p.type)
             p_names.append(p.name)
         # get old parameters column from run table
         sql = """
         SELECT parameters FROM runs
         WHERE run_id=?
         """
-        with atomic(conn) as conn:
-            c = transaction(conn, sql, run_id)
+        with atomic(atomic_conn) as atomic_conn_1:
+            c = transaction(atomic_conn_1, sql, run_id)
         old_parameters = one(c, 'parameters')
         if old_parameters:
             new_parameters = ",".join([old_parameters] + p_names)
         else:
             new_parameters = ",".join(p_names)
         sql = "UPDATE runs SET parameters=? WHERE run_id=?"
-        with atomic(conn) as conn:
-            transaction(conn, sql, new_parameters, run_id)
+        with atomic(atomic_conn) as atomic_conn_1:
+            transaction(atomic_conn_1, sql, new_parameters, run_id)
 
         # Update the layouts table
-        c = _add_parameters_to_layout_and_deps(conn, run_id, *parameter)
+        c = _add_parameters_to_layout_and_deps(atomic_conn, run_id, *parameter)
 
 
 def _add_parameters_to_layout_and_deps(
@@ -1548,14 +1548,13 @@ def _add_parameters_to_layout_and_deps(
     VALUES {placeholder}
     """
 
-    with atomic(conn) as conn:
-        c = transaction(conn, sql, *layout_args)
+    with atomic(conn) as atomic_conn:
+        c = transaction(atomic_conn, sql, *layout_args)
 
         for p in parameter:
 
             if p.depends_on != '':
-
-                layout_id = _get_layout_id(conn, p, run_id)
+                layout_id = _get_layout_id(atomic_conn, p, run_id)
 
                 deps = p.depends_on.split(', ')
                 for ax_num, dp in enumerate(deps):
@@ -1565,7 +1564,7 @@ def _add_parameters_to_layout_and_deps(
                     WHERE run_id=? and parameter=?;
                     """
 
-                    c = transaction(conn, sql, run_id, dp)
+                    c = transaction(atomic_conn, sql, run_id, dp)
                     dep_ind = one(c, 'layout_id')
 
                     sql = """
@@ -1573,7 +1572,7 @@ def _add_parameters_to_layout_and_deps(
                     VALUES (?,?,?)
                     """
 
-                    c = transaction(conn, sql, layout_id, dep_ind, ax_num)
+                    c = transaction(atomic_conn, sql, layout_id, dep_ind, ax_num)
     return c
 
 
@@ -1602,7 +1601,7 @@ def _create_run_table(
     """
     _validate_table_name(formatted_name)
 
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
 
         if parameters and values:
             _parameters = ",".join(p.sql_repr() for p in parameters)
@@ -1612,10 +1611,11 @@ def _create_run_table(
                 {_parameters}
             );
             """
-            transaction(conn, query)
+            transaction(atomic_conn, query)
             # now insert values
-            insert_values(conn, formatted_name,
-                          [p.name for p in parameters], values)
+            insert_values(
+                atomic_conn, formatted_name, [p.name for p in parameters], values
+            )
         elif parameters:
             _parameters = ",".join(p.sql_repr() for p in parameters)
             query = f"""
@@ -1624,14 +1624,14 @@ def _create_run_table(
                 {_parameters}
             );
             """
-            transaction(conn, query)
+            transaction(atomic_conn, query)
         else:
             query = f"""
             CREATE TABLE "{formatted_name}" (
                 id INTEGER PRIMARY KEY
             );
             """
-            transaction(conn, query)
+            transaction(atomic_conn, query)
 
 
 def create_run(
@@ -1974,13 +1974,13 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
         run_id: int, conn: ConnectionPlus, guid_comps: dict[str, Any]
     ) -> None:
         guid_str = build_guid_from_components(guid_comps)
-        with atomic(conn) as conn:
+        with atomic(conn) as atomic_conn:
             sql = """
                    UPDATE runs
                    SET guid = ?
                    WHERE run_id = ?
                    """
-            conn.execute(sql, (guid_str, run_id))
+            atomic_conn.execute(sql, (guid_str, run_id))
 
         log.info(f'Succesfully updated run number {run_id}.')
 

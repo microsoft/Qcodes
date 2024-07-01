@@ -606,10 +606,10 @@ class LakeshoreBase(VisaInstrument):
                                "TempSensors",
                                self.CHANNEL_CLASS,
                                snapshotable=False)
-        for name, command in self.channel_name_command.items():
-            channel = self.CHANNEL_CLASS(self, name, command)
+        for channel_name, command in self.channel_name_command.items():
+            channel = self.CHANNEL_CLASS(self, channel_name, command)
             channels.append(channel)
-            self.add_submodule(name, channel)
+            self.add_submodule(channel_name, channel)
         self.add_submodule("channels", channels.to_channel_tuple())
 
         # on Model335 we need to change serial port settings

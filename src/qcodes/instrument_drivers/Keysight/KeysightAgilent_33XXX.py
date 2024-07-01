@@ -69,7 +69,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
                 output = float('inf')
             else:
                 output = float(inputstring)
-                if parser == int:
+                if parser is int:
                     output = parser(output)
 
             return output
