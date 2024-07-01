@@ -474,7 +474,7 @@ def test_ramp_down_first(current_driver, caplog: LogCaptureFixture) -> None:
             # get the order in which the ramps down occur
             order = get_ramp_down_order(messages)
             # the first one should be the one for which delta < 0
-            assert order[0][0] == names[count]
+            assert order[0][0] == ramp_down_name
 
 
 def test_field_limit_exception(current_driver) -> None:

@@ -293,7 +293,7 @@ def insert_many_values(conn: ConnectionPlus,
     stop = 0
 
     return_value = None
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
         for ii, chunk in enumerate(chunks):
             _values_x_params = ",".join([_values] * chunk)
 
@@ -307,7 +307,7 @@ def insert_many_values(conn: ConnectionPlus,
             flattened_values = list(
                 itertools.chain.from_iterable(values[start:stop]))
 
-            c = transaction(conn, query, *flattened_values)
+            c = transaction(atomic_conn, query, *flattened_values)
 
             if ii == 0:
                 return_value = c.lastrowid
@@ -365,14 +365,14 @@ def insert_column(
     if name in [col[description["name"]] for col in columns]:
         return
 
-    with atomic(conn) as conn:
+    with atomic(conn) as atomic_conn:
         if paramtype:
-            transaction(conn,
-                        f'ALTER TABLE "{table}" ADD COLUMN "{name}" '
-                        f'{paramtype}')
+            transaction(
+                atomic_conn,
+                f'ALTER TABLE "{table}" ADD COLUMN "{name}" {paramtype}',
+            )
         else:
-            transaction(conn,
-                        f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
+            transaction(atomic_conn, f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
 def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:

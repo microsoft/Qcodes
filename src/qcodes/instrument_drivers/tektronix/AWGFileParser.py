@@ -7,38 +7,38 @@ from typing import Any
 import numpy as np
 
 AWG_FILE_FORMAT = {
-    'MAGIC': 'h',
-    'VERSION': 'h',
-    'SAMPLING_RATE': 'd',    # d
-    'REPETITION_RATE': 'd',    # # NAME?
-    'HOLD_REPETITION_RATE': 'h',    # True | False
-    'CLOCK_SOURCE': 'h',    # Internal | External
-    'REFERENCE_SOURCE': 'h',    # Internal | External
-    'EXTERNAL_REFERENCE_TYPE': 'h',    # Fixed | Variable
-    'REFERENCE_CLOCK_FREQUENCY_SELECTION': 'h',  # 10 MHz | 20 MHz | 100 MHz
-    'REFERENCE_MULTIPLIER_RATE': 'h',    #
-    'DIVIDER_RATE': 'h',   # 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256
-    'TRIGGER_SOURCE': 'h',    # Internal | External
-    'INTERNAL_TRIGGER_RATE': 'd',    #
-    'TRIGGER_INPUT_IMPEDANCE': 'h',    # 50 ohm | 1 kohm
-    'TRIGGER_INPUT_SLOPE': 'h',    # Positive | Negative
-    'TRIGGER_INPUT_POLARITY': 'h',    # Positive | Negative
-    'TRIGGER_INPUT_THRESHOLD': 'd',    #
-    'EVENT_INPUT_IMPEDANCE': 'h',    # 50 ohm | 1 kohm
-    'EVENT_INPUT_POLARITY': 'h',    # Positive | Negative
-    'EVENT_INPUT_THRESHOLD': 'd',
-    'JUMP_TIMING': 'h',    # Sync | Async
-    'INTERLEAVE': 'h',    # On |  This setting is stronger than coupling
-    'ZEROING': 'h',    # On | Off
-    'COUPLING': 'h',    # The Off | Pair | All setting is weaker than .
-    'RUN_MODE': 'h',    # Continuous | Triggered | Gated | Sequence
-    'WAIT_VALUE': 'h',    # First | Last
-    'RUN_STATE': 'h',    # On | Off
-    'INTERLEAVE_ADJ_PHASE': 'd',
-    'INTERLEAVE_ADJ_AMPLITUDE': 'd',
-    'EVENT_JUMP_MODE': 'h',  # Event jump | Dynamic jump
-    'TABLE_JUMP_STROBE': 'h',  # On
-    'TABLE_JUMP_DEFINITION': 'ignore',  # Array of tablejump
+    "MAGIC": "h",
+    "VERSION": "h",
+    "SAMPLING_RATE": "d",  # d
+    "REPETITION_RATE": "d",  # # NAME?
+    "HOLD_REPETITION_RATE": "h",  # True | False
+    "CLOCK_SOURCE": "h",  # Internal | External
+    "REFERENCE_SOURCE": "h",  # Internal | External
+    "EXTERNAL_REFERENCE_TYPE": "h",  # Fixed | Variable
+    "REFERENCE_CLOCK_FREQUENCY_SELECTION": "h",  # 10 MHz | 20 MHz | 100 MHz
+    "REFERENCE_MULTIPLIER_RATE": "h",
+    "DIVIDER_RATE": "h",  # 1 | 2 | 4 | 8 | 16 | 32 | 64 | 128 | 256
+    "TRIGGER_SOURCE": "h",  # Internal | External
+    "INTERNAL_TRIGGER_RATE": "d",
+    "TRIGGER_INPUT_IMPEDANCE": "h",  # 50 ohm | 1 kohm
+    "TRIGGER_INPUT_SLOPE": "h",  # Positive | Negative
+    "TRIGGER_INPUT_POLARITY": "h",  # Positive | Negative
+    "TRIGGER_INPUT_THRESHOLD": "d",
+    "EVENT_INPUT_IMPEDANCE": "h",  # 50 ohm | 1 kohm
+    "EVENT_INPUT_POLARITY": "h",  # Positive | Negative
+    "EVENT_INPUT_THRESHOLD": "d",
+    "JUMP_TIMING": "h",  # Sync | Async
+    "INTERLEAVE": "h",  # On |  This setting is stronger than coupling
+    "ZEROING": "h",  # On | Off
+    "COUPLING": "h",  # The Off | Pair | All setting is weaker than .
+    "RUN_MODE": "h",  # Continuous | Triggered | Gated | Sequence
+    "WAIT_VALUE": "h",  # First | Last
+    "RUN_STATE": "h",  # On | Off
+    "INTERLEAVE_ADJ_PHASE": "d",
+    "INTERLEAVE_ADJ_AMPLITUDE": "d",
+    "EVENT_JUMP_MODE": "h",  # Event jump | Dynamic jump
+    "TABLE_JUMP_STROBE": "h",  # On
+    "TABLE_JUMP_DEFINITION": "ignore",  # Array of tablejump
     # ---------------------
     # Channel 1 settings
     # ---------------------
@@ -543,10 +543,10 @@ def _parser3(sequencelist: list[list[Any]], wfmdict: dict[Any, Any]) -> _parser3
         wfms_temp = []
         m1s_temp = []
         m2s_temp = []
-        for wfmdict in sequencedict[key]:
-            wfms_temp.append(wfmdict['wfm'])
-            m1s_temp.append(wfmdict['m1'])
-            m2s_temp.append(wfmdict['m2'])
+        for parsed_wfmdict in sequencedict[key]:
+            wfms_temp.append(parsed_wfmdict["wfm"])
+            m1s_temp.append(parsed_wfmdict["m1"])
+            m2s_temp.append(parsed_wfmdict["m2"])
 
         wfms.append(wfms_temp)
         m1s.append(m1s_temp)
