@@ -262,7 +262,7 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
-pillow==10.3.0
+pillow==10.4.0
     # via
     #   qcodes (pyproject.toml)
     #   matplotlib
