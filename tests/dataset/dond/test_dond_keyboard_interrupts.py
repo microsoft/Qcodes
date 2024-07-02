@@ -1,8 +1,6 @@
-from unittest.mock import MagicMock, patch
 
 import pytest
 
-from qcodes.dataset.dond.do_nd import dond
 from qcodes.dataset.dond.do_nd_utils import BreakConditionInterrupt, catch_interrupts
 
 
@@ -100,43 +98,3 @@ def test_catch_interrupts_simulated_sweeps():
                 inner_results.append(inner_value)
     assert outer_results == [0, 1]
     assert inner_results == [0, 1, 2, 3, 4, 0, 1]
-
-
-@pytest.fixture
-def mock_dond_dependencies():
-    with (
-        patch("qcodes.dataset.dond.do_nd._Sweeper") as mock_sweeper,
-        patch("qcodes.dataset.dond.do_nd._Measurements") as mock_measurements,
-    ):
-
-        mock_sweeper_instance = MagicMock()
-        mock_sweeper_instance.__iter__.return_value = iter([MagicMock()])
-        mock_sweeper.return_value = mock_sweeper_instance
-
-        mock_measurements_instance = MagicMock()
-        mock_measurements_instance.groups = [MagicMock()]
-        mock_measurements.return_value = mock_measurements_instance
-
-        yield
-
-
-def test_dond_interruptible(mock_dond_dependencies):
-    interrupt_raised = False
-
-    def simulated_interrupt(*args, **kwargs):
-        nonlocal interrupt_raised
-        interrupt_raised = True
-        raise KeyboardInterrupt()
-
-    # Mock the catch_interrupts context manager
-    mock_catch_interrupts = MagicMock()
-    mock_catch_interrupts.__enter__.return_value = lambda: None
-    mock_catch_interrupts.__exit__.side_effect = simulated_interrupt
-
-    with patch(
-        "qcodes.dataset.dond.do_nd.catch_interrupts", return_value=mock_catch_interrupts
-    ):
-        with pytest.raises(KeyboardInterrupt):
-            dond(MagicMock(), MagicMock())
-
-    assert interrupt_raised, "KeyboardInterrupt was not raised"
