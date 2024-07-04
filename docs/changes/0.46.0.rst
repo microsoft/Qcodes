@@ -1,4 +1,4 @@
-QCoDeS 0.46.0 (2024-06-27)
+QCoDeS 0.46.0 (2024-07-04)
 ==========================
 
 Breaking Changes:
@@ -11,7 +11,7 @@ Breaking Changes:
   documented as TypedDics classes that can be used to type `**kwargs` in the subclass constructors.
   See `Creating QCoDeS instrument drivers` for usage examples.
 
-  This also means that the these arguments **must** be passed as keyword arguments, and not as positional arguments.
+  This also means that these arguments **must** be passed as keyword arguments, and not as positional arguments.
   This specifically includeds passing ``label`` and ``metadata`` to direct subclasses of ``Instrument`` as well as
   ``terminator`` to subclasses of ``VisaInstrument``.
 
@@ -26,6 +26,10 @@ Breaking Changes:
   overwritten by a new parameter. To remove the existing Parameter use the new `instrument.remove_parameter`` method.
   If the attribute is not a ParameterBase this will instead warn. It is the intention that this becomes an error in the future.
   (:pr:`6174`) (:pr:`6211`)
+
+- Updated dond functions to to re-raise KeyboardInterrupt for better interrupt handling making it easier to stop long-running measurement
+  loops and reducing the need for kernel restarts. This meas that if you interrupt a `dond`` function with a keyboard interrupt not only
+  the measurement but any pending code to execute will be interrupted. In the process logging for interrupted measurements has been improved. (:pr:`6192`)
 
 
 Improved:
