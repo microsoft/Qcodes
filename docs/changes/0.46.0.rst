@@ -27,6 +27,10 @@ Breaking Changes:
   If the attribute is not a ParameterBase this will instead warn. It is the intention that this becomes an error in the future.
   (:pr:`6174`) (:pr:`6211`)
 
+- Updated dond functions to to re-raise KeyboardInterrupt for better interrupt handling making it easier to stop long-running measurement
+  loops and reducing the need for kernel restarts. This meas that if you interrupt a `dond`` function with a keyboard interrupt not only
+  the measurement but any pending code to execute will be interrupted. In the process logging for interrupted measurements has been improved. (:pr:`6192`)
+
 
 Improved:
 ---------

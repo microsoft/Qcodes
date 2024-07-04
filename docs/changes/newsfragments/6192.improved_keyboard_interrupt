@@ -1,4 +1,0 @@
-- Updated [`catch_interrupts`](https://github.com/QCoDeS/Qcodes/blob/main/src/qcodes/dataset/dond/do_nd_utils.py#L161) function in `do_nd_utils.py` to re-raise KeyboardInterrupt
-for better interrupt handling making it easier to stop long-running measurement loops and reducing the need for kernel restarts.
-- Separate handling for KeyboardInterrupt and BreakConditionInterrupt.
-- Improved logging for interrupted measurements in `catch_interrupts` function.
