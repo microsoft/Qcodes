@@ -99,7 +99,7 @@ h5py==3.11.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.104.2
+hypothesis==6.105.0
     # via qcodes (pyproject.toml)
 idna==3.7
     # via requests
