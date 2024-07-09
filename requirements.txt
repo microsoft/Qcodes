@@ -139,7 +139,7 @@ jsonpointer==3.0.0
     # via sphinx-jsonschema
 jsonref==1.1.0
     # via zhinst-toolkit
-jsonschema==4.22.0
+jsonschema==4.23.0
     # via
     #   qcodes (pyproject.toml)
     #   nbformat
