@@ -349,7 +349,7 @@ class DataSetInMem(BaseDataSet):
         elif xr_path is not None and not xr_path.is_file():
             success = False
             warnings.warn(
-                "Could not load raw data for dataset with guid : {ds.guid} from location {xr_path}"
+                f"Could not load raw data for dataset with guid : {ds.guid} from location {xr_path}"
             )
         else:
             warnings.warn(f"No raw data stored for dataset with guid : {ds.guid}")
