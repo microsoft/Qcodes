@@ -12,7 +12,7 @@ try:
     from numpy.exceptions import VisibleDeprecationWarning
 except ImportError:
     # numpy < 2.0
-    from numpy import VisibleDeprecationWarning
+    from numpy import VisibleDeprecationWarning  # type: ignore[attr-defined, no-redef]
 
 
 def list_of_data_to_maybe_ragged_nd_array(
