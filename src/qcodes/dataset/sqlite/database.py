@@ -161,7 +161,8 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:
-        sqlite3.register_adapter(complex_type, _adapt_complex)
+        # https://github.com/python/typeshed/issues/2429
+        sqlite3.register_adapter(complex_type, _adapt_complex)  # type: ignore[arg-type]
     sqlite3.register_converter("complex", _convert_complex)
 
     if debug:

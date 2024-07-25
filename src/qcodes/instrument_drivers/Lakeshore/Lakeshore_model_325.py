@@ -101,7 +101,7 @@ class LakeshoreModel325Status(IntFlag):
     # is merged
     @classmethod
     def from_bytes(
-        cls: "type[Self]",
+        cls,
         bytes: "Iterable[SupportsIndex] | SupportsBytes | Buffer",
         byteorder: Literal["big", "little"] = "big",
         *,
