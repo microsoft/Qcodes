@@ -275,7 +275,7 @@ prompt-toolkit==3.0.47
     # via ipython
 psutil==6.0.0
     # via ipykernel
-pure-eval==0.2.2
+pure-eval==0.2.3
     # via stack-data
 pyarrow==16.1.0
     # via
