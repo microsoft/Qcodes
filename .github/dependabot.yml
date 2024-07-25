@@ -16,6 +16,10 @@ updates:
         - "ipywidgets"
         - "widgetsnbextension"
         - "jupyterlab-widgets"
+    sphinx:
+      patterns:
+        - "sphinx"
+        - "sphinxcontrib*"
 
 - package-ecosystem: github-actions
   directory: "/"
