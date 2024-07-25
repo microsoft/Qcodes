@@ -1,0 +1,2 @@
+- Add power output parameters to LakeShore335 driver,
+  this allows to configure the maximum heater current.
