@@ -53,6 +53,7 @@ dependencies = [
     "tornado>=6.3.3",
     "ipython>=8.10.0",
     "pillow>=9.0.0",
+    "pydantic>=2.0.0",
 ]
 
 dynamic = ["version"]
