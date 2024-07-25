@@ -130,9 +130,9 @@ class LakeshoreBaseOutput(InstrumentChannel):
         self.output_type: GroupParameter = self.add_parameter(
             name="output_type",
             docstring="Output type (Output 2 only): 0=Current, 1=Voltage",
-            val_mapping={"current": 0, "voltage": 1}
-            if output_index == 1
-            else {"current": 0},
+            val_mapping=(
+                {"current": 0, "voltage": 1} if output_index == 1 else {"current": 0}
+            ),
             parameter_class=GroupParameter,
         )
         """Output type (Output 2 only): 0=Current, 1=Voltage"""
