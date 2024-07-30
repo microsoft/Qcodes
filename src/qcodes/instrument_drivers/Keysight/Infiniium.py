@@ -701,6 +701,24 @@ class KeysightInfiniiumChannel(InstrumentChannel):
         self._channel = channel
 
         super().__init__(parent, name, **kwargs)
+
+        # input
+        # On MXR/EXR-Series oscilloscopes:
+        # DC — DC coupling, 1 MΩ impedance.
+        # DC50 | DCFifty — DC coupling, 50Ω impedance.
+        # AC — AC coupling, 1 MΩ impedance.
+        # LFR1 | LFR2 — AC 1 MΩ input impedance.
+        # When no probe is attached, the coupling for each channel can be AC, DC, DC50, or DCFifty.
+        # If you have an 1153A probe attached, the valid parameters are DC, LFR1, and LFR2 (low-frequency reject).
+        self.input: Parameter = Parameter(
+            name="input",
+            instrument=self,
+            label=f"Channel {channel} input coupling & impedance",
+            set_cmd=f"CHAN{channel}:INP {{}}",
+            get_cmd=f"CHAN{channel}:INP?",
+            vals=vals.Enum("DC", "DC50", "AC", "LFR1", "LFR2"),
+        )
+
         # display
         self.display: Parameter = Parameter(
             name="display",
