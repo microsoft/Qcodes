@@ -927,7 +927,7 @@ class KeysightInfiniium(VisaInstrument):
             set_cmd=":TRIGger:EDGE:SOURce {}",
             vals=vals.Enum(
                 *(
-                    [f"CHAN{i}" for i in range(1, 4 + 1)]
+                    [f"CHAN{i}" for i in range(1, self.no_channels + 1)]
                     + [f"DIG{i}" for i in range(16 + 1)]
                     + ["AUX", "LINE"]
                 )
