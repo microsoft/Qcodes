@@ -190,7 +190,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mistune==3.0.2
     # via nbconvert
-mypy==1.11.0
+mypy==1.11.1
     # via qcodes (pyproject.toml)
 mypy-extensions==1.0.0
     # via mypy
@@ -503,7 +503,7 @@ wrapt==1.16.0
     #   qcodes (pyproject.toml)
     #   deprecated
     #   qcodes
-xarray==2024.6.0
+xarray==2024.7.0
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
