@@ -1255,6 +1255,35 @@ class KeysightInfiniium(VisaInstrument):
             if timeout is not None:
                 self.visa_handle.timeout = old_timeout
 
+    def screenshot(self,
+                   path: str = f"./screenshot",
+                   with_time: bool = False,
+                   time_fmt: str = "%Y-%m-%d_%H-%M-%S",
+                   divider: str = "_") -> Optional[np.ndarray]:
+        """ save screen to {path} with {image_type}: bmp, jpg, gif, tif, png
+
+            return np.array if sucessfully saved, else return None
+        """
+        from PIL.Image import open as pil_open
+        from io import BytesIO
+        from datetime import date, datetime
+        from os.path import splitext
+        img_name, img_type = splitext(path)
+        img_path = f"{img_name}{with_time and divider + datetime.now().strftime(time_fmt) or ''}{img_type.lower()}"
+        try:
+            with open(img_path, "wb") as f :
+                screen_bytes = self.visa_handle.query_binary_values(
+                    f":DISPlay:DATA? {img_type.upper()[1:]}", # without .
+                    # https://docs.python.org/3/library/struct.html#format-characters
+                    datatype='B', # Capitcal B for unsigned byte
+                    container=bytes
+                )
+                f.write(screen_bytes)
+            print(f"Screen image written to {img_path}")
+            return np.asarray(pil_open(BytesIO(screen_bytes)))
+        except Exception as e:
+            print(f"Failed to save screenshot, Error occurred: {e}")
+            return None
 
 Infiniium = KeysightInfiniium
 """
