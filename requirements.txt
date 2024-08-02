@@ -334,7 +334,7 @@ pyzmq==26.0.3
     # via
     #   ipykernel
     #   jupyter-client
-qcodes-loop==0.1.2
+qcodes-loop==0.1.3
     # via qcodes (pyproject.toml)
 referencing==0.35.1
     # via
