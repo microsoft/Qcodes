@@ -56,7 +56,7 @@ def _set_parameter_factory(
             # that cmd is a str even if this is defined inside
             # an if isinstance block
             assert isinstance(cmd, str)
-            # TODO it is possible to format str with additional args.
+            # TODO it is possible to format str with more than one arg.
             # this does not seem to have been tested
             formatted_cmd = cmd.format(*args)
             return function(formatted_cmd)
