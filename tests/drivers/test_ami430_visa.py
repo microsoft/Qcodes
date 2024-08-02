@@ -1287,8 +1287,13 @@ def test_change_field_units_parameter(ami430, new_value, unit_string) -> None:
     ami430.field_units("tesla")
 
 
-def test_switch_heater_enabled(ami430) -> None:
+def test_switch_heater_enabled(ami430, caplog) -> None:
     assert ami430.switch_heater.enabled() is False
+    # make sure that getting snapshot with heater disabled works without warning
+    caplog.clear()
+    with caplog.at_level(logging.WARNING, logger=ami430.log.name):
+        ami430.snapshot(update=True)
+    assert len(caplog.records) == 0
     ami430.switch_heater.enabled(True)
     assert ami430.switch_heater.enabled() is True
     ami430.switch_heater.enabled(False)
