@@ -67,10 +67,10 @@ class Experiment(Sized):
 
         self.conn = conn_from_dbpath_or_conn(conn, path_to_db)
 
-        max_id = len(get_experiments(self.conn))
+        experiments_list = get_experiments(self.conn)
 
         if exp_id is not None:
-            if exp_id not in range(1, max_id+1):
+            if exp_id not in experiments_list:
                 raise ValueError('No such experiment in the database')
             self._exp_id = exp_id
         else:
@@ -86,7 +86,7 @@ class Experiment(Sized):
                                  "(name, exp_id, run_counter)") from e
 
             log.info(f"creating new experiment in {self.path_to_db}")
-
+            max_id = max(experiments_list, default=0)
             name = name or f"experiment_{max_id+1}"
             sample_name = sample_name or "some_sample"
             self._exp_id = ne(self.conn, name, sample_name, format_string)
