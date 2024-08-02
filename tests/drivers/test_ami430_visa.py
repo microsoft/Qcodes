@@ -23,6 +23,7 @@ from qcodes.instrument_drivers.american_magnetics.AMI430_visa import (
     AMI430_3D,  # pyright: ignore[reportDeprecated]
 )
 from qcodes.math_utils import FieldVector
+from qcodes.utils import QCoDeSDeprecationWarning
 from qcodes.utils.types import (
     numpy_concrete_floats,
     numpy_concrete_ints,
@@ -132,7 +133,7 @@ def test_instantiation_from_names(
     names as opposed from their instances.
     """
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMIModel4303D.close_all)
+    request.addfinalizer(Instrument.close_all)
 
     driver = AMIModel4303D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
 
@@ -145,21 +146,31 @@ def test_instantiation_compat_classes(request: FixtureRequest) -> None:
     """
     Test that we can instantiate drivers using the old names
     """
-    request.addfinalizer(AMIModel4303D.close_all)
-    request.addfinalizer(AMI430_3D.close_all)  # pyright: ignore[reportDeprecated]
-    mag_x = AMI430(  # pyright: ignore[reportDeprecated]
-        "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
-    )
-    mag_y = AMI430(  # pyright: ignore[reportDeprecated]
-        "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
-    )
-    mag_z = AMI430(  # pyright: ignore[reportDeprecated]
-        "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
-    )
+    request.addfinalizer(Instrument.close_all)
 
-    driver = AMI430_3D(  # pyright: ignore[reportDeprecated]
-        "AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit
-    )
+    with pytest.warns(QCoDeSDeprecationWarning):
+        mag_x = AMI430(  # pyright: ignore[reportDeprecated]
+            "x",
+            address="GPIB::1::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+        )
+        mag_y = AMI430(  # pyright: ignore[reportDeprecated]
+            "y",
+            address="GPIB::2::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+        )
+        mag_z = AMI430(  # pyright: ignore[reportDeprecated]
+            "z",
+            address="GPIB::3::INSTR",
+            pyvisa_sim_file="AMI430.yaml",
+            terminator="\n",
+        )
+
+        driver = AMI430_3D(  # pyright: ignore[reportDeprecated]
+            "AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit
+        )
 
     assert driver._instrument_x is mag_x
     assert driver._instrument_y is mag_y
@@ -170,7 +181,7 @@ def test_visa_interaction(request: FixtureRequest) -> None:
     """
     Test that closing one instrument we can still use the other simulated instruments.
     """
-    request.addfinalizer(AMIModel4303D.close_all)
+    request.addfinalizer(Instrument.close_all)
     mag_x = AMIModel430(
         "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
     )
@@ -206,7 +217,7 @@ def test_sim_visa_reset_on_fully_closed(request: FixtureRequest) -> None:
     Test that closing all instruments defined in a yaml file will reset the
     state of all the instruments.
     """
-    request.addfinalizer(AMIModel4303D.close_all)
+    request.addfinalizer(Instrument.close_all)
     mag_x = AMIModel430(
         "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
     )
@@ -255,7 +266,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMIModel4303D.close_all)
+    request.addfinalizer(Instrument.close_all)
 
     non_existent_instrument = mag_y.name + "foo"
 
@@ -271,7 +282,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMIModel4303D.close_all)
+    request.addfinalizer(Instrument.close_all)
 
     non_ami_existing_instrument = Instrument("foo")
 
@@ -296,7 +307,7 @@ def test_instantiation_from_badly_typed_argument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
     mag_x, mag_y, mag_z = magnet_axes_instances
-    request.addfinalizer(AMIModel4303D.close_all)
+    request.addfinalizer(Instrument.close_all)
 
     badly_typed_instrument_z_argument = 123
 
