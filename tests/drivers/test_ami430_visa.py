@@ -18,7 +18,10 @@ from qcodes.instrument_drivers.american_magnetics import (
     AMIModel430,
     AMIModel4303D,
 )
-from qcodes.instrument_drivers.american_magnetics.AMI430_visa import AMI430, AMI430_3D
+from qcodes.instrument_drivers.american_magnetics.AMI430_visa import (
+    AMI430,  # pyright: ignore[reportDeprecated]
+    AMI430_3D,  # pyright: ignore[reportDeprecated]
+)
 from qcodes.math_utils import FieldVector
 from qcodes.utils.types import (
     numpy_concrete_floats,
@@ -143,18 +146,20 @@ def test_instantiation_compat_classes(request: FixtureRequest) -> None:
     Test that we can instantiate drivers using the old names
     """
     request.addfinalizer(AMIModel4303D.close_all)
-    request.addfinalizer(AMI430_3D.close_all)
-    mag_x = AMI430(
+    request.addfinalizer(AMI430_3D.close_all)  # pyright: ignore[reportDeprecated]
+    mag_x = AMI430(  # pyright: ignore[reportDeprecated]
         "x", address="GPIB::1::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
     )
-    mag_y = AMI430(
+    mag_y = AMI430(  # pyright: ignore[reportDeprecated]
         "y", address="GPIB::2::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
     )
-    mag_z = AMI430(
+    mag_z = AMI430(  # pyright: ignore[reportDeprecated]
         "z", address="GPIB::3::INSTR", pyvisa_sim_file="AMI430.yaml", terminator="\n"
     )
 
-    driver = AMI430_3D("AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit)
+    driver = AMI430_3D(  # pyright: ignore[reportDeprecated]
+        "AMI430_3D", mag_x.name, mag_y.name, mag_z.name, field_limit
+    )
 
     assert driver._instrument_x is mag_x
     assert driver._instrument_y is mag_y
