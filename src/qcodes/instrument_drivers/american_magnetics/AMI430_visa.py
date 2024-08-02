@@ -83,7 +83,7 @@ class AMI430SwitchHeater(InstrumentChannel):
             set_cmd=lambda x: (self.on() if x else self.off()),
             vals=Bool(),
         )
-        """Parameter state"""
+        """Parameter state. Always False is the switch heater is not enabled"""
         self.in_persistent_mode: Parameter = self.add_parameter(
             "in_persistent_mode",
             label="Persistent Mode",
@@ -149,8 +149,9 @@ class AMI430SwitchHeater(InstrumentChannel):
         while self._parent.ramping_state() == "cooling switch":
             self._parent._sleep(0.5)
 
-    @_Decorators.check_enabled
     def check_state(self) -> bool:
+        if self.enabled() is False:
+            return False
         return bool(int(self.ask("PS?").strip()))
 
 
