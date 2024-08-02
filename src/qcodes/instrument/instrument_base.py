@@ -654,6 +654,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     #
     delegate_attr_dicts: ClassVar[list[str]] = ["parameters", "functions", "submodules"]
 
+    @deprecated(
+        "Use attributes directly on the instrument object instead.",
+        category=QCoDeSDeprecationWarning,
+    )
     def __getitem__(self, key: str) -> Callable[..., Any] | Parameter:
         """Delegate instrument['name'] to parameter or function 'name'."""
         try:
@@ -661,6 +665,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         except KeyError:
             return self.functions[key]
 
+    @deprecated(
+        "Call set directly on the parameter.",
+        category=QCoDeSDeprecationWarning,
+    )
     def set(self, param_name: str, value: Any) -> None:
         """
         Shortcut for setting a parameter from its name and new value.
@@ -671,6 +679,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         """
         self.parameters[param_name].set(value)
 
+    @deprecated(
+        "Call get directly on the parameter.",
+        category=QCoDeSDeprecationWarning,
+    )
     def get(self, param_name: str) -> Any:
         """
         Shortcut for getting a parameter from its name.
@@ -683,6 +695,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         """
         return self.parameters[param_name].get()
 
+    @deprecated(
+        "Call the function directly.",
+        category=QCoDeSDeprecationWarning,
+    )
     def call(self, func_name: str, *args: Any) -> Any:
         """
         Shortcut for calling a function from its name.
