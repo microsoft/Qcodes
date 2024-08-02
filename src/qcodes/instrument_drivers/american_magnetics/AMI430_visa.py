@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, ClassVar, Concatenate, TypeVar, cast
 
 import numpy as np
 from pyvisa import VisaIOError
-from typing_extensions import ParamSpec
+from typing_extensions import ParamSpec, deprecated
 
 from qcodes.instrument import (
     Instrument,
@@ -56,7 +56,7 @@ class AMI430SwitchHeater(InstrumentChannel):
             def check_enabled_decorator(
                 self: S, *args: P.args, **kwargs: P.kwargs
             ) -> T:
-                if not self.check_enabled():
+                if not self.enabled():
                     raise AMI430Exception("Switch not enabled")
                 return f(self, *args, **kwargs)
 
@@ -71,16 +71,16 @@ class AMI430SwitchHeater(InstrumentChannel):
         self.enabled: Parameter = self.add_parameter(
             "enabled",
             label="Switch Heater Enabled",
-            get_cmd=self.check_enabled,
-            set_cmd=lambda x: (self.enable() if x else self.disable()),
+            get_cmd=self._check_enabled,
+            set_cmd=lambda x: (self._enable() if x else self._disable()),
             vals=Bool(),
         )
         """Parameter enabled"""
         self.state: Parameter = self.add_parameter(
             "state",
             label="Switch Heater On",
-            get_cmd=self.check_state,
-            set_cmd=lambda x: (self.on() if x else self.off()),
+            get_cmd=self._check_state,
+            set_cmd=lambda x: (self._on() if x else self._off()),
             vals=Bool(),
         )
         """Parameter state. Always False is the switch heater is not enabled"""
@@ -124,35 +124,59 @@ class AMI430SwitchHeater(InstrumentChannel):
         )
         """Parameter cool_time"""
 
-    def disable(self) -> None:
+    def _disable(self) -> None:
         """Turn measurement off"""
         self.write("CONF:PS 0")
         self._enabled = False
 
-    def enable(self) -> None:
+    def _enable(self) -> None:
         """Turn measurement on"""
-        self.write("CONF:PS 1")
+        self.write(cmd="CONF:PS 1")
         self._enabled = True
 
-    def check_enabled(self) -> bool:
+    @deprecated("Use enabled parameter to enable/disable the switch heater.")
+    def disable(self) -> None:
+        self._disable()
+
+    @deprecated("Use enabled parameter to enable/disable the switch heater.")
+    def enable(self) -> None:
+        self._enable()
+
+    def _check_enabled(self) -> bool:
         return bool(int(self.ask("PS:INST?").strip()))
 
+    @deprecated("Use enabled parameter to inspect switch heater status.")
+    def check_enabled(self) -> bool:
+        return self._check_enabled()
+
     @_Decorators.check_enabled
-    def on(self) -> None:
+    def _on(self) -> None:
         self.write("PS 1")
         while self._parent.ramping_state() == "heating switch":
             self._parent._sleep(0.5)
 
+    @deprecated("Use state parameter to turn on the switch heater.")
+    def on(self) -> None:
+        self._on()
+
     @_Decorators.check_enabled
-    def off(self) -> None:
+    def _off(self) -> None:
         self.write("PS 0")
         while self._parent.ramping_state() == "cooling switch":
             self._parent._sleep(0.5)
 
-    def check_state(self) -> bool:
+    @deprecated("Use state parameter to turn off the switch heater.")
+    def off(self) -> None:
+        self._off()
+
+    def _check_state(self) -> bool:
         if self.enabled() is False:
             return False
         return bool(int(self.ask("PS?").strip()))
+
+    @deprecated("Use state parameter to inspect if switch heater is on.")
+    def check_state(self) -> bool:
+        return self._check_state()
 
 
 class AMIModel430(VisaInstrument):
