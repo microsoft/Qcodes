@@ -330,7 +330,7 @@ pyyaml==6.0.1
     #   libcst
     #   pyvisa-sim
     #   sphinx-jsonschema
-pyzmq==26.0.3
+pyzmq==26.1.0
     # via
     #   ipykernel
     #   jupyter-client
