@@ -6,7 +6,7 @@ alabaster==0.7.16
     # via sphinx
 asttokens==2.4.1
     # via stack-data
-attrs==23.2.0
+attrs==24.1.0
     # via
     #   hypothesis
     #   jsonschema
