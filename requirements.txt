@@ -178,7 +178,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.1
+matplotlib==3.9.0
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
