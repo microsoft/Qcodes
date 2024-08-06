@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import deprecated
 
-from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping

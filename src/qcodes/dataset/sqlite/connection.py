@@ -90,7 +90,7 @@ def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
     Args:
         conn: connection to guard
     """
-    with DelayedKeyboardInterrupt():
+    with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
         if not isinstance(conn, ConnectionPlus):
             raise ValueError('atomic context manager only accepts '
                              'ConnectionPlus database connection objects.')
