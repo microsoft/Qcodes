@@ -239,6 +239,53 @@ class LakeshoreBaseOutput(InstrumentChannel):
         (which is set via `input_channel` parameter)
         """
 
+        self.setpoint_ramp_enabled: GroupParameter = self.add_parameter(
+            "setpoint_ramping_enabled",
+            label="Setpoint ramping enabled",
+            docstring="Specifies whether setpoint ramping is 0 = Off or 1 = On",
+            val_mapping={False: 0, True: 1},
+            parameter_class=GroupParameter,
+        )
+        """
+        Specifies whether setpoint ramping is 0 = Off or 1 = On
+        """
+
+        self.setpoint_ramp_rate: GroupParameter = self.add_parameter(
+            "setpoint_ramping_rate",
+            label="Setpoint ramping rate",
+            unit="K/min",
+            get_parser=float,
+            docstring="Specifies setpoint ramp rate in kelvin per minute from"
+            "0.1 to 100. The rate is always positive, but will respond to"
+            "ramps up or down. A rate of 0 is interpreted as infinite, and"
+            "will therefore respond as if setpoint ramping were off",
+            vals=vals.Numbers(0, 100),
+            parameter_class=GroupParameter,
+        )
+        """
+        Specifies setpoint ramp rate in kelvin per minute from
+        0.1 to 100. The rate is always positive, but will respond to
+        ramps up or down. A rate of 0 is interpreted as infinite, and
+        will therefore respond as if setpoint ramping were off
+        """
+
+        self.setpoint_ramp_group = Group(
+            [
+                self.setpoint_ramping_enabled,
+                self.setpoint_ramping_rate,
+            ],
+            set_cmd=f"RAMP {output_index},{{setpoint_ramping_enabled}},{{setpoint_ramping_rate}}",
+            get_cmd=f"RAMP? {output_index}",
+        )
+
+        self.setpoint_ramp_status: Parameter = self.add_parameter(
+            "setpoint_ramp_status",
+            label="Setpoint is ramping",
+            docstring="0 = Not ramping, 1 = Setpoint is ramping",
+            val_mapping={True: 1, False: 0},
+            get_cmd=f"RAMPST? {output_index}",
+        )
+
         # Additional non-Visa parameters
 
         self.range_limits: Parameter = self.add_parameter(
