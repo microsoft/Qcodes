@@ -240,7 +240,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
         """
 
         self.setpoint_ramp_enabled: GroupParameter = self.add_parameter(
-            "setpoint_ramping_enabled",
+            "setpoint_ramp_enabled",
             label="Setpoint ramping enabled",
             docstring="Specifies whether setpoint ramping is 0 = Off or 1 = On",
             val_mapping={False: 0, True: 1},
@@ -251,7 +251,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
         """
 
         self.setpoint_ramp_rate: GroupParameter = self.add_parameter(
-            "setpoint_ramping_rate",
+            "setpoint_ramp_rate",
             label="Setpoint ramping rate",
             unit="K/min",
             get_parser=float,
@@ -271,8 +271,8 @@ class LakeshoreBaseOutput(InstrumentChannel):
 
         self.setpoint_ramp_group = Group(
             [
-                self.setpoint_ramping_enabled,
-                self.setpoint_ramping_rate,
+                self.setpoint_ramp_enabled,
+                self.setpoint_ramp_rate,
             ],
             set_cmd=f"RAMP {output_index},{{setpoint_ramping_enabled}},{{setpoint_ramping_rate}}",
             get_cmd=f"RAMP? {output_index}",
