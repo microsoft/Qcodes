@@ -324,7 +324,7 @@ pyvisa-sim==0.6.0
     # via qcodes (pyproject.toml)
 pywin32==306; sys_platform == 'win32'
     # via jupyter-core
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   dask
     #   libcst
