@@ -1,17 +1,6 @@
 QCoDeS 0.47.0 (2024-08-07)
 ==========================
 
-Breaking Changes:
------------------
-
-- This will be the last version of QCoDeS to support Python 3.9. Future versions will require Python 3.10 or higher.
-
-Improved:
----------
-
-- Updated `dond` functions to re-raise KeyboardInterrupt for better interrupt handling, making it easier to stop long-running measurement loops and reducing the need for kernel restarts.
-This means that if you interrupt a `dond` function with a keyboard interrupt, not only the measurement but any pending code to execute will be interrupted. Logging for interrupted measurements has been improved. (:pr:`6192`)
-
 Improved Drivers:
 -----------------
 
