@@ -1,6 +1,11 @@
 QCoDeS 0.47.0 (2024-08-07)
 ==========================
 
+Breaking Changes:
+-----------------
+
+This release supports Python 3.10 and later.
+
 Improved Drivers:
 -----------------
 
@@ -11,6 +16,15 @@ Improved Drivers:
 - Added power output parameters to LakeShore335 driver, allowing configuration of the maximum heater current. (:pr:`6248`)
 - Added input coupling and impedance parameters for channels in the Keysight Infiniium oscilloscope driver. (:pr:`6293`)
 - Added 'offset' parameter to Tektronix AWG Channels. (:pr:`6303`)
+- The ``qcodes.instrument_drivers.american_magnetics.AMIModel430`` driver can now be snapshotted with the heater missing or not enabled
+  without triggering warnings. Furthermore confusing aliases for parameters on the switch module have been deprecated since use of these would
+  lead to incorrect state of the parameters.
+  The aliases ``qcodes.instrument_drivers.american_magnetics.AMI_430_visa.AMI430_3D`` and ``qcodes.instrument_drivers.american_magnetics.AMI_430_visa.AMI430``
+  have been deprecated. (:pr:`6306`)
+- Add setpoint ramp rate parameters to LakeShore335 driver,
+  this allows to configure the setpoint ramp rate. (:pr:`6322`)
+- Add setpoint ramp status parameter to LakeShore335 driver,
+  this allows to monitor a ongoing setpoint ramp. (:pr:`6322`)
 
 Other Changes:
 --------------

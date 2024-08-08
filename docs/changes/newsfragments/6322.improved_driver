@@ -1,4 +1,0 @@
-- Add setpoint ramp rate parameters to LakeShore335 driver,
-  this allows to configure the setpoint ramp rate.
-- Add setpoint ramp status parameter to LakeShore335 driver,
-  this allows to monitor a ongoing setpoint ramp.
