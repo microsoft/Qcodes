@@ -113,6 +113,31 @@ devices:
         setter:
           q: "PS {}"
 
+      persistent heater current:
+        default: 0
+        getter:
+          q: "PS:CURR?"
+          r: "{}"
+        setter:
+          q: "CONF:PS:CURR {}"
+
+      persistent heater heat_time:
+        default: 5
+        getter:
+          q: "PS:HTIME?"
+          r: "{}"
+        setter:
+          q: "CONF:PS:HTIME {}"
+
+      persistent heater cool_time:
+        default: 3600
+        getter:
+          q: "PS:CTIME?"
+          r: "{}"
+        setter:
+          q: "CONF:PS:CTIME {}"
+
+
       pause:
         setter:
           q: "PAUSE"
