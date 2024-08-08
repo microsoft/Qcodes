@@ -1,5 +1,0 @@
-The ``qcodes.instrument_drivers.american_magnetics.AMIModel430`` driver can now be snapshotted with the heater missing or not enabled
-without triggering warnings. Furthermore confusing aliases for parameters on the switch module have been deprecated since use of these would
-lead to incorrect state of the parameters.
-The aliases ``qcodes.instrument_drivers.american_magnetics.AMI_430_visa.AMI430_3D`` and ``qcodes.instrument_drivers.american_magnetics.AMI_430_visa.AMI430``
-have been deprecated.
