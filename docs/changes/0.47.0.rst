@@ -1,0 +1,13 @@
+QCoDeS 0.47.0 (2024-08-07)
+==========================
+
+Improved Drivers:
+-----------------
+
+- - Fix the Harvard DecaDAC range not including the highest bit
+  - Fix Keysight 34465A DMM firmware version parsing
+  - Fix Oxford Instruments Triton section parsing (:pr:`6076`)
+- The long deprecated aliases to channels on MiniCircuits UsbSPDT drivers have been removed.
+  This means that `channel_a` should be replaced by `a` and so on in any call to this driver. (:pr:`6207`)
+- - Add power output parameters to LakeShore335 driver,
+    this allows to configure the maximum heater current. (:pr:`6248`)
