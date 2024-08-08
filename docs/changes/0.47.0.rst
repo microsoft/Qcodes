@@ -9,7 +9,8 @@ Breaking Changes:
 Improved:
 ---------
 
-- Updated `dond` functions to re-raise KeyboardInterrupt for better interrupt handling, making it easier to stop long-running measurement loops and reducing the need for kernel restarts. This means that if you interrupt a `dond` function with a keyboard interrupt, not only the measurement but any pending code to execute will be interrupted. Logging for interrupted measurements has been improved. (:pr:`6192`)
+- Updated `dond` functions to re-raise KeyboardInterrupt for better interrupt handling, making it easier to stop long-running measurement loops and reducing the need for kernel restarts.
+This means that if you interrupt a `dond` function with a keyboard interrupt, not only the measurement but any pending code to execute will be interrupted. Logging for interrupted measurements has been improved. (:pr:`6192`)
 
 Improved Drivers:
 -----------------
