@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml --extra test --extra docs --output-file .\requirements.txt
 #    manually removed qcodes it self from the requirements and added version and platform specific env markers
 #    for ipython and pywin32
-alabaster==0.7.16
+alabaster==1.0.0
     # via sphinx
 asttokens==2.4.1
     # via stack-data
