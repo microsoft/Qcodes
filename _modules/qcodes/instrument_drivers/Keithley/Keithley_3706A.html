@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Keithley.Keithley_3706A &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Keithley.Keithley_3706A</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Keithley.Keithley_3706A</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">import</span> <span class="nn">qcodes.validators</span> <span class="k">as</span> <span class="nn">vals</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">VisaInstrument</span><span class="p">,</span> <span class="n">VisaInstrumentKWArgs</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">create_on_off_val_mapping</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+
+<div class="viewcode-block" id="Keithley3706AUnknownOrEmptySlot">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706AUnknownOrEmptySlot">[docs]</a>
+<span class="k">class</span> <span class="nc">Keithley3706AUnknownOrEmptySlot</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Keithley3706AInvalidValue">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706AInvalidValue">[docs]</a>
+<span class="k">class</span> <span class="nc">Keithley3706AInvalidValue</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+
+<div class="viewcode-block" id="Keithley3706A">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A">[docs]</a>
+<span class="k">class</span> <span class="nc">Keithley3706A</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is the QCoDeS instrument driver for the Keithley 3706A-SNFP</span>
+<span class="sd">    System Switch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name: Name to use internally in QCoDeS</span>
+<span class="sd">            address: VISA resource address</span>
+<span class="sd">            **kwargs: kwargs are forwarded to base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_connect_rule</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;channel_connect_rule&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_channel_connect_rule</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_channel_connect_rule</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="sd">                                    Controls the connection rule for closing</span>
+<span class="sd">                                    and opening channels when using</span>
+<span class="sd">                                    `exclusive_close` and `exclusive_slot_close`</span>
+<span class="sd">                                    parameters.</span>
+
+<span class="sd">                                    If it is set to break before make,</span>
+<span class="sd">                                    it is ensured that all channels open</span>
+<span class="sd">                                    before any channels close.</span>
+
+<span class="sd">                                    If it is set to make before break, it is</span>
+<span class="sd">                                    ensured that all channels close before any</span>
+<span class="sd">                                    channels open.</span>
+
+<span class="sd">                                    If it is off, channels open and close</span>
+<span class="sd">                                    simultaneously.&quot;&quot;&quot;</span>
+            <span class="p">),</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span><span class="s2">&quot;BREAK_BEFORE_MAKE&quot;</span><span class="p">,</span> <span class="s2">&quot;MAKE_BEFORE_BREAK&quot;</span><span class="p">,</span> <span class="s2">&quot;OFF&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Controls the connection rule for closing and opening channels when using</span>
+<span class="sd">        `exclusive_close` and `exclusive_slot_close`</span>
+<span class="sd">        parameters.</span>
+
+<span class="sd">        If it is set to break before make, it is ensured that all channels open</span>
+<span class="sd">        before any channels close.</span>
+
+<span class="sd">        If it is set to make before break, it is ensured that all channels close</span>
+<span class="sd">        before any channels open.</span>
+
+<span class="sd">        If it is off, channels open and close simultaneously.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpib_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;gpib_enabled&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_gpib_status</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_gpib_status</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Enables or disables GPIB connection.&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;false&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enables or disables GPIB connection.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpib_address</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;gpib_address&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_gpib_address</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_gpib_address</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Sets and gets the GPIB address.&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets and gets the GPIB address.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lan_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;lan_enabled&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_lan_status</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_lan_status</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Enables or disables LAN connection.&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;false&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enables or disables LAN connection.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Keithley3706A.reset_channel">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.reset_channel">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the specified channels to factory default settings.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels, channel ranges,</span>
+<span class="sd">                backplane relays, slots or channel patterns to be queried.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, backplane relays or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.reset(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.open_channel">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.open_channel">[docs]</a>
+    <span class="k">def</span> <span class="nf">open_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Opens the specified channels and backplane relays.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels, channel ranges,</span>
+<span class="sd">                backplane relays, slots or channel patterns to be queried.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, backplane relays or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.open(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.close_channel">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.close_channel">[docs]</a>
+    <span class="k">def</span> <span class="nf">close_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closes the channels and backplane relays.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels, channel ranges,</span>
+<span class="sd">                backplane relays to be queried.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slots</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;allslots&quot;</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_names</span><span class="p">()]</span>
+        <span class="n">forbidden_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_forbidden_channels</span><span class="p">(</span><span class="s2">&quot;allslots&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">slots</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span><span class="s2">&quot;Slots cannot be closed all together.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels or channel &quot;</span>
+                <span class="s2">&quot;ranges and associated backplane relays.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">forbidden_channels</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">):</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;You are attempting to close channels that are forbidden to close.&quot;</span><span class="p">,</span>
+                <span class="ne">UserWarning</span><span class="p">,</span>
+                <span class="mi">2</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_warn_on_disengaged_interlocks</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.close(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_warn_on_disengaged_interlocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if backplance channels among the given specifiers can be</span>
+<span class="sd">        energized dependening on respective hardware interlocks being</span>
+<span class="sd">        engaged, and raises a warning for those backplane channels which</span>
+<span class="sd">        cannot be energized.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels, channel ranges,</span>
+<span class="sd">                backplane relays.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_interlock_state</span><span class="p">()</span>
+        <span class="n">val_specifiers</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">val_specifiers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_backplane_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">):</span>
+                <span class="n">slot</span> <span class="o">=</span> <span class="n">channel</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">interlock_state</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">state</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span> <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;slot_no&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">slot</span>
+                <span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">interlock_state</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">]</span>
+                    <span class="o">==</span> <span class="s2">&quot;Interlocks 1 and 2 are disengaged on the card&quot;</span>
+                <span class="p">):</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;The hardware interlocks in Slot &quot;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">interlock_state</span><span class="p">[</span><span class="s2">&quot;slot_no&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> are disengaged. &#39;</span>
+                        <span class="sa">f</span><span class="s2">&quot;The analog backplane relay </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2"> &quot;</span>
+                        <span class="s2">&quot;cannot be energized.&quot;</span><span class="p">,</span>
+                        <span class="ne">UserWarning</span><span class="p">,</span>
+                        <span class="mi">2</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_is_backplane_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">channel_id</span><span class="si">}</span><span class="s2"> is not a valid channel id&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">channel_id</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;9&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Keithley3706A.exclusive_close">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.exclusive_close">[docs]</a>
+    <span class="k">def</span> <span class="nf">exclusive_close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closes the specified channels such that any presently closed channels</span>
+<span class="sd">        opens if they are not in the specified by the parameter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels, channel ranges,</span>
+<span class="sd">                backplane relays to be queried.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slots</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;allslots&quot;</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_names</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">slots</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span><span class="s2">&quot;Slots cannot be exclusively closed.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="s2">&quot;An empty string may cause all channels and &quot;</span>
+                <span class="s2">&quot;associated backplane relays to open. Use &quot;</span>
+                <span class="s1">&#39;&quot;open_channel&quot; parameter instead.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels or channel &quot;</span>
+                <span class="s2">&quot;ranges and associated backplane relays.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.exclusiveclose(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.exclusive_slot_close">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.exclusive_slot_close">[docs]</a>
+    <span class="k">def</span> <span class="nf">exclusive_slot_close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closes the specified channels on the associated slots abd opens any</span>
+<span class="sd">        other channels if they are not specified by the parameter.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels, channel ranges,</span>
+<span class="sd">                backplane relays to be queried.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slots</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;allslots&quot;</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_names</span><span class="p">()]</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">slots</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span><span class="s2">&quot;Slots cannot be exclusively closed.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span><span class="s2">&quot;Argument cannot be an empty string.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels or channel &quot;</span>
+                <span class="s2">&quot;ranges and associated backplane relays.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.exclusiveslotclose(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_channel_connect_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">connect_rule</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;BREAK_BEFORE_MAKE&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;MAKE_BEFORE_BREAK&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;OFF&quot;</span><span class="p">}</span>
+        <span class="n">rule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;channel.connectrule&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">connect_rule</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">rule</span><span class="p">))]</span>
+
+    <span class="k">def</span> <span class="nf">_set_channel_connect_rule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.connectrule = channel.</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_gpib_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;comm.gpib.enable&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_gpib_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;comm.gpib.enable = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_lan_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;comm.lan.enable&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_lan_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;comm.lan.enable = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_gpib_address</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;gpib.address&quot;</span><span class="p">)))</span>
+
+    <span class="k">def</span> <span class="nf">_set_gpib_address</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;gpib.address = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Keithley3706A.get_closed_channels">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_closed_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_closed_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queries for the closed channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels,</span>
+<span class="sd">                backplane relays or channel patterns to be queried.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span><span class="s2">&quot;Argument cannot be an empty string.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, backplane relays or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.getclose(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="o">==</span> <span class="s2">&quot;nil&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;;&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.set_forbidden_channels">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.set_forbidden_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_forbidden_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Prevents the closing of specified channels and backplane</span>
+<span class="sd">        relays.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing channels and backplane relays</span>
+<span class="sd">                to make forbidden to close.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, backplane relays or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.setforbidden(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_forbidden_channels">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_forbidden_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_forbidden_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a string that lists the channels and backplane relays</span>
+<span class="sd">        that are forbidden to close.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels,</span>
+<span class="sd">                backplane relays or channel patterns to be queried to see</span>
+<span class="sd">                if they are forbidden to close.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, backplane relays or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.getforbidden(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.clear_forbidden_channels">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.clear_forbidden_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_forbidden_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears the list of channels that are forbidden to close.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels that will no longer</span>
+<span class="sd">                be listed as forbidden to close.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, backplane relays or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.clearforbidden(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.set_delay">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.set_delay">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">delay_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets an additional delay time for the specified channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels for which there will</span>
+<span class="sd">                be an additional delay time.</span>
+<span class="sd">            delay_time: Delay time for the specified channels in seconds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">backplanes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_analog_backplane_specifiers</span><span class="p">()</span>
+        <span class="n">specifiers</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">specifiers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">backplanes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                    <span class="s2">&quot;Additional delay times cannot be set for &quot;</span>
+                    <span class="s2">&quot;analog backplane relays.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.setdelay(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;, </span><span class="si">{</span><span class="n">delay_time</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_delay">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_delay">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_delay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Queries for the delay times.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels to query for</span>
+<span class="sd">                additional delay times.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">backplanes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_analog_backplane_specifiers</span><span class="p">()</span>
+        <span class="n">specifiers</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">specifiers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">backplanes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                    <span class="s2">&quot;Additional delay times cannot be set for &quot;</span>
+                    <span class="s2">&quot;analog backplane relays.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="n">delay_times</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.getdelay(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">delay_times</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.set_backplane">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.set_backplane">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_backplane</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">backplane</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the analog backplane relays to use with given channels</span>
+<span class="sd">        when they are used in switching applications.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the list of channels to change.</span>
+<span class="sd">            backplane: A string representing the list of analog backplane</span>
+<span class="sd">                relays to set for the channels specified.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_interlock_state</span><span class="p">()</span>
+        <span class="n">backplanes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_analog_backplane_specifiers</span><span class="p">()</span>
+        <span class="n">plane_specifiers</span> <span class="o">=</span> <span class="n">backplane</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="n">val_specifiers</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">element</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Interlocks 1 and 2 are disengaged on the card&quot;</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The hardware interlocks in Slot &quot;</span>
+                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">element</span><span class="p">[</span><span class="s2">&quot;slot_no&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> are disengaged. &#39;</span>
+                    <span class="s2">&quot;The corresponding analog backplane relays &quot;</span>
+                    <span class="s2">&quot;cannot be energized.&quot;</span><span class="p">,</span>
+                    <span class="ne">UserWarning</span><span class="p">,</span>
+                    <span class="mi">2</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">val_specifiers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">backplanes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                    <span class="s2">&quot;The specifier cannot be analog &quot;</span>
+                    <span class="s2">&quot;backplane relay.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">plane</span> <span class="ow">in</span> <span class="n">plane_specifiers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">plane</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">backplanes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">backplane</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                    <span class="s2">&quot;The specifier should be analog &quot;</span>
+                    <span class="s2">&quot;backplane relay.&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.setbackplane(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;, &#39;</span><span class="si">{</span><span class="n">backplane</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_backplane">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_backplane">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_backplane</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lists the backplane relays that are controlled in switching</span>
+<span class="sd">        applications for specified channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: A string representing the channels being queried.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">backplanes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_analog_backplane_specifiers</span><span class="p">()</span>
+        <span class="n">specifiers</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">specifiers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">backplanes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> cannot be a analog backplane relay.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validator</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AInvalidValue</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> is not a valid specifier. &quot;</span>
+                <span class="s2">&quot;The specifier should be channels, channel &quot;</span>
+                <span class="s1">&#39;ranges, slots, or &quot;allslots&quot;.&#39;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;channel.getbackplane(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_slot_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the slot ids of the installed cards.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cards</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_switch_cards</span><span class="p">()</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">card</span><span class="p">[</span><span class="s1">&#39;slot_no&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">card</span> <span class="ow">in</span> <span class="n">cards</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">slot_id</span>
+
+    <span class="k">def</span> <span class="nf">_get_slot_names</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the names of the slots as &quot;slotX&quot;,</span>
+<span class="sd">        where &quot;X&quot; is the slot id.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">slot_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;slot</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">slot_id</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">slot_names</span>
+
+    <span class="k">def</span> <span class="nf">_get_number_of_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the total number of rows of the installed cards.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">total_number_of_rows</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;slot[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">].rows.matrix&quot;</span><span class="p">)))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">slot_id</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">total_number_of_rows</span>
+
+    <span class="k">def</span> <span class="nf">_get_number_of_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the total number of columns of the installed cards.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">total_number_of_columns</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;slot[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">].columns.matrix&quot;</span><span class="p">)))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">slot_id</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">total_number_of_columns</span>
+
+    <span class="k">def</span> <span class="nf">_get_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the elements of each row.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_number_of_rows</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_number_of_rows</span><span class="p">()</span>
+        <span class="n">row_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">total_number_of_rows</span><span class="p">:</span>
+            <span class="n">rows_in_each_slot</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">item</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="n">row_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rows_in_each_slot</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">row_list</span>
+
+    <span class="k">def</span> <span class="nf">_get_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the elements of each column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">total_number_of_columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_number_of_columns</span><span class="p">()</span>
+        <span class="n">column_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">total_number_of_columns</span><span class="p">:</span>
+            <span class="n">columns_in_each_slot</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">item</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+                    <span class="n">columns_in_each_slot</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;0&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">columns_in_each_slot</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="n">column_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">columns_in_each_slot</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">column_list</span>
+
+    <span class="k">def</span> <span class="nf">_get_channel_ranges</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A helper function that gets two channel names from the available</span>
+<span class="sd">        channels list and join them via a colon to define a channel range.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">range_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">():</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channels_by_slot</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">combinations</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="n">range_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">range_list</span>
+
+<div class="viewcode-block" id="Keithley3706A.get_channels">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function returns the name of the matrix channels.</span>
+<span class="sd">        User can call this function to see the names of the available</span>
+<span class="sd">        channels, in case he/she is not familiar with the naming convention.</span>
+<span class="sd">        However, note that, this is a standalone helper function and</span>
+<span class="sd">        the usage of channel attributes of the instrument driver does</span>
+<span class="sd">        not depend on the functionality of this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">row_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_rows</span><span class="p">()</span>
+        <span class="n">column_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">()</span>
+        <span class="n">matrix_channels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">slot</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">slot_id</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">row_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">column_list</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                <span class="n">matrix_channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matrix_channels</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_channels_by_slot">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_channels_by_slot">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_channels_by_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot_no</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the channel names of a given slot.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_no: An integer value specifying the slot number.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">slot_no</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">slot_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AUnknownOrEmptySlot</span><span class="p">(</span>
+                <span class="s2">&quot;Please provide a valid slot identifier. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available slots are </span><span class="si">{</span><span class="n">slot_id</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">row_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_rows</span><span class="p">()</span>
+        <span class="n">column_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">()</span>
+        <span class="n">matrix_channels_by_slot</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">slot_no</span><span class="p">),</span> <span class="n">row_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">column_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">matrix_channels_by_slot</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">matrix_channels_by_slot</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_analog_backplane_specifiers">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_analog_backplane_specifiers">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_analog_backplane_specifiers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of comma separated strings representing available analog</span>
+<span class="sd">        backplane relays. This function should not be mixed with the</span>
+<span class="sd">        `get_backplane` method. The latter returns backplane relays which are</span>
+<span class="sd">        associated with a channel by using `set_backplane` method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">backplane_common_number</span> <span class="o">=</span> <span class="s2">&quot;9&quot;</span>
+        <span class="n">backplane_relay_common_numbers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;11&quot;</span><span class="p">,</span> <span class="s2">&quot;12&quot;</span><span class="p">,</span> <span class="s2">&quot;13&quot;</span><span class="p">,</span> <span class="s2">&quot;14&quot;</span><span class="p">,</span> <span class="s2">&quot;15&quot;</span><span class="p">,</span> <span class="s2">&quot;16&quot;</span><span class="p">]</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">analog_backplane_relays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span>
+            <span class="n">slot_id</span><span class="p">,</span> <span class="n">backplane_common_number</span><span class="p">,</span> <span class="n">backplane_relay_common_numbers</span>
+        <span class="p">):</span>
+            <span class="n">analog_backplane_relays</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">analog_backplane_relays</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_connect_or_disconnect_row_to_columns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">row_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A private function that connects or (disconnects) given columns</span>
+<span class="sd">        to (from) a row of a slot and opens (closes) the formed channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="s2">&quot;disconnect&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The action should be identified as either &quot;</span>
+                <span class="s2">&quot;&#39;connect&#39; or &#39;disconnect&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">slots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">slot_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">slot</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">slots</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AUnknownOrEmptySlot</span><span class="p">(</span>
+                <span class="s2">&quot;Please provide a valid slot identifier. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available slots are </span><span class="si">{</span><span class="n">slots</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row_id</span><span class="p">)</span>
+        <span class="n">columns_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="n">columns_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;0&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">columns_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">channels_to_connect_or_disconnect</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">columns_list</span><span class="p">):</span>
+            <span class="n">channels_to_connect_or_disconnect</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">channels_to_connect_or_disconnect</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;connect&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">open_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">close_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">channels_to_connect_or_disconnect</span>
+
+    <span class="k">def</span> <span class="nf">_connect_or_disconnect_column_to_rows</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A private function that connects (disconnects) given rows</span>
+<span class="sd">        to (from) a column of a slot and opens (closes) the formed channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">action</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="s2">&quot;disconnect&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;The action should be identified as either &quot;</span>
+                <span class="s2">&quot;&#39;connect&#39; or &#39;disconnect&#39;.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">slots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">slot</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">slot_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">slot</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">slots</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">Keithley3706AUnknownOrEmptySlot</span><span class="p">(</span>
+                <span class="s2">&quot;Please provide a valid slot identifier. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Available slots are </span><span class="si">{</span><span class="n">slots</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">column</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">column_id</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="n">column</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;0&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">column_id</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">column</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">column_id</span><span class="p">))</span>
+        <span class="n">rows_list</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+        <span class="n">channels_to_connect_or_disconnect</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">slot</span><span class="p">,</span> <span class="n">rows_list</span><span class="p">,</span> <span class="n">column</span><span class="p">):</span>
+            <span class="n">channels_to_connect_or_disconnect</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">element</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">channels_to_connect_or_disconnect</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;connect&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">open_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">close_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">channels_to_connect_or_disconnect</span>
+
+<div class="viewcode-block" id="Keithley3706A.connect_row_to_columns">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.connect_row_to_columns">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect_row_to_columns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">row_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A convenient function that connects given columns to a row of a</span>
+<span class="sd">        slot and opens the formed channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_id: The specifier for the slot from which the row and columns</span>
+<span class="sd">                will be selected.</span>
+<span class="sd">            row_id: The specifier for the row to which the provided columns</span>
+<span class="sd">                will be connected.</span>
+<span class="sd">            columns: The specifiers of the columns will be connected to the</span>
+<span class="sd">                provided row.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect_or_disconnect_row_to_columns</span><span class="p">(</span>
+            <span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">,</span> <span class="n">row_id</span><span class="p">,</span> <span class="n">columns</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.disconnect_row_from_columns">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.disconnect_row_from_columns">[docs]</a>
+    <span class="k">def</span> <span class="nf">disconnect_row_from_columns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">row_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A convenient function that disconnects given columns to a row of a</span>
+<span class="sd">        slot and closes the formed channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_id: The specifier for the slot from which the row and columns</span>
+<span class="sd">                will be selected.</span>
+<span class="sd">            row_id: The specifier for the row to which the provided columns</span>
+<span class="sd">                will be disconnected.</span>
+<span class="sd">            columns: The specifiers of the columns will be disconnected from the</span>
+<span class="sd">                provided row.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect_or_disconnect_row_to_columns</span><span class="p">(</span>
+            <span class="s2">&quot;disconnect&quot;</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">,</span> <span class="n">row_id</span><span class="p">,</span> <span class="n">columns</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.connect_column_to_rows">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.connect_column_to_rows">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect_column_to_rows</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A convenient function that connects given rows to a column of a</span>
+<span class="sd">        slot and opens the formed channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_id: The specifier for the slot from which the row and columns</span>
+<span class="sd">                will be selected.</span>
+<span class="sd">            column_id: The specifier for the column to which the provided rows</span>
+<span class="sd">                will be connected.</span>
+<span class="sd">            rows: The specifiers of the rows will be connected to the</span>
+<span class="sd">                provided column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect_or_disconnect_column_to_rows</span><span class="p">(</span>
+            <span class="s2">&quot;connect&quot;</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">,</span> <span class="n">column_id</span><span class="p">,</span> <span class="n">rows</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.disconnect_column_from_rows">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.disconnect_column_from_rows">[docs]</a>
+    <span class="k">def</span> <span class="nf">disconnect_column_from_rows</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A convenient function that disconnects given rows to a column of a</span>
+<span class="sd">        slot and closes the formed channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            slot_id: The specifier for the slot from which the row and columns</span>
+<span class="sd">                will be selected.</span>
+<span class="sd">            column_id: The specifier for the column to which the provided rows</span>
+<span class="sd">                will be disconnected.</span>
+<span class="sd">            rows: The specifiers of the rows will be disconnected from the</span>
+<span class="sd">                provided column.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connect_or_disconnect_column_to_rows</span><span class="p">(</span>
+            <span class="s2">&quot;disconnect&quot;</span><span class="p">,</span> <span class="n">slot_id</span><span class="p">,</span> <span class="n">column_id</span><span class="p">,</span> <span class="n">rows</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_idn">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_idn">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_idn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overwrites the generic QCoDeS get IDN method. Returns</span>
+<span class="sd">        a dictionary including the vendor, model, serial number and</span>
+<span class="sd">        firmware version of the instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">idnstr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask_raw</span><span class="p">(</span><span class="s2">&quot;*IDN?&quot;</span><span class="p">)</span>
+        <span class="n">vendor</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">serial</span><span class="p">,</span> <span class="n">firmware</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span> <span class="n">idnstr</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="p">[</span><span class="mi">6</span><span class="p">:]</span>
+
+        <span class="n">idn</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="n">vendor</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span>
+            <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="n">serial</span><span class="p">,</span>
+            <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="n">firmware</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">idn</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_switch_cards">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_switch_cards">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_switch_cards</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of dictionaries listing the properties of the installed</span>
+<span class="sd">        switch cards including the slot number tha it is installed, model,</span>
+<span class="sd">        firmware version and serial number.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">switch_cards</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+            <span class="n">scard</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;slot[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">].idn&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">scard</span> <span class="o">!=</span> <span class="s2">&quot;Empty Slot&quot;</span><span class="p">:</span>
+                <span class="n">model</span><span class="p">,</span> <span class="n">mtype</span><span class="p">,</span> <span class="n">firmware</span><span class="p">,</span> <span class="n">serial</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span> <span class="n">scard</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+                <span class="n">sdict</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;slot_no&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span>
+                    <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span>
+                    <span class="s2">&quot;mtype&quot;</span><span class="p">:</span> <span class="n">mtype</span><span class="p">,</span>
+                    <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="n">firmware</span><span class="p">,</span>
+                    <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="n">serial</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="n">switch_cards</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sdict</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">switch_cards</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_available_memory">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_available_memory">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_available_memory</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the amount of memory that is currently available for</span>
+<span class="sd">        storing scripts, configurations and channel patterns.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">memstring</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;memory.available()&quot;</span><span class="p">)</span>
+        <span class="n">system_memory</span><span class="p">,</span> <span class="n">script_memory</span><span class="p">,</span> <span class="n">pattern_memory</span><span class="p">,</span> <span class="n">config_memory</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span>
+            <span class="nb">str</span><span class="o">.</span><span class="n">strip</span><span class="p">,</span> <span class="n">memstring</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">memory_available</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;System Memory  (%)&quot;</span><span class="p">:</span> <span class="n">system_memory</span><span class="p">,</span>
+            <span class="s2">&quot;Script Memory  (%)&quot;</span><span class="p">:</span> <span class="n">script_memory</span><span class="p">,</span>
+            <span class="s2">&quot;Pattern Memory (%)&quot;</span><span class="p">:</span> <span class="n">pattern_memory</span><span class="p">,</span>
+            <span class="s2">&quot;Config Memory  (%)&quot;</span><span class="p">:</span> <span class="n">config_memory</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">memory_available</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_interlock_state">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_interlock_state">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_interlock_state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A function that collects the interlock status of the installed cards.</span>
+<span class="sd">        The channel relays can continue to operate even if the interlock</span>
+<span class="sd">        in the corresponding slot is disengaged, one cannot perform</span>
+<span class="sd">        measurements through the switching card, as the analog backplanes</span>
+<span class="sd">        cannot be energized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">slot_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_ids</span><span class="p">()</span>
+        <span class="n">interlock_status</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="kc">None</span><span class="p">:</span> <span class="p">(</span>
+                <span class="s2">&quot;No card is installed or the installed card does &quot;</span>
+                <span class="s2">&quot;not support interlocks&quot;</span>
+            <span class="p">),</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;Interlocks 1 and 2 are disengaged on the card&quot;</span><span class="p">,</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Interlock 1 is engaged, interlock 2 (if it exists) is disengaged&quot;</span><span class="p">,</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;Interlock 2 in engaged, interlock 1 is disengaged&quot;</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="s2">&quot;Both interlock 1 and 2 are engaged&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">states</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">slot_id</span><span class="p">:</span>
+            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_interlock_state_by_slot</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">states</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;slot_no&quot;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span> <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="n">interlock_status</span><span class="p">[</span><span class="n">state</span><span class="p">]})</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">states</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_interlock_state_by_slot">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_interlock_state_by_slot">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_interlock_state_by_slot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slot</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;slot[</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">slot</span><span class="p">)</span><span class="si">}</span><span class="s2">].interlock.state&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s2">&quot;nil&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">state</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.get_ip_address">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.get_ip_address">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ip_address</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the current IP address of the instrument.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;lan.status.ipaddress&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.reset_local_network">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.reset_local_network">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_local_network</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the local network (LAN).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;lan.reset()&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.save_setup">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.save_setup">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves the present setup.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: An optional string representing the path and the file name</span>
+<span class="sd">                to which the setup shall be saved on a USB flash drive. If not</span>
+<span class="sd">                provided, the setup will be saved to the nonvolatile memory</span>
+<span class="sd">                of the instrument, any previous saves will be overwritten.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;setup.save(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;setup.save()&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.load_setup">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.load_setup">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads the settings from a saved setup.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            val: An integer or a string that specifies the location of saved</span>
+<span class="sd">                setup. If it is `0`, factory defaults load. If it is `1`,</span>
+<span class="sd">                the saved setup from the nonvolatile memory is recalled.</span>
+<span class="sd">                Otherwise, a string specifying the relative path to the saved</span>
+<span class="sd">                setup on a USB drive should be passed in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;setup.recall(&#39;</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instrument specific validator. As the number of validation points</span>
+<span class="sd">        are around 15k, to avoid QCoDeS parameter validation to print them all,</span>
+<span class="sd">        we shall raise a custom exception.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channels</span><span class="p">()</span>
+        <span class="n">ch_range</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_channel_ranges</span><span class="p">()</span>
+        <span class="n">slots</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;allslots&quot;</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_slot_names</span><span class="p">()]</span>
+        <span class="n">backplanes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_analog_backplane_specifiers</span><span class="p">()</span>
+        <span class="n">specifier</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">specifier</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">element</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">ch</span><span class="p">,</span> <span class="o">*</span><span class="n">ch_range</span><span class="p">,</span> <span class="o">*</span><span class="n">slots</span><span class="p">,</span> <span class="o">*</span><span class="n">backplanes</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+<div class="viewcode-block" id="Keithley3706A.connect_message">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.connect_message">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect_message</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">idn_param</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;IDN&quot;</span><span class="p">,</span> <span class="n">begin_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overwrites the generic QCoDeS instrument connect message.</span>
+<span class="sd">        Here, additionally, we provide information about</span>
+<span class="sd">        which slots of the system switch is occupied with what</span>
+<span class="sd">        kind of matrix, as well.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">idn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()</span>
+        <span class="n">cards</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_switch_cards</span><span class="p">()</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_interlock_state</span><span class="p">()</span>
+
+        <span class="n">con_msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;Connected to: </span><span class="si">{vendor}</span><span class="s2"> </span><span class="si">{model}</span><span class="s2"> SYSTEM SWITCH &quot;</span>
+            <span class="s2">&quot;(serial:</span><span class="si">{serial}</span><span class="s2">, firmware:</span><span class="si">{firmware}</span><span class="s2">)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">idn</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">con_msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connected to instrument: </span><span class="si">{</span><span class="n">idn</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cards</span><span class="p">):</span>
+            <span class="n">card_info</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="s2">&quot;Slot </span><span class="si">{slot_no}</span><span class="s2">- Model:</span><span class="si">{model}</span><span class="s2">, Matrix Type:</span><span class="si">{mtype}</span><span class="s2">, &quot;</span>
+                <span class="s2">&quot;Firmware:</span><span class="si">{firmware}</span><span class="s2">, Serial:</span><span class="si">{serial}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">item</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">card_info</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Switch Cards: </span><span class="si">{</span><span class="n">item</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">states</span><span class="p">):</span>
+            <span class="n">state_info</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{state}</span><span class="s2"> in Slot </span><span class="si">{slot_no}</span><span class="s2">.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">item</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">state_info</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keithley3706A.ask">
+<a class="viewcode-back" href="../../../../drivers_api/Keithley.html#qcodes.instrument_drivers.Keithley.Keithley3706A.ask">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Override of normal ask. This is important, since queries to the</span>
+<span class="sd">        instrument must be wrapped in &#39;print()&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;print(</span><span class="si">{</span><span class="n">cmd</span><span class="si">:</span><span class="s2">s</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.rohde_schwarz.ZNB &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.rohde_schwarz.ZNB</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.rohde_schwarz.ZNB</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">deprecated</span>
+
+<span class="kn">import</span> <span class="nn">qcodes.validators</span> <span class="k">as</span> <span class="nn">vals</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ChannelList</span><span class="p">,</span>
+    <span class="n">Instrument</span><span class="p">,</span>
+    <span class="n">InstrumentBaseKWArgs</span><span class="p">,</span>
+    <span class="n">InstrumentChannel</span><span class="p">,</span>
+    <span class="n">VisaInstrument</span><span class="p">,</span>
+    <span class="n">VisaInstrumentKWArgs</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ArrayParameter</span><span class="p">,</span>
+    <span class="n">ManualParameter</span><span class="p">,</span>
+    <span class="n">MultiParameter</span><span class="p">,</span>
+    <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">ParamRawDataType</span><span class="p">,</span>
+    <span class="n">create_on_off_val_mapping</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.utils</span> <span class="kn">import</span> <span class="n">QCoDeSDeprecationWarning</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">FixedFrequencyTraceIQ</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameter for sweep that returns the real (I) and imaginary (Q) parts of</span>
+<span class="sd">    the VNA response.</span>
+<span class="sd">    Requires the use of the sweep type to be set to continuous wave mode.</span>
+<span class="sd">    See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en</span>
+<span class="sd">    /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -&gt; sweep softtool</span>
+<span class="sd">    -&gt; sweep type tab -&gt; CW mode</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="s2">&quot;RohdeSchwarzZNBChannel&quot;</span><span class="p">,</span>
+        <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">bandwidth</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="s2">&quot;Q&quot;</span><span class="p">),</span>
+            <span class="n">labels</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> I&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> Q&quot;</span><span class="p">),</span>
+            <span class="n">units</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">setpoint_names</span><span class="o">=</span><span class="p">(</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">_frequency&quot;</span><span class="p">,),</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">_frequency&quot;</span><span class="p">,),</span>
+            <span class="p">),</span>
+            <span class="n">setpoint_units</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;s&quot;</span><span class="p">,),</span> <span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">,)),</span>
+            <span class="n">setpoint_labels</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;time&quot;</span><span class="p">,),</span> <span class="p">(</span><span class="s2">&quot;time&quot;</span><span class="p">,)),</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((</span><span class="n">npts</span><span class="p">,),</span> <span class="p">(</span><span class="n">npts</span><span class="p">,),),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cw_sweep</span><span class="p">(</span><span class="n">npts</span><span class="p">,</span> <span class="n">bandwidth</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_cw_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">bandwidth</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates config of the software parameter on sweep change. This is</span>
+<span class="sd">        needed in order to sync the setpoint shape with the returned data</span>
+<span class="sd">        shape after a change of sweep settings.</span>
+
+<span class="sd">        Sets setpoints to the tuple which are hashable for look up.</span>
+
+<span class="sd">        Note: This is similar to the set_sweep functions of the frequency</span>
+<span class="sd">        sweep parameters. The time setpoints here neglect a small VNA</span>
+<span class="sd">        overhead. The total time including overhead can be queried with the</span>
+<span class="sd">        sweep_time function of the vna, but since it is not clear where this</span>
+<span class="sd">        overhead is spend, we keep the x-axis set to 1/bandwidth. The error</span>
+<span class="sd">        is only apparent in really fast measurements at 1us and 10us but</span>
+<span class="sd">        depends on the amount of points you take. More points give less</span>
+<span class="sd">        overhead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">npts</span> <span class="o">/</span> <span class="n">bandwidth</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">npts</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="p">((</span><span class="n">t</span><span class="p">,),</span> <span class="p">(</span><span class="n">t</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shapes</span> <span class="o">=</span> <span class="p">((</span><span class="n">npts</span><span class="p">,),</span> <span class="p">(</span><span class="n">npts</span><span class="p">,))</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the raw real and imaginary part of the data. If parameter</span>
+<span class="sd">        `cw_check_sweep_first` is set to `True` then at the cost of a few ms</span>
+<span class="sd">        overhead checks if the vna is setup correctly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">RohdeSchwarzZNBChannel</span><span class="p">)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">_get_cw_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">q</span>
+
+
+<span class="k">class</span> <span class="nc">FixedFrequencyPointIQ</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameter for sweep that returns the mean of the real (I) and imaginary (Q)</span>
+<span class="sd">    parts of the VNA response.</span>
+<span class="sd">    Requires the use of the sweep type to be set to continuous wave mode.</span>
+<span class="sd">    See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en</span>
+<span class="sd">    /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -&gt; sweep softtool</span>
+<span class="sd">    -&gt; sweep type tab -&gt; CW mode</span>
+<span class="sd">    Useful for two-tone and other bigger sweeps where you do not want to</span>
+<span class="sd">    store all individual I-Q values.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: parameter name</span>
+<span class="sd">        instrument: instrument the parameter belongs to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument</span><span class="p">:</span> <span class="s2">&quot;RohdeSchwarzZNBChannel&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">,</span> <span class="s2">&quot;Q&quot;</span><span class="p">),</span>
+            <span class="n">labels</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> I&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> Q&quot;</span><span class="p">),</span>
+            <span class="n">units</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">setpoints</span><span class="o">=</span><span class="p">((),</span> <span class="p">(),),</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((),</span> <span class="p">(),),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the mean of the raw real and imaginary part of the data. If</span>
+<span class="sd">        parameter `cw_check_sweep_first` is set to `True` then at the cost of a</span>
+<span class="sd">        few ms overhead checks if the vna is setup correctly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">RohdeSchwarzZNBChannel</span><span class="p">)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">_get_cw_data</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">i</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">q</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">FixedFrequencyPointMagPhase</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameter for sweep that returns the magnitude of mean of the real (I) and</span>
+<span class="sd">    imaginary (Q) parts of the VNA response and it&#39;s phase.</span>
+<span class="sd">    Requires the use of the sweep type to be set to continuous wave mode.</span>
+<span class="sd">    See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en</span>
+<span class="sd">    /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -&gt; sweep softtool</span>
+<span class="sd">    -&gt; sweep type tab -&gt; CW mode</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: parameter name</span>
+<span class="sd">        instrument: instrument the parameter belongs to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">instrument</span><span class="p">:</span> <span class="s2">&quot;RohdeSchwarzZNBChannel&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;magnitude&quot;</span><span class="p">,</span> <span class="s2">&quot;phase&quot;</span><span class="p">),</span>
+            <span class="n">labels</span><span class="o">=</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> magnitude&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> phase&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">units</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;rad&quot;</span><span class="p">),</span>
+            <span class="n">setpoints</span><span class="o">=</span><span class="p">((),</span> <span class="p">(),),</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((),</span> <span class="p">(),),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets the magnitude and phase of the mean of the raw real and imaginary</span>
+<span class="sd">        part of the data. If the parameter `cw_check_sweep_first` is set to</span>
+<span class="sd">        `True` for the instrument then at the cost of a few ms overhead</span>
+<span class="sd">        checks if the vna is setup correctly.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">RohdeSchwarzZNBChannel</span><span class="p">)</span>
+        <span class="n">i</span><span class="p">,</span> <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">_get_cw_data</span><span class="p">()</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">s</span><span class="p">)),</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">FrequencySweepMagPhase</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sweep that return magnitude and phase.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="s2">&quot;RohdeSchwarzZNBChannel&quot;</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">channel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;magnitude&quot;</span><span class="p">,</span> <span class="s2">&quot;phase&quot;</span><span class="p">),</span>
+            <span class="n">labels</span><span class="o">=</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> magnitude&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> phase&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">units</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;rad&quot;</span><span class="p">),</span>
+            <span class="n">setpoint_units</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;Hz&quot;</span><span class="p">,),</span> <span class="p">(</span><span class="s2">&quot;Hz&quot;</span><span class="p">,)),</span>
+            <span class="n">setpoint_labels</span><span class="o">=</span><span class="p">(</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> frequency&quot;</span><span class="p">,),</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> frequency&quot;</span><span class="p">,),</span>
+            <span class="p">),</span>
+            <span class="n">setpoint_names</span><span class="o">=</span><span class="p">(</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">_frequency&quot;</span><span class="p">,),</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">_frequency&quot;</span><span class="p">,),</span>
+            <span class="p">),</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((</span><span class="n">npts</span><span class="p">,),</span> <span class="p">(</span><span class="n">npts</span><span class="p">,),),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_sweep</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">npts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
+
+    <span class="k">def</span> <span class="nf">set_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Needed to update config of the software parameter on sweep change</span>
+        <span class="c1"># frequency setpoints tuple as needs to be hashable for look up.</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">npts</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="p">((</span><span class="n">f</span><span class="p">,),</span> <span class="p">(</span><span class="n">f</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shapes</span> <span class="o">=</span> <span class="p">((</span><span class="n">npts</span><span class="p">,),</span> <span class="p">(</span><span class="n">npts</span><span class="p">,))</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamRawDataType</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">RohdeSchwarzZNBChannel</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="s2">&quot;Complex&quot;</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">_get_sweep_data</span><span class="p">(</span><span class="n">force_polar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+
+
+<span class="k">class</span> <span class="nc">FrequencySweepDBPhase</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sweep that return magnitude in decibel (dB) and phase in radians.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="s2">&quot;RohdeSchwarzZNBChannel&quot;</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">channel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;magnitude&quot;</span><span class="p">,</span> <span class="s2">&quot;phase&quot;</span><span class="p">),</span>
+            <span class="n">labels</span><span class="o">=</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> magnitude&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> phase&quot;</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">units</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;dB&quot;</span><span class="p">,</span> <span class="s2">&quot;rad&quot;</span><span class="p">),</span>
+            <span class="n">setpoint_units</span><span class="o">=</span><span class="p">((</span><span class="s2">&quot;Hz&quot;</span><span class="p">,),</span> <span class="p">(</span><span class="s2">&quot;Hz&quot;</span><span class="p">,)),</span>
+            <span class="n">setpoint_labels</span><span class="o">=</span><span class="p">(</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> frequency&quot;</span><span class="p">,),</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> frequency&quot;</span><span class="p">,),</span>
+            <span class="p">),</span>
+            <span class="n">setpoint_names</span><span class="o">=</span><span class="p">(</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">_frequency&quot;</span><span class="p">,),</span>
+                <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">_frequency&quot;</span><span class="p">,),</span>
+            <span class="p">),</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((</span><span class="n">npts</span><span class="p">,),</span> <span class="p">(</span><span class="n">npts</span><span class="p">,),),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_sweep</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">npts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
+
+    <span class="k">def</span> <span class="nf">set_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Needed to update config of the software parameter on sweep change</span>
+        <span class="c1"># frequency setpoints tuple as needs to be hashable for look up.</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">npts</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="p">((</span><span class="n">f</span><span class="p">,),</span> <span class="p">(</span><span class="n">f</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shapes</span> <span class="o">=</span> <span class="p">((</span><span class="n">npts</span><span class="p">,),</span> <span class="p">(</span><span class="n">npts</span><span class="p">,))</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamRawDataType</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">RohdeSchwarzZNBChannel</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="s2">&quot;Complex&quot;</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">_get_sweep_data</span><span class="p">(</span><span class="n">force_polar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mi">20</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">data</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">FrequencySweep</span><span class="p">(</span><span class="n">ArrayParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hardware controlled parameter class for Rohde Schwarz ZNB trace.</span>
+
+<span class="sd">    Instrument returns an array of transmission or reflection data depending</span>
+<span class="sd">    on the active measurement.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: parameter name</span>
+<span class="sd">        instrument: instrument the parameter belongs to</span>
+<span class="sd">        start: starting frequency of sweep</span>
+<span class="sd">        stop: ending frequency of sweep</span>
+<span class="sd">        npts: number of points in frequency sweep</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">          get(): executes a sweep and returns magnitude and phase arrays</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="n">Instrument</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">channel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="p">,</span>
+            <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">npts</span><span class="p">,),</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;dB&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> magnitude&quot;</span><span class="p">,</span>
+            <span class="n">setpoint_units</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Hz&quot;</span><span class="p">,),</span>
+            <span class="n">setpoint_labels</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> frequency&quot;</span><span class="p">,),</span>
+            <span class="n">setpoint_names</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">instrument</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2">_frequency&quot;</span><span class="p">,),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_sweep</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">npts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span> <span class="o">=</span> <span class="n">channel</span>
+
+    <span class="k">def</span> <span class="nf">set_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">npts</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets the shapes and setpoint arrays of the parameter to</span>
+<span class="sd">        correspond with the sweep</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            start: Starting frequency of the sweep</span>
+<span class="sd">            stop: Stopping frequency of the sweep</span>
+<span class="sd">            npts: Number of points in the sweep</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Needed to update config of the software parameter on sweep change</span>
+        <span class="c1"># freq setpoints tuple as needs to be hashable for look up.</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">start</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">stop</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="n">npts</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setpoints</span> <span class="o">=</span> <span class="p">(</span><span class="n">f</span><span class="p">,)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">npts</span><span class="p">,)</span>
+
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span> <span class="n">RohdeSchwarzZNBChannel</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="o">.</span><span class="n">_get_sweep_data</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="RohdeSchwarzZNBChannel">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBChannel">[docs]</a>
+<span class="k">class</span> <span class="nc">RohdeSchwarzZNBChannel</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="s2">&quot;RohdeSchwarzZNBBase&quot;</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">channel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">vna_parameter</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">existing_trace_to_bind_to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            parent: Instrument that this channel is bound to.</span>
+<span class="sd">            name: Name to use for this channel.</span>
+<span class="sd">            channel: channel on the VNA to use</span>
+<span class="sd">            vna_parameter: Name of parameter on the vna that this should</span>
+<span class="sd">                measure such as S12. If left empty this will fall back to</span>
+<span class="sd">                `name`.</span>
+<span class="sd">            existing_trace_to_bind_to: Name of an existing trace on the VNA.</span>
+<span class="sd">                If supplied try to bind to an existing trace with this name</span>
+<span class="sd">                rather than creating a new trace.</span>
+<span class="sd">            **kwargs: Forwarded to base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span> <span class="o">=</span> <span class="n">channel</span>
+
+        <span class="k">if</span> <span class="n">vna_parameter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">vna_parameter</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vna_parameter</span> <span class="o">=</span> <span class="n">vna_parameter</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">existing_trace_to_bind_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Trc</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">traces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;CONFigure:TRACe:CATalog?&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">existing_trace_to_bind_to</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">traces</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Trying to bind to&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">existing_trace_to_bind_to</span><span class="si">}</span><span class="s2"> &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;which is not in </span><span class="si">{</span><span class="n">traces</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span> <span class="o">=</span> <span class="n">existing_trace_to_bind_to</span>
+
+        <span class="c1"># map hardware channel to measurement</span>
+        <span class="c1"># hardware channels are mapped one to one to QCoDeS channels</span>
+        <span class="c1"># we are not using sub traces within channels.</span>
+        <span class="k">if</span> <span class="n">existing_trace_to_bind_to</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:PAR:SDEF&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span><span class="si">}</span><span class="s2">&#39;, &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_vna_parameter</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Source power is dependent on model, but not well documented.</span>
+        <span class="c1"># Here we assume -60 dBm for ZNB20, the others are set,</span>
+        <span class="c1"># due to lack of knowledge, to -80 dBm as of before the edit.</span>
+        <span class="n">full_modelname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">full_modelname</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">full_modelname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not determine ZNB model&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_min_source_power</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ZNB4&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">80</span><span class="p">,</span>
+            <span class="s2">&quot;ZNB8&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">80</span><span class="p">,</span>
+            <span class="s2">&quot;ZNB20&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">60</span><span class="p">,</span>
+            <span class="s2">&quot;ZNB40&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">60</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_min_source_power</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported ZNB model: </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_source_power</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_source_power</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_min_source_power</span><span class="p">[</span><span class="n">model</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">vna_parameter</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;vna_parameter&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;VNA parameter&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:PAR:MEAS? &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_strip</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter vna_parameter&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;power&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Power&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;dBm&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SOUR</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:POW?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SOUR</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:POW </span><span class="se">{{</span><span class="s2">:.4f</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_source_power</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter power&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;bandwidth&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Bandwidth&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:BAND?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_bandwidth</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Enum</span><span class="p">(</span>
+                <span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">10</span> <span class="o">**</span> <span class="mi">6</span><span class="p">,</span>
+                           <span class="n">np</span><span class="o">.</span><span class="n">kron</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">],</span> <span class="mi">10</span> <span class="o">**</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">6</span><span class="p">)))</span>
+            <span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Measurement bandwidth of the IF filter. &quot;</span>
+            <span class="s2">&quot;The inverse of this sets the integration &quot;</span>
+            <span class="s2">&quot;time per point. &quot;</span>
+            <span class="s2">&quot;There is an &#39;increased bandwidth option&#39; &quot;</span>
+            <span class="s2">&quot;(p. 4 of manual) that does not get taken &quot;</span>
+            <span class="s2">&quot;into account here.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Measurement bandwidth of the IF filter.</span>
+<span class="sd">        The inverse of this sets the integration time per point.</span>
+<span class="sd">        There is an &#39;increased bandwidth option&#39; (p. 4 of manual)</span>
+<span class="sd">        that does not get taken into account here.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">avg</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;avg&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Averages&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:AVER:COUN?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:AVER:COUN </span><span class="se">{{</span><span class="s2">:.4f</span><span class="se">}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Ints</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">5000</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter avg&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;start&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:FREQ:START?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_start</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_min_freq</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_max_freq</span> <span class="o">-</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter start&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;stop&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:FREQ:STOP?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_stop</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_min_freq</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_max_freq</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter stop&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:FREQ:CENT?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_center</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_min_freq</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_max_freq</span> <span class="o">-</span> <span class="mi">10</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter center&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">span</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;span&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:FREQ:SPAN?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_span</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                              <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_max_freq</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_min_freq</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter span&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;npts&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:SWE:POIN?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_npts</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter npts&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;status&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CONF:CHAN</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:MEAS?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;CONF:CHAN</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:MEAS </span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter status&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;format&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_format</span><span class="p">,</span> <span class="n">tracename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span><span class="p">),</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_format</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;dB&quot;</span><span class="p">:</span> <span class="s2">&quot;MLOG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Linear Magnitude&quot;</span><span class="p">:</span> <span class="s2">&quot;MLIN</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Phase&quot;</span><span class="p">:</span> <span class="s2">&quot;PHAS</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Unwr Phase&quot;</span><span class="p">:</span> <span class="s2">&quot;UPH</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Polar&quot;</span><span class="p">:</span> <span class="s2">&quot;POL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Smith&quot;</span><span class="p">:</span> <span class="s2">&quot;SMIT</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Inverse Smith&quot;</span><span class="p">:</span> <span class="s2">&quot;ISM</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;SWR&quot;</span><span class="p">:</span> <span class="s2">&quot;SWR</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Real&quot;</span><span class="p">:</span> <span class="s2">&quot;REAL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Imaginary&quot;</span><span class="p">:</span> <span class="s2">&quot;IMAG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Delay&quot;</span><span class="p">:</span> <span class="s2">&quot;GDEL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Complex&quot;</span><span class="p">:</span> <span class="s2">&quot;COMP</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter format&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace_mag_phase</span><span class="p">:</span> <span class="n">FrequencySweepMagPhase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trace_mag_phase&quot;</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span>
+            <span class="n">stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">(),</span>
+            <span class="n">npts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">(),</span>
+            <span class="n">channel</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">FrequencySweepMagPhase</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter trace_mag_phase&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace_db_phase</span><span class="p">:</span> <span class="n">FrequencySweepDBPhase</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trace_db_phase&quot;</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span>
+            <span class="n">stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">(),</span>
+            <span class="n">npts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">(),</span>
+            <span class="n">channel</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">FrequencySweepDBPhase</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter trace_db_phase&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="p">:</span> <span class="n">FrequencySweep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trace&quot;</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span>
+            <span class="n">stop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">(),</span>
+            <span class="n">npts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">(),</span>
+            <span class="n">channel</span><span class="o">=</span><span class="n">n</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">FrequencySweep</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter trace&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electrical_delay</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;electrical_delay&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Electrical delay&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:CORR:EDEL2:TIME?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:CORR:EDEL2:TIME </span><span class="se">{{}}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter electrical_delay&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sweep_time</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sweep_time&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Sweep time&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:SWE:TIME?&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter sweep_time&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sweep_type</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sweep_type&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:SWE:TYPE?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_sweep_type</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;Linear&quot;</span><span class="p">:</span> <span class="s2">&quot;LIN</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Logarithmic&quot;</span><span class="p">:</span> <span class="s2">&quot;LOG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Power&quot;</span><span class="p">:</span> <span class="s2">&quot;POW</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;CW_Time&quot;</span><span class="p">:</span> <span class="s2">&quot;CW</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;CW_Point&quot;</span><span class="p">:</span> <span class="s2">&quot;POIN</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;Segmented&quot;</span><span class="p">:</span> <span class="s2">&quot;SEGM</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;The sweep_type parameter is used to set &quot;</span>
+            <span class="s2">&quot;the type of measurement sweeps. It &quot;</span>
+            <span class="s2">&quot;allows switching the default linear &quot;</span>
+            <span class="s2">&quot;VNA sweep type to other types. Note that &quot;</span>
+            <span class="s2">&quot;at the moment only the linear and &quot;</span>
+            <span class="s2">&quot;CW_Point modes have supporting &quot;</span>
+            <span class="s2">&quot;measurement parameters.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The sweep_type parameter is used to set the type of measurement sweeps.</span>
+<span class="sd">        It allows switching the default linear VNA sweep type to other types.</span>
+<span class="sd">        Note that at the moment only the linear and CW_Point modes</span>
+<span class="sd">        have supporting measurement parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cw_frequency</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;cw_frequency&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:FREQ:CW?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_cw_frequency</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Numbers</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_min_freq</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">_max_freq</span> <span class="o">-</span> <span class="mi">10</span>
+            <span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Parameter for setting frequency and &quot;</span>
+            <span class="s2">&quot;querying for it when VNA sweep type is &quot;</span>
+            <span class="s2">&quot;set to CW_Point mode.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameter for setting frequency and querying for it</span>
+<span class="sd">        when VNA sweep type is set to CW_Point mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cw_check_sweep_first</span><span class="p">:</span> <span class="n">ManualParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;cw_check_sweep_first&quot;</span><span class="p">,</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">ManualParameter</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Bool</span><span class="p">(),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Parameter that enables a few commands &quot;</span>
+            <span class="s2">&quot;which are called before each get in &quot;</span>
+            <span class="s2">&quot;continuous wave mode checking whether &quot;</span>
+            <span class="s2">&quot;the vna is setup correctly. Is recommended &quot;</span>
+            <span class="s2">&quot;to be turned, but can be turned off if &quot;</span>
+            <span class="s2">&quot;one wants to minimize overhead in fast &quot;</span>
+            <span class="s2">&quot;measurements. &quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameter that enables a few commands which are called before each get</span>
+<span class="sd">        in continuous wave mode checking whether the vna is setup correctly.</span>
+<span class="sd">        Is recommended to be turned, but can be turned off if</span>
+<span class="sd">        one wants to minimize overhead in fast measurements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace_fixed_frequency</span><span class="p">:</span> <span class="n">FixedFrequencyTraceIQ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;trace_fixed_frequency&quot;</span><span class="p">,</span>
+            <span class="n">npts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">(),</span>
+            <span class="n">bandwidth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">(),</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">FixedFrequencyTraceIQ</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter trace_fixed_frequency&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">point_fixed_frequency</span><span class="p">:</span> <span class="n">FixedFrequencyPointIQ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;point_fixed_frequency&quot;</span><span class="p">,</span> <span class="n">parameter_class</span><span class="o">=</span><span class="n">FixedFrequencyPointIQ</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter point_fixed_frequency&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">point_fixed_frequency_mag_phase</span><span class="p">:</span> <span class="n">FixedFrequencyPointMagPhase</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="s2">&quot;point_fixed_frequency_mag_phase&quot;</span><span class="p">,</span>
+                <span class="n">parameter_class</span><span class="o">=</span><span class="n">FixedFrequencyPointMagPhase</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter point_fixed_frequency_mag_phase&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaging_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;averaging_enabled&quot;</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_enable_averaging</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Bool</span><span class="p">(),</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;OFF&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter averaging_enabled&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_sweep_time_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;auto_sweep_time_enabled&quot;</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_enable_auto_sweep_time</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="o">.</span><span class="n">Bool</span><span class="p">(),</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;ON&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;OFF&quot;</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;When enabled, the (minimum) sweep time is &quot;</span>
+            <span class="s2">&quot;calculated internally using the other channel settings &quot;</span>
+            <span class="s2">&quot;and zero delay&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        When enabled, the (minimum) sweep time is calculated internally</span>
+<span class="sd">        using the other channel settings and zero delay</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span>
+            <span class="s2">&quot;set_electrical_delay_auto&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:CORR:EDEL:AUTO ONCE&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span>
+            <span class="s2">&quot;autoscale&quot;</span><span class="p">,</span>
+            <span class="n">call_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;DISPlay:TRACe1:Y:SCALe:AUTO ONCE, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tracename</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:PAR:SEL &#39;</span><span class="si">{</span><span class="n">tracename</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">:FORM?&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">unit_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;MLOG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;dB&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MLIN</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;PHAS</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;rad&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;UPH</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;rad&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;POL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SMIT</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ISM</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SWR</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;U&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;REAL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;U&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;IMAG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;U&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;GDEL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;S&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;COMP</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">label_mapping</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;MLOG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Magnitude&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;MLIN</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Magnitude&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;PHAS</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Phase&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;UPH</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Unwrapped phase&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;POL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Complex Magnitude&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SMIT</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Complex Magnitude&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;ISM</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Complex Magnitude&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;SWR</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Standing Wave Ratio&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;REAL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Real Magnitude&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;IMAG</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Imaginary Magnitude&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;GDEL</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Delay&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;COMP</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span> <span class="s2">&quot;Complex Magnitude&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:PAR:SEL &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:FORM </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trace</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">short_name</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">label_mapping</span><span class="p">[</span><span class="n">val</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_strip</span><span class="p">(</span><span class="n">var</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Strip newline and quotes from instrument reply.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_set_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:FREQ:START </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&gt;=</span> <span class="n">stop</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Stop frequency must be larger than start &quot;</span>
+                             <span class="s2">&quot;frequency.&quot;</span><span class="p">)</span>
+        <span class="c1"># we get start as the vna may not be able to set it to the</span>
+        <span class="c1"># exact value provided.</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not set start to </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> setting it to </span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_lin_traces</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;=</span> <span class="n">start</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Stop frequency must be larger than start &quot;</span>
+                             <span class="s2">&quot;frequency.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:FREQ:STOP </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># We get stop as the vna may not be able to set it to the</span>
+        <span class="c1"># exact value provided.</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">val</span> <span class="o">-</span> <span class="n">stop</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not set stop to </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2"> setting it to </span><span class="si">{</span><span class="n">stop</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_lin_traces</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_npts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:SWE:POIN </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sweep_type</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;CW&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_cw_traces</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_lin_traces</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_bandwidth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:BAND </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_cw_traces</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_span</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:FREQ:SPAN </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_lin_traces</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:FREQ:CENT </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_lin_traces</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_sweep_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:SWE:TYPE </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_cw_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:FREQ:CW </span><span class="si">{</span><span class="n">val</span><span class="si">:</span><span class="s2">.7f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_enable_averaging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:AVER:STAT </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_enable_auto_sweep_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s2">:SWE:TIME:AUTO </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RohdeSchwarzZNBChannel.update_lin_traces">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBChannel.update_lin_traces">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_lin_traces</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates start, stop and npts of all trace parameters</span>
+<span class="sd">        so that the x-coordinates are updated for the sweep.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="n">npts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="p">(</span><span class="n">FrequencySweep</span><span class="p">,</span> <span class="n">FrequencySweepMagPhase</span><span class="p">,</span> <span class="n">FrequencySweepDBPhase</span><span class="p">)):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parameter</span><span class="o">.</span><span class="n">set_sweep</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">npts</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="RohdeSchwarzZNBChannel.update_cw_traces">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBChannel.update_cw_traces">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_cw_traces</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates the bandwidth and npts of all fixed frequency (CW) traces.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bandwidth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">()</span>
+        <span class="n">npts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parameter</span><span class="p">,</span> <span class="n">FixedFrequencyTraceIQ</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">parameter</span><span class="o">.</span><span class="n">set_cw_sweep</span><span class="p">(</span><span class="n">npts</span><span class="p">,</span> <span class="n">bandwidth</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sweep_time</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_sweep_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force_polar</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">rf_power</span><span class="p">():</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;RF output is off when getting sweep data&quot;</span><span class="p">)</span>
+        <span class="c1"># It is possible that the instrument and QCoDeS disagree about</span>
+        <span class="c1"># which parameter is measured on this channel.</span>
+        <span class="n">instrument_parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vna_parameter</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">instrument_parameter</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vna_parameter</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Invalid parameter. Tried to measure &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_vna_parameter</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">instrument_parameter</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaging_enabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:AVER:CLE&quot;</span><span class="p">)</span>
+
+        <span class="c1"># preserve original state of the znb</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">cont_meas_off</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># if force polar is set, the SDAT data format will be used.</span>
+                <span class="c1"># Here the data will be transferred as a complex number</span>
+                <span class="c1"># independent of the set format in the instrument.</span>
+                <span class="k">if</span> <span class="n">force_polar</span><span class="p">:</span>
+                    <span class="n">data_format_command</span> <span class="o">=</span> <span class="s2">&quot;SDAT&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">data_format_command</span> <span class="o">=</span> <span class="s2">&quot;FDAT&quot;</span>
+
+                <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_timeout</span><span class="p">()):</span>
+                    <span class="c1"># instrument averages over its last &#39;avg&#39; number of sweeps</span>
+                    <span class="c1"># need to ensure averaged result is returned</span>
+                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">avg</span><span class="p">()):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;INIT</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:IMM; *WAI&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:PAR:SEL &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_tracename</span><span class="si">}</span><span class="s2">&#39;&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">data_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:DATA?&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">data_format_command</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_str</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">()</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;Polar&quot;</span><span class="p">,</span>
+                                     <span class="s2">&quot;Complex&quot;</span><span class="p">,</span>
+                                     <span class="s2">&quot;Smith&quot;</span><span class="p">,</span>
+                                     <span class="s2">&quot;Inverse Smith&quot;</span><span class="p">]:</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">cont_meas_on</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+<div class="viewcode-block" id="RohdeSchwarzZNBChannel.setup_cw_sweep">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBChannel.setup_cw_sweep">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_cw_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method sets the VNA to CW mode. CW Mode sweeps are performed at</span>
+<span class="sd">        fixed frequency and allow to perform measurements versus time instead</span>
+<span class="sd">        of versus frequency.</span>
+<span class="sd">        See (https://www.rohde-schwarz.com/webhelp/ZNB_ZNBT_HTML_UserManual_en</span>
+<span class="sd">        /ZNB_ZNBT_HTML_UserManual_en.htm) under GUI reference -&gt; sweep softtool</span>
+<span class="sd">        -&gt; sweep type tab -&gt; CW mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># set the channel type to single point msmt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sweep_type</span><span class="p">(</span><span class="s2">&quot;CW_Point&quot;</span><span class="p">)</span>
+        <span class="c1"># turn off average on the VNA since we want single point sweeps.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaging_enabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># This format is required for getting both real and imaginary parts.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Complex&quot;</span><span class="p">)</span>
+        <span class="c1"># Set the sweep time to auto such that it sets the delay to zero</span>
+        <span class="c1"># between each point (e.g msmt speed is optimized). Note that if one</span>
+        <span class="c1"># would like to do a time sweep with time &gt; npts/bandwidth, this is</span>
+        <span class="c1"># where the delay would be set, but in general we want to measure as</span>
+        <span class="c1"># fast as possible without artificial delays.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auto_sweep_time_enabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Set cont measurement off here so we don&#39;t have to send that command</span>
+        <span class="c1"># while measuring later.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">cont_meas_off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RohdeSchwarzZNBChannel.setup_lin_sweep">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBChannel.setup_lin_sweep">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_lin_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setup the instrument into linear sweep mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sweep_type</span><span class="p">(</span><span class="s2">&quot;Linear&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaging_enabled</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">cont_meas_on</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_check_cw_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if all required settings are met to be able to measure in</span>
+<span class="sd">        CW_point mode. Similar to what is done in get_sweep_data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sweep_type</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">&quot;CW_Point&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Sweep type is not set to continuous wave &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;mode, instead it is: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sweep_type</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">rf_power</span><span class="p">():</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;RF output is off when getting sweep data&quot;</span><span class="p">)</span>
+
+        <span class="c1"># It is possible that the instrument and QCoDeS disagree about</span>
+        <span class="c1"># which parameter is measured on this channel.</span>
+        <span class="n">instrument_parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vna_parameter</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">instrument_parameter</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vna_parameter</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Invalid parameter. Tried to measure &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_vna_parameter</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;got </span><span class="si">{</span><span class="n">instrument_parameter</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Turn off average on the VNA since we want single point sweeps.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaging_enabled</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Set the format to complex.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;Complex&quot;</span><span class="p">)</span>
+        <span class="c1"># Set cont measurement off.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">cont_meas_off</span><span class="p">()</span>
+        <span class="c1"># Cache the sweep time so it is up to date when setting timeouts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sweep_time</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_cw_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="c1"># Make the checking optional such that we can do super fast sweeps as</span>
+        <span class="c1"># well, skipping the overhead of the other commands.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cw_check_sweep_first</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_cw_sweep</span><span class="p">()</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">set_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_timeout</span><span class="p">()):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;INIT</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:IMM; *WAI&quot;</span><span class="p">)</span>
+                <span class="n">data_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CALC</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_instrument_channel</span><span class="si">}</span><span class="s2">:DATA? &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;SDAT&quot;</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data_str</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">q</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">q</span>
+
+    <span class="k">def</span> <span class="nf">_get_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">timeout</span><span class="p">()</span> <span class="ow">or</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;+inf&quot;</span><span class="p">)</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sweep_time</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">,</span> <span class="n">timeout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">timeout</span></div>
+
+
+
+<span class="n">ZNBChannel</span> <span class="o">=</span> <span class="n">RohdeSchwarzZNBChannel</span>
+
+
+<div class="viewcode-block" id="RohdeSchwarzZNBBase">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBBase">[docs]</a>
+<span class="k">class</span> <span class="nc">RohdeSchwarzZNBBase</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Base class for QCoDeS driver for the Rohde &amp; Schwarz ZNB8 and ZNB20</span>
+<span class="sd">    virtual network analyser. It can probably be extended to ZNB4 and 40</span>
+<span class="sd">    without too much work. This class should not be instantiated directly</span>
+<span class="sd">    the RohdeSchwarzZNB8 and RohdeSchwarzZNB20 should be used instead.</span>
+
+<span class="sd">    Requires FrequencySweep parameter for taking a trace</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: instrument name</span>
+<span class="sd">        address: Address of instrument probably in format</span>
+<span class="sd">            &#39;TCPIP0::192.168.15.100::inst0::INSTR&#39;</span>
+<span class="sd">        init_s_params: Automatically setup channels for all S parameters on the</span>
+<span class="sd">            VNA.</span>
+<span class="sd">        reset_channels: If True any channels defined on the VNA at the time</span>
+<span class="sd">            of initialization are reset and removed.</span>
+<span class="sd">        **kwargs: passed to base class</span>
+
+<span class="sd">    Todo:</span>
+<span class="sd">        - check initialisation settings and test functions</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CHANNEL_CLASS</span> <span class="o">=</span> <span class="n">ZNBChannel</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">init_s_params</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">reset_channels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># TODO(JHN) I could not find a way to get max and min freq from</span>
+        <span class="c1"># the API, if that is possible replace below with that</span>
+        <span class="c1"># See page 1025 in the manual. 7.3.15.10 for details of max/min freq</span>
+        <span class="c1"># no attempt to support ZNB40, not clear without one how the format</span>
+        <span class="c1"># is due to variants</span>
+        <span class="n">fullmodel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_idn</span><span class="p">()[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">fullmodel</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">fullmodel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not determine ZNB model&quot;</span><span class="p">)</span>
+        <span class="c1"># format seems to be ZNB8-4Port</span>
+        <span class="n">m_frequency</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;ZNB4&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">9e3</span><span class="p">,</span> <span class="mf">4.5e9</span><span class="p">),</span>
+            <span class="s2">&quot;ZNB8&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">9e3</span><span class="p">,</span> <span class="mf">8.5e9</span><span class="p">),</span>
+            <span class="s2">&quot;ZNB20&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">100e3</span><span class="p">,</span> <span class="mf">20e9</span><span class="p">),</span>
+            <span class="s2">&quot;ZNB40&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">10e6</span><span class="p">,</span> <span class="mf">40e9</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">model</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">m_frequency</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported ZNB model </span><span class="si">{</span><span class="n">model</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_freq</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_freq</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_freq</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_max_freq</span> <span class="o">=</span> <span class="n">m_frequency</span><span class="p">[</span><span class="n">model</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_ports</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;num_ports&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;INST:PORT:COUN?&quot;</span><span class="p">,</span> <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter num_ports&quot;&quot;&quot;</span>
+        <span class="n">num_ports</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_ports</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rf_power</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rf_power&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;OUTP1?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;OUTP1 </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="kc">True</span><span class="p">:</span> <span class="s2">&quot;1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">:</span> <span class="s2">&quot;0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">},</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter rf_power&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;reset&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;*RST&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;tooltip_on&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;SYST:ERR:DISP ON&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;tooltip_off&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;SYST:ERR:DISP OFF&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;cont_meas_on&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;INIT:CONT:ALL ON&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;cont_meas_off&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;INIT:CONT:ALL OFF&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;update_display_once&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;SYST:DISP:UPD ONCE&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;update_display_on&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;SYST:DISP:UPD ON&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;update_display_off&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;SYST:DISP:UPD OFF&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span>
+            <span class="s2">&quot;display_sij_split&quot;</span><span class="p">,</span>
+            <span class="n">call_cmd</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;DISP:LAY GRID;:DISP:LAY:GRID </span><span class="si">{</span><span class="n">num_ports</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">num_ports</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span>
+            <span class="s2">&quot;display_single_window&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;DISP:LAY GRID;:DISP:LAY:GRID 1,1&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span>
+            <span class="s2">&quot;display_dual_window&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;DISP:LAY GRID;:DISP:LAY:GRID 2,1&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;rf_off&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;OUTP1 OFF&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_function</span><span class="p">(</span><span class="s2">&quot;rf_on&quot;</span><span class="p">,</span> <span class="n">call_cmd</span><span class="o">=</span><span class="s2">&quot;OUTP1 ON&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">reset_channels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clear_channels</span><span class="p">()</span>
+        <span class="n">channels</span> <span class="o">=</span> <span class="n">ChannelList</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;VNAChannels&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">CHANNEL_CLASS</span><span class="p">,</span> <span class="n">snapshotable</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;channels&quot;</span><span class="p">,</span> <span class="n">channels</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">init_s_params</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_ports</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_ports</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">ch_name</span> <span class="o">=</span> <span class="s2">&quot;S&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_channel</span><span class="p">(</span><span class="n">ch_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">display_sij_split</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_display_on</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">reset_channels</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rf_off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+<div class="viewcode-block" id="RohdeSchwarzZNBBase.display_grid">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBBase.display_grid">[docs]</a>
+    <span class="k">def</span> <span class="nf">display_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">cols</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display a grid of channels rows by columns.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DISP:LAY GRID;:DISP:LAY:GRID </span><span class="si">{</span><span class="n">rows</span><span class="si">}</span><span class="s2">,</span><span class="si">{</span><span class="n">cols</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RohdeSchwarzZNBBase.add_channel">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBBase.add_channel">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_channel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_channel</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">CHANNEL_CLASS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">,</span> <span class="n">i_channel</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i_channel</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">display_single_window</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">i_channel</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">display_dual_window</span><span class="p">()</span>
+        <span class="c1"># shortcut</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel_name</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+        <span class="c1"># initialising channel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">i_channel</span><span class="si">}</span><span class="s2">:SWE:TYPE LIN&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">i_channel</span><span class="si">}</span><span class="s2">:SWE:TIME:AUTO ON&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TRIG</span><span class="si">{</span><span class="n">i_channel</span><span class="si">}</span><span class="s2">:SEQ:SOUR IMM&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SENS</span><span class="si">{</span><span class="n">i_channel</span><span class="si">}</span><span class="s2">:AVER:STAT ON&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RohdeSchwarzZNBBase.clear_channels">
+<a class="viewcode-back" href="../../../../drivers_api/RohdeSchwarz.html#qcodes.instrument_drivers.rohde_schwarz.RohdeSchwarzZNBBase.clear_channels">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove all channels from the instrument and channel list and</span>
+<span class="sd">        unlock the channel list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;CALCulate:PARameter:DELete:ALL&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">submodule</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">submodule</span><span class="p">,</span> <span class="n">ChannelList</span><span class="p">):</span>
+                <span class="n">submodule</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
+
+
+
+<span class="nd">@deprecated</span><span class="p">(</span>
+    <span class="s2">&quot;The ZNB base class has been renamed RohdeSchwarzZNBBase&quot;</span><span class="p">,</span>
+    <span class="n">category</span><span class="o">=</span><span class="n">QCoDeSDeprecationWarning</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">class</span> <span class="nc">ZNB</span><span class="p">(</span><span class="n">RohdeSchwarzZNBBase</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

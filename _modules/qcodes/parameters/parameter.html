@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.parameters.parameter &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.parameters.parameter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.parameters.parameter</h1><div class="highlight"><pre>
+<span></span><span class="c1"># TODO (alexcjohnson) update this with the real duck-typing requirements or</span>
+<span class="c1"># create an ABC for Parameter and MultiParameter - or just remove this statement</span>
+<span class="c1"># if everyone is happy to use these classes.</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">MethodType</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">.command</span> <span class="kn">import</span> <span class="n">Command</span>
+<span class="kn">from</span> <span class="nn">.parameter_base</span> <span class="kn">import</span> <span class="n">ParamDataType</span><span class="p">,</span> <span class="n">ParameterBase</span><span class="p">,</span> <span class="n">ParamRawDataType</span>
+<span class="kn">from</span> <span class="nn">.sweep_values</span> <span class="kn">import</span> <span class="n">SweepFixedValues</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.instrument.base</span> <span class="kn">import</span> <span class="n">InstrumentBase</span>
+    <span class="kn">from</span> <span class="nn">qcodes.logger.instrument_logger</span> <span class="kn">import</span> <span class="n">InstrumentLoggerAdapter</span>
+    <span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Validator</span>
+
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Parameter">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.Parameter">[docs]</a>
+<span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">ParameterBase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A parameter represents a single degree of freedom. Most often,</span>
+<span class="sd">    this is the standard parameter for Instruments, though it can also be</span>
+<span class="sd">    used as a variable, i.e. storing/retrieving a value, or be subclassed for</span>
+<span class="sd">    more complex uses.</span>
+
+<span class="sd">    By default only gettable, returning its last value.</span>
+<span class="sd">    This behaviour can be modified in two ways:</span>
+
+<span class="sd">    1. Providing a ``get_cmd``/``set_cmd``, which can do the following:</span>
+
+<span class="sd">       a. callable, with zero args for get_cmd, one arg for set_cmd</span>
+<span class="sd">       b. VISA command string</span>
+<span class="sd">       c. None, in which case it retrieves its last value for ``get_cmd``,</span>
+<span class="sd">          and stores a value for ``set_cmd``</span>
+<span class="sd">       d. False, in which case trying to get/set will raise an error.</span>
+
+<span class="sd">    2. Creating a subclass with an explicit :meth:`get_raw`/:meth:`set_raw`</span>
+<span class="sd">       method.</span>
+
+<span class="sd">       This enables more advanced functionality. The :meth:`get_raw` and</span>
+<span class="sd">       :meth:`set_raw` methods are automatically wrapped to provide ``get`` and</span>
+<span class="sd">       ``set``.</span>
+
+<span class="sd">    It is an error to do both 1 and 2. E.g supply a ``get_cmd``/``set_cmd``</span>
+<span class="sd">    and implement ``get_raw``/``set_raw``</span>
+
+
+<span class="sd">    To detect if a parameter is gettable or settable check the attributes</span>
+<span class="sd">    :py:attr:`~gettable` and :py:attr:`~settable` on the parameter.</span>
+
+<span class="sd">    Parameters have a ``cache`` object that stores internally the current</span>
+<span class="sd">    ``value`` and ``raw_value`` of the parameter. Calling ``cache.get()``</span>
+<span class="sd">    (or ``cache()``) simply returns the most recent set or measured value of</span>
+<span class="sd">    the parameter.</span>
+
+<span class="sd">    Parameter also has a ``.get_latest`` method that duplicates the behavior</span>
+<span class="sd">    of ``cache()`` call, as in, it also simply returns the most recent set</span>
+<span class="sd">    or measured value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: The local name of the parameter. Should be a valid</span>
+<span class="sd">            identifier, ie no spaces or special characters. If this parameter</span>
+<span class="sd">            is part of an Instrument or Station, this is how it will be</span>
+<span class="sd">            referenced from that parent, ie ``instrument.name`` or</span>
+<span class="sd">            ``instrument.parameters[name]``.</span>
+
+<span class="sd">        instrument: The instrument this parameter</span>
+<span class="sd">            belongs to, if any.</span>
+
+<span class="sd">        label: Normally used as the axis label when this</span>
+<span class="sd">            parameter is graphed, along with ``unit``.</span>
+
+<span class="sd">        unit: The unit of measure. Use ``&#39;&#39;`` for unitless.</span>
+
+<span class="sd">        snapshot_get: ``False`` prevents any update to the</span>
+<span class="sd">            parameter during a snapshot, even if the snapshot was called with</span>
+<span class="sd">            ``update=True``, for example, if it takes too long to update,</span>
+<span class="sd">            or if the parameter is only meant for measurements hence calling</span>
+<span class="sd">            get on it during snapshot may be an error. Default True.</span>
+
+<span class="sd">        snapshot_value: ``False`` prevents parameter value to be</span>
+<span class="sd">            stored in the snapshot. Useful if the value is large.</span>
+
+<span class="sd">        snapshot_exclude: ``True`` prevents parameter to be</span>
+<span class="sd">            included in the snapshot. Useful if there are many of the same</span>
+<span class="sd">            parameter which are clogging up the snapshot.</span>
+<span class="sd">            Default ``False``.</span>
+
+<span class="sd">        step: Max increment of parameter value.</span>
+<span class="sd">            Larger changes are broken into multiple steps this size.</span>
+<span class="sd">            When combined with delays, this acts as a ramp.</span>
+
+<span class="sd">        scale: Scale to multiply value with before</span>
+<span class="sd">            performing set. the internally multiplied value is stored in</span>
+<span class="sd">            ``cache.raw_value``. Can account for a voltage divider.</span>
+
+<span class="sd">        inter_delay: Minimum time (in seconds)</span>
+<span class="sd">            between successive sets. If the previous set was less than this,</span>
+<span class="sd">            it will wait until the condition is met.</span>
+<span class="sd">            Can be set to 0 to go maximum speed with no errors.</span>
+
+<span class="sd">        post_delay: Time (in seconds) to wait</span>
+<span class="sd">            after the *start* of each set, whether part of a sweep or not.</span>
+<span class="sd">            Can be set to 0 to go maximum speed with no errors.</span>
+
+<span class="sd">        val_mapping: A bi-directional map data/readable values</span>
+<span class="sd">            to instrument codes, expressed as a dict:</span>
+<span class="sd">            ``{data_val: instrument_code}``</span>
+<span class="sd">            For example, if the instrument uses &#39;0&#39; to mean 1V and &#39;1&#39; to mean</span>
+<span class="sd">            10V, set val_mapping={1: &#39;0&#39;, 10: &#39;1&#39;} and on the user side you</span>
+<span class="sd">            only see 1 and 10, never the coded &#39;0&#39; and &#39;1&#39;</span>
+<span class="sd">            If vals is omitted, will also construct a matching Enum validator.</span>
+<span class="sd">            **NOTE** only applies to get if get_cmd is a string, and to set if</span>
+<span class="sd">            set_cmd is a string.</span>
+<span class="sd">            You can use ``val_mapping`` with ``get_parser``, in which case</span>
+<span class="sd">            ``get_parser`` acts on the return value from the instrument first,</span>
+<span class="sd">            then ``val_mapping`` is applied (in reverse).</span>
+
+<span class="sd">        get_parser: Function to transform the response</span>
+<span class="sd">            from get to the final output value. See also `val_mapping`.</span>
+
+<span class="sd">        set_parser: Function to transform the input set</span>
+<span class="sd">            value to an encoded value sent to the instrument.</span>
+<span class="sd">            See also `val_mapping`.</span>
+
+<span class="sd">        vals: Allowed values for setting this parameter.</span>
+<span class="sd">            Only relevant if settable. Defaults to ``Numbers()``.</span>
+
+<span class="sd">        max_val_age: The max time (in seconds) to trust a</span>
+<span class="sd">            saved value obtained from ``cache()`` (or ``cache.get()``, or</span>
+<span class="sd">            ``get_latest()``. If this parameter has not been set or measured</span>
+<span class="sd">            more recently than this, perform an additional measurement.</span>
+
+<span class="sd">        initial_value: Value to set the parameter to at the end of its</span>
+<span class="sd">            initialization (this is equivalent to calling</span>
+<span class="sd">            ``parameter.set(initial_value)`` after parameter initialization).</span>
+<span class="sd">            Cannot be passed together with ``initial_cache_value`` argument.</span>
+
+<span class="sd">        initial_cache_value: Value to set the cache of the parameter to</span>
+<span class="sd">            at the end of its initialization (this is equivalent to calling</span>
+<span class="sd">            ``parameter.cache.set(initial_cache_value)`` after parameter</span>
+<span class="sd">            initialization). Cannot be passed together with ``initial_value``</span>
+<span class="sd">            argument.</span>
+
+<span class="sd">        docstring: Documentation string for the ``__doc__``</span>
+<span class="sd">            field of the object. The ``__doc__``  field of the instance is</span>
+<span class="sd">            used by some help systems, but not all.</span>
+
+<span class="sd">        metadata: Extra information to include with the</span>
+<span class="sd">            JSON snapshot of the parameter.</span>
+
+<span class="sd">        abstract: Specifies if this parameter is abstract or not. Default</span>
+<span class="sd">            is False. If the parameter is &#39;abstract&#39;, it *must* be overridden</span>
+<span class="sd">            by a non-abstract parameter before the instrument containing</span>
+<span class="sd">            this parameter can be instantiated. We override a parameter by</span>
+<span class="sd">            adding one with the same name and unit. An abstract parameter</span>
+<span class="sd">            can be added in a base class and overridden in a subclass.</span>
+
+<span class="sd">        bind_to_instrument: Should the parameter be registered as a delegate attribute</span>
+<span class="sd">            on the instrument passed via the instrument argument.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">get_cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">set_cmd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">initial_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">max_val_age</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">vals</span><span class="p">:</span> <span class="n">Validator</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">docstring</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">initial_cache_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">bind_to_instrument</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">_get_manual_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mylogger</span><span class="p">:</span> <span class="n">InstrumentLoggerAdapter</span> <span class="o">|</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">log</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mylogger</span> <span class="o">=</span> <span class="n">log</span>
+            <span class="n">mylogger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Getting raw value of parameter: </span><span class="si">%s</span><span class="s2"> as </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">raw_value</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">raw_value</span>
+
+        <span class="k">def</span> <span class="nf">_set_manual_parameter</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">ParamRawDataType</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParamRawDataType</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">mylogger</span><span class="p">:</span> <span class="n">InstrumentLoggerAdapter</span> <span class="o">|</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">log</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">mylogger</span> <span class="o">=</span> <span class="n">log</span>
+            <span class="n">mylogger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="s2">&quot;Setting raw value of parameter: </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_name</span><span class="p">,</span> <span class="n">x</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">_set_from_raw_value</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="k">if</span> <span class="n">instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">bind_to_instrument</span><span class="p">:</span>
+            <span class="n">existing_parameter</span> <span class="o">=</span> <span class="n">instrument</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">existing_parameter</span><span class="p">:</span>
+
+                <span class="c1"># this check is redundant since its also in the baseclass</span>
+                <span class="c1"># but if we do not put it here it would be an api break</span>
+                <span class="c1"># as parameter duplication check won&#39;t be done first,</span>
+                <span class="c1"># hence for parameters that are duplicates and have</span>
+                <span class="c1"># wrong units, users will be getting ValueError where</span>
+                <span class="c1"># they used to have KeyError before.</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">existing_parameter</span><span class="o">.</span><span class="n">abstract</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Duplicate parameter name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> on instrument </span><span class="si">{</span><span class="n">instrument</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="n">existing_unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">existing_parameter</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">existing_unit</span> <span class="o">!=</span> <span class="n">unit</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;The unit of the parameter &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; is &#39;</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;This is inconsistent with the unit defined in the &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;base class&quot;</span>
+                    <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">vals</span><span class="p">,</span>
+            <span class="n">max_val_age</span><span class="o">=</span><span class="n">max_val_age</span><span class="p">,</span>
+            <span class="n">bind_to_instrument</span><span class="o">=</span><span class="n">bind_to_instrument</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">no_instrument_get</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gettable</span> <span class="ow">and</span> <span class="p">(</span><span class="n">get_cmd</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">get_cmd</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># TODO: a matching check should be in ParameterBase but</span>
+        <span class="c1">#   due to the current limited design the ParameterBase cannot</span>
+        <span class="c1">#   know if this subclass will supply a get_cmd</span>
+        <span class="c1">#   To work around this a RunTime check is put into get of GetLatest</span>
+        <span class="c1">#   and into get of _Cache</span>
+        <span class="k">if</span> <span class="n">max_val_age</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">no_instrument_get</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+                <span class="s2">&quot;Must have get method or specify get_cmd when max_val_age is set&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Enable set/get methods from get_cmd/set_cmd if given and</span>
+        <span class="c1"># no `get`/`set` or `get_raw`/`set_raw` methods have been defined</span>
+        <span class="c1"># in the scope of this class.</span>
+        <span class="c1"># (previous call to `super().__init__` wraps existing</span>
+        <span class="c1"># get_raw/set_raw into get/set methods)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gettable</span> <span class="ow">and</span> <span class="n">get_cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Supplying a not None or False `get_cmd` to a Parameter&quot;</span>
+                <span class="s2">&quot; that already implements&quot;</span>
+                <span class="s2">&quot; get_raw is an error.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gettable</span> <span class="ow">and</span> <span class="n">get_cmd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">get_cmd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># ignore typeerror since mypy does not allow setting a method dynamically</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_raw</span> <span class="o">=</span> <span class="n">MethodType</span><span class="p">(</span><span class="n">_get_manual_parameter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>  <span class="c1"># type: ignore[method-assign]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">get_cmd</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">instrument</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Cannot use a str get_cmd without &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;binding to an instrument. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Got: get_cmd </span><span class="si">{</span><span class="n">get_cmd</span><span class="si">}</span><span class="s2"> for parameter </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="n">exec_str_ask</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="s2">&quot;ask&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">instrument</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="c1"># TODO get_raw should also be a method here. This should probably be done by wrapping</span>
+                <span class="c1"># it with MethodType like above</span>
+                <span class="c1"># ignore typeerror since mypy does not allow setting a method dynamically</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">get_raw</span> <span class="o">=</span> <span class="n">Command</span><span class="p">(</span>  <span class="c1"># type: ignore[method-assign]</span>
+                    <span class="n">arg_count</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">cmd</span><span class="o">=</span><span class="n">get_cmd</span><span class="p">,</span>
+                    <span class="n">exec_str</span><span class="o">=</span><span class="n">exec_str_ask</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gettable</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># mypy resolves the type of self.get_raw to object here.</span>
+            <span class="c1"># this may be resolvable if Command above is correctly wrapped in MethodType</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_raw</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">settable</span> <span class="ow">and</span> <span class="n">set_cmd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="s2">&quot;Supplying a not None or False `set_cmd` to a Parameter&quot;</span>
+                <span class="s2">&quot; that already implements&quot;</span>
+                <span class="s2">&quot; set_raw is an error.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">settable</span> <span class="ow">and</span> <span class="n">set_cmd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">set_cmd</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># ignore typeerror since mypy does not allow setting a method dynamically</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_raw</span> <span class="o">=</span> <span class="n">MethodType</span><span class="p">(</span><span class="n">_set_manual_parameter</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>  <span class="c1"># type: ignore[method-assign]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">set_cmd</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">instrument</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Cannot use a str set_cmd without &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;binding to an instrument. &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Got: set_cmd </span><span class="si">{</span><span class="n">set_cmd</span><span class="si">}</span><span class="s2"> for parameter </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+
+                <span class="n">exec_str_write</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">instrument</span><span class="p">,</span> <span class="s2">&quot;write&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">instrument</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="p">)</span>
+                <span class="c1"># TODO get_raw should also be a method here. This should probably be done by wrapping</span>
+                <span class="c1"># it with MethodType like above</span>
+                <span class="c1"># ignore typeerror since mypy does not allow setting a method dynamically</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_raw</span> <span class="o">=</span> <span class="n">Command</span><span class="p">(</span>  <span class="c1"># type: ignore[assignment]</span>
+                    <span class="n">arg_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cmd</span><span class="o">=</span><span class="n">set_cmd</span><span class="p">,</span> <span class="n">exec_str</span><span class="o">=</span><span class="n">exec_str_write</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_settable</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">set_raw</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_meta_attrs</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="s2">&quot;vals&quot;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_label</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unitval</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="k">if</span> <span class="n">initial_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">initial_cache_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">SyntaxError</span><span class="p">(</span>
+                <span class="s2">&quot;It is not possible to specify both of the &quot;</span>
+                <span class="s2">&quot;`initial_value` and `initial_cache_value` &quot;</span>
+                <span class="s2">&quot;keyword arguments.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">initial_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">initial_value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">initial_cache_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">initial_cache_value</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_docstring</span> <span class="o">=</span> <span class="n">docstring</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build__doc__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_build__doc__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">validators</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">validator_docstrings</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;* `vals` None&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">validator_docstrings</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="sa">f</span><span class="s2">&quot;* `vals` </span><span class="si">{</span><span class="n">validator</span><span class="si">!r}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">validator</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">validators</span>
+            <span class="p">]</span>
+        <span class="c1"># generate default docstring</span>
+        <span class="n">doc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="s2">&quot;Parameter class:&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;* `name` </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;* `label` </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;* `unit` </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="o">*</span><span class="n">validator_docstrings</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_docstring</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">doc</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_docstring</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">doc</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">doc</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">unit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The unit of measure. Use ``&#39;&#39;`` (the empty string)</span>
+<span class="sd">        for unitless.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unitval</span>
+
+    <span class="nd">@unit</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">unit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unitval</span> <span class="o">=</span> <span class="n">unit</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">label</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Label of the data used for plots etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_label</span>
+
+    <span class="nd">@label</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">label</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_label</span> <span class="o">=</span> <span class="n">label</span>
+
+<div class="viewcode-block" id="Parameter.__getitem__">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.Parameter.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SweepFixedValues</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Slice a Parameter to get a SweepValues object</span>
+<span class="sd">        to iterate over during a sweep</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SweepFixedValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Parameter.increment">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.Parameter.increment">[docs]</a>
+    <span class="k">def</span> <span class="nf">increment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">ParamDataType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Increment the parameter with a value</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: Value to be added to the parameter.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">+</span> <span class="n">value</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Parameter.sweep">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.Parameter.sweep">[docs]</a>
+    <span class="k">def</span> <span class="nf">sweep</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">step</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SweepFixedValues</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a collection of parameter values to be iterated over.</span>
+<span class="sd">        Requires `start` and `stop` and (`step` or `num`)</span>
+<span class="sd">        The sign of `step` is not relevant.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            start: The starting value of the sequence.</span>
+<span class="sd">            stop: The end value of the sequence.</span>
+<span class="sd">            step:  Spacing between values.</span>
+<span class="sd">            num: Number of values to generate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            SweepFixedValues: Collection of parameter values to be</span>
+<span class="sd">            iterated over.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            &gt;&gt;&gt; sweep(0, 10, num=5)</span>
+<span class="sd">             [0.0, 2.5, 5.0, 7.5, 10.0]</span>
+<span class="sd">            &gt;&gt;&gt; sweep(5, 10, step=1)</span>
+<span class="sd">            [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]</span>
+<span class="sd">            &gt;&gt;&gt; sweep(15, 10.5, step=1.5)</span>
+<span class="sd">            &gt;[15.0, 13.5, 12.0, 10.5]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">SweepFixedValues</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">num</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ManualParameter">
+<a class="viewcode-back" href="../../../api/parameters/index.html#qcodes.parameters.ManualParameter">[docs]</a>
+<span class="k">class</span> <span class="nc">ManualParameter</span><span class="p">(</span><span class="n">Parameter</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">instrument</span><span class="p">:</span> <span class="n">InstrumentBase</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">initial_value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A simple alias for a parameter that does not have a set or</span>
+<span class="sd">        a get function. Useful for parameters that do not have a direct</span>
+<span class="sd">        instrument mapping.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">instrument</span><span class="o">=</span><span class="n">instrument</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="n">initial_value</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

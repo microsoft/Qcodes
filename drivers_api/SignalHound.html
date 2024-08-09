@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal Hound Drivers &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Stahl Drivers" href="Stahl.html" />
+    <link rel="prev" title="Stanford Research Systems Drivers" href="SRS.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Signal Hound Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.dll_path"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.dll_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.span"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.span</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.npts"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.npts</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.avg"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.avg</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.ref_lvl"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.ref_lvl</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.external_reference"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.external_reference</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_type"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.device_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_mode"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.device_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.acquisition_mode"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.acquisition_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.rbw"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.rbw</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.vbw"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.vbw</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.reject_image"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.reject_image</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sleep_time"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.sleep_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.trace"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.trace</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.power"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.power</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.scale"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.scale</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency_axis"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.frequency_axis</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.freq_sweep"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.freq_sweep</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sync_parameters"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.sync_parameters()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.configure"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.configure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.openDevice"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.openDevice()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.close"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.abort"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.abort()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.preset"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.preset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.QuerySweep"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.QuerySweep()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.check_for_error"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.check_for_error()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.get_idn"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.parameters"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.functions"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.submodules"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.instrument_modules"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.log"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.metadata"><code class="docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B.metadata</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">Signal Hound Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/SignalHound.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.signal_hound">
+<span id="signal-hound-drivers"></span><span id="signalhound-api"></span><h1>Signal Hound Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.signal_hound" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SignalHoundUSBSA124B</span></code></a>(name[, dll_path])</p></td>
+<td><p>QCoDeS driver for the SignalHound USB SA124B</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.signal_hound.</span></span><span class="sig-name descname"><span class="pre">SignalHoundUSBSA124B</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">dll_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instrument</span></code></a></p>
+<p>QCoDeS driver for the SignalHound USB SA124B</p>
+<p>The driver needs Signal Hounds software
+<a class="reference external" href="https://signalhound.com/spike/">Spike</a> installed to function.
+In addition, you may need to install Microsoft Visual Studio C++
+Redistributable for the driver to function within QCoDeS.
+At the time of writing the current version of Spike (3.2.3) uses
+<a class="reference external" href="https://www.microsoft.com/en-us/download/details.aspx?id=30679">Microsoft Visual Studio C++ Redistributable 2012</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name of the instrument.</p></li>
+<li><p><strong>dll_path</strong> – Path to <code class="docutils literal notranslate"><span class="pre">sa_api.dll</span></code> Defaults to the default dll within
+Spike installation</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.dll_path" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.dll_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dll_path</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency"><code class="xref py py-obj docutils literal notranslate"><span class="pre">frequency</span></code></a></p></td>
+<td><p>Center frequency for sweep.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.span" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.span"><code class="xref py py-obj docutils literal notranslate"><span class="pre">span</span></code></a></p></td>
+<td><p>Width of frequency span.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.npts" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.npts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">npts</span></code></a></p></td>
+<td><p>Number of points in frequency sweep.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.avg" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.avg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">avg</span></code></a></p></td>
+<td><p>Number of averages to perform.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.ref_lvl" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.ref_lvl"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ref_lvl</span></code></a></p></td>
+<td><p>Setting reference level will automatically select gain and attenuation optimal for measuring at and below this level</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.external_reference" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.external_reference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">external_reference</span></code></a></p></td>
+<td><p>Use an external 10 MHz reference source.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_type" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">device_type</span></code></a></p></td>
+<td><p>Parameter device_type</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_mode" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">device_mode</span></code></a></p></td>
+<td><p>The driver currently only supports sweeping mode.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.acquisition_mode" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.acquisition_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">acquisition_mode</span></code></a></p></td>
+<td><p>The driver only supports averaging mode.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.rbw" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.rbw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rbw</span></code></a></p></td>
+<td><p>Resolution Bandwidth (RBW) is the bandwidth of spectral energy represented in each frequency bin</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.vbw" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.vbw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vbw</span></code></a></p></td>
+<td><p>The video bandwidth (VBW) is applied after the signal has been converted to frequency domain as power, voltage, or log units.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.reject_image" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.reject_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reject_image</span></code></a></p></td>
+<td><p>Apply software filter to remove undersampling mirroring</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sleep_time" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sleep_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sleep_time</span></code></a></p></td>
+<td><p>Time to sleep before and after getting data from the instrument</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.trace" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.trace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trace</span></code></a></p></td>
+<td><p>Parameter trace</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.power" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.power"><code class="xref py py-obj docutils literal notranslate"><span class="pre">power</span></code></a></p></td>
+<td><p>The maximum power in a window of 250 kHz around the specified frequency with Resolution bandwidth set to 1 kHz.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.scale" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">scale</span></code></a></p></td>
+<td><p>Parameter scale</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency_axis" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency_axis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">frequency_axis</span></code></a></p></td>
+<td><p>Parameter frequency_axis</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.freq_sweep" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.freq_sweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">freq_sweep</span></code></a></p></td>
+<td><p>Parameter freq_sweep</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sync_parameters" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sync_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sync_parameters</span></code></a>()</p></td>
+<td><p>Sync parameters sets the configuration of the instrument using the parameters specified in the Qcodes instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.configure" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.configure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">configure</span></code></a>()</p></td>
+<td><p>Syncs parameters to the Instrument and updates the setpoint of the trace.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.openDevice" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.openDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">openDevice</span></code></a>()</p></td>
+<td><p>Opens connection to the instrument</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.close" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.close"><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code></a>()</p></td>
+<td><p>Close connection to the instrument.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.abort" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.abort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">abort</span></code></a>()</p></td>
+<td><p>Abort any running acquisition.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.preset" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.preset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preset</span></code></a>()</p></td>
+<td><p>Like close but performs a hardware reset before closing the connection.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.QuerySweep" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.QuerySweep"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QuerySweep</span></code></a>()</p></td>
+<td><p>Queries the sweep for information on the parameters that defines the x axis of the sweep</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.check_for_error" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.check_for_error"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_for_error</span></code></a>(err, source[, extrainfo])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.get_idn" title="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.dll_path">
+<span class="sig-name descname"><span class="pre">dll_path</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'C:\\Program</span> <span class="pre">Files\\Signal</span> <span class="pre">Hound\\Spike\\sa_api.dll'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.dll_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency">
+<span class="sig-name descname"><span class="pre">frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">SweepTraceParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;frequency&quot;,</span> <span class="pre">label=&quot;Frequency&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">initial_value=5e9,</span> <span class="pre">vals=vals.Numbers(),</span> <span class="pre">parameter_class=SweepTraceParameter,</span> <span class="pre">docstring=&quot;Center</span> <span class="pre">frequency</span> <span class="pre">for</span> <span class="pre">sweep.</span> <span class="pre">&quot;</span> <span class="pre">&quot;This</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">set</span> <span class="pre">center,</span> <span class="pre">the</span> <span class="pre">actual</span> <span class="pre">&quot;</span> <span class="pre">&quot;center</span> <span class="pre">may</span> <span class="pre">be</span> <span class="pre">subject</span> <span class="pre">to</span> <span class="pre">round</span> <span class="pre">off</span> <span class="pre">&quot;</span> <span class="pre">&quot;compared</span> <span class="pre">to</span> <span class="pre">this</span> <span class="pre">value&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency" title="Link to this definition"></a></dt>
+<dd><p>Center frequency for sweep.</p>
+<p>This is the set center, the actual center may be subject to round off compared to this value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.span">
+<span class="sig-name descname"><span class="pre">span</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">SweepTraceParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;span&quot;,</span> <span class="pre">label=&quot;Span&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">initial_value=0.25e6,</span> <span class="pre">vals=vals.Numbers(),</span> <span class="pre">parameter_class=SweepTraceParameter,</span> <span class="pre">docstring=&quot;Width</span> <span class="pre">of</span> <span class="pre">frequency</span> <span class="pre">span.</span> <span class="pre">&quot;</span> <span class="pre">&quot;This</span> <span class="pre">is</span> <span class="pre">the</span> <span class="pre">set</span> <span class="pre">span,</span> <span class="pre">the</span> <span class="pre">actual</span> <span class="pre">&quot;</span> <span class="pre">&quot;span</span> <span class="pre">may</span> <span class="pre">be</span> <span class="pre">subject</span> <span class="pre">to</span> <span class="pre">round</span> <span class="pre">off</span> <span class="pre">&quot;</span> <span class="pre">&quot;compared</span> <span class="pre">to</span> <span class="pre">this</span> <span class="pre">value&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.span" title="Link to this definition"></a></dt>
+<dd><p>Width of frequency span.</p>
+<p>This is the set span, the actual span may be subject to round off compared to this value</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.npts">
+<span class="sig-name descname"><span class="pre">npts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;npts&quot;,</span> <span class="pre">label=&quot;Number</span> <span class="pre">of</span> <span class="pre">Points&quot;,</span> <span class="pre">get_cmd=self._get_npts,</span> <span class="pre">set_cmd=False,</span> <span class="pre">docstring=&quot;Number</span> <span class="pre">of</span> <span class="pre">points</span> <span class="pre">in</span> <span class="pre">frequency</span> <span class="pre">sweep.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.npts" title="Link to this definition"></a></dt>
+<dd><p>Number of points in frequency sweep.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.avg">
+<span class="sig-name descname"><span class="pre">avg</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;avg&quot;,</span> <span class="pre">label=&quot;Averages&quot;,</span> <span class="pre">initial_value=1,</span> <span class="pre">get_cmd=None,</span> <span class="pre">set_cmd=None,</span> <span class="pre">vals=vals.Ints(),</span> <span class="pre">docstring=&quot;Number</span> <span class="pre">of</span> <span class="pre">averages</span> <span class="pre">to</span> <span class="pre">perform.</span> <span class="pre">&quot;</span> <span class="pre">&quot;Averages</span> <span class="pre">are</span> <span class="pre">performed</span> <span class="pre">in</span> <span class="pre">software</span> <span class="pre">by</span> <span class="pre">&quot;</span> <span class="pre">&quot;acquiring</span> <span class="pre">multiple</span> <span class="pre">sweeps&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.avg" title="Link to this definition"></a></dt>
+<dd><p>Number of averages to perform.</p>
+<p>Averages are performed in software by acquiring multiple sweeps</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.ref_lvl">
+<span class="sig-name descname"><span class="pre">ref_lvl</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TraceParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ref_lvl&quot;,</span> <span class="pre">label=&quot;Reference</span> <span class="pre">power&quot;,</span> <span class="pre">unit=&quot;dBm&quot;,</span> <span class="pre">initial_value=0,</span> <span class="pre">vals=vals.Numbers(max_value=20),</span> <span class="pre">parameter_class=TraceParameter,</span> <span class="pre">docstring=&quot;Setting</span> <span class="pre">reference</span> <span class="pre">level</span> <span class="pre">will</span> <span class="pre">&quot;</span> <span class="pre">&quot;automatically</span> <span class="pre">select</span> <span class="pre">gain</span> <span class="pre">and</span> <span class="pre">attenuation</span> <span class="pre">&quot;</span> <span class="pre">&quot;optimal</span> <span class="pre">for</span> <span class="pre">measuring</span> <span class="pre">at</span> <span class="pre">and</span> <span class="pre">below</span> <span class="pre">&quot;</span> <span class="pre">&quot;this</span> <span class="pre">level&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.ref_lvl" title="Link to this definition"></a></dt>
+<dd><p>Setting reference level will automatically select gain and attenuation
+optimal for measuring at and below this level</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.external_reference">
+<span class="sig-name descname"><span class="pre">external_reference</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ExternalRefParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;external_reference&quot;,</span> <span class="pre">initial_value=False,</span> <span class="pre">vals=vals.Bool(),</span> <span class="pre">parameter_class=ExternalRefParameter,</span> <span class="pre">docstring=&quot;Use</span> <span class="pre">an</span> <span class="pre">external</span> <span class="pre">10</span> <span class="pre">MHz</span> <span class="pre">reference</span> <span class="pre">source.</span> <span class="pre">&quot;</span> <span class="pre">&quot;Note</span> <span class="pre">that</span> <span class="pre">Signal</span> <span class="pre">Hound</span> <span class="pre">does</span> <span class="pre">not</span> <span class="pre">support</span> <span class="pre">&quot;</span> <span class="pre">&quot;disabling</span> <span class="pre">external</span> <span class="pre">ref.</span> <span class="pre">To</span> <span class="pre">disable</span> <span class="pre">close</span> <span class="pre">&quot;</span> <span class="pre">&quot;the</span> <span class="pre">connection</span> <span class="pre">and</span> <span class="pre">restart.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.external_reference" title="Link to this definition"></a></dt>
+<dd><p>Use an external 10 MHz reference source.</p>
+<p>Note that Signal Hound does not support disabling external ref.
+To disable close the connection and restart.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_type">
+<span class="sig-name descname"><span class="pre">device_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;device_type&quot;,</span> <span class="pre">set_cmd=False,</span> <span class="pre">get_cmd=self._get_device_type</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_type" title="Link to this definition"></a></dt>
+<dd><p>Parameter device_type</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_mode">
+<span class="sig-name descname"><span class="pre">device_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;device_mode&quot;,</span> <span class="pre">get_cmd=lambda:</span> <span class="pre">&quot;sweeping&quot;,</span> <span class="pre">set_cmd=False,</span> <span class="pre">docstring=&quot;The</span> <span class="pre">driver</span> <span class="pre">currently</span> <span class="pre">only</span> <span class="pre">&quot;</span> <span class="pre">&quot;supports</span> <span class="pre">sweeping</span> <span class="pre">mode.</span> <span class="pre">&quot;</span> <span class="pre">&quot;It</span> <span class="pre">is</span> <span class="pre">therefor</span> <span class="pre">not</span> <span class="pre">possible</span> <span class="pre">&quot;</span> <span class="pre">&quot;to</span> <span class="pre">set</span> <span class="pre">this</span> <span class="pre">parameter</span> <span class="pre">to</span> <span class="pre">anything</span> <span class="pre">else&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.device_mode" title="Link to this definition"></a></dt>
+<dd><p>The driver currently only supports sweeping mode.</p>
+<p>It is therefor not possible to set this parameter to anything else</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.acquisition_mode">
+<span class="sig-name descname"><span class="pre">acquisition_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;acquisition_mode&quot;,</span> <span class="pre">get_cmd=lambda:</span> <span class="pre">&quot;average&quot;,</span> <span class="pre">set_cmd=False,</span> <span class="pre">docstring=&quot;The</span> <span class="pre">driver</span> <span class="pre">only</span> <span class="pre">supports</span> <span class="pre">averaging</span> <span class="pre">&quot;</span> <span class="pre">&quot;mode</span> <span class="pre">it</span> <span class="pre">is</span> <span class="pre">therefor</span> <span class="pre">not</span> <span class="pre">possible</span> <span class="pre">to</span> <span class="pre">set</span> <span class="pre">&quot;</span> <span class="pre">&quot;this</span> <span class="pre">parameter</span> <span class="pre">to</span> <span class="pre">anything</span> <span class="pre">else&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.acquisition_mode" title="Link to this definition"></a></dt>
+<dd><p>The driver only supports averaging mode.</p>
+<p>It is therefor not possible to set
+this parameter to anything else</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.rbw">
+<span class="sig-name descname"><span class="pre">rbw</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TraceParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;rbw&quot;,</span> <span class="pre">label=&quot;Resolution</span> <span class="pre">Bandwidth&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">initial_value=1e3,</span> <span class="pre">vals=vals.Numbers(0.1,</span> <span class="pre">250e3),</span> <span class="pre">parameter_class=TraceParameter,</span> <span class="pre">docstring=&quot;Resolution</span> <span class="pre">Bandwidth</span> <span class="pre">(RBW)</span> <span class="pre">is</span> <span class="pre">&quot;</span> <span class="pre">&quot;the</span> <span class="pre">bandwidth</span> <span class="pre">of</span> <span class="pre">&quot;</span> <span class="pre">&quot;spectral</span> <span class="pre">energy</span> <span class="pre">represented</span> <span class="pre">in</span> <span class="pre">each</span> <span class="pre">&quot;</span> <span class="pre">&quot;frequency</span> <span class="pre">bin&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.rbw" title="Link to this definition"></a></dt>
+<dd><p>Resolution Bandwidth (RBW)
+is the bandwidth of spectral energy represented in each frequency bin</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.vbw">
+<span class="sig-name descname"><span class="pre">vbw</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TraceParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;vbw&quot;,</span> <span class="pre">label=&quot;Video</span> <span class="pre">Bandwidth&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">initial_value=1e3,</span> <span class="pre">vals=vals.Numbers(),</span> <span class="pre">parameter_class=TraceParameter,</span> <span class="pre">docstring=&quot;The</span> <span class="pre">video</span> <span class="pre">bandwidth</span> <span class="pre">(VBW)</span> <span class="pre">is</span> <span class="pre">applied</span> <span class="pre">&quot;</span> <span class="pre">&quot;after</span> <span class="pre">the</span> <span class="pre">signal</span> <span class="pre">has</span> <span class="pre">been</span> <span class="pre">converted</span> <span class="pre">to</span> <span class="pre">&quot;</span> <span class="pre">&quot;frequency</span> <span class="pre">domain</span> <span class="pre">as</span> <span class="pre">power,</span> <span class="pre">voltage,</span> <span class="pre">&quot;</span> <span class="pre">&quot;or</span> <span class="pre">log</span> <span class="pre">units.</span> <span class="pre">It</span> <span class="pre">is</span> <span class="pre">implemented</span> <span class="pre">as</span> <span class="pre">a</span> <span class="pre">&quot;</span> <span class="pre">&quot;simple</span> <span class="pre">rectangular</span> <span class="pre">window,</span> <span class="pre">averaging</span> <span class="pre">the</span> <span class="pre">&quot;</span> <span class="pre">&quot;amplitude</span> <span class="pre">readings</span> <span class="pre">for</span> <span class="pre">each</span> <span class="pre">frequency</span> <span class="pre">&quot;</span> <span class="pre">&quot;bin</span> <span class="pre">over</span> <span class="pre">several</span> <span class="pre">overlapping</span> <span class="pre">FFTs.</span> <span class="pre">&quot;</span> <span class="pre">&quot;For</span> <span class="pre">best</span> <span class="pre">performance</span> <span class="pre">use</span> <span class="pre">RBW</span> <span class="pre">as</span> <span class="pre">the</span> <span class="pre">VBW.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.vbw" title="Link to this definition"></a></dt>
+<dd><p>The video bandwidth (VBW)
+is applied after the signal has been converted to frequency domain as power,
+voltage, or log units. It is implemented as a simple rectangular window,
+averaging the amplitude readings for each frequency bin over several overlapping FFTs.
+For best performance use RBW as the VBW.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.reject_image">
+<span class="sig-name descname"><span class="pre">reject_image</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TraceParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;reject_image&quot;,</span> <span class="pre">label=&quot;Reject</span> <span class="pre">image&quot;,</span> <span class="pre">unit=&quot;&quot;,</span> <span class="pre">initial_value=True,</span> <span class="pre">parameter_class=TraceParameter,</span> <span class="pre">get_cmd=None,</span> <span class="pre">docstring=&quot;Apply</span> <span class="pre">software</span> <span class="pre">filter</span> <span class="pre">to</span> <span class="pre">remove</span> <span class="pre">undersampling</span> <span class="pre">mirroring&quot;,</span> <span class="pre">vals=vals.Bool(),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.reject_image" title="Link to this definition"></a></dt>
+<dd><p>Apply software filter to remove undersampling mirroring</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sleep_time">
+<span class="sig-name descname"><span class="pre">sleep_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;sleep_time&quot;,</span> <span class="pre">label=&quot;Sleep</span> <span class="pre">time&quot;,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">initial_value=0.1,</span> <span class="pre">get_cmd=None,</span> <span class="pre">set_cmd=None,</span> <span class="pre">docstring=&quot;Time</span> <span class="pre">to</span> <span class="pre">sleep</span> <span class="pre">before</span> <span class="pre">and</span> <span class="pre">after</span> <span class="pre">&quot;</span> <span class="pre">&quot;getting</span> <span class="pre">data</span> <span class="pre">from</span> <span class="pre">the</span> <span class="pre">instrument&quot;,</span> <span class="pre">vals=vals.Numbers(0),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sleep_time" title="Link to this definition"></a></dt>
+<dd><p>Time to sleep before and after getting data from the instrument</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.trace">
+<span class="sig-name descname"><span class="pre">trace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">FrequencySweep</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;trace&quot;,</span> <span class="pre">sweep_len=1,</span> <span class="pre">start_freq=1,</span> <span class="pre">stepsize=1,</span> <span class="pre">parameter_class=FrequencySweep,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.trace" title="Link to this definition"></a></dt>
+<dd><p>Parameter trace</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.power">
+<span class="sig-name descname"><span class="pre">power</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;power&quot;,</span> <span class="pre">label=&quot;Power&quot;,</span> <span class="pre">unit=&quot;dBm&quot;,</span> <span class="pre">get_cmd=self._get_power_at_freq,</span> <span class="pre">set_cmd=False,</span> <span class="pre">docstring=&quot;The</span> <span class="pre">maximum</span> <span class="pre">power</span> <span class="pre">in</span> <span class="pre">a</span> <span class="pre">window</span> <span class="pre">of</span> <span class="pre">250</span> <span class="pre">kHz</span> <span class="pre">&quot;</span> <span class="pre">&quot;around</span> <span class="pre">the</span> <span class="pre">specified</span> <span class="pre">frequency</span> <span class="pre">with</span> <span class="pre">&quot;</span> <span class="pre">&quot;Resolution</span> <span class="pre">bandwidth</span> <span class="pre">set</span> <span class="pre">to</span> <span class="pre">1</span> <span class="pre">kHz.&quot;</span> <span class="pre">&quot;The</span> <span class="pre">integration</span> <span class="pre">window</span> <span class="pre">is</span> <span class="pre">specified</span> <span class="pre">by</span> <span class="pre">&quot;</span> <span class="pre">&quot;the</span> <span class="pre">VideoBandWidth</span> <span class="pre">(set</span> <span class="pre">by</span> <span class="pre">vbw)&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.power" title="Link to this definition"></a></dt>
+<dd><p>The maximum power in a window of 250 kHz around the specified frequency with Resolution bandwidth set to 1 kHz.</p>
+<p>The integration window is specified by the VideoBandWidth (set by vbw)</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.scale">
+<span class="sig-name descname"><span class="pre">scale</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ScaleParameter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;scale&quot;,</span> <span class="pre">initial_value=&quot;log-scale&quot;,</span> <span class="pre">vals=vals.Enum(</span> <span class="pre">&quot;log-scale&quot;,</span> <span class="pre">&quot;lin-scale&quot;,</span> <span class="pre">&quot;log-full-scale&quot;,</span> <span class="pre">&quot;lin-full-scale&quot;</span> <span class="pre">),</span> <span class="pre">parameter_class=ScaleParameter,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.scale" title="Link to this definition"></a></dt>
+<dd><p>Parameter scale</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency_axis">
+<span class="sig-name descname"><span class="pre">frequency_axis</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;frequency_axis&quot;,</span> <span class="pre">label=&quot;Frequency&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">get_cmd=self._get_freq_axis,</span> <span class="pre">set_cmd=False,</span> <span class="pre">vals=vals.Arrays(shape=(self.npts,)),</span> <span class="pre">snapshot_value=False,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.frequency_axis" title="Link to this definition"></a></dt>
+<dd><p>Parameter frequency_axis</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.freq_sweep">
+<span class="sig-name descname"><span class="pre">freq_sweep</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterWithSetpoints" title="qcodes.parameters.ParameterWithSetpoints"><span class="pre">ParameterWithSetpoints</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;freq_sweep&quot;,</span> <span class="pre">label=&quot;Power&quot;,</span> <span class="pre">unit=&quot;depends</span> <span class="pre">on</span> <span class="pre">mode&quot;,</span> <span class="pre">get_cmd=self._get_sweep_data,</span> <span class="pre">set_cmd=False,</span> <span class="pre">parameter_class=ParameterWithSetpoints,</span> <span class="pre">vals=vals.Arrays(shape=(self.npts,)),</span> <span class="pre">setpoints=(self.frequency_axis,),</span> <span class="pre">snapshot_value=False,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.freq_sweep" title="Link to this definition"></a></dt>
+<dd><p>Parameter freq_sweep</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sync_parameters">
+<span class="sig-name descname"><span class="pre">sync_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.sync_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.sync_parameters" title="Link to this definition"></a></dt>
+<dd><p>Sync parameters sets the configuration of the instrument using the
+parameters specified in the Qcodes instrument.</p>
+<dl class="simple">
+<dt>Sync parameters consists of five parts</dt><dd><ol class="arabic simple">
+<li><p>Center span configuration (freqs and span)</p></li>
+<li><dl class="simple">
+<dt>Acquisition configuration</dt><dd><p>lin-scale/log-scale
+avg/max power</p>
+</dd>
+</dl>
+</li>
+<li><p>Configuring the external 10MHz reference</p></li>
+<li><p>Configuration of the mode that is being used</p></li>
+<li><p>Acquisition mode. At the moment only <cite>sweeping</cite> is implemented</p></li>
+</ol>
+</dd>
+</dl>
+<p>This does not currently implement Configuration of the tracking
+generator used in VNA mode</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.configure">
+<span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.configure" title="Link to this definition"></a></dt>
+<dd><p>Syncs parameters to the Instrument and updates the setpoint of the
+trace.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.openDevice">
+<span class="sig-name descname"><span class="pre">openDevice</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.openDevice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.openDevice" title="Link to this definition"></a></dt>
+<dd><p>Opens connection to the instrument</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.close" title="Link to this definition"></a></dt>
+<dd><p>Close connection to the instrument.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.abort">
+<span class="sig-name descname"><span class="pre">abort</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.abort"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.abort" title="Link to this definition"></a></dt>
+<dd><p>Abort any running acquisition.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.preset">
+<span class="sig-name descname"><span class="pre">preset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.preset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.preset" title="Link to this definition"></a></dt>
+<dd><p>Like close but performs a hardware reset before closing the
+connection.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.QuerySweep">
+<span class="sig-name descname"><span class="pre">QuerySweep</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.QuerySweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.QuerySweep" title="Link to this definition"></a></dt>
+<dd><p>Queries the sweep for information on the parameters that defines the
+x axis of the sweep</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>number of points in sweep, start frequency and step size</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.check_for_error">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_for_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">err</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">extrainfo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.check_for_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.check_for_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/signal_hound/SignalHound_USB_SA124B.html#SignalHoundUSBSA124B.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p>
+<p>Even though this is the VISA standard, it applies to various other
+types as well, such as IPInstruments, so it is included here in the
+Instrument base class.</p>
+<p>Override this if your instrument does not support <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> or
+returns a nonstandard IDN string. This string is supposed to be a
+comma-separated list of vendor, model, serial, and firmware, but
+semicolon and colon are also common separators so we accept them here
+as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dict containing vendor, model, serial, and firmware.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.signal_hound.SignalHoundUSBSA124B.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="SRS.html" class="btn btn-neutral float-left" title="Stanford Research Systems Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Stahl.html" class="btn btn-neutral float-right" title="Stahl Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

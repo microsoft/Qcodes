@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Using datasaver_builder and dond_into to streamline measurements &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="DataSet Performance" href="Dataset_Performance.html" />
+    <link rel="prev" title="Databases" href="Database.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Setup">Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Using-the-datasaver_builder">Using the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Using-dond_into">Using <code class="docutils literal notranslate"><span class="pre">dond_into</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Using-datasaver_builder-with-dond_into-and-LinSweeper">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> with <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> and <code class="docutils literal notranslate"><span class="pre">LinSweeper</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Using-datasaver_builder-and-dond_into-with-ParameterWithSetpoints">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> with <code class="docutils literal notranslate"><span class="pre">ParameterWithSetpoints</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/DataSet/Datasaver_Builder.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/Datasaver_Builder.ipynb">docs/examples/DataSet/Datasaver_Builder.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/Datasaver_Builder.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Using-datasaver_builder-and-dond_into-to-streamline-measurements">
+<h1>Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements<a class="headerlink" href="#Using-datasaver_builder-and-dond_into-to-streamline-measurements" title="Link to this heading"></a></h1>
+<p>This example notebook shows examples of how to use the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> extensions together. It showcases these as an intermediate abstraction layer between the low-level <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object and the high-level <code class="docutils literal notranslate"><span class="pre">doNd</span></code> routines.</p>
+<section id="Setup">
+<h2>Setup<a class="headerlink" href="#Setup" title="Link to this heading"></a></h2>
+<p>Here, we call necessary imports for running this notebook, as well as setting up a database, dummy parameters, and creating an experiment object.</p>
+<section id="Main-Module-Imports">
+<h3>Main Module Imports<a class="headerlink" href="#Main-Module-Imports" title="Link to this heading"></a></h3>
+<p>These are the main components we’ll be looking at in this notebook.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="n">DataSetDefinition</span><span class="p">,</span> <span class="n">LinSweeper</span><span class="p">,</span> <span class="n">datasaver_builder</span><span class="p">,</span> <span class="n">dond_into</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : /home/runner/.qcodes/logs/240809-12445-qcodes.log
+</pre></div></div>
+</div>
+</section>
+<section id="Other-imports">
+<h3>Other imports<a class="headerlink" href="#Other-imports" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">product</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">qcodes</span> <span class="k">as</span> <span class="nn">qc</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="n">LinSweep</span><span class="p">,</span> <span class="n">Measurement</span><span class="p">,</span> <span class="n">plot_dataset</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">ParameterWithSetpoints</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Arrays</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Set-up-database-and-experiment">
+<h3>Set up database and experiment<a class="headerlink" href="#Set-up-database-and-experiment" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_path</span> <span class="o">=</span> <span class="s2">&quot;measurement_extensions.db&quot;</span>
+<span class="n">qc</span><span class="o">.</span><span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">db_path</span><span class="p">)</span>
+<span class="n">experiment</span> <span class="o">=</span> <span class="n">qc</span><span class="o">.</span><span class="n">load_or_create_experiment</span><span class="p">(</span><span class="s2">&quot;Examples&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Dummy-Parameter-Creation">
+<h3>Dummy Parameter Creation<a class="headerlink" href="#Dummy-Parameter-Creation" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">set1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;set1&quot;</span><span class="p">,</span> <span class="n">get_cmd</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">set2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;set2&quot;</span><span class="p">,</span>  <span class="n">get_cmd</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">set3</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;set3&quot;</span><span class="p">,</span>  <span class="n">get_cmd</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_set1</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">set1</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">get_sum12</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">set1</span><span class="p">()</span> <span class="o">+</span> <span class="n">set2</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">get_diff13</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">set1</span><span class="p">()</span> <span class="o">-</span> <span class="n">set3</span><span class="p">()</span>
+
+
+<span class="n">meas1</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;meas1&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="n">get_set1</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">meas2</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;meas2&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="n">get_sum12</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">meas3</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;meas3&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="n">get_diff13</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="ParameterWithSetpoints-Creation">
+<h3>ParameterWithSetpoints Creation<a class="headerlink" href="#ParameterWithSetpoints-Creation" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_setpoints_array</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">get_pws_results</span><span class="p">():</span>
+    <span class="n">setpoints_arr</span> <span class="o">=</span> <span class="n">get_setpoints_array</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">setpoints_arr</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">set1</span><span class="p">()</span>
+
+
+<span class="n">setpoint_array</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s2">&quot;setpoints&quot;</span><span class="p">,</span>
+                            <span class="n">get_cmd</span> <span class="o">=</span> <span class="n">get_setpoints_array</span><span class="p">,</span>
+                            <span class="n">vals</span><span class="o">=</span><span class="n">Arrays</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,))</span>
+                            <span class="p">)</span>
+
+<span class="n">pws</span> <span class="o">=</span> <span class="n">ParameterWithSetpoints</span><span class="p">(</span><span class="s2">&quot;pws&quot;</span><span class="p">,</span>
+                             <span class="n">setpoints</span> <span class="o">=</span> <span class="p">(</span><span class="n">setpoint_array</span><span class="p">,),</span>
+                             <span class="n">get_cmd</span> <span class="o">=</span> <span class="n">get_pws_results</span><span class="p">,</span>
+                             <span class="n">vals</span><span class="o">=</span><span class="n">Arrays</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,))</span>
+                             <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Using-the-datasaver_builder">
+<h2>Using the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code><a class="headerlink" href="#Using-the-datasaver_builder" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> is a shortcut to creating multiple qcodes <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> objects, registering the relevant parameters and dependencies, and entering the datasaver context managers.</p>
+<p>This process begins with the <code class="docutils literal notranslate"><span class="pre">DataSetDefinition</span></code>, a dataclass specifying the name of the dataset, the independent parameters, the dependent parameters, and optionally the experiment to write the dataset to. If the experiment kwarg is omitted, Qcodes will write to the default experiment. Note that the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> assumes that all dependent parameters depend on all independent parameters. This is less flexible than the raw <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object, but covers the most common measurement
+types.</p>
+<p>Once the datasets have been defined, we enter the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> by passing the list or tuple of <code class="docutils literal notranslate"><span class="pre">DataSetDefinition</span></code> objects.</p>
+<p>When we enter the context manager, we get a list of the respective datasavers, in an order which matches the order passed. These can be accessed like any other <code class="docutils literal notranslate"><span class="pre">DataSaver</span></code>, and arbitrary code can be executed in whatever order is needed. When the measurement is complete, these datasavers can then be assigned to datasets which can be plotted.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset_definition</span> <span class="o">=</span> <span class="p">[</span><span class="n">DataSetDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dataset_1&quot;</span><span class="p">,</span>
+                                        <span class="n">independent</span> <span class="o">=</span> <span class="p">[</span><span class="n">set1</span><span class="p">,</span> <span class="n">set2</span><span class="p">],</span>
+                                        <span class="n">dependent</span><span class="o">=</span> <span class="p">[</span><span class="n">meas2</span><span class="p">],</span>
+                                        <span class="n">experiment</span><span class="o">=</span><span class="n">experiment</span><span class="p">),</span>
+                      <span class="n">DataSetDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dataset_2&quot;</span><span class="p">,</span>
+                                        <span class="n">independent</span> <span class="o">=</span> <span class="p">[</span><span class="n">set1</span><span class="p">,</span> <span class="n">set3</span><span class="p">],</span>
+                                        <span class="n">dependent</span><span class="o">=</span> <span class="p">[</span><span class="n">meas3</span><span class="p">],</span>
+                                        <span class="n">experiment</span><span class="o">=</span><span class="n">experiment</span><span class="p">)]</span>
+<span class="k">with</span> <span class="n">datasaver_builder</span><span class="p">(</span><span class="n">dataset_definition</span><span class="p">)</span> <span class="k">as</span> <span class="n">datasavers</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">,</span> <span class="n">val3</span> <span class="ow">in</span> <span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">set1</span><span class="p">(</span><span class="n">val1</span><span class="p">)</span>
+        <span class="n">set2</span><span class="p">(</span><span class="n">val2</span><span class="p">)</span>
+        <span class="n">set3</span><span class="p">(</span><span class="n">val3</span><span class="p">)</span>
+        <span class="n">meas2_val</span> <span class="o">=</span> <span class="n">meas2</span><span class="p">()</span>
+        <span class="n">meas3_val</span> <span class="o">=</span> <span class="n">meas3</span><span class="p">()</span>
+        <span class="n">datasavers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">set1</span><span class="p">,</span> <span class="n">val1</span><span class="p">),</span> <span class="p">(</span><span class="n">set2</span><span class="p">,</span> <span class="n">val2</span><span class="p">),</span> <span class="p">(</span><span class="n">meas2</span><span class="p">,</span> <span class="n">meas2_val</span><span class="p">))</span>
+        <span class="n">datasavers</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">add_result</span><span class="p">((</span><span class="n">set1</span><span class="p">,</span> <span class="n">val1</span><span class="p">),</span> <span class="p">(</span><span class="n">set3</span><span class="p">,</span> <span class="n">val3</span><span class="p">),</span> <span class="p">(</span><span class="n">meas3</span><span class="p">,</span> <span class="n">meas3_val</span><span class="p">))</span>
+    <span class="n">datasets</span> <span class="o">=</span><span class="p">[</span><span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span> <span class="k">for</span> <span class="n">datasaver</span> <span class="ow">in</span> <span class="n">datasavers</span><span class="p">]</span>
+
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 1.
+Starting experimental run with id: 2.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #2, Experiment Examples (some_sample)&#39;}, xlabel=&#39;set1&#39;, ylabel=&#39;set3&#39;&gt;],
+ [&lt;matplotlib.colorbar.Colorbar at 0x7f3493d01790&gt;])
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Datasaver_Builder_13_2.png" src="../../_images/examples_DataSet_Datasaver_Builder_13_2.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Datasaver_Builder_13_3.png" src="../../_images/examples_DataSet_Datasaver_Builder_13_3.png" />
+</div>
+</div>
+</section>
+<section id="Using-dond_into">
+<h2>Using <code class="docutils literal notranslate"><span class="pre">dond_into</span></code><a class="headerlink" href="#Using-dond_into" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">dond_into</span></code> is a dond-like utility function which performs gridded measurements and writes them to a specified datasaver. Unlike <code class="docutils literal notranslate"><span class="pre">dond</span></code> however, <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> can write to the same datasaver – and thus the same dataset – multiple times. There are caveats, though. 1. <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> will not stop a user from measuring the same data point more than once, which may lead to unexpected output shapes, especially when converted to an xarray. 2. <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> does not support <code class="docutils literal notranslate"><span class="pre">TogetherSweeps</span></code> or
+multiple datasets via grouping parameters. These arguments will raise Exceptions if passed.</p>
+<p>In this example, we take two slices from the same measurement function: one at low resolution, and another at high resolution. Both sets of data are then written to the same dataset.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">core_test_measurement</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;core_test_1&quot;</span><span class="p">,</span> <span class="n">exp</span><span class="o">=</span><span class="n">experiment</span><span class="p">)</span>
+<span class="n">core_test_measurement</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">set1</span><span class="p">)</span>
+<span class="n">core_test_measurement</span><span class="o">.</span><span class="n">register_parameter</span><span class="p">(</span><span class="n">meas1</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="p">[</span><span class="n">set1</span><span class="p">])</span>
+<span class="k">with</span> <span class="n">core_test_measurement</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">:</span>
+    <span class="n">sweep1</span> <span class="o">=</span> <span class="n">LinSweep</span><span class="p">(</span><span class="n">set1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+    <span class="n">dond_into</span><span class="p">(</span><span class="n">datasaver</span><span class="p">,</span> <span class="n">sweep1</span><span class="p">,</span> <span class="n">meas1</span><span class="p">)</span>
+
+    <span class="n">sweep2</span> <span class="o">=</span> <span class="n">LinSweep</span><span class="p">(</span><span class="n">set1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+    <span class="n">dond_into</span><span class="p">(</span><span class="n">datasaver</span><span class="p">,</span> <span class="n">sweep2</span><span class="p">,</span> <span class="n">meas1</span><span class="p">)</span>
+
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 3.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #3, Experiment Examples (some_sample)&#39;}, xlabel=&#39;set1&#39;, ylabel=&#39;meas1&#39;&gt;],
+ [None])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Datasaver_Builder_15_2.png" src="../../_images/examples_DataSet_Datasaver_Builder_15_2.png" />
+</div>
+</div>
+</section>
+<section id="Using-datasaver_builder-with-dond_into-and-LinSweeper">
+<h2>Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> with <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> and <code class="docutils literal notranslate"><span class="pre">LinSweeper</span></code><a class="headerlink" href="#Using-datasaver_builder-with-dond_into-and-LinSweeper" title="Link to this heading"></a></h2>
+<p>Put together, the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> extensions provide a clean way of writing flexible measurement code that too complicated for <code class="docutils literal notranslate"><span class="pre">dond</span></code> yet too simple for the full power of the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object.</p>
+<p>In the example below, we also introduce a new class, the <code class="docutils literal notranslate"><span class="pre">LinSweeper</span></code>. This is an iterable that sets the given swept parameter according to the inputs. It is useful for building outer-loops, within which more detailed measurements or functions are called. Once again, arbitrary code blocks can be included, simplifying the equivalent of dond’s <code class="docutils literal notranslate"><span class="pre">enter_actions</span></code>, <code class="docutils literal notranslate"><span class="pre">exit_actions</span></code>, and <code class="docutils literal notranslate"><span class="pre">break_conditions</span></code> kwargs. Instead of being arguments, they can be explicitly included in the measurement, and
+can be nested precisely where the user wants them.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset_definition</span> <span class="o">=</span> <span class="p">[</span><span class="n">DataSetDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dataset_1&quot;</span><span class="p">,</span>
+                                        <span class="n">independent</span> <span class="o">=</span> <span class="p">[</span><span class="n">set1</span><span class="p">,</span> <span class="n">set2</span><span class="p">],</span>
+                                        <span class="n">dependent</span><span class="o">=</span> <span class="p">[</span><span class="n">meas2</span><span class="p">]),</span>
+                      <span class="n">DataSetDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dataset_2&quot;</span><span class="p">,</span>
+                                        <span class="n">independent</span> <span class="o">=</span> <span class="p">[</span><span class="n">set1</span><span class="p">,</span> <span class="n">set3</span><span class="p">],</span>
+                                        <span class="n">dependent</span><span class="o">=</span> <span class="p">[</span><span class="n">meas3</span><span class="p">])]</span>
+<span class="k">with</span> <span class="n">datasaver_builder</span><span class="p">(</span><span class="n">dataset_definition</span><span class="p">)</span> <span class="k">as</span> <span class="n">datasavers</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">LinSweeper</span><span class="p">(</span><span class="n">set1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">):</span>
+        <span class="n">sweep1</span> <span class="o">=</span> <span class="n">LinSweep</span><span class="p">(</span><span class="n">set2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+        <span class="n">sweep2</span> <span class="o">=</span> <span class="n">LinSweep</span><span class="p">(</span><span class="n">set3</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">)</span>
+        <span class="n">dond_into</span><span class="p">(</span><span class="n">datasavers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sweep1</span><span class="p">,</span> <span class="n">meas2</span><span class="p">,</span> <span class="n">additional_setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">set1</span><span class="p">,))</span>
+        <span class="n">dond_into</span><span class="p">(</span><span class="n">datasavers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sweep2</span><span class="p">,</span> <span class="n">meas3</span><span class="p">,</span> <span class="n">additional_setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">set1</span><span class="p">,))</span>
+    <span class="n">datasets</span> <span class="o">=</span><span class="p">[</span><span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span> <span class="k">for</span> <span class="n">datasaver</span> <span class="ow">in</span> <span class="n">datasavers</span><span class="p">]</span>
+
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 4.
+Starting experimental run with id: 5.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #5, Experiment Examples (some_sample)&#39;}, xlabel=&#39;set1&#39;, ylabel=&#39;set3&#39;&gt;],
+ [&lt;matplotlib.colorbar.Colorbar at 0x7f3493c83250&gt;])
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Datasaver_Builder_17_2.png" src="../../_images/examples_DataSet_Datasaver_Builder_17_2.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Datasaver_Builder_17_3.png" src="../../_images/examples_DataSet_Datasaver_Builder_17_3.png" />
+</div>
+</div>
+</section>
+<section id="Using-datasaver_builder-and-dond_into-with-ParameterWithSetpoints">
+<h2>Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> with <code class="docutils literal notranslate"><span class="pre">ParameterWithSetpoints</span></code><a class="headerlink" href="#Using-datasaver_builder-and-dond_into-with-ParameterWithSetpoints" title="Link to this heading"></a></h2>
+<p>One final use case includes support for the <code class="docutils literal notranslate"><span class="pre">ParameterWithSetpoints</span></code>. As seen below, the <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> behave intuitively with these special parameters.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset_definition</span> <span class="o">=</span> <span class="p">[</span><span class="n">DataSetDefinition</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;dataset_1&quot;</span><span class="p">,</span>
+                                        <span class="n">independent</span><span class="o">=</span> <span class="p">[</span><span class="n">set1</span><span class="p">],</span>
+                                        <span class="n">dependent</span> <span class="o">=</span>  <span class="p">[</span><span class="n">pws</span><span class="p">])]</span>
+<span class="k">with</span> <span class="n">datasaver_builder</span><span class="p">(</span><span class="n">dataset_definition</span><span class="p">)</span> <span class="k">as</span> <span class="n">datasavers</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">LinSweeper</span><span class="p">(</span><span class="n">set1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">):</span>
+        <span class="n">dond_into</span><span class="p">(</span><span class="n">datasavers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pws</span><span class="p">,</span> <span class="n">additional_setpoints</span><span class="o">=</span><span class="p">(</span><span class="n">set1</span><span class="p">,))</span>
+
+    <span class="n">datasets</span> <span class="o">=</span><span class="p">[</span><span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span> <span class="k">for</span> <span class="n">datasaver</span> <span class="ow">in</span> <span class="n">datasavers</span><span class="p">]</span>
+
+<span class="n">plot_dataset</span><span class="p">(</span><span class="n">datasets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Starting experimental run with id: 6.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+([&lt;Axes: title={&#39;center&#39;: &#39;Run #6, Experiment Examples (some_sample)&#39;}, xlabel=&#39;set1&#39;, ylabel=&#39;setpoints&#39;&gt;],
+ [&lt;matplotlib.colorbar.Colorbar at 0x7f3491b90750&gt;])
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/examples_DataSet_Datasaver_Builder_19_2.png" src="../../_images/examples_DataSet_Datasaver_Builder_19_2.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Database.html" class="btn btn-neutral float-left" title="Databases" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Dataset_Performance.html" class="btn btn-neutral float-right" title="DataSet Performance" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

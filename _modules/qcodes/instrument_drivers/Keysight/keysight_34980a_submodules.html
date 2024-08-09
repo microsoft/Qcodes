@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Keysight.keysight_34980a_submodules &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Keysight.keysight_34980a_submodules</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Keysight.keysight_34980a_submodules</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">deprecated</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="n">InstrumentBaseKWArgs</span><span class="p">,</span> <span class="n">InstrumentChannel</span><span class="p">,</span> <span class="n">VisaInstrument</span>
+<span class="kn">from</span> <span class="nn">qcodes.utils</span> <span class="kn">import</span> <span class="n">QCoDeSDeprecationWarning</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+
+<span class="nd">@deprecated</span><span class="p">(</span><span class="s2">&quot;Unused module&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">QCoDeSDeprecationWarning</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">KeysightSubModule</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base class for submodules for the 34980A systems.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        parent: the system which the module is installed on</span>
+<span class="sd">        name: user defined name for the module</span>
+<span class="sd">        slot: the slot the module is installed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">VisaInstrument</span> <span class="o">|</span> <span class="n">InstrumentChannel</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">slot</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">slot</span> <span class="o">=</span> <span class="n">slot</span>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule">[docs]</a>
+<span class="k">class</span> <span class="nc">Keysight34980ASwitchMatrixSubModule</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">VisaInstrument</span> <span class="o">|</span> <span class="n">InstrumentChannel</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">slot</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A base class for **Switch Matrix** submodules for the 34980A systems.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            parent: the system which the module is installed on</span>
+<span class="sd">            name: user defined name for the module</span>
+<span class="sd">            slot: the slot the module is installed</span>
+<span class="sd">            **kwargs: Forwarded to base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">slot</span> <span class="o">=</span> <span class="n">slot</span>
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.validate_value">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.validate_value">[docs]</a>
+    <span class="k">def</span> <span class="nf">validate_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to check if the row and column number is within the range of the module</span>
+<span class="sd">        layout.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row: row value</span>
+<span class="sd">            column: column value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Please subclass this&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.to_channel_list">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.to_channel_list">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_channel_list</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">wiring_config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        convert the (row, column) pair to a 4-digit channel number &#39;sxxx&#39;, where</span>
+<span class="sd">        s is the slot number, xxx is generated from the numbering function.</span>
+<span class="sd">        This may be different for different modules.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]</span>
+<span class="sd">            wiring_config: for 1-wire matrices, values are &#39;MH&#39;, &#39;ML&#39;;</span>
+<span class="sd">                                 for 2-wire matrices, values are &#39;M1H&#39;, &#39;M2H&#39;,</span>
+<span class="sd">                                 &#39;M1L&#39;, &#39;M2L&#39;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            in the format of &#39;(@sxxx, sxxx, sxxx, sxxx)&#39;, where sxxx is a</span>
+<span class="sd">            4-digit channel number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Please subclass this&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.is_open">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.is_open">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to check if a channel is open/disconnected</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row: row number</span>
+<span class="sd">            column: column number</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the channel is open/disconnected</span>
+<span class="sd">            False if it&#39;s closed/connected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">([(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)])</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ROUT:OPEN? </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">message</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.is_closed">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.is_closed">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to check if a channel is closed/connected</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row: row number</span>
+<span class="sd">            column: column number</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the channel is closed/connected</span>
+<span class="sd">            False if it&#39;s open/disconnected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">([(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)])</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ROUT:CLOSe? </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">message</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.connect">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.connect">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to connect/close the specified channels</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row: row number</span>
+<span class="sd">            column: column number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">([(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ROUT:CLOSe </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.disconnect">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.disconnect">[docs]</a>
+    <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to disconnect/open the specified channels</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            row: row number</span>
+<span class="sd">            column: column number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">([(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;ROUT:OPEN </span><span class="si">{</span><span class="n">channel</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.connect_paths">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.connect_paths">[docs]</a>
+    <span class="k">def</span> <span class="nf">connect_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to connect/close the specified channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel_list_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ROUTe:CLOSe </span><span class="si">{</span><span class="n">channel_list_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.disconnect_paths">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.disconnect_paths">[docs]</a>
+    <span class="k">def</span> <span class="nf">disconnect_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to disconnect/open the specified channels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel_list_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ROUTe:OPEN </span><span class="si">{</span><span class="n">channel_list_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.are_closed">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.are_closed">[docs]</a>
+    <span class="k">def</span> <span class="nf">are_closed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to check if a list of channels is closed/connected</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paths: list of channels [(r1, c1), (r2, c2), (r3, c3)]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a list of True and/or False</span>
+<span class="sd">            True if the channel is closed/connected</span>
+<span class="sd">            False if it&#39;s open/disconnected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel_list_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ROUTe:CLOSe? </span><span class="si">{</span><span class="n">channel_list_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">message</span><span class="p">))</span> <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">messages</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="Keysight34980ASwitchMatrixSubModule.are_open">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.Keysight34980ASwitchMatrixSubModule.are_open">[docs]</a>
+    <span class="k">def</span> <span class="nf">are_open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        to check if a list of channels is open/disconnected</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            paths: list of channels [(r1, c1), (r2, c2), (r3, c3)]</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            a list of True and/or False</span>
+<span class="sd">            True if the channel is closed/connected</span>
+<span class="sd">            False if it&#39;s open/disconnected.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">row</span><span class="p">,</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">validate_value</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">column</span><span class="p">)</span>
+        <span class="n">channel_list_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_channel_list</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ROUTe:OPEN? </span><span class="si">{</span><span class="n">channel_list_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="nb">bool</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">message</span><span class="p">))</span> <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">messages</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span></div>
+</div>
+
+
+<span class="nd">@deprecated</span><span class="p">(</span>
+    <span class="s2">&quot;Use Keysight34980ASwitchMatrixSubModule&quot;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">QCoDeSDeprecationWarning</span>
+<span class="p">)</span>
+<span class="k">class</span> <span class="nc">KeysightSwitchMatrixSubModule</span><span class="p">(</span><span class="n">Keysight34980ASwitchMatrixSubModule</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

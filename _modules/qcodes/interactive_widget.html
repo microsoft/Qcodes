@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.interactive_widget &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.interactive_widget</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.interactive_widget</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This file contains functions to displays an interactive widget</span>
+<span class="sd">with information about :func:`qcodes.dataset.experiments`.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">operator</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">reduce</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="p">(</span>  <span class="c1"># type: ignore[import-untyped]</span>
+    <span class="n">HTML</span><span class="p">,</span>
+    <span class="n">Box</span><span class="p">,</span>
+    <span class="n">Button</span><span class="p">,</span>
+    <span class="n">GridspecLayout</span><span class="p">,</span>
+    <span class="n">HBox</span><span class="p">,</span>
+    <span class="n">Label</span><span class="p">,</span>
+    <span class="n">Layout</span><span class="p">,</span>
+    <span class="n">Output</span><span class="p">,</span>
+    <span class="n">Tab</span><span class="p">,</span>
+    <span class="n">Textarea</span><span class="p">,</span>
+    <span class="n">VBox</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">ruamel.yaml</span> <span class="kn">import</span> <span class="n">YAML</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="n">experiments</span><span class="p">,</span> <span class="n">initialise_or_create_database_at</span><span class="p">,</span> <span class="n">plot_dataset</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.dataset.data_set_protocol</span> <span class="kn">import</span> <span class="n">DataSetProtocol</span>
+    <span class="kn">from</span> <span class="nn">qcodes.dataset.descriptions.param_spec</span> <span class="kn">import</span> <span class="n">ParamSpecBase</span>
+
+<span class="n">_META_DATA_KEY</span> <span class="o">=</span> <span class="s2">&quot;widget_notes&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_get_in</span><span class="p">(</span><span class="n">nested_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">dct</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">reduce</span><span class="p">(</span><span class="n">operator</span><span class="o">.</span><span class="n">getitem</span><span class="p">,</span> <span class="n">nested_keys</span><span class="p">,</span> <span class="n">dct</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">button</span><span class="p">(</span>
+    <span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">button_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">on_click</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">layout_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">button_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Button</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a `ipywidgets.Button`.&quot;&quot;&quot;</span>
+    <span class="n">layout_kwargs</span> <span class="o">=</span> <span class="n">layout_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">but</span> <span class="o">=</span> <span class="n">Button</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">,</span>
+        <span class="n">button_style</span><span class="o">=</span><span class="n">button_style</span><span class="p">,</span>
+        <span class="n">layout</span><span class="o">=</span><span class="n">Layout</span><span class="p">(</span>
+            <span class="n">height</span><span class="o">=</span><span class="n">layout_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;height&quot;</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+            <span class="n">width</span><span class="o">=</span><span class="n">layout_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">layout_kwargs</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">tooltip</span><span class="o">=</span><span class="n">tooltip</span> <span class="ow">or</span> <span class="n">description</span><span class="p">,</span>
+        <span class="o">**</span><span class="p">(</span><span class="n">button_kwargs</span> <span class="ow">or</span> <span class="p">{}),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">on_click</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">but</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">on_click</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">but</span>
+
+
+<span class="k">def</span> <span class="nf">button_to_text</span><span class="p">(</span><span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Box</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_button_to_input</span><span class="p">(</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">box</span><span class="p">:</span> <span class="n">Box</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Button</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">def</span> <span class="nf">on_click</span><span class="p">(</span><span class="n">_</span><span class="p">:</span> <span class="n">Button</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">text_input</span> <span class="o">=</span> <span class="n">Textarea</span><span class="p">(</span>
+                <span class="n">value</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+                <span class="n">placeholder</span><span class="o">=</span><span class="s2">&quot;Enter text&quot;</span><span class="p">,</span>
+                <span class="n">disabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">layout</span><span class="o">=</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s2">&quot;300px&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">back_button</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span>
+                <span class="s2">&quot;Back&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="n">_back_button</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">box</span><span class="p">),</span>
+                <span class="n">button_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">icon</span><span class="o">=</span><span class="s2">&quot;undo&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">box</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">text_input</span><span class="p">,</span> <span class="n">back_button</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">on_click</span>
+
+    <span class="k">def</span> <span class="nf">_back_button</span><span class="p">(</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">box</span><span class="p">:</span> <span class="n">Box</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Button</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">def</span> <span class="nf">on_click</span><span class="p">(</span><span class="n">_</span><span class="p">:</span> <span class="n">Button</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">box</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">_changeable_button</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">box</span><span class="p">),)</span>
+
+        <span class="k">return</span> <span class="n">on_click</span>
+
+    <span class="k">def</span> <span class="nf">_changeable_button</span><span class="p">(</span><span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">box</span><span class="p">:</span> <span class="n">Box</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Button</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">button</span><span class="p">(</span>
+            <span class="n">title</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">,</span> <span class="n">on_click</span><span class="o">=</span><span class="n">_button_to_input</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">box</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="n">box</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">([],</span> <span class="n">layout</span><span class="o">=</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">))</span>
+    <span class="n">box</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">_changeable_button</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">body</span><span class="p">,</span> <span class="n">box</span><span class="p">),)</span>
+    <span class="k">return</span> <span class="n">box</span>
+
+
+<span class="k">def</span> <span class="nf">label</span><span class="p">(</span><span class="n">description</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Label</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a `ipywidgets.Label` with text.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">Label</span><span class="p">(</span>
+        <span class="n">value</span><span class="o">=</span><span class="n">description</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s2">&quot;max-content&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_update_nested_dict_browser</span><span class="p">(</span>
+    <span class="n">nested_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">nested_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">box</span><span class="p">:</span> <span class="n">Box</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Button</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">update_box</span><span class="p">(</span><span class="n">_</span><span class="p">:</span> <span class="n">Button</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">box</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">_nested_dict_browser</span><span class="p">(</span><span class="n">nested_keys</span><span class="p">,</span> <span class="n">nested_dict</span><span class="p">,</span> <span class="n">box</span><span class="p">),)</span>
+
+    <span class="k">return</span> <span class="n">update_box</span>
+
+
+<span class="k">def</span> <span class="nf">_nested_dict_browser</span><span class="p">(</span>
+    <span class="n">nested_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">nested_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">box</span><span class="p">:</span> <span class="n">Box</span><span class="p">,</span>
+    <span class="n">max_nrows</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GridspecLayout</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a `GridspecLayout` of the ``nested_keys`` in ``nested_dict``</span>
+<span class="sd">    which is put inside of ``box``.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        nested_keys: A sequence of keys of the nested dict. e.g., if</span>
+<span class="sd">            ``nested_keys=[&#39;a&#39;, &#39;b&#39;]`` then ``nested_dict[&#39;a&#39;][&#39;b&#39;]``.</span>
+<span class="sd">        nested_dict: A dictionary that can contain more dictionaries as keys.</span>
+<span class="sd">        box: An `ipywidgets.Box` instance.</span>
+<span class="sd">        max_nrows: The maximum number of rows that can be displayed at once.</span>
+<span class="sd">            Whenever the table has less than ``max_nrows`` rows, the table is</span>
+<span class="sd">            displayed in 3 columns, otherwise it&#39;s 2 columns.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_should_expand</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">!=</span> <span class="p">{}</span>
+
+    <span class="n">col_widths</span> <span class="o">=</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">30</span><span class="p">]</span>
+    <span class="n">selected_table</span> <span class="o">=</span> <span class="n">_get_in</span><span class="p">(</span><span class="n">nested_keys</span><span class="p">,</span> <span class="n">nested_dict</span><span class="p">)</span>
+    <span class="n">nrows</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">sum</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="n">_should_expand</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">selected_table</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="o">+</span> <span class="mi">1</span>
+    <span class="p">)</span>
+    <span class="n">ncols</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="k">if</span> <span class="n">nrows</span> <span class="o">&gt;</span> <span class="n">max_nrows</span><span class="p">:</span>
+        <span class="n">nrows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_table</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">col_widths</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">GridspecLayout</span><span class="p">(</span><span class="n">nrows</span><span class="p">,</span> <span class="n">col_widths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">update</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span>
+        <span class="n">_update_nested_dict_browser</span><span class="p">,</span> <span class="n">nested_dict</span><span class="o">=</span><span class="n">nested_dict</span><span class="p">,</span> <span class="n">box</span><span class="o">=</span><span class="n">box</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Header</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="s2">&quot; ► &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">nested_keys</span><span class="p">)</span>
+    <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;success&quot;</span><span class="p">)</span>
+    <span class="n">up_click</span> <span class="o">=</span> <span class="n">update</span><span class="p">(</span><span class="n">nested_keys</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">grid</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span><span class="s2">&quot;↰&quot;</span><span class="p">,</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="n">up_click</span><span class="p">)</span>
+
+    <span class="c1"># Body</span>
+
+    <span class="n">row_index</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">selected_table</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">row_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="n">_should_expand</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ncols</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">but</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="s2">&quot;info&quot;</span><span class="p">,</span> <span class="n">up_click</span><span class="p">)</span>
+        <span class="n">grid</span><span class="p">[</span><span class="n">row_index</span> <span class="p">:</span> <span class="n">row_index</span> <span class="o">+</span> <span class="n">row_length</span><span class="p">,</span> <span class="p">:</span> <span class="n">col_widths</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">but</span>
+        <span class="k">if</span> <span class="n">_should_expand</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">ncols</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">k_</span><span class="p">,</span> <span class="n">v_</span> <span class="ow">in</span> <span class="n">v</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">but</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span><span class="n">k_</span><span class="p">,</span> <span class="s2">&quot;danger&quot;</span><span class="p">,</span> <span class="n">update</span><span class="p">([</span><span class="o">*</span><span class="n">nested_keys</span><span class="p">,</span> <span class="n">k</span><span class="p">]))</span>
+                    <span class="n">grid</span><span class="p">[</span><span class="n">row_index</span><span class="p">,</span> <span class="n">col_widths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">col_widths</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">but</span>
+                    <span class="k">if</span> <span class="n">_should_expand</span><span class="p">(</span><span class="n">v_</span><span class="p">):</span>
+                        <span class="n">sub_keys</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">v_</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                        <span class="n">but</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span>
+                            <span class="n">sub_keys</span><span class="p">,</span> <span class="s2">&quot;warning&quot;</span><span class="p">,</span> <span class="n">update</span><span class="p">([</span><span class="o">*</span><span class="n">nested_keys</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">k_</span><span class="p">])</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">but</span> <span class="o">=</span> <span class="n">label</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v_</span><span class="p">))</span>
+                    <span class="n">grid</span><span class="p">[</span><span class="n">row_index</span><span class="p">,</span> <span class="n">col_widths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">but</span>
+                    <span class="n">row_index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sub_keys</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="n">grid</span><span class="p">[</span><span class="n">row_index</span><span class="p">,</span> <span class="n">col_widths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span>
+                    <span class="n">sub_keys</span><span class="p">,</span> <span class="s2">&quot;danger&quot;</span><span class="p">,</span> <span class="n">update</span><span class="p">([</span><span class="o">*</span><span class="n">nested_keys</span><span class="p">,</span> <span class="n">k</span><span class="p">])</span>
+                <span class="p">)</span>
+                <span class="n">row_index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">grid</span><span class="p">[</span><span class="n">row_index</span><span class="p">,</span> <span class="n">col_widths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">label</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+            <span class="n">row_index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">grid</span>
+
+
+<div class="viewcode-block" id="nested_dict_browser">
+<a class="viewcode-back" href="../../api/interactive_widget.html#qcodes.interactive_widget.nested_dict_browser">[docs]</a>
+<span class="k">def</span> <span class="nf">nested_dict_browser</span><span class="p">(</span>
+    <span class="n">nested_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">nested_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Box</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a widget to interactive browse a nested dictionary.&quot;&quot;&quot;</span>
+    <span class="n">box</span> <span class="o">=</span> <span class="n">Box</span><span class="p">([])</span>
+    <span class="n">_update_nested_dict_browser</span><span class="p">(</span><span class="n">nested_keys</span><span class="p">,</span> <span class="n">nested_dict</span><span class="p">,</span> <span class="n">box</span><span class="p">)(</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">box</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_plot_ds</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+    <span class="n">plot_dataset</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>  <span class="c1"># might fail</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_do_in_tab</span><span class="p">(</span>
+    <span class="n">tab</span><span class="p">:</span> <span class="n">Tab</span><span class="p">,</span> <span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">,</span> <span class="n">which</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;plot&quot;</span><span class="p">,</span> <span class="s2">&quot;snapshot&quot;</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Button</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs an operation inside of a subtab of a `ipywidgets.Tab`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        tab: Instance of `ipywidgets.Tab`.</span>
+<span class="sd">        ds: A qcodes.DataSet instance.</span>
+<span class="sd">        which: Either &quot;plot&quot; or &quot;snapshot&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">clear_output</span><span class="p">,</span> <span class="n">display</span>
+    <span class="k">assert</span> <span class="n">which</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;plot&quot;</span><span class="p">,</span> <span class="s2">&quot;snapshot&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">delete_tab</span><span class="p">(</span><span class="n">output</span><span class="p">:</span> <span class="n">Output</span><span class="p">,</span> <span class="n">tab</span><span class="p">:</span> <span class="n">Tab</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Button</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">def</span> <span class="nf">on_click</span><span class="p">(</span><span class="n">_</span><span class="p">:</span> <span class="n">Button</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tab</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">tab</span><span class="o">.</span><span class="n">children</span> <span class="k">if</span> <span class="n">c</span> <span class="o">!=</span> <span class="n">output</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">on_click</span>
+
+    <span class="k">def</span> <span class="nf">_on_click</span><span class="p">(</span><span class="n">_</span><span class="p">:</span> <span class="n">Button</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">which</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;plot&quot;</span><span class="p">,</span> <span class="s2">&quot;snapshot&quot;</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;RID #</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">captured_run_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">which</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tab</span><span class="o">.</span><span class="n">children</span><span class="p">))</span> <span class="k">if</span> <span class="n">tab</span><span class="o">.</span><span class="n">get_title</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="n">title</span><span class="p">),</span>
+            <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Plot/snapshot is already in the tab</span>
+            <span class="n">tab</span><span class="o">.</span><span class="n">selected_index</span> <span class="o">=</span> <span class="n">i</span>
+            <span class="k">return</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">Output</span><span class="p">()</span>
+        <span class="n">tab</span><span class="o">.</span><span class="n">children</span> <span class="o">+=</span> <span class="p">(</span><span class="n">out</span><span class="p">,)</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tab</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">tab</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">out</span><span class="p">:</span>
+            <span class="n">clear_output</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="n">close_button</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Close </span><span class="si">{</span><span class="n">which</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;danger&quot;</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="n">delete_tab</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">tab</span><span class="p">),</span>
+                <span class="n">button_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">icon</span><span class="o">=</span><span class="s2">&quot;eraser&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">close_button</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">which</span> <span class="o">==</span> <span class="s2">&quot;plot&quot;</span><span class="p">:</span>
+                    <span class="n">_plot_ds</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">which</span> <span class="o">==</span> <span class="s2">&quot;snapshot&quot;</span><span class="p">:</span>
+                    <span class="n">snapshot</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">snapshot</span>
+                    <span class="k">if</span> <span class="n">snapshot</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">display</span><span class="p">(</span><span class="n">nested_dict_browser</span><span class="p">(</span><span class="n">snapshot</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;This dataset has no snapshot&quot;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+        <span class="n">tab</span><span class="o">.</span><span class="n">selected_index</span> <span class="o">=</span> <span class="n">i</span>
+
+    <span class="k">return</span> <span class="n">_on_click</span>
+
+
+<span class="k">def</span> <span class="nf">create_tab</span><span class="p">(</span><span class="n">do_display</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tab</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a `ipywidgets.Tab` which can display outputs in its tabs.&quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">Output</span><span class="p">()</span>
+    <span class="n">tab</span> <span class="o">=</span> <span class="n">Tab</span><span class="p">(</span><span class="n">children</span><span class="o">=</span><span class="p">(</span><span class="n">output</span><span class="p">,))</span>
+
+    <span class="n">tab</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Info&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">do_display</span><span class="p">:</span>
+        <span class="n">display</span><span class="p">(</span><span class="n">tab</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">output</span><span class="p">:</span>
+        <span class="c1"># Prints it in the Output inside the tab.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Plots and snapshots will show up here!&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tab</span>
+
+
+<span class="k">def</span> <span class="nf">editable_metadata</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Box</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_button_to_input</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">box</span><span class="p">:</span> <span class="n">Box</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Button</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">def</span> <span class="nf">on_click</span><span class="p">(</span><span class="n">_</span><span class="p">:</span> <span class="n">Button</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">text_input</span> <span class="o">=</span> <span class="n">Textarea</span><span class="p">(</span>
+                <span class="n">value</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+                <span class="n">placeholder</span><span class="o">=</span><span class="s2">&quot;Enter text&quot;</span><span class="p">,</span>
+                <span class="n">disabled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">layout</span><span class="o">=</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">save_button</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span>
+                <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="n">_save_button</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">ds</span><span class="p">),</span>
+                <span class="n">button_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">icon</span><span class="o">=</span><span class="s2">&quot;save&quot;</span><span class="p">),</span>
+                <span class="n">layout_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&quot;50%&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">cancel_button</span> <span class="o">=</span> <span class="n">button</span><span class="p">(</span>
+                <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;danger&quot;</span><span class="p">,</span>
+                <span class="n">on_click</span><span class="o">=</span><span class="n">_save_button</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="n">do_save</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+                <span class="n">button_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">icon</span><span class="o">=</span><span class="s2">&quot;close&quot;</span><span class="p">),</span>
+                <span class="n">layout_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&quot;50%&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">subbox</span> <span class="o">=</span> <span class="n">HBox</span><span class="p">([</span><span class="n">save_button</span><span class="p">,</span> <span class="n">cancel_button</span><span class="p">],)</span>
+            <span class="n">box</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">text_input</span><span class="p">,</span> <span class="n">subbox</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">on_click</span>
+
+    <span class="k">def</span> <span class="nf">_save_button</span><span class="p">(</span>
+        <span class="n">box</span><span class="p">:</span> <span class="n">Box</span><span class="p">,</span> <span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">,</span> <span class="n">do_save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Button</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="k">def</span> <span class="nf">on_click</span><span class="p">(</span><span class="n">_</span><span class="p">:</span> <span class="n">Button</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">box</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span>
+            <span class="k">if</span> <span class="n">do_save</span><span class="p">:</span>
+                <span class="n">ds</span><span class="o">.</span><span class="n">add_metadata</span><span class="p">(</span><span class="n">tag</span><span class="o">=</span><span class="n">_META_DATA_KEY</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">box</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">_changeable_button</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">box</span><span class="p">),)</span>
+
+        <span class="k">return</span> <span class="n">on_click</span>
+
+    <span class="k">def</span> <span class="nf">_changeable_button</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">box</span><span class="p">:</span> <span class="n">Box</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Button</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">button</span><span class="p">(</span>
+            <span class="n">text</span><span class="p">,</span>
+            <span class="s2">&quot;success&quot;</span><span class="p">,</span>
+            <span class="n">on_click</span><span class="o">=</span><span class="n">_button_to_input</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">box</span><span class="p">),</span>
+            <span class="n">button_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">icon</span><span class="o">=</span><span class="s2">&quot;edit&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">text</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="k">else</span> <span class="p">{},</span>
+        <span class="p">)</span>
+
+    <span class="n">text</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_META_DATA_KEY</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">box</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">([],</span> <span class="n">layout</span><span class="o">=</span><span class="n">Layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">))</span>
+    <span class="n">box</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">(</span><span class="n">_changeable_button</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">box</span><span class="p">),)</span>
+    <span class="k">return</span> <span class="n">box</span>
+
+
+<span class="k">def</span> <span class="nf">_yaml_dump</span><span class="p">(</span><span class="n">dct</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">YAML</span><span class="p">()</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dct</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">_get_parameters</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="n">independent</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">dependent</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_get_attr</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">ParamSpecBase</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+            <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">for</span> <span class="n">dep</span><span class="p">,</span> <span class="n">indeps</span> <span class="ow">in</span> <span class="n">ds</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">interdeps</span><span class="o">.</span><span class="n">dependencies</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">attrs</span> <span class="o">=</span> <span class="n">_get_attr</span><span class="p">(</span><span class="n">dep</span><span class="p">)</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;depends_on&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">indeps</span><span class="p">]</span>
+        <span class="n">dependent</span><span class="p">[</span><span class="n">dep</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">attrs</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">indeps</span><span class="p">:</span>
+            <span class="n">independent</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_attr</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;independent&quot;</span><span class="p">:</span> <span class="n">independent</span><span class="p">,</span> <span class="s2">&quot;dependent&quot;</span><span class="p">:</span> <span class="n">dependent</span><span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">_get_experiment_button</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Box</span><span class="p">:</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">exp_name</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">ds</span><span class="o">.</span><span class="n">sample_name</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">_yaml_dump</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;.exp_name&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">exp_name</span><span class="p">,</span>
+            <span class="s2">&quot;.sample_name&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">sample_name</span><span class="p">,</span>
+            <span class="s2">&quot;.name&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;.path_to_db&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">path_to_db</span><span class="p">,</span>
+            <span class="s2">&quot;.exp_id&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">button_to_text</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_timestamp_button</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Box</span><span class="p">:</span>
+    <span class="n">start_timestamp</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">run_timestamp_raw</span>
+    <span class="n">end_timestamp</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">completed_timestamp_raw</span>
+    <span class="k">if</span> <span class="n">start_timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_timestamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">total_time</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">end_timestamp</span><span class="p">)</span>
+            <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">start_timestamp</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">total_time</span> <span class="o">=</span> <span class="s2">&quot;?&quot;</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">run_timestamp</span><span class="p">()</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">_yaml_dump</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;.run_timestamp&quot;</span><span class="p">:</span> <span class="n">start</span><span class="p">,</span>
+            <span class="s2">&quot;.completed_timestamp&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">completed_timestamp</span><span class="p">(),</span>
+            <span class="s2">&quot;total_time&quot;</span><span class="p">:</span> <span class="n">total_time</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">button_to_text</span><span class="p">(</span><span class="n">start</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_run_id_button</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Box</span><span class="p">:</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">_yaml_dump</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;.guid&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">guid</span><span class="p">,</span>
+            <span class="s2">&quot;.captured_run_id&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">captured_run_id</span><span class="p">,</span>
+            <span class="s2">&quot;.run_id&quot;</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">button_to_text</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_parameters_button</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Box</span><span class="p">:</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="n">_get_parameters</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">_parameters</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">button_to_text</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">_yaml_dump</span><span class="p">(</span><span class="n">parameters</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_get_snapshot_button</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">,</span> <span class="n">tab</span><span class="p">:</span> <span class="n">Tab</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Button</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">button</span><span class="p">(</span>
+        <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+        <span class="n">tooltip</span><span class="o">=</span><span class="s2">&quot;Click to open this DataSet&#39;s snapshot in a tab above.&quot;</span><span class="p">,</span>
+        <span class="n">on_click</span><span class="o">=</span><span class="n">_do_in_tab</span><span class="p">(</span><span class="n">tab</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="s2">&quot;snapshot&quot;</span><span class="p">),</span>
+        <span class="n">button_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">icon</span><span class="o">=</span><span class="s2">&quot;camera&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_plot_button</span><span class="p">(</span><span class="n">ds</span><span class="p">:</span> <span class="n">DataSetProtocol</span><span class="p">,</span> <span class="n">tab</span><span class="p">:</span> <span class="n">Tab</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Button</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">button</span><span class="p">(</span>
+        <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+        <span class="n">tooltip</span><span class="o">=</span><span class="s2">&quot;Click to open this DataSet&#39;s plot in a tab above.&quot;</span><span class="p">,</span>
+        <span class="n">on_click</span><span class="o">=</span><span class="n">_do_in_tab</span><span class="p">(</span><span class="n">tab</span><span class="p">,</span> <span class="n">ds</span><span class="p">,</span> <span class="s2">&quot;plot&quot;</span><span class="p">),</span>
+        <span class="n">button_kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">icon</span><span class="o">=</span><span class="s2">&quot;line-chart&quot;</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_experiment_widget</span><span class="p">(</span>
+    <span class="n">data_sets</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">DataSetProtocol</span><span class="p">],</span> <span class="n">tab</span><span class="p">:</span> <span class="n">Tab</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GridspecLayout</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Show a `ipywidgets.GridspecLayout` with information about the</span>
+<span class="sd">    loaded experiment. The clickable buttons can perform an action in ``tab``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">header_names</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;Run ID&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Experiment&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Parameters&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;MSMT Time&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Notes&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Snapshot&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Plot&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="n">header</span> <span class="o">=</span> <span class="p">{</span><span class="n">n</span><span class="p">:</span> <span class="n">button</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">&quot;info&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">header_names</span><span class="p">}</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">header</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">data_sets</span><span class="p">:</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Run ID&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_run_id_button</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Experiment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_experiment_button</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Notes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">editable_metadata</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Parameters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_parameters_button</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;MSMT Time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_timestamp_button</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Snapshot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_snapshot_button</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">tab</span><span class="p">)</span>
+        <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Plot&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_get_plot_button</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">tab</span><span class="p">)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">GridspecLayout</span><span class="p">(</span><span class="n">n_rows</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">),</span> <span class="n">n_columns</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">header_names</span><span class="p">))</span>
+
+    <span class="n">empty_label</span> <span class="o">=</span> <span class="n">label</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">header_names</span><span class="p">):</span>
+            <span class="n">grid</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">empty_label</span><span class="p">)</span>
+
+    <span class="n">grid</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">grid_template_rows</span> <span class="o">=</span> <span class="s2">&quot;auto &quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="n">grid</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">grid_template_columns</span> <span class="o">=</span> <span class="s2">&quot;auto &quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">header_names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grid</span>
+
+
+<div class="viewcode-block" id="experiments_widget">
+<a class="viewcode-back" href="../../api/interactive_widget.html#qcodes.interactive_widget.experiments_widget">[docs]</a>
+<span class="k">def</span> <span class="nf">experiments_widget</span><span class="p">(</span>
+    <span class="n">db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">data_sets</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">DataSetProtocol</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">sort_by</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">,</span> <span class="s2">&quot;run_id&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;run_id&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VBox</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Displays an interactive widget that shows the :func:`qcodes.dataset.experiments`.</span>
+
+<span class="sd">    With the edit button in the column ``Notes`` one can make persistent</span>
+<span class="sd">    changes to the :class:`qcodes.dataset.DataSetProtocol`\s attribute</span>
+<span class="sd">    ``metadata`` in the key &quot;widget_notes&quot;.</span>
+<span class="sd">    Expanding the coordinates or variables buttons, reveals more options, such</span>
+<span class="sd">    as plotting or the ability to easily browse</span>
+<span class="sd">    the :class:`qcodes.dataset.DataSetProtocol`\s snapshot.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        db: Optionally pass a database file, if no database has been loaded.</span>
+<span class="sd">        data_sets: Sequence of :class:`qcodes.dataset.DataSetProtocol`\s.</span>
+<span class="sd">            If datasets are explicitly provided via this argument, the ``db``</span>
+<span class="sd">            argument has no effect.</span>
+<span class="sd">        sort_by: Sort datasets in widget by either &quot;timestamp&quot; (newest first),</span>
+<span class="sd">            &quot;run_id&quot; or None (no predefined sorting).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">data_sets</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+        <span class="n">data_sets</span> <span class="o">=</span> <span class="p">[</span><span class="n">ds</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiments</span><span class="p">()</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">exp</span><span class="o">.</span><span class="n">data_sets</span><span class="p">()]</span>
+    <span class="k">if</span> <span class="n">sort_by</span> <span class="o">==</span> <span class="s2">&quot;run_id&quot;</span><span class="p">:</span>
+        <span class="n">data_sets</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">data_sets</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ds</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">sort_by</span> <span class="o">==</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span>
+        <span class="n">data_sets</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">data_sets</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ds</span><span class="p">:</span> <span class="n">ds</span><span class="o">.</span><span class="n">run_timestamp_raw</span> <span class="k">if</span> <span class="n">ds</span><span class="o">.</span><span class="n">run_timestamp_raw</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+
+    <span class="n">title</span> <span class="o">=</span> <span class="n">HTML</span><span class="p">(</span><span class="s2">&quot;&lt;h1&gt;QCoDeS experiments widget&lt;/h1&gt;&quot;</span><span class="p">)</span>
+    <span class="n">tab</span> <span class="o">=</span> <span class="n">create_tab</span><span class="p">(</span><span class="n">do_display</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">_experiment_widget</span><span class="p">(</span><span class="n">data_sets</span><span class="p">,</span> <span class="n">tab</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">VBox</span><span class="p">([</span><span class="n">title</span><span class="p">,</span> <span class="n">tab</span><span class="p">,</span> <span class="n">grid</span><span class="p">])</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;experiments_widget&quot;</span><span class="p">,</span> <span class="s2">&quot;nested_dict_browser&quot;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

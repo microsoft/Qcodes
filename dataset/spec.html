@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataSet Specification &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Dataset Design" href="dataset_design.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">DataSet</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">DataSet Specification</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#terminology">Terminology</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#requirements">Requirements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#basics">Basics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#creation">Creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#writing">Writing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#access">Access</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#storage-and-persistence">Storage and Persistence</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#interface">Interface</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Creation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#construction">Construction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Writing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id3">Access</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#subscribing">Subscribing</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#storage">Storage</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#metadata">Metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#utilities">Utilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#open-issues">Open Issues</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="dataset_design.html">Dataset Design</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interdependentparams.html">Interdependent Parameters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">DataSet</a></li>
+      <li class="breadcrumb-item active">DataSet Specification</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/dataset/spec.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dataset-specification">
+<span id="dataset-spec"></span><h1>DataSet Specification<a class="headerlink" href="#dataset-specification" title="Link to this heading"></a></h1>
+<section id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Link to this heading"></a></h2>
+<p>The DataSet class is used in QCoDeS to hold measurement results.
+It is the destination for measurement loops and the source for plotting and data analysis.
+As such, it is a central component of QCoDeS.</p>
+<p>The DataSet class should be usable on its own, without other QCoDeS components.
+In particular, the DataSet class should not require the use of Loop and parameters, although it should integrate with those components seamlessly.
+This will significantly improve the modularity of QCoDeS by allowing users to plug into and extend the package in many different ways.
+As long as a DataSet is used for data storage, users can freely select the QCoDeS components they want to use.</p>
+</section>
+<section id="terminology">
+<h2>Terminology<a class="headerlink" href="#terminology" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt>Metadata</dt><dd><p>Many items in this spec have metadata associated with them.
+In all cases, we expect metadata to be represented as a dictionary with string keys.
+While the values are arbitrary and up to the user, in many cases we expect metadata to be nested, string-keyed dictionaries
+with scalars (strings or numbers) as the final values.
+In some cases, we specify particular keys or paths in the metadata that other QCoDeS components may rely on.</p>
+</dd>
+<dt>Parameter</dt><dd><p>A logically-single value input to or produced by a measurement.
+A parameter need not be a scalar, but can be an array or a tuple or an array of tuples, etc.
+A DataSet parameter corresponds conceptually to a QCoDeS parameter, but does not have to be defined by or associated with a QCoDeS Parameter .
+Roughly, a parameter represents a column in a table of experimental data.</p>
+</dd>
+<dt>Result</dt><dd><p>A result is the collection of parameter values associated to a single measurement in an experiment.
+Roughly, a result corresponds to a row in a table of experimental data.</p>
+</dd>
+<dt>DataSet</dt><dd><p>A DataSet is a QCoDeS object that stores the results of an experiment.
+Roughly, a DataSet corresponds to a table of experimental data, along with metadata that describes the data.
+Depending on the state of the experiment, a DataSet may be “in progress” or “completed”.</p>
+</dd>
+<dt>ExperimentContainer</dt><dd><p>An ExperimentContainer is a QCoDeS object that stores all information about an experiment.
+This includes items such as the equipment on which the experiment was run, the configuration of the equipment, graphs and other analytical output, and arbitrary notes, as well as the DataSet that holds the results of the experiment.</p>
+</dd>
+</dl>
+</section>
+<section id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Link to this heading"></a></h2>
+<p>The DataSet class should meet the following requirements:</p>
+<section id="basics">
+<h3>Basics<a class="headerlink" href="#basics" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>A DataSet can store data of (reasonably) arbitrary types and shapes. basically, any type and shape that can fit in a NumPy array should be supported.</p></li>
+<li><p>The results stored in a completed DataSet should be immutable; no new results may be added to a completed DataSet.</p></li>
+<li><p>Each DataSet should have a unique identifying string that can be used to create references to DataSets.</p></li>
+</ol>
+</section>
+<section id="creation">
+<h3>Creation<a class="headerlink" href="#creation" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>It should be possible to create a DataSet without knowing the final item count of the various values it stores.
+In particular, the number of loop iterations for a sweep should not be required to create the DataSet.</p></li>
+<li><p>The list of parameters in each result to be stored in a DataSet may be specified at creation time.
+This includes the name, role (set-point or output), and type of each parameter.
+Parameters may be marked as optional, in which case they are not required for each result.</p></li>
+<li><p>It should be possible to add a new parameter to an in-progress DataSet.</p></li>
+<li><p>It should be possible to define a result parameter that is independent of any QCoDeSParameter or Instrument.</p></li>
+<li><p>A QCoDeS Parameter should provide sufficient information to define a result parameter.</p></li>
+<li><p>A DataSet should allow storage of relatively arbitrary metadata describing the run that
+generated the results and the parameters included in the results.
+Essentially, DataSet metadata should be a string-keyed dictionary at the top,
+and should allow storage of any JSON-encodable data.</p></li>
+<li><p>The DataSet identifier should be automatically stored in the DataSet’s metadata under the “id” tag.</p></li>
+</ol>
+</section>
+<section id="writing">
+<h3>Writing<a class="headerlink" href="#writing" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>It should be possible to add a single result or a sequence of results to an in-progress DataSet.</p></li>
+<li><p>It should be possible to add an array of values for a new parameter to an in-progress DataSet.</p></li>
+<li><p>It should be possible to modify a single result or a sequence of results in an in-progress DataSet.</p></li>
+<li><p>A DataSet should maintain the order in which results were added.</p></li>
+<li><p>An in-progress DataSet may be marked as completed.</p></li>
+</ol>
+</section>
+<section id="access">
+<h3>Access<a class="headerlink" href="#access" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Values in a DataSet should be easily accessible for plotting and analysis, even while the DataSet is in progress.
+In particular, it should be possible to retrieve full or partial results as a NumPy array.</p></li>
+<li><p>It should be possible to define a cursor that specifies a location in a specific value set in a DataSet.
+It should be possible to get a cursor that specifies the current end of the DataSet when the DataSet is “in progress”.
+It should be possible to read “new data” in a DataSet; that is, to read everything after a cursor.</p></li>
+<li><p>It should be possible to subscribe to change notifications from a DataSet.
+It is acceptable if such subscriptions must be in-process until QCoDeS multiprocessing is redone.</p></li>
+</ol>
+</section>
+<section id="storage-and-persistence">
+<h3>Storage and Persistence<a class="headerlink" href="#storage-and-persistence" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Storage and persistence should be defined outside of the DataSet class.</p></li>
+</ol>
+<p>The following items are no longer applicable:</p>
+<ol class="arabic simple">
+<li><p>A DataSet object should allow writing to and reading from storage in a variety of formats.</p></li>
+<li><p>Users should be able to define new persistence formats.</p></li>
+<li><p>Users should be able to specify where a DataSet is written.</p></li>
+</ol>
+</section>
+</section>
+<section id="interface">
+<h2>Interface<a class="headerlink" href="#interface" title="Link to this heading"></a></h2>
+<section id="id1">
+<h3>Creation<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<section id="paramspec">
+<h4>ParamSpec<a class="headerlink" href="#paramspec" title="Link to this heading"></a></h4>
+<p>A ParamSpec object specifies a single parameter in a DataSet.</p>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">ParamSpec(name,</span> <span class="pre">type,</span> <span class="pre">metadata=)</span></code></dt><dd><p>Creates a parameter specification with the given name and type.
+The type should be a NumPy dtype object.</p>
+<p>If metadata is provided, it is included in the overall metadata of the DataSet.
+The metadata can be any JSON-able object.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ParamSpec.name</span></code></dt><dd><p>The name of this parameter.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ParamSpec.type</span></code></dt><dd><p>The dtype of this parameter.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ParamSpec.metadata</span></code></dt><dd><p>The metadata of this parameter.
+This should be an empty dictionary as a default.</p>
+</dd>
+</dl>
+<p>Either the QCoDeS Parameter class should inherit from ParamSpec, or the Parameter class should provide
+a simple way to get a ParamSpec for the Parameter.</p>
+</section>
+<section id="dataset">
+<h4>DataSet<a class="headerlink" href="#dataset" title="Link to this heading"></a></h4>
+</section>
+</section>
+<section id="construction">
+<h3>Construction<a class="headerlink" href="#construction" title="Link to this heading"></a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet(name)</span></code></dt><dd><p>Creates a DataSet with no parameters.
+The name should be a short string that will be part of the DataSet’s identifier.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet(name,</span> <span class="pre">specs)</span></code></dt><dd><p>Creates a DataSet for the provided list of parameter specifications.
+The name should be a short string that will be part of the DataSet’s identifier.
+Each item in the list should be a ParamSpec object.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet(name,</span> <span class="pre">specs,</span> <span class="pre">values)</span></code></dt><dd><p>Creates a DataSet for the provided list of parameter specifications and values.
+The name should be a short string that will be part of the DataSet’s identifier.
+Each item in the specs list should be a ParamSpec object.
+Each item in the values list should be a NumPy array or a Python list of values for the corresponding ParamSpec.
+There should be exactly one item in the values list for every item in the specs list.
+All of the arrays/lists in the values list should have the same length.
+The values list may intermix NumPy arrays and Python lists.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.add_parameter(spec)</span></code></dt><dd><p>Adds a parameter to the DataSet.
+The spec should be a ParamSpec object.
+If the DataSet is not empty, then existing results will have the type-appropriate null value for the new parameter.</p>
+<p>It is an error to add parameters to a completed DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.add_parameters(specs)</span></code></dt><dd><p>Adds a list of parameters to the DataSet.
+Each item in the list should be a ParamSpec object.
+If the DataSet is not empty, then existing results will have the type-appropriate null value for the new parameters.</p>
+<p>It is an error to add parameters to a completed DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.add_metadata(tag=,</span> <span class="pre">metadata=)</span></code></dt><dd><p>Adds metadata to the DataSet.
+The metadata is stored under the provided tag.
+If there is already metadata under the provided tag, the new metadata replaces the old metadata.
+The metadata can be any JSON-able object.</p>
+</dd>
+</dl>
+</section>
+<section id="id2">
+<h3>Writing<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.add_result(**kwargs)</span></code></dt><dd><p>Adds a result to the DataSet.
+Keyword parameters should have the name of a parameter as the keyword and the value to associate as the value.
+If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to parameter value.</p>
+<p>Returns the zero-based index in the DataSet that the result was stored at; that is, it returns the length of the DataSet before the addition.</p>
+<p>It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.</p>
+<p>It is an error to add a result to a completed DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.add_results(args)</span></code></dt><dd><p>Adds a sequence of results to the DataSet.
+The single argument should be a sequence of dictionaries, where each dictionary provides the values for all of the parameters in that result.
+See the add_result method for a description of such a dictionary.
+The order of dictionaries in the sequence will be the same as the order in which they are added to the DataSet.</p>
+<p>Returns the zero-based index in the DataSet that the first result was stored at; that is, it returns the length of the DataSet before the addition.</p>
+<p>It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.</p>
+<p>It is an error to add results to a completed DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.modify_result(index,</span> <span class="pre">**kwargs)</span></code></dt><dd><p>Modifies a result in the DataSet.
+The index should be the zero-based index of the result to be modified.
+Keyword parameters should have the name of a parameter as the keyword and the updated value to associate as the value.
+If there is only one positional parameter and it is a dictionary, then it is interpreted as a map from parameter name to updated parameter value.</p>
+<p>Any parameters that were specified in the original result that do not appear in the modification are left unchanged.
+To remove a parameter from a result, map it to None.</p>
+<p>It is an error to modify a result at an index less than zero or beyond the end of the DataSet.</p>
+<p>It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.</p>
+<p>It is an error to modify a result in a completed DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.modify_results(start_index,</span> <span class="pre">updates)</span></code></dt><dd><p>Modifies a sequence of results in the DataSet.
+The start_index should be the zero-based index of the first result of the sequence to be modified.
+The updates argument should be a sequence of dictionaries, where each dictionary provides modified values for parameters
+as a map from parameter name to parameter value.
+See the modify_result method for a description of such a dictionary.
+The order of dictionaries in the sequence will be the same as the order in which they are applied to the DataSet.</p>
+<p>Any parameters that were specified in a original result that do not appear in the corresponding modification are left unchanged.
+To remove a parameter from a result, map it to None.</p>
+<p>It is an error to modify a result at an index less than zero or beyond the end of the DataSet.</p>
+<p>It is an error to provide a value for a key or keyword that is not the name of a parameter in this DataSet.</p>
+<p>It is an error to modify results in a completed DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.add_parameter_values(spec,</span> <span class="pre">values)</span></code></dt><dd><p>Adds a parameter to the DataSet and associates result values with the new parameter.
+The values must be a NumPy array or a Python list, with each element holding a single result value that matches the parameter’s data type.
+If the DataSet is not empty, then the count of provided values must equal the current count of results in the DataSet, or an error will result.</p>
+<p>It is an error to add parameters to a completed DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.mark_completed()</span></code></dt><dd><p>Marks the DataSet as completed.</p>
+</dd>
+</dl>
+</section>
+<section id="id3">
+<h3>Access<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.id</span></code></dt><dd><p>Returns the unique identifying string for this DataSet.
+This string will include the date and time that the DataSet was created and the name supplied to the constructor,
+as well as additional content to ensure uniqueness.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.length</span></code></dt><dd><p>This attribute holds the current number of results in the DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.is_empty</span></code></dt><dd><p>This attribute will be true if the DataSet is empty (has no results), or false if at least one result has been added to the DataSet.
+It is equivalent to testing if the length is zero.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.is_marked_complete</span></code></dt><dd><p>This attribute will be true if the DataSet has been marked as complete or false if it is in progress.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.get_data(*params,</span> <span class="pre">start=,</span> <span class="pre">end=)</span></code></dt><dd><p>Returns the values stored in the DataSet for the specified parameters.
+The values are returned as a list of parallel NumPy arrays, one array per parameter.
+The data type of each array is based on the data type provided when the DataSet was created.</p>
+<p>The parameter list may contain a mix of string parameter names, QCoDeS Parameter objects, and ParamSpec objects.</p>
+<p>If provided, the start and end parameters select a range of results by result count (index).
+Start defaults to 0, and end defaults to the current length.</p>
+<p>If the range is empty – that is, if the end is less than or equal to the start, or if start is after the current end of the DataSet –
+then a list of empty arrays is returned.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.get_parameters()</span></code></dt><dd><p>Returns a list of ParamSpec objects that describe the parameters stored in this DataSet.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.get_metadata(tag=)</span></code></dt><dd><p>Returns metadata for this DataSet.</p>
+<p>If a tag string is provided, only metadata stored under that tag is returned.
+Otherwise, all metadata is returned.</p>
+</dd>
+</dl>
+</section>
+<section id="subscribing">
+<h3>Subscribing<a class="headerlink" href="#subscribing" title="Link to this heading"></a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.subscribe(callback,</span> <span class="pre">min_wait=,</span> <span class="pre">min_count=,</span> <span class="pre">state=)</span></code></dt><dd><p>Subscribes the provided callback function to result additions to the DataSet.
+As results are added to the DataSet, the subscriber is notified by having the callback invoked.</p>
+<ul class="simple">
+<li><p>min_wait is the minimum amount of time between notifications for this subscription, in milliseconds. The default is 100.</p></li>
+<li><p>min_count is the minimum number of results for which a notification should be sent. The default is 1.</p></li>
+</ul>
+<p>When the callback is invoked, it is passed the DataSet itself, the current length of the DataSet, and the state object provided when subscribing.
+If no state object was provided, then the callback gets passed None as the fourth parameter.</p>
+<p>The callback is invoked when the DataSet is completed, regardless of the values of min_wait and min_count.</p>
+<p>This method returns an opaque subscription identifier.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">DataSet.unsubscribe(subid)</span></code></dt><dd><p>Removes the indicated subscription.
+The subid must be the same object that was returned from a DataSet.subscribe call.</p>
+</dd>
+</dl>
+</section>
+<section id="storage">
+<h3>Storage<a class="headerlink" href="#storage" title="Link to this heading"></a></h3>
+<p>DataSet persistence is handled externally to this class.</p>
+<p>The existing QCoDeS storage subsystem should be modified so that some object has two methods:</p>
+<ul class="simple">
+<li><p>A write_dataset method that takes a DataSet object and writes it to the appropriate storage location in an appropriate format.</p></li>
+<li><p>A read_dataset method that reads from the appropriate location, either with a specified format or inferring the format, and returns
+a DataSet object.</p></li>
+</ul>
+</section>
+</section>
+<section id="metadata">
+<h2>Metadata<a class="headerlink" href="#metadata" title="Link to this heading"></a></h2>
+<p>While in general the metadata associated with a DataSet is free-form, it is useful to specify a set of “well-known” tags and paths that components can rely on to contain specific information.
+Other components are free to specify new well-known metadata tags and paths, as long as they don’t conflict with the set defined here.</p>
+<dl class="simple">
+<dt>parameters</dt><dd><p>This tag contains a dictionary from the string name of each parameter to information about that parameter.
+Thus, if DataSet ds has a parameter named “foo”, there will be a key “foo” in the dictionary returned from ds.get_metadata(“parameters”).
+The value associated with this key will be a string-keyed dictionary.</p>
+</dd>
+<dt>parameters/__param__/spec</dt><dd><p>This path contains a string-keyed dictionary with (at least) the following two keys:
+The “type” key is associated with the NumPy dtype for the values of this parameter.
+The “metadata” key is associated with the metadata that was passed to the ParamSpec constructor that defines this parameter, or an empty dictionary if no metadata was set.</p>
+</dd>
+</dl>
+</section>
+<section id="utilities">
+<h2>Utilities<a class="headerlink" href="#utilities" title="Link to this heading"></a></h2>
+<p>There are many utility routines that may be defined outside of the DataSet class that may be useful.
+We collect several of them here, with the note that these functions will not be part of the DataSet class
+and will not be required by the DataSet class.</p>
+<dl class="simple">
+<dt>dataframe_from_dataset(dataset)</dt><dd><p>Creates a Pandas DataFrame object from a DataSet that has been marked as completed.</p>
+</dd>
+</dl>
+</section>
+<section id="open-issues">
+<h2>Open Issues<a class="headerlink" href="#open-issues" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Should it be possible to “reopen” a DataSet that has been marked as completed?</p></li>
+</ol>
+<p>This is convenient for adding data analysis results after the experiement has added, but could potentially lead mixing data from different experimental runs accidentally.
+It is already possible to modify metadata after the DataSet has beenmarked as completed, but sometimes that may not be sufficient.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="introduction.html" class="btn btn-neutral float-left" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="dataset_design.html" class="btn btn-neutral float-right" title="Dataset Design" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

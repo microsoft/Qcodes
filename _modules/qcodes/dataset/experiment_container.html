@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.experiment_container &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.experiment_container</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.experiment_container</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sized</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">warn</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset.data_set</span> <span class="kn">import</span> <span class="n">DataSet</span><span class="p">,</span> <span class="n">load_by_id</span><span class="p">,</span> <span class="n">new_data_set</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.experiment_settings</span> <span class="kn">import</span> <span class="n">_set_default_experiment_id</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.connection</span> <span class="kn">import</span> <span class="n">ConnectionPlus</span><span class="p">,</span> <span class="n">path_to_dbfile</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.database</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">conn_from_dbpath_or_conn</span><span class="p">,</span>
+    <span class="n">connect</span><span class="p">,</span>
+    <span class="n">get_DB_location</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.queries</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">finish_experiment</span><span class="p">,</span>
+    <span class="n">get_experiment_name_from_experiment_id</span><span class="p">,</span>
+    <span class="n">get_experiments</span><span class="p">,</span>
+    <span class="n">get_last_experiment</span><span class="p">,</span>
+    <span class="n">get_last_run</span><span class="p">,</span>
+    <span class="n">get_matching_exp_ids</span><span class="p">,</span>
+    <span class="n">get_run_counter</span><span class="p">,</span>
+    <span class="n">get_runid_from_expid_and_counter</span><span class="p">,</span>
+    <span class="n">get_runs</span><span class="p">,</span>
+    <span class="n">get_sample_name_from_experiment_id</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.queries</span> <span class="kn">import</span> <span class="n">new_experiment</span> <span class="k">as</span> <span class="n">ne</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.sqlite.query_helpers</span> <span class="kn">import</span> <span class="n">VALUES</span><span class="p">,</span> <span class="n">select_one_where</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">qcodes.dataset.data_set_protocol</span> <span class="kn">import</span> <span class="n">SPECS</span><span class="p">,</span> <span class="n">DataSetProtocol</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Experiment</span><span class="p">(</span><span class="n">Sized</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path_to_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">exp_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">sample_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">format_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create or load an experiment. If exp_id is None, a new experiment is</span>
+<span class="sd">        created. If exp_id is not None, an experiment is loaded.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            path_to_db: The path of the database file to create in/load from.</span>
+<span class="sd">              If a conn is passed together with path_to_db, an exception is</span>
+<span class="sd">              raised</span>
+<span class="sd">            exp_id: The id of the experiment to load</span>
+<span class="sd">            name: The name of the experiment to create. Ignored if exp_id is</span>
+<span class="sd">              not None</span>
+<span class="sd">            sample_name: The sample name for this experiment. Ignored if exp_id</span>
+<span class="sd">              is not None</span>
+<span class="sd">            format_string: The format string used to name result-tables.</span>
+<span class="sd">              Ignored if exp_id is not None.</span>
+<span class="sd">            conn: connection to the database. If not supplied, the constructor</span>
+<span class="sd">              first tries to use path_to_db to figure out where to connect to.</span>
+<span class="sd">              If path_to_db is not supplied either, a new connection</span>
+<span class="sd">              to the DB file specified in the config is made</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">conn_from_dbpath_or_conn</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">path_to_db</span><span class="p">)</span>
+
+        <span class="n">experiments_list</span> <span class="o">=</span> <span class="n">get_experiments</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">exp_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">exp_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">experiments_list</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;No such experiment in the database&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_exp_id</span> <span class="o">=</span> <span class="n">exp_id</span>
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="c1"># it is better to catch an invalid format string earlier than later</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># the corresponding function from sqlite module will try to</span>
+                <span class="c1"># format as `(name, exp_id, run_counter)`, hence we prepare</span>
+                <span class="c1"># for that here</span>
+                <span class="n">format_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid format string. Can not format &quot;</span>
+                                 <span class="s2">&quot;(name, exp_id, run_counter)&quot;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;creating new experiment in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_db</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">max_id</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">experiments_list</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;experiment_</span><span class="si">{</span><span class="n">max_id</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">sample_name</span> <span class="o">=</span> <span class="n">sample_name</span> <span class="ow">or</span> <span class="s2">&quot;some_sample&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_exp_id</span> <span class="o">=</span> <span class="n">ne</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">sample_name</span><span class="p">,</span> <span class="n">format_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">exp_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exp_id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path_to_db</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">path_to_dbfile</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_experiment_name_from_experiment_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sample_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_sample_name_from_experiment_id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">last_counter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_run_counter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">started_at</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">select_one_where</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;experiments&quot;</span><span class="p">,</span> <span class="s2">&quot;start_time&quot;</span><span class="p">,</span> <span class="s2">&quot;exp_id&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">start_time</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">finished_at</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">finish_time</span> <span class="o">=</span> <span class="n">select_one_where</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;experiments&quot;</span><span class="p">,</span> <span class="s2">&quot;end_time&quot;</span><span class="p">,</span> <span class="s2">&quot;exp_id&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">finish_time</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">finish_time</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">format_string</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">format_str</span> <span class="o">=</span> <span class="n">select_one_where</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;experiments&quot;</span><span class="p">,</span> <span class="s2">&quot;format_string&quot;</span><span class="p">,</span> <span class="s2">&quot;exp_id&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">format_str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">format_str</span>
+
+    <span class="k">def</span> <span class="nf">new_data_set</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">specs</span><span class="p">:</span> <span class="n">SPECS</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">values</span><span class="p">:</span> <span class="n">VALUES</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new dataset in this experiment</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: the name of the new dataset</span>
+<span class="sd">            specs: list of parameters (as ParamSpecs) to create this data_set</span>
+<span class="sd">                with</span>
+<span class="sd">            values: the values to associate with the parameters</span>
+<span class="sd">            metadata: the metadata to associate with the dataset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">new_data_set</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">specs</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span>
+                            <span class="n">conn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">data_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">counter</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get dataset with the specified counter from this experiment</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            counter: the counter of the run we want to load</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            the dataset</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">run_id</span> <span class="o">=</span> <span class="n">get_runid_from_expid_and_counter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">,</span>
+                                                  <span class="n">counter</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DataSet</span><span class="p">(</span><span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">conn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">data_sets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">DataSetProtocol</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all the datasets of this experiment&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">load_by_id</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">conn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">run_id</span> <span class="ow">in</span> <span class="n">get_runs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">last_data_set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSetProtocol</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the last dataset of this experiment&quot;&quot;&quot;</span>
+        <span class="n">run_id</span> <span class="o">=</span> <span class="n">get_last_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">run_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;There are no runs in this experiment&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">load_by_id</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">finish</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Marks this experiment as finished by saving the moment in time</span>
+<span class="sd">        when this method is called</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">finish_experiment</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_sets</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_name</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exp_id</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path_to_db</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">]</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">out</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">counter</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">_parameters</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_sets</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+
+<span class="c1"># public api</span>
+
+<div class="viewcode-block" id="experiments">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.experiments">[docs]</a>
+<span class="k">def</span> <span class="nf">experiments</span><span class="p">(</span><span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Experiment</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    List all the experiments in the container (database file from config)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        conn: connection to the database. If not supplied, a new connection</span>
+<span class="sd">          to the DB file specified in the config is made</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        All the experiments in the container</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">conn_from_dbpath_or_conn</span><span class="p">(</span><span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span> <span class="n">path_to_db</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loading experiments from </span><span class="si">{</span><span class="n">conn</span><span class="o">.</span><span class="n">path_to_dbfile</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">load_experiment</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">conn</span><span class="p">)</span> <span class="k">for</span> <span class="n">exp_id</span> <span class="ow">in</span> <span class="n">get_experiments</span><span class="p">(</span><span class="n">conn</span><span class="p">)]</span></div>
+
+
+
+<div class="viewcode-block" id="new_experiment">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.new_experiment">[docs]</a>
+<span class="k">def</span> <span class="nf">new_experiment</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">sample_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">format_string</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">-</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experiment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a new experiment (in the database file from config)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: the name of the experiment</span>
+<span class="sd">        sample_name: the name of the current sample</span>
+<span class="sd">        format_string: basic format string for table-name</span>
+<span class="sd">            must contain 3 placeholders.</span>
+<span class="sd">        conn: connection to the database. If not supplied, a new connection</span>
+<span class="sd">          to the DB file specified in the config is made</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        the new experiment</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sample_name</span> <span class="o">=</span> <span class="n">sample_name</span> <span class="ow">or</span> <span class="s2">&quot;some_sample&quot;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">conn</span> <span class="ow">or</span> <span class="n">connect</span><span class="p">(</span><span class="n">get_DB_location</span><span class="p">())</span>
+    <span class="n">exp_ids</span> <span class="o">=</span> <span class="n">get_matching_exp_ids</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="n">sample_name</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_ids</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;There is (are) already experiment(s) with the name of </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;and sample name of </span><span class="si">{</span><span class="n">sample_name</span><span class="si">}</span><span class="s2"> in the database.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">experiment</span> <span class="o">=</span> <span class="n">Experiment</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="n">sample_name</span><span class="p">,</span> <span class="n">format_string</span><span class="o">=</span><span class="n">format_string</span><span class="p">,</span> <span class="n">conn</span><span class="o">=</span><span class="n">conn</span>
+    <span class="p">)</span>
+    <span class="n">_set_default_experiment_id</span><span class="p">(</span><span class="n">path_to_dbfile</span><span class="p">(</span><span class="n">conn</span><span class="p">),</span> <span class="n">experiment</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">experiment</span></div>
+
+
+
+<div class="viewcode-block" id="load_experiment">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.load_experiment">[docs]</a>
+<span class="k">def</span> <span class="nf">load_experiment</span><span class="p">(</span><span class="n">exp_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experiment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load experiment with the specified id (from database file from config)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        exp_id: experiment id</span>
+<span class="sd">        conn: connection to the database. If not supplied, a new connection</span>
+<span class="sd">          to the DB file specified in the config is made</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        experiment with the specified id</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If experiment id is not an integer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">conn_from_dbpath_or_conn</span><span class="p">(</span><span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span> <span class="n">path_to_db</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Experiment ID must be an integer&#39;</span><span class="p">)</span>
+    <span class="n">experiment</span> <span class="o">=</span> <span class="n">Experiment</span><span class="p">(</span><span class="n">exp_id</span><span class="o">=</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+    <span class="n">_set_default_experiment_id</span><span class="p">(</span><span class="n">path_to_dbfile</span><span class="p">(</span><span class="n">conn</span><span class="p">),</span> <span class="n">experiment</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">experiment</span></div>
+
+
+
+<div class="viewcode-block" id="load_last_experiment">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.load_last_experiment">[docs]</a>
+<span class="k">def</span> <span class="nf">load_last_experiment</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Experiment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load last experiment (from database file from config)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The last experiment</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If no experiment exists in the db.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">get_DB_location</span><span class="p">())</span>
+    <span class="n">last_exp_id</span> <span class="o">=</span> <span class="n">get_last_experiment</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">last_exp_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;There are no experiments in the database file&#39;</span><span class="p">)</span>
+    <span class="n">experiment</span> <span class="o">=</span> <span class="n">Experiment</span><span class="p">(</span><span class="n">exp_id</span><span class="o">=</span><span class="n">last_exp_id</span><span class="p">)</span>
+    <span class="n">_set_default_experiment_id</span><span class="p">(</span><span class="n">get_DB_location</span><span class="p">(),</span> <span class="n">experiment</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">experiment</span></div>
+
+
+
+<div class="viewcode-block" id="load_experiment_by_name">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.load_experiment_by_name">[docs]</a>
+<span class="k">def</span> <span class="nf">load_experiment_by_name</span><span class="p">(</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">sample</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">load_last_duplicate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experiment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Try to load experiment with the specified name.</span>
+
+<span class="sd">    Nothing stops you from having many experiments with the same name and</span>
+<span class="sd">    sample name. In that case this won&#39;t work unless load_last_duplicate</span>
+<span class="sd">    is set to True. Then, the last of duplicated experiments will be loaded.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: the name of the experiment</span>
+<span class="sd">        sample: the name of the sample</span>
+<span class="sd">        load_last_duplicate: If True, prevent raising error for having</span>
+<span class="sd">            multiple experiments with the same name and sample name, and</span>
+<span class="sd">            load the last duplicated experiment, instead.</span>
+<span class="sd">        conn: connection to the database. If not supplied, a new connection</span>
+<span class="sd">            to the DB file specified in the config is made</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The requested experiment</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: either if the name and sample name are not unique, unless</span>
+<span class="sd">            load_last_duplicate is True, or if no experiment found for the</span>
+<span class="sd">            supplied name and sample.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">conn</span> <span class="ow">or</span> <span class="n">connect</span><span class="p">(</span><span class="n">get_DB_location</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">sample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args_to_find</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;sample_name&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">args_to_find</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+    <span class="n">exp_ids</span> <span class="o">=</span> <span class="n">get_matching_exp_ids</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="o">**</span><span class="n">args_to_find</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_ids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Experiment not found&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">_repr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">exp_id</span> <span class="ow">in</span> <span class="n">exp_ids</span><span class="p">:</span>
+            <span class="n">exp</span> <span class="o">=</span> <span class="n">load_experiment</span><span class="p">(</span><span class="n">exp_id</span><span class="p">,</span> <span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;exp_id:</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">exp_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">sample_name</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot; started at (</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">started_at</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="p">)</span>
+            <span class="n">_repr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">_repr_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_repr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">load_last_duplicate</span><span class="p">:</span>
+            <span class="n">e</span> <span class="o">=</span> <span class="n">exp</span>  <span class="c1"># pyright: ignore</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Many experiments matching your request found:</span><span class="se">\n</span><span class="si">{</span><span class="n">_repr_str</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">Experiment</span><span class="p">(</span><span class="n">exp_id</span><span class="o">=</span><span class="n">exp_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+    <span class="n">_set_default_experiment_id</span><span class="p">(</span><span class="n">path_to_dbfile</span><span class="p">(</span><span class="n">conn</span><span class="p">),</span> <span class="n">e</span><span class="o">.</span><span class="n">exp_id</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">e</span></div>
+
+
+
+<div class="viewcode-block" id="load_or_create_experiment">
+<a class="viewcode-back" href="../../../api/dataset/index.html#qcodes.dataset.load_or_create_experiment">[docs]</a>
+<span class="k">def</span> <span class="nf">load_or_create_experiment</span><span class="p">(</span>
+    <span class="n">experiment_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">sample_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">load_last_duplicate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experiment</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find and return an experiment with the given name and sample name,</span>
+<span class="sd">    or create one if not found.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        experiment_name: Name of the experiment to find or create.</span>
+<span class="sd">        sample_name: Name of the sample.</span>
+<span class="sd">        load_last_duplicate: If True, prevent raising error for having</span>
+<span class="sd">            multiple experiments with the same name and sample name, and</span>
+<span class="sd">            load the last duplicated experiment, instead.</span>
+<span class="sd">        conn: Connection to the database. If not supplied, a new connection</span>
+<span class="sd">            to the DB file specified in the config is made.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The found or created experiment</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the name and sample name are not unique, unless</span>
+<span class="sd">            load_last_duplicate is True.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">conn</span> <span class="ow">or</span> <span class="n">connect</span><span class="p">(</span><span class="n">get_DB_location</span><span class="p">())</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">experiment</span> <span class="o">=</span> <span class="n">load_experiment_by_name</span><span class="p">(</span>
+            <span class="n">experiment_name</span><span class="p">,</span>
+            <span class="n">sample_name</span><span class="p">,</span>
+            <span class="n">load_last_duplicate</span><span class="o">=</span><span class="n">load_last_duplicate</span><span class="p">,</span>
+            <span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">exception</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">&quot;Experiment not found&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">exception</span><span class="p">):</span>
+            <span class="n">experiment</span> <span class="o">=</span> <span class="n">new_experiment</span><span class="p">(</span><span class="n">experiment_name</span><span class="p">,</span> <span class="n">sample_name</span><span class="p">,</span>
+                                        <span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">exception</span>
+    <span class="k">return</span> <span class="n">experiment</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_create_exp_if_needed</span><span class="p">(</span>
+    <span class="n">target_conn</span><span class="p">:</span> <span class="n">ConnectionPlus</span><span class="p">,</span>
+    <span class="n">exp_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">sample_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">fmt_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">start_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">end_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Look up in the database whether an experiment already exists and create</span>
+<span class="sd">    it if it doesn&#39;t. Note that experiments do not have GUIDs, so this method</span>
+<span class="sd">    is not guaranteed to work. Matching names and times is the best we can do.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">matching_exp_ids</span> <span class="o">=</span> <span class="n">get_matching_exp_ids</span><span class="p">(</span>
+        <span class="n">target_conn</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="n">exp_name</span><span class="p">,</span>
+        <span class="n">sample_name</span><span class="o">=</span><span class="n">sample_name</span><span class="p">,</span>
+        <span class="n">format_string</span><span class="o">=</span><span class="n">fmt_str</span><span class="p">,</span>
+        <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+        <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matching_exp_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">exp_id</span> <span class="o">=</span> <span class="n">matching_exp_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">matching_exp_ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiments found in target DB that &quot;</span>
+            <span class="s2">&quot;match name, sample_name, fmt_str, start_time, and end_time. &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Inserting into the experiment with exp_id=</span><span class="si">{</span><span class="n">exp_id</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">exp_id</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">matching_exp_ids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">matching_exp_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lastrowid</span> <span class="o">=</span> <span class="n">ne</span><span class="p">(</span>
+            <span class="n">target_conn</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">exp_name</span><span class="p">,</span>
+            <span class="n">sample_name</span><span class="o">=</span><span class="n">sample_name</span><span class="p">,</span>
+            <span class="n">format_string</span><span class="o">=</span><span class="n">fmt_str</span><span class="p">,</span>
+            <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
+            <span class="n">end_time</span><span class="o">=</span><span class="n">end_time</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">lastrowid</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

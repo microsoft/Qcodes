@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>types &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">types</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for types</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Define names for built-in types that aren&#39;t directly accessible as a builtin.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># Iterators in Python aren&#39;t a matter of type but of protocol.  A large</span>
+<span class="c1"># and changing number of builtin types implement *some* flavor of</span>
+<span class="c1"># iterator.  Don&#39;t check the type!  Use hasattr to check for both</span>
+<span class="c1"># &quot;__iter__&quot; and &quot;__next__&quot; attributes instead.</span>
+
+<span class="k">def</span> <span class="nf">_f</span><span class="p">():</span> <span class="k">pass</span>
+<span class="n">FunctionType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_f</span><span class="p">)</span>
+<span class="n">LambdaType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span>         <span class="c1"># Same as FunctionType</span>
+<span class="n">CodeType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_f</span><span class="o">.</span><span class="vm">__code__</span><span class="p">)</span>
+<span class="n">MappingProxyType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">type</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
+<span class="n">SimpleNamespace</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">implementation</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">_cell_factory</span><span class="p">():</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+        <span class="k">nonlocal</span> <span class="n">a</span>
+    <span class="k">return</span> <span class="n">f</span><span class="o">.</span><span class="vm">__closure__</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">CellType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_cell_factory</span><span class="p">())</span>
+
+<span class="k">def</span> <span class="nf">_g</span><span class="p">():</span>
+    <span class="k">yield</span> <span class="mi">1</span>
+<span class="n">GeneratorType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_g</span><span class="p">())</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">_c</span><span class="p">():</span> <span class="k">pass</span>
+<span class="n">_c</span> <span class="o">=</span> <span class="n">_c</span><span class="p">()</span>
+<span class="n">CoroutineType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+<span class="n">_c</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># Prevent ResourceWarning</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">_ag</span><span class="p">():</span>
+    <span class="k">yield</span>
+<span class="n">_ag</span> <span class="o">=</span> <span class="n">_ag</span><span class="p">()</span>
+<span class="n">AsyncGeneratorType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_ag</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">_C</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_m</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">pass</span>
+<span class="n">MethodType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">_C</span><span class="p">()</span><span class="o">.</span><span class="n">_m</span><span class="p">)</span>
+
+<span class="n">BuiltinFunctionType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">len</span><span class="p">)</span>
+<span class="n">BuiltinMethodType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">([]</span><span class="o">.</span><span class="n">append</span><span class="p">)</span>     <span class="c1"># Same as BuiltinFunctionType</span>
+
+<span class="n">WrapperDescriptorType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">object</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span>
+<span class="n">MethodWrapperType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">object</span><span class="p">()</span><span class="o">.</span><span class="fm">__str__</span><span class="p">)</span>
+<span class="n">MethodDescriptorType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">join</span><span class="p">)</span>
+<span class="n">ClassMethodDescriptorType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">&#39;fromkeys&#39;</span><span class="p">])</span>
+
+<span class="n">ModuleType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">sys</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span>
+<span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="n">TracebackType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">__traceback__</span><span class="p">)</span>
+    <span class="n">FrameType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">__traceback__</span><span class="o">.</span><span class="n">tb_frame</span><span class="p">)</span>
+
+<span class="c1"># For Jython, the following two types are identical</span>
+<span class="n">GetSetDescriptorType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">FunctionType</span><span class="o">.</span><span class="vm">__code__</span><span class="p">)</span>
+<span class="n">MemberDescriptorType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">FunctionType</span><span class="o">.</span><span class="vm">__globals__</span><span class="p">)</span>
+
+<span class="k">del</span> <span class="n">sys</span><span class="p">,</span> <span class="n">_f</span><span class="p">,</span> <span class="n">_g</span><span class="p">,</span> <span class="n">_C</span><span class="p">,</span> <span class="n">_c</span><span class="p">,</span> <span class="n">_ag</span>  <span class="c1"># Not for export</span>
+
+
+<span class="c1"># Provide a PEP 3115 compliant mechanism for class creation</span>
+<span class="k">def</span> <span class="nf">new_class</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="o">=</span><span class="p">(),</span> <span class="n">kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exec_body</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a class object dynamically using the appropriate metaclass.&quot;&quot;&quot;</span>
+    <span class="n">resolved_bases</span> <span class="o">=</span> <span class="n">resolve_bases</span><span class="p">(</span><span class="n">bases</span><span class="p">)</span>
+    <span class="n">meta</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">kwds</span> <span class="o">=</span> <span class="n">prepare_class</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">resolved_bases</span><span class="p">,</span> <span class="n">kwds</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exec_body</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">exec_body</span><span class="p">(</span><span class="n">ns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">resolved_bases</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">bases</span><span class="p">:</span>
+        <span class="n">ns</span><span class="p">[</span><span class="s1">&#39;__orig_bases__&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bases</span>
+    <span class="k">return</span> <span class="n">meta</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">resolved_bases</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">resolve_bases</span><span class="p">(</span><span class="n">bases</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve MRO entries dynamically as specified by PEP 560.&quot;&quot;&quot;</span>
+    <span class="n">new_bases</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">bases</span><span class="p">)</span>
+    <span class="n">updated</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">shift</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">base</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">bases</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="s2">&quot;__mro_entries__&quot;</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">new_base</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="n">__mro_entries__</span><span class="p">(</span><span class="n">bases</span><span class="p">)</span>
+        <span class="n">updated</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">new_base</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;__mro_entries__ must return a tuple&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_bases</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="n">shift</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="n">shift</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_base</span>
+            <span class="n">shift</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_base</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">updated</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bases</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new_bases</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">prepare_class</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="o">=</span><span class="p">(),</span> <span class="n">kwds</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Call the __prepare__ method of the appropriate metaclass.</span>
+
+<span class="sd">    Returns (metaclass, namespace, kwds) as a 3-tuple</span>
+
+<span class="sd">    *metaclass* is the appropriate metaclass</span>
+<span class="sd">    *namespace* is the prepared class namespace</span>
+<span class="sd">    *kwds* is an updated copy of the passed in kwds argument with any</span>
+<span class="sd">    &#39;metaclass&#39; entry removed. If no kwds argument is passed in, this will</span>
+<span class="sd">    be an empty dict.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">kwds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">kwds</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">kwds</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwds</span><span class="p">)</span> <span class="c1"># Don&#39;t alter the provided mapping</span>
+    <span class="k">if</span> <span class="s1">&#39;metaclass&#39;</span> <span class="ow">in</span> <span class="n">kwds</span><span class="p">:</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">kwds</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;metaclass&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">bases</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">bases</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="nb">type</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="c1"># when meta is a type, we first determine the most-derived metaclass</span>
+        <span class="c1"># instead of invoking the initial candidate directly</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="n">_calculate_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">bases</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="s1">&#39;__prepare__&#39;</span><span class="p">):</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="fm">__prepare__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="n">meta</span><span class="p">,</span> <span class="n">ns</span><span class="p">,</span> <span class="n">kwds</span>
+
+<span class="k">def</span> <span class="nf">_calculate_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">bases</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the most derived metaclass.&quot;&quot;&quot;</span>
+    <span class="n">winner</span> <span class="o">=</span> <span class="n">meta</span>
+    <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">bases</span><span class="p">:</span>
+        <span class="n">base_meta</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">winner</span><span class="p">,</span> <span class="n">base_meta</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">base_meta</span><span class="p">,</span> <span class="n">winner</span><span class="p">):</span>
+            <span class="n">winner</span> <span class="o">=</span> <span class="n">base_meta</span>
+            <span class="k">continue</span>
+        <span class="c1"># else:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;metaclass conflict: &quot;</span>
+                        <span class="s2">&quot;the metaclass of a derived class &quot;</span>
+                        <span class="s2">&quot;must be a (non-strict) subclass &quot;</span>
+                        <span class="s2">&quot;of the metaclasses of all its bases&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">winner</span>
+
+<span class="k">class</span> <span class="nc">DynamicClassAttribute</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route attribute access on a class to __getattr__.</span>
+
+<span class="sd">    This is a descriptor, used to define attributes that act differently when</span>
+<span class="sd">    accessed through an instance and through a class.  Instance access remains</span>
+<span class="sd">    normal, but access to an attribute through a class will be routed to the</span>
+<span class="sd">    class&#39;s __getattr__ method; this is done by raising AttributeError.</span>
+
+<span class="sd">    This allows one to have properties active on an instance, and have virtual</span>
+<span class="sd">    attributes on the class with the same name.  (Enum used this between Python</span>
+<span class="sd">    versions 3.4 - 3.9 .)</span>
+
+<span class="sd">    Subclass from this to use a different method of accessing virtual attributes</span>
+<span class="sd">    and still be treated properly by the inspect module. (Enum uses this since</span>
+<span class="sd">    Python 3.10 .)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fget</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fset</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fdel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fget</span> <span class="o">=</span> <span class="n">fget</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fset</span> <span class="o">=</span> <span class="n">fset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fdel</span> <span class="o">=</span> <span class="n">fdel</span>
+        <span class="c1"># next two lines make DynamicClassAttribute act the same as property</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">doc</span> <span class="ow">or</span> <span class="n">fget</span><span class="o">.</span><span class="vm">__doc__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_doc</span> <span class="o">=</span> <span class="n">doc</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="c1"># support for abstract methods</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isabstractmethod__</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">fget</span><span class="p">,</span> <span class="s1">&#39;__isabstractmethod__&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="fm">__get__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">ownerclass</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">instance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__isabstractmethod__</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">fget</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;unreadable attribute&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fget</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__set__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;can&#39;t set attribute&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fset</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__delete__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fdel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;can&#39;t delete attribute&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fdel</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">getter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fget</span><span class="p">):</span>
+        <span class="n">fdoc</span> <span class="o">=</span> <span class="n">fget</span><span class="o">.</span><span class="vm">__doc__</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_doc</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">fget</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fdel</span><span class="p">,</span> <span class="n">fdoc</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">overwrite_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_doc</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fset</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">fget</span><span class="p">,</span> <span class="n">fset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fdel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">overwrite_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_doc</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">deleter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fdel</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">fget</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fset</span><span class="p">,</span> <span class="n">fdel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">overwrite_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">overwrite_doc</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="k">class</span> <span class="nc">_GeneratorWrapper</span><span class="p">:</span>
+    <span class="c1"># TODO: Implement this in C.</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gen</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span> <span class="o">=</span> <span class="n">gen</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__isgen</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="vm">__class__</span> <span class="ow">is</span> <span class="n">GeneratorType</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__qualname__</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gen</span><span class="p">,</span> <span class="s1">&#39;__qualname__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">throw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="o">*</span><span class="n">rest</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">tp</span><span class="p">,</span> <span class="o">*</span><span class="n">rest</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">gi_code</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="o">.</span><span class="n">gi_code</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">gi_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="o">.</span><span class="n">gi_frame</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">gi_running</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="o">.</span><span class="n">gi_running</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">gi_yieldfrom</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="o">.</span><span class="n">gi_yieldfrom</span>
+    <span class="n">cr_code</span> <span class="o">=</span> <span class="n">gi_code</span>
+    <span class="n">cr_frame</span> <span class="o">=</span> <span class="n">gi_frame</span>
+    <span class="n">cr_running</span> <span class="o">=</span> <span class="n">gi_running</span>
+    <span class="n">cr_await</span> <span class="o">=</span> <span class="n">gi_yieldfrom</span>
+    <span class="k">def</span> <span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span><span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__isgen</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__wrapped</span>
+        <span class="k">return</span> <span class="bp">self</span>
+    <span class="fm">__await__</span> <span class="o">=</span> <span class="fm">__iter__</span>
+
+<span class="k">def</span> <span class="nf">coroutine</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert regular generator function to a coroutine.&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;types.coroutine() expects a callable&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__class__</span> <span class="ow">is</span> <span class="n">FunctionType</span> <span class="ow">and</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;__code__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="vm">__class__</span> <span class="ow">is</span> <span class="n">CodeType</span><span class="p">):</span>
+
+        <span class="n">co_flags</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_flags</span>
+
+        <span class="c1"># Check if &#39;func&#39; is a coroutine function.</span>
+        <span class="c1"># (0x180 == CO_COROUTINE | CO_ITERABLE_COROUTINE)</span>
+        <span class="k">if</span> <span class="n">co_flags</span> <span class="o">&amp;</span> <span class="mh">0x180</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">func</span>
+
+        <span class="c1"># Check if &#39;func&#39; is a generator function.</span>
+        <span class="c1"># (0x20 == CO_GENERATOR)</span>
+        <span class="k">if</span> <span class="n">co_flags</span> <span class="o">&amp;</span> <span class="mh">0x20</span><span class="p">:</span>
+            <span class="c1"># TODO: Implement this in C.</span>
+            <span class="n">co</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__code__</span>
+            <span class="c1"># 0x100 == CO_ITERABLE_COROUTINE</span>
+            <span class="n">func</span><span class="o">.</span><span class="vm">__code__</span> <span class="o">=</span> <span class="n">co</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">co_flags</span><span class="o">=</span><span class="n">co</span><span class="o">.</span><span class="n">co_flags</span> <span class="o">|</span> <span class="mh">0x100</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">func</span>
+
+    <span class="c1"># The following code is primarily to support functions that</span>
+    <span class="c1"># return generator-like objects (for instance generators</span>
+    <span class="c1"># compiled with Cython).</span>
+
+    <span class="c1"># Delay functools and _collections_abc import for speeding up types import.</span>
+    <span class="kn">import</span> <span class="nn">functools</span>
+    <span class="kn">import</span> <span class="nn">_collections_abc</span>
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapped</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">coro</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">coro</span><span class="o">.</span><span class="vm">__class__</span> <span class="ow">is</span> <span class="n">CoroutineType</span> <span class="ow">or</span>
+            <span class="n">coro</span><span class="o">.</span><span class="vm">__class__</span> <span class="ow">is</span> <span class="n">GeneratorType</span> <span class="ow">and</span> <span class="n">coro</span><span class="o">.</span><span class="n">gi_code</span><span class="o">.</span><span class="n">co_flags</span> <span class="o">&amp;</span> <span class="mh">0x100</span><span class="p">):</span>
+            <span class="c1"># &#39;coro&#39; is a native coroutine object or an iterable coroutine</span>
+            <span class="k">return</span> <span class="n">coro</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">coro</span><span class="p">,</span> <span class="n">_collections_abc</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="ow">and</span>
+            <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coro</span><span class="p">,</span> <span class="n">_collections_abc</span><span class="o">.</span><span class="n">Coroutine</span><span class="p">)):</span>
+            <span class="c1"># &#39;coro&#39; is either a pure Python generator iterator, or it</span>
+            <span class="c1"># implements collections.abc.Generator (and does not implement</span>
+            <span class="c1"># collections.abc.Coroutine).</span>
+            <span class="k">return</span> <span class="n">_GeneratorWrapper</span><span class="p">(</span><span class="n">coro</span><span class="p">)</span>
+        <span class="c1"># &#39;coro&#39; is either an instance of collections.abc.Coroutine or</span>
+        <span class="c1"># some other object -- pass it through.</span>
+        <span class="k">return</span> <span class="n">coro</span>
+
+    <span class="k">return</span> <span class="n">wrapped</span>
+
+<span class="n">GenericAlias</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+<span class="n">UnionType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span>
+
+<span class="n">EllipsisType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">Ellipsis</span><span class="p">)</span>
+<span class="n">NoneType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">NotImplementedType</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">NotImplemented</span><span class="p">)</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;_&#39;</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

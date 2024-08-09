@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniCircuits Drivers &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Oxford Instruments Drivers" href="Oxford.html" />
+    <link rel="prev" title="Lakeshore Drivers" href="Lakeshore.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">MiniCircuits Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4T</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.ask"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4T.ask()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.get_idn"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4T.get_idn()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.switch"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel.switch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDT</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.ask"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDT.ask()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.get_idn"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDT.get_idn()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.switch"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel.switch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.model_name"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.model_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.serial_number"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.serial_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.firmware"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.firmware</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.attenuation"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.attenuation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.startup_attenuation"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.startup_attenuation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.hop_points"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.hop_points</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.vendor_id"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.vendor_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.product_id"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb.product_id</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.model_name"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.model_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.serial_number"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.serial_number</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.firmware"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.firmware</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.attenuation"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.attenuation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.startup_attenuation"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.startup_attenuation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.hop_points"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.hop_points</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.get_idn"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base.get_idn()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.vendor_id"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.vendor_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.product_id"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.product_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.write_raw"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.write_raw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.ask_raw"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.ask_raw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.close"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.enumerate_devices"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.enumerate_devices()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.CHANNEL_CLASS"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.CHANNEL_CLASS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.PATH_TO_DRIVER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER_45"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.PATH_TO_DRIVER_45</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.get_idn"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.CHANNEL_CLASS"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.CHANNEL_CLASS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.add_channels"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.add_channels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.all"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.all()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.get_number_of_channels"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.get_number_of_channels()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDTSwitchChannel"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDTSwitchChannel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.switch"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase.switch</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.parameters"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.functions"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.submodules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.instrument_modules"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.log"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.metadata"><code class="docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase.metadata</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">MiniCircuits Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/Minicircuits.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.Minicircuits">
+<span id="minicircuits-drivers"></span><span id="minicircuits-api"></span><h1>MiniCircuits Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.Minicircuits" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4T</span></code></a>(name, address[, port])</p></td>
+<td><p>Driver for MiniCircuits RC-SP4T RF switch connected via ethernet.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsRCSP4TChannel</span></code></a>(parent, name, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDT</span></code></a>(name, address[, port])</p></td>
+<td><p>Mini-Circuits RC-SPDT RF switch connected via ethernet.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsRCSPDTChannel</span></code></a>(parent, name, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Usb</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Driver for the Minicircuits RUDAT-13G-90 90 dB Programmable Attenuator</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base</span></code></a>(name, **kwargs)</p></td>
+<td><p>Base class for drivers for MiniCircuits RUDAT-13G-90 Should not be instantiated directly.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin</span></code></a>(*args, **kwargs)</p></td>
+<td><p>The specific implementation for mini circuit human interface devices.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDT</span></code></a>(name[, driver_path, ...])</p></td>
+<td><p>Mini-Circuits SPDT RF switch</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase</span></code></a>(name, **kwargs)</p></td>
+<td><p>Base class for MiniCircuits SPDT Switch instruments.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDTSwitchChannel" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDTSwitchChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDTSwitchChannel</span></code></a>(parent, ...)</p></td>
+<td><p>Base class for MiniCircuits SPDT Switch channels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase</span></code></a>(parent, ...)</p></td>
+<td><p>Base class for MiniCircuits SPDT Switch channels.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsRCSP4T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">23</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_sp4t.html#MiniCircuitsRCSP4T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.IPInstrument" title="qcodes.instrument.ip.IPInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">IPInstrument</span></code></a></p>
+<p>Driver for MiniCircuits RC-SP4T RF switch connected via ethernet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – the name of the instrument</p></li>
+<li><p><strong>address</strong> – ip address ie “10.0.0.1”</p></li>
+<li><p><strong>port</strong> – port to connect to default <a class="reference external" href="Telnet:23">Telnet:23</a></p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to the baseclass</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.ask" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.ask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask</span></code></a>(cmd)</p></td>
+<td><p>Write a command string to the hardware and return a response.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.get_idn" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.ask">
+<span class="sig-name descname"><span class="pre">ask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_sp4t.html#MiniCircuitsRCSP4T.ask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.ask" title="Link to this definition"></a></dt>
+<dd><p>Write a command string to the hardware and return a response.</p>
+<p>Subclasses that transform <code class="docutils literal notranslate"><span class="pre">cmd</span></code> should override this method, and in
+it call <code class="docutils literal notranslate"><span class="pre">super().ask(new_cmd)</span></code>. Subclasses that define a new
+hardware communication should instead override <code class="docutils literal notranslate"><span class="pre">ask_raw</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – The string to send to the instrument.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>response</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Exception" title="(in Python v3.10)"><strong>Exception</strong></a> – Wraps any underlying exception with extra context,
+    including the command and the instrument.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_sp4t.html#MiniCircuitsRCSP4T.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4T.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p>
+<p>Even though this is the VISA standard, it applies to various other
+types as well, such as IPInstruments, so it is included here in the
+Instrument base class.</p>
+<p>Override this if your instrument does not support <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> or
+returns a nonstandard IDN string. This string is supposed to be a
+comma-separated list of vendor, model, serial, and firmware, but
+semicolon and colon are also common separators so we accept them here
+as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dict containing vendor, model, serial, and firmware.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsRCSP4TChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.IPInstrument" title="qcodes.instrument.ip.IPInstrument"><span class="pre">IPInstrument</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel_letter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_sp4t.html#MiniCircuitsRCSP4TChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – The instrument the channel is a part of</p></li>
+<li><p><strong>name</strong> – the name of the channel</p></li>
+<li><p><strong>channel_letter</strong> – channel letter [‘a’, ‘b’])</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.switch" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.switch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch</span></code></a></p></td>
+<td><p>Parameter switch</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.switch">
+<span class="sig-name descname"><span class="pre">switch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;switch&quot;,</span> <span class="pre">label=&quot;switch&quot;,</span> <span class="pre">set_cmd=self._set_switch,</span> <span class="pre">get_cmd=self._get_switch,</span> <span class="pre">vals=vals.Ints(0,</span> <span class="pre">4),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.switch" title="Link to this definition"></a></dt>
+<dd><p>Parameter switch</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSP4TChannel.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsRCSPDT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">23</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_spdt.html#MiniCircuitsRCSPDT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.IPInstrument" title="qcodes.instrument.ip.IPInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">IPInstrument</span></code></a></p>
+<p>Mini-Circuits RC-SPDT RF switch connected
+via ethernet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – the name of the instrument</p></li>
+<li><p><strong>address</strong> – ip address ie “10.0.0.1”</p></li>
+<li><p><strong>port</strong> – port to connect to default <a class="reference external" href="Telnet:23">Telnet:23</a></p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.ask" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.ask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask</span></code></a>(cmd)</p></td>
+<td><p>Write a command string to the hardware and return a response.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.get_idn" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.ask">
+<span class="sig-name descname"><span class="pre">ask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_spdt.html#MiniCircuitsRCSPDT.ask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.ask" title="Link to this definition"></a></dt>
+<dd><p>Write a command string to the hardware and return a response.</p>
+<p>Subclasses that transform <code class="docutils literal notranslate"><span class="pre">cmd</span></code> should override this method, and in
+it call <code class="docutils literal notranslate"><span class="pre">super().ask(new_cmd)</span></code>. Subclasses that define a new
+hardware communication should instead override <code class="docutils literal notranslate"><span class="pre">ask_raw</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – The string to send to the instrument.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>response</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Exception" title="(in Python v3.10)"><strong>Exception</strong></a> – Wraps any underlying exception with extra context,
+    including the command and the instrument.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_spdt.html#MiniCircuitsRCSPDT.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p>
+<p>Even though this is the VISA standard, it applies to various other
+types as well, such as IPInstruments, so it is included here in the
+Instrument base class.</p>
+<p>Override this if your instrument does not support <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> or
+returns a nonstandard IDN string. This string is supposed to be a
+comma-separated list of vendor, model, serial, and firmware, but
+semicolon and colon are also common separators so we accept them here
+as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dict containing vendor, model, serial, and firmware.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsRCSPDTChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDT"><span class="pre">MiniCircuitsRCSPDT</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel_letter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rc_spdt.html#MiniCircuitsRCSPDTChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – The instrument the channel is a part of</p></li>
+<li><p><strong>name</strong> – the name of the channel</p></li>
+<li><p><strong>channel_letter</strong> – channel letter [‘a’, ‘b’, ‘c’ or ‘d’])</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to the baseclass</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.switch" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.switch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch</span></code></a></p></td>
+<td><p>Parameter switch</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.switch">
+<span class="sig-name descname"><span class="pre">switch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;switch&quot;,</span> <span class="pre">label=&quot;switch&quot;,</span> <span class="pre">set_cmd=self._set_switch,</span> <span class="pre">get_cmd=self._get_switch,</span> <span class="pre">vals=vals.Ints(1,</span> <span class="pre">2),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.switch" title="Link to this definition"></a></dt>
+<dd><p>Parameter switch</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRCSPDTChannel.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsRudat13G90Usb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rudat_13g_90.html#MiniCircuitsRudat13G90Usb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin" title="qcodes.instrument_drivers.Minicircuits.USBHIDMixin.MiniCircuitsHIDMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">MiniCircuitsHIDMixin</span></code></a>, <a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base" title="qcodes.instrument_drivers.Minicircuits._minicircuits_rudat_13g_90.MiniCircuitsRudat13G90Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">MiniCircuitsRudat13G90Base</span></code></a></p>
+<p>Driver for the Minicircuits RUDAT-13G-90
+90 dB Programmable Attenuator</p>
+<p>The specific implementation for mini circuit human interface devices.</p>
+<p>This implementation allows to use <cite>write</cite>/<cite>ask</cite> methods of the instrument
+instance to send SCPI commands to MiniCircuits instruments over USB HID
+connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – instrument name</p></li>
+<li><p><strong>instance_id</strong> – The id of the instrument we want to connect. If there is
+only one instrument then this is an optional argument. If we have
+more then one instrument, use the class method
+<cite>enumerate_devices</cite> to query their IDs</p></li>
+<li><p><strong>timeout</strong> – Specify a timeout for this instrument in seconds</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.vendor_id" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.vendor_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vendor_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.product_id" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.product_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">product_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.model_name">
+<span class="sig-name descname"><span class="pre">model_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(&quot;model_name&quot;,</span> <span class="pre">get_cmd=&quot;:MN?&quot;)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.model_name" title="Link to this definition"></a></dt>
+<dd><p>Parameter model_name</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.serial_number">
+<span class="sig-name descname"><span class="pre">serial_number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;serial_number&quot;,</span> <span class="pre">get_cmd=&quot;:SN?&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.serial_number" title="Link to this definition"></a></dt>
+<dd><p>Parameter serial_number</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.firmware">
+<span class="sig-name descname"><span class="pre">firmware</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(&quot;firmware&quot;,</span> <span class="pre">get_cmd=&quot;:FIRMWARE?&quot;)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.firmware" title="Link to this definition"></a></dt>
+<dd><p>Parameter firmware</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.attenuation">
+<span class="sig-name descname"><span class="pre">attenuation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;attenuation&quot;,</span> <span class="pre">set_cmd=&quot;:SETATT={}&quot;,</span> <span class="pre">get_cmd=&quot;:ATT?&quot;,</span> <span class="pre">get_parser=float</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.attenuation" title="Link to this definition"></a></dt>
+<dd><p>Parameter attenuation</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.startup_attenuation">
+<span class="sig-name descname"><span class="pre">startup_attenuation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;startup_attenuation&quot;,</span> <span class="pre">set_cmd=&quot;:STARTUPATT:VALUE:{}&quot;,</span> <span class="pre">get_cmd=&quot;:STARTUPATT:VALUE?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.startup_attenuation" title="Link to this definition"></a></dt>
+<dd><p>Parameter startup_attenuation</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.hop_points">
+<span class="sig-name descname"><span class="pre">hop_points</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;hop_points&quot;,</span> <span class="pre">get_cmd=&quot;HOP:POINTS?&quot;,</span> <span class="pre">get_parser=int</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.hop_points" title="Link to this definition"></a></dt>
+<dd><p>Parameter hop_points</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.vendor_id">
+<span class="sig-name descname"><span class="pre">vendor_id</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8398</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.vendor_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.product_id">
+<span class="sig-name descname"><span class="pre">product_id</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">35</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Usb.product_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsRudat13G90Base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rudat_13g_90.html#MiniCircuitsRudat13G90Base"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instrument</span></code></a></p>
+<p>Base class for drivers for MiniCircuits RUDAT-13G-90
+Should not be instantiated directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name of the instrument</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.model_name" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.model_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model_name</span></code></a></p></td>
+<td><p>Parameter model_name</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.serial_number" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.serial_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serial_number</span></code></a></p></td>
+<td><p>Parameter serial_number</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.firmware" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.firmware"><code class="xref py py-obj docutils literal notranslate"><span class="pre">firmware</span></code></a></p></td>
+<td><p>Parameter firmware</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.attenuation" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.attenuation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attenuation</span></code></a></p></td>
+<td><p>Parameter attenuation</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.startup_attenuation" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.startup_attenuation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">startup_attenuation</span></code></a></p></td>
+<td><p>Parameter startup_attenuation</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.hop_points" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.hop_points"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hop_points</span></code></a></p></td>
+<td><p>Parameter hop_points</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.get_idn" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.model_name">
+<span class="sig-name descname"><span class="pre">model_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(&quot;model_name&quot;,</span> <span class="pre">get_cmd=&quot;:MN?&quot;)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.model_name" title="Link to this definition"></a></dt>
+<dd><p>Parameter model_name</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.serial_number">
+<span class="sig-name descname"><span class="pre">serial_number</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;serial_number&quot;,</span> <span class="pre">get_cmd=&quot;:SN?&quot;</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.serial_number" title="Link to this definition"></a></dt>
+<dd><p>Parameter serial_number</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.firmware">
+<span class="sig-name descname"><span class="pre">firmware</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(&quot;firmware&quot;,</span> <span class="pre">get_cmd=&quot;:FIRMWARE?&quot;)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.firmware" title="Link to this definition"></a></dt>
+<dd><p>Parameter firmware</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.attenuation">
+<span class="sig-name descname"><span class="pre">attenuation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;attenuation&quot;,</span> <span class="pre">set_cmd=&quot;:SETATT={}&quot;,</span> <span class="pre">get_cmd=&quot;:ATT?&quot;,</span> <span class="pre">get_parser=float</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.attenuation" title="Link to this definition"></a></dt>
+<dd><p>Parameter attenuation</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.startup_attenuation">
+<span class="sig-name descname"><span class="pre">startup_attenuation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;startup_attenuation&quot;,</span> <span class="pre">set_cmd=&quot;:STARTUPATT:VALUE:{}&quot;,</span> <span class="pre">get_cmd=&quot;:STARTUPATT:VALUE?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.startup_attenuation" title="Link to this definition"></a></dt>
+<dd><p>Parameter startup_attenuation</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.hop_points">
+<span class="sig-name descname"><span class="pre">hop_points</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;hop_points&quot;,</span> <span class="pre">get_cmd=&quot;HOP:POINTS?&quot;,</span> <span class="pre">get_parser=int</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.hop_points" title="Link to this definition"></a></dt>
+<dd><p>Parameter hop_points</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_rudat_13g_90.html#MiniCircuitsRudat13G90Base.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsRudat13G90Base.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p>
+<p>Even though this is the VISA standard, it applies to various other
+types as well, such as IPInstruments, so it is included here in the
+Instrument base class.</p>
+<p>Override this if your instrument does not support <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> or
+returns a nonstandard IDN string. This string is supposed to be a
+comma-separated list of vendor, model, serial, and firmware, but
+semicolon and colon are also common separators so we accept them here
+as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dict containing vendor, model, serial, and firmware.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsHIDMixin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/USBHIDMixin.html#MiniCircuitsHIDMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instrument</span></code></a></p>
+<p>The specific implementation for mini circuit human interface devices.</p>
+<p>This implementation allows to use <cite>write</cite>/<cite>ask</cite> methods of the instrument
+instance to send SCPI commands to MiniCircuits instruments over USB HID
+connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – instrument name</p></li>
+<li><p><strong>instance_id</strong> – The id of the instrument we want to connect. If there is
+only one instrument then this is an optional argument. If we have
+more then one instrument, use the class method
+<cite>enumerate_devices</cite> to query their IDs</p></li>
+<li><p><strong>timeout</strong> – Specify a timeout for this instrument in seconds</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.vendor_id" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.vendor_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vendor_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.product_id" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.product_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">product_id</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.write_raw" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.write_raw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_raw</span></code></a>(cmd)</p></td>
+<td><p>Send a string command to the human interface device</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.ask_raw" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.ask_raw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask_raw</span></code></a>(cmd)</p></td>
+<td><p>Send a string command to the human interface device and wait for a reply</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.close" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.close"><code class="xref py py-obj docutils literal notranslate"><span class="pre">close</span></code></a>()</p></td>
+<td><p>Irreversibly stop this instrument and free its resources.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.enumerate_devices" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.enumerate_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">enumerate_devices</span></code></a>()</p></td>
+<td><p>This method returns the 'instance_id's of all connected devices for with the given product and vendor IDs.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.vendor_id">
+<span class="sig-name descname"><span class="pre">vendor_id</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.vendor_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.product_id">
+<span class="sig-name descname"><span class="pre">product_id</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.product_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.write_raw">
+<span class="sig-name descname"><span class="pre">write_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/USBHIDMixin.html#MiniCircuitsHIDMixin.write_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.write_raw" title="Link to this definition"></a></dt>
+<dd><p>Send a string command to the human interface device</p>
+<p>The given command is processed by <cite>_pack_string</cite> method to return a
+byte sequence that is going to be actually sent to the device.
+Subclasses must implement <cite>_pack_string</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – a command to send in a form of a string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.ask_raw">
+<span class="sig-name descname"><span class="pre">ask_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/USBHIDMixin.html#MiniCircuitsHIDMixin.ask_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.ask_raw" title="Link to this definition"></a></dt>
+<dd><p>Send a string command to the human interface device and wait for a reply</p>
+<p>The given command is processed by <cite>_pack_string</cite> method to return a
+byte sequence that is going to be actually sent to the device.
+Subclasses must implement <cite>_pack_string</cite> method.</p>
+<p>The  byte sequence of the reply is processed by <cite>_unpack_string</cite>
+method, and the resulting string is returned. Subclasses must
+implement <cite>_unpack_string</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – a command to send in a form of a string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/USBHIDMixin.html#MiniCircuitsHIDMixin.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.close" title="Link to this definition"></a></dt>
+<dd><p>Irreversibly stop this instrument and free its resources.</p>
+<p>Subclasses should override this if they have other specific
+resources to close.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.enumerate_devices">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">enumerate_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/USBHIDMixin.html#MiniCircuitsHIDMixin.enumerate_devices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.enumerate_devices" title="Link to this definition"></a></dt>
+<dd><p>This method returns the ‘instance_id’s of all connected devices for
+with the given product and vendor IDs.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsHIDMixin.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsUsbSPDT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">driver_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serial_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.html#MiniCircuitsUsbSPDT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase" title="qcodes.instrument_drivers.Minicircuits.Base_SPDT.MiniCircuitsSPDTBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">MiniCircuitsSPDTBase</span></code></a></p>
+<p>Mini-Circuits SPDT RF switch</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – the name of the instrument</p></li>
+<li><p><strong>driver_path</strong> – path to the dll</p></li>
+<li><p><strong>serial_number</strong> – the serial number of the device
+(printed on the sticker on the back side, without s/n)</p></li>
+<li><p><strong>kwargs</strong> – kwargs to be passed to Instrument class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.CHANNEL_CLASS" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.CHANNEL_CLASS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHANNEL_CLASS</span></code></a></p></td>
+<td><p>alias of <a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDTSwitchChannel" title="qcodes.instrument_drivers.Minicircuits._minicircuits_usb_spdt.MiniCircuitsUsbSPDTSwitchChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDTSwitchChannel</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PATH_TO_DRIVER</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER_45" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER_45"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PATH_TO_DRIVER_45</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.get_idn" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.CHANNEL_CLASS">
+<span class="sig-name descname"><span class="pre">CHANNEL_CLASS</span></span><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.CHANNEL_CLASS" title="Link to this definition"></a></dt>
+<dd><p>alias of <a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDTSwitchChannel" title="qcodes.instrument_drivers.Minicircuits._minicircuits_usb_spdt.MiniCircuitsUsbSPDTSwitchChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MiniCircuitsUsbSPDTSwitchChannel</span></code></a></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER">
+<span class="sig-name descname"><span class="pre">PATH_TO_DRIVER</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'mcl_RF_Switch_Controller64'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER_45">
+<span class="sig-name descname"><span class="pre">PATH_TO_DRIVER_45</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'mcl_RF_Switch_Controller_NET45'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.PATH_TO_DRIVER_45" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.html#MiniCircuitsUsbSPDT.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Parse a standard VISA <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> response into an ID dict.</p>
+<p>Even though this is the VISA standard, it applies to various other
+types as well, such as IPInstruments, so it is included here in the
+Instrument base class.</p>
+<p>Override this if your instrument does not support <code class="docutils literal notranslate"><span class="pre">*IDN?</span></code> or
+returns a nonstandard IDN string. This string is supposed to be a
+comma-separated list of vendor, model, serial, and firmware, but
+semicolon and colon are also common separators so we accept them here
+as well.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A dict containing vendor, model, serial, and firmware.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDT.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsSPDTBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/Base_SPDT.html#MiniCircuitsSPDTBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">Instrument</span></code></a></p>
+<p>Base class for MiniCircuits SPDT Switch instruments.
+Should not be instantiated directly.</p>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.CHANNEL_CLASS" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.CHANNEL_CLASS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHANNEL_CLASS</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.add_channels" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.add_channels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_channels</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.all" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">all</span></code></a>(switch_to)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.get_number_of_channels" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.get_number_of_channels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_number_of_channels</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.CHANNEL_CLASS">
+<span class="sig-name descname"><span class="pre">CHANNEL_CLASS</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#type" title="(in Python v3.10)"><span class="pre">type</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase"><span class="pre">MiniCircuitsSPDTSwitchChannelBase</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.CHANNEL_CLASS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.add_channels">
+<span class="sig-name descname"><span class="pre">add_channels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/Base_SPDT.html#MiniCircuitsSPDTBase.add_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.add_channels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.all">
+<span class="sig-name descname"><span class="pre">all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">switch_to</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/Base_SPDT.html#MiniCircuitsSPDTBase.all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.all" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.get_number_of_channels">
+<span class="sig-name descname"><span class="pre">get_number_of_channels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/Base_SPDT.html#MiniCircuitsSPDTBase.get_number_of_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.get_number_of_channels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTBase.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDTSwitchChannel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsUsbSPDTSwitchChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.Instrument"><span class="pre">Instrument</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel_letter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/_minicircuits_usb_spdt.html#MiniCircuitsUsbSPDTSwitchChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsUsbSPDTSwitchChannel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase" title="qcodes.instrument_drivers.Minicircuits.Base_SPDT.MiniCircuitsSPDTSwitchChannelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">MiniCircuitsSPDTSwitchChannelBase</span></code></a></p>
+<p>Base class for MiniCircuits SPDT Switch channels.
+Should not be instantiated directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – The instrument the channel is a part of</p></li>
+<li><p><strong>name</strong> – the name of the channel</p></li>
+<li><p><strong>channel_letter</strong> – channel letter [‘a’, ‘b’, ‘c’ or ‘d’])</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.Minicircuits.</span></span><span class="sig-name descname"><span class="pre">MiniCircuitsSPDTSwitchChannelBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.Instrument"><span class="pre">Instrument</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel_letter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/Minicircuits/Base_SPDT.html#MiniCircuitsSPDTSwitchChannelBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<p>Base class for MiniCircuits SPDT Switch channels.
+Should not be instantiated directly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – The instrument the channel is a part of</p></li>
+<li><p><strong>name</strong> – the name of the channel</p></li>
+<li><p><strong>channel_letter</strong> – channel letter [‘a’, ‘b’, ‘c’ or ‘d’])</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.switch" title="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.switch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">switch</span></code></a></p></td>
+<td><p>Parameter switch</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.switch">
+<span class="sig-name descname"><span class="pre">switch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">'switch',</span> <span class="pre">label=f'switch</span> <span class="pre">{self.channel_letter}',</span> <span class="pre">set_cmd=self._set_switch,</span> <span class="pre">get_cmd=self._get_switch,</span> <span class="pre">vals=Ints(1,</span> <span class="pre">2))</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.switch" title="Link to this definition"></a></dt>
+<dd><p>Parameter switch</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.Minicircuits.MiniCircuitsSPDTSwitchChannelBase.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Lakeshore.html" class="btn btn-neutral float-left" title="Lakeshore Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Oxford.html" class="btn btn-neutral float-right" title="Oxford Instruments Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

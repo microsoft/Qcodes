@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Keysight.keysightb1500.constants &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" />
+    <link href="../../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Keysight.keysightb1500.constants</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Keysight.keysightb1500.constants</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span><span class="p">,</span> <span class="n">IntFlag</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">StrEnum</span>
+<span class="k">else</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">StrEnum</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+<span class="k">class</span> <span class="nc">ChannelName</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="s2">&quot;CH1&quot;</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="s2">&quot;CH2&quot;</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="s2">&quot;CH3&quot;</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="s2">&quot;CH4&quot;</span>
+    <span class="n">E</span> <span class="o">=</span> <span class="s2">&quot;CH5&quot;</span>
+    <span class="n">F</span> <span class="o">=</span> <span class="s2">&quot;CH6&quot;</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="s2">&quot;CH7&quot;</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="s2">&quot;CH8&quot;</span>
+    <span class="n">I</span> <span class="o">=</span> <span class="s2">&quot;CH9&quot;</span>  <span class="c1"># noqa E741</span>
+    <span class="n">J</span> <span class="o">=</span> <span class="s2">&quot;CH10&quot;</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="s2">&quot;XDATA&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">MeasurementError</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The list below enumerates all possible compliance errors and assigns</span>
+<span class="sd">    integer 0 or 1 to them. Assigning integer 1 means the data is compliant</span>
+<span class="sd">    and assigning 0 means it not compliant. As seen from the list, all cases</span>
+<span class="sd">    except when the output is N are non-compliant. To know the reason for</span>
+<span class="sd">    Non compliance in the individual case one may refer to</span>
+<span class="sd">    :class:`.MeasurementStatus`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<span class="k">class</span> <span class="nc">MeasurementStatus</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Contains the meanings of possible compliance errors. One may look at</span>
+<span class="sd">    this list to figure out the reason for the non-compliant data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">C</span> <span class="o">=</span> <span class="s2">&quot;Reached compliance limit.&quot;</span>
+    <span class="n">N</span> <span class="o">=</span> <span class="s2">&quot;No status error occurred.&quot;</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="s2">&quot;Another channel reached compliance limit.&quot;</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;Measurement data is over the measurement range.&quot;</span>
+        <span class="s2">&quot; Or the sweep measurement was aborted by the automatic&quot;</span>
+        <span class="s2">&quot; stop function or power compliance.&quot;</span>
+        <span class="s2">&quot; D will be 199.999E+99 (no meaning).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;One or more channels are oscillating. &quot;</span>
+        <span class="s2">&quot;Or source output did not settle before measurement.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">U</span> <span class="o">=</span> <span class="s2">&quot;CMU is in the NULL loop unbalance condition.&quot;</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="s2">&quot;CMU is in the IV amplifier saturation condition.&quot;</span>
+    <span class="n">G</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;For linear or binary search measurement, &quot;</span>
+        <span class="s2">&quot;the target value was not found within the search range.&quot;</span>
+        <span class="s2">&quot; Returns the source output value. &quot;</span>
+        <span class="s2">&quot;For quasi-pulsed spot measurement, &quot;</span>
+        <span class="s2">&quot;the detection time was over the limit &quot;</span>
+        <span class="s2">&quot;(3 s for Short mode, 12 s for Long mode).&quot;</span>
+    <span class="p">)</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;For linear or binary search measurement, &quot;</span>
+        <span class="s2">&quot;the search measurement was stopped. &quot;</span>
+        <span class="s2">&quot;Returns the source output value. &quot;</span>
+        <span class="s2">&quot;See status of Data_sense.&quot;</span>
+        <span class="s2">&quot;For quasi-pulsed spot measurement, &quot;</span>
+        <span class="s2">&quot;output slew rate was too slow to perform the settling detection.&quot;</span>
+        <span class="s2">&quot;Or quasi-pulsed source channel reached the current compliance&quot;</span>
+        <span class="s2">&quot; before the source output voltage changed 10 V from the start voltage.&quot;</span>
+    <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ModuleKind</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This enumeration is internal to this driver, and is meant to classify</span>
+<span class="sd">    difference B1500 modules, as well as provide a default naming scheme for</span>
+<span class="sd">    them (hence the `StrEnum`).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">SMU</span> <span class="o">=</span> <span class="s1">&#39;SMU&#39;</span>  <span class="c1"># Source/Monitor Unit</span>
+    <span class="n">CMU</span> <span class="o">=</span> <span class="s1">&#39;CMU&#39;</span>  <span class="c1"># Capacitance Measurement Unit</span>
+    <span class="n">WGFMU</span> <span class="o">=</span> <span class="s1">&#39;WGFMU&#39;</span>  <span class="c1"># Waveform Generator/Fast Measurement Unit</span>
+
+
+<span class="k">class</span> <span class="nc">SlotNr</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">ALL</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">MAINFRAME</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">SLOT01</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">SLOT02</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">SLOT03</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">SLOT04</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">SLOT05</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">SLOT06</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">SLOT07</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">SLOT08</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">SLOT09</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">SLOT10</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+<span class="k">class</span> <span class="nc">ChNr</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">SLOT_01_CH1</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">SLOT_02_CH1</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">SLOT_03_CH1</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">SLOT_04_CH1</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">SLOT_05_CH1</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">SLOT_06_CH1</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">SLOT_07_CH1</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">SLOT_08_CH1</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">SLOT_09_CH1</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">SLOT_10_CH1</span> <span class="o">=</span> <span class="mi">10</span>
+
+    <span class="n">SLOT_01_CH2</span> <span class="o">=</span> <span class="mi">102</span>
+    <span class="n">SLOT_02_CH2</span> <span class="o">=</span> <span class="mi">202</span>
+    <span class="n">SLOT_03_CH2</span> <span class="o">=</span> <span class="mi">302</span>
+    <span class="n">SLOT_04_CH2</span> <span class="o">=</span> <span class="mi">402</span>
+    <span class="n">SLOT_05_CH2</span> <span class="o">=</span> <span class="mi">502</span>
+    <span class="n">SLOT_06_CH2</span> <span class="o">=</span> <span class="mi">602</span>
+    <span class="n">SLOT_07_CH2</span> <span class="o">=</span> <span class="mi">702</span>
+    <span class="n">SLOT_08_CH2</span> <span class="o">=</span> <span class="mi">802</span>
+    <span class="n">SLOT_09_CH2</span> <span class="o">=</span> <span class="mi">902</span>
+    <span class="n">SLOT_10_CH2</span> <span class="o">=</span> <span class="mi">1002</span>
+
+
+<span class="n">ChannelList</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ChNr</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Abort</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">DISABLED</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">ENABLED</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">TriggerPort</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">EXT_TRIG_IN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">EXT_TRIG_OUT</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+    <span class="n">DIO_1</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">DIO_2</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">DIO_3</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">DIO_4</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">DIO_5</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">DIO_6</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="n">DIO_7</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">DIO_8</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">DIO_9</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">DIO_10</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">DIO_11</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">DIO_12</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">DIO_13</span> <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">DIO_14</span> <span class="o">=</span> <span class="mi">14</span>
+    <span class="n">DIO_15</span> <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">DIO_16</span> <span class="o">=</span> <span class="mi">16</span>
+
+
+<span class="k">class</span> <span class="nc">SweepMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">LINEAR</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">LOG</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">LINEAR_TWO_WAY</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">LOG_TWO_WAY</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">LinearSweepMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">LINEAR</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">LINEAR_TWO_WAY</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">APIVersion</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">B1500</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">CLASSIC</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">VOutputRange</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">MIN_0V2</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">MIN_0V5</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">MIN_2V</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">MIN_5V</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">MIN_20V</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">MIN_40V</span> <span class="o">=</span> <span class="mi">400</span>
+    <span class="n">MIN_100V</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">MIN_200V</span> <span class="o">=</span> <span class="mi">2000</span>
+    <span class="n">MIN_500V</span> <span class="o">=</span> <span class="mi">5000</span>
+    <span class="n">MIN_1500V</span> <span class="o">=</span> <span class="mi">15000</span>
+    <span class="n">MIN_3000V</span> <span class="o">=</span> <span class="mi">30000</span>
+    <span class="n">MIN_10000V</span> <span class="o">=</span> <span class="mi">103</span>
+
+
+<span class="k">class</span> <span class="nc">VMeasRange</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">MIN_0V2</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">MIN_0V5</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="n">MIN_2V</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">MIN_5V</span> <span class="o">=</span> <span class="mi">50</span>
+    <span class="n">MIN_20V</span> <span class="o">=</span> <span class="mi">200</span>
+    <span class="n">MIN_40V</span> <span class="o">=</span> <span class="mi">400</span>
+    <span class="n">MIN_100V</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">MIN_200V</span> <span class="o">=</span> <span class="mi">2000</span>
+    <span class="n">MIN_500V</span> <span class="o">=</span> <span class="mi">5000</span>
+    <span class="n">MIN_1500V</span> <span class="o">=</span> <span class="mi">15000</span>
+    <span class="n">MIN_3000V</span> <span class="o">=</span> <span class="mi">30000</span>
+    <span class="n">MIN_10000V</span> <span class="o">=</span> <span class="mi">103</span>
+
+    <span class="n">FIX_0V2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+    <span class="n">FIX_0V5</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5</span>
+    <span class="n">FIX_2V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span>
+    <span class="n">FIX_5V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">50</span>
+    <span class="n">FIX_20V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">200</span>
+    <span class="n">FIX_40V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">400</span>
+    <span class="n">FIX_100V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1000</span>
+    <span class="n">FIX_200V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2000</span>
+    <span class="n">FIX_500V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">5000</span>
+    <span class="n">FIX_1500V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">15000</span>
+    <span class="n">FIX_3000V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">30000</span>
+    <span class="n">FIX_10000V</span> <span class="o">=</span> <span class="o">-</span><span class="mi">103</span>
+
+
+<span class="k">class</span> <span class="nc">IOutputRange</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">MIN_1pA</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">MIN_10pA</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">MIN_100pA</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">MIN_1nA</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">MIN_10nA</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">MIN_100nA</span> <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">MIN_1uA</span> <span class="o">=</span> <span class="mi">14</span>
+    <span class="n">MIN_10uA</span> <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">MIN_100uA</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">MIN_1mA</span> <span class="o">=</span> <span class="mi">17</span>
+    <span class="n">MIN_10mA</span> <span class="o">=</span> <span class="mi">18</span>
+    <span class="n">MIN_100mA</span> <span class="o">=</span> <span class="mi">19</span>
+    <span class="n">MIN_1A</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">MIN_2A</span> <span class="o">=</span> <span class="mi">21</span>
+    <span class="n">MIN_20A</span> <span class="o">=</span> <span class="mi">22</span>
+    <span class="n">MIN_40A</span> <span class="o">=</span> <span class="mi">23</span>
+
+    <span class="n">FIX_500A</span> <span class="o">=</span> <span class="mi">26</span>
+    <span class="n">FIX_2000A</span> <span class="o">=</span> <span class="mi">28</span>
+
+
+<span class="k">class</span> <span class="nc">IMeasRange</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">MIN_1pA</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">MIN_10pA</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="n">MIN_100pA</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">MIN_1nA</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">MIN_10nA</span> <span class="o">=</span> <span class="mi">12</span>
+    <span class="n">MIN_100nA</span> <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">MIN_1uA</span> <span class="o">=</span> <span class="mi">14</span>
+    <span class="n">MIN_10uA</span> <span class="o">=</span> <span class="mi">15</span>
+    <span class="n">MIN_100uA</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">MIN_1mA</span> <span class="o">=</span> <span class="mi">17</span>
+    <span class="n">MIN_10mA</span> <span class="o">=</span> <span class="mi">18</span>
+    <span class="n">MIN_100mA</span> <span class="o">=</span> <span class="mi">19</span>
+    <span class="n">MIN_1A</span> <span class="o">=</span> <span class="mi">20</span>
+    <span class="n">MIN_2A</span> <span class="o">=</span> <span class="mi">21</span>
+    <span class="n">MIN_20A</span> <span class="o">=</span> <span class="mi">22</span>
+    <span class="n">MIN_40A</span> <span class="o">=</span> <span class="mi">23</span>
+
+    <span class="n">MIN_500A</span> <span class="o">=</span> <span class="mi">26</span>
+    <span class="n">MIN_2000A</span> <span class="o">=</span> <span class="mi">28</span>
+
+    <span class="n">FIX_1pA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">8</span>
+    <span class="n">FIX_10pA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">9</span>
+    <span class="n">FIX_100pA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">10</span>
+    <span class="n">FIX_1nA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">11</span>
+    <span class="n">FIX_10nA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">12</span>
+    <span class="n">FIX_100nA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">13</span>
+    <span class="n">FIX_1uA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">14</span>
+    <span class="n">FIX_10uA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">15</span>
+    <span class="n">FIX_100uA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">16</span>
+    <span class="n">FIX_1mA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">17</span>
+    <span class="n">FIX_10mA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">18</span>
+    <span class="n">FIX_100mA</span> <span class="o">=</span> <span class="o">-</span><span class="mi">19</span>
+    <span class="n">FIX_1A</span> <span class="o">=</span> <span class="o">-</span><span class="mi">20</span>
+    <span class="n">FIX_2A</span> <span class="o">=</span> <span class="o">-</span><span class="mi">21</span>
+    <span class="n">FIX_20A</span> <span class="o">=</span> <span class="o">-</span><span class="mi">22</span>
+    <span class="n">FIX_40A</span> <span class="o">=</span> <span class="o">-</span><span class="mi">23</span>
+
+    <span class="n">FIX_500A</span> <span class="o">=</span> <span class="o">-</span><span class="mi">26</span>
+    <span class="n">FIX_2000A</span> <span class="o">=</span> <span class="o">-</span><span class="mi">28</span>
+
+
+<span class="n">OutputRange</span> <span class="o">=</span> <span class="n">VOutputRange</span> <span class="o">|</span> <span class="n">IOutputRange</span>
+
+<span class="n">MeasureRange</span> <span class="o">=</span> <span class="n">VMeasRange</span> <span class="o">|</span> <span class="n">IMeasRange</span>
+
+
+<span class="k">class</span> <span class="nc">RangingMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">FIXED</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">CompliancePolarityMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">MANUAL</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">LinearSearchMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">VALUE_LEQ_TARGET</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">VALUE_GEQ_TARGET</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">BinarySearchMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">LIMIT</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">REPEAT_COUNT</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">Polarity</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">NEGATIVE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">POSITIVE</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">CalibrationType</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">OPEN</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">SHORT</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">LOAD</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">AutoPeriod</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+    <span class="n">AUTO_EFFECTIVE_MINIMUM</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">AUTO_LONGEST</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+
+<span class="c1">#: Command specific Enums</span>
+
+<span class="k">class</span> <span class="nc">AAD</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Type</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">HIGH_SPEED</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">HIGH_RESOLUTION</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">HIGH_SPEED_PULSED</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ACT</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">PLC</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ADJ</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">MANUAL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">LOAD_ADAPTIVE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ADJQuery</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">USE_LAST</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">MEASURE</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">PASSED</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">FAILED</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">ABORTED</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">NOT_PERFORMED</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">AIT</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Type</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">HIGH_SPEED</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">HIGH_RESOLUTION</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">HIGH_SPEED_PULSED</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">MANUAL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">NPLC</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">MEAS_TIME_MODE</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">AV</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">AUTO</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">MANUAL</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">BDM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Interval</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SHORT</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">LONG</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">VOLTAGE</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">CURRENT</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">BSM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">NORMAL</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">CAUTIOUS</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">START_VAL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STOP_VAL</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">OUTPUT_AT_SEARCH_TARGET</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">BSVM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">DataOutputMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SEARCH</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">SEARCH_AND_SENSE</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">CALResponse</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
+    <span class="n">PASSED</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">SLOT_1_FAILED</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">SLOT_2_FAILED</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">SLOT_3_FAILED</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="n">SLOT_4_FAILED</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">SLOT_5_FAILED</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">SLOT_6_FAILED</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">SLOT_7_FAILED</span> <span class="o">=</span> <span class="mi">64</span>
+    <span class="n">SLOT_8_FAILED</span> <span class="o">=</span> <span class="mi">128</span>
+    <span class="n">SLOT_9_FAILED</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="n">SLOT_10_FAILED</span> <span class="o">=</span> <span class="mi">512</span>
+    <span class="n">MAINFRAME_FAILED</span> <span class="o">=</span> <span class="mi">1024</span>
+
+
+<span class="k">class</span> <span class="nc">CORR</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SUCCESSFUL</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">FAILED</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">ABORTED</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">CORRST</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OFF</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ON</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">CLCORR</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">CLEAR_ONLY</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">CLEAR_AND_SET_DEFAULT_FREQ</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">CMM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">COMPLIANCE_SIDE</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">FORCE_SIDE</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">CURRENT</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">VOLTAGE</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">CURRENT_AND_VOLTAGE</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">DCORR</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">Cp_G</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="n">Ls_Rs</span> <span class="o">=</span> <span class="mi">400</span>
+
+
+<span class="k">class</span> <span class="nc">DIAG</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Item</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">TRIGGER_IO</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">HIGH_VOLTAGE_LED</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">DIGITAL_IO</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">INTERLOCK_OPEN</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">INTERLOCK_CLOSE</span> <span class="o">=</span> <span class="mi">7</span>
+
+
+<span class="k">class</span> <span class="nc">ERCMAGRD</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Guard</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">COMMON_AC</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">FLOATING</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ERHPP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Path</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">HVSMU</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">HCSMU</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">HPSMU</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">HVSMU_WITH_R_SERIES</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">ERHPQG</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">GATE_CHARGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">IV</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ERHVP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">HVSMU</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">HVMCU</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ERHVPV</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">HVMCU_DC</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">CAPACITANCE_CHARGE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ERMOD</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">GENERAL_PURPOSE</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">SMU_PGU_SELECTOR_16440A</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">N1258A_N1259A</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">N1265A</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">N1266A</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">N1268A</span> <span class="o">=</span> <span class="mi">16</span>
+        <span class="n">N1272A</span> <span class="o">=</span> <span class="mi">32</span>
+
+
+<span class="k">class</span> <span class="nc">ERPFDP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">UHCUL_AND_UHCUH</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">GNDU_AND_HVSMU_HVMCU</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">GNDU_AND_MP_HPSMU</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">GNDU_AND_OPEN</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">ERPFGP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">State</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">CONNECTED</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">ERPFGR</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">State</span><span class="p">:</span>
+        <span class="n">R_0</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">R_10</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">R_100</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="n">R_1000</span> <span class="o">=</span> <span class="mi">1000</span>
+
+
+<span class="k">class</span> <span class="nc">ERR</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">READ_ALL</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">READ_ONE</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">ERRX</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">CODE_AND_MESSAGE</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">CODE_ONLY</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">ERSSP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Port</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SELECTOR_1_OUT_1</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">SELECTOR_1_OUT_2</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">SELECTOR_2_OUT_1</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">SELECTOR_2_OUT_2</span> <span class="o">=</span> <span class="mi">3</span>
+
+    <span class="k">class</span> <span class="nc">Status</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">ALL_OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">SMU_ON</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">PGU_ON</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">PGU_OPEN</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">FMT</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Format</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">ASCII_12_DIGITS_WITH_HEADER_CRLF_EOI</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">ASCII_12_DIGITS_NO_HEADER_CRLF_EOI</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">BINARY_4_BYTE_CRLF_EOI</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">BINARY_4_BYTE_EOI</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">ASCII_12_DIGITS_WITH_HEADER_COMMA</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="n">ASCII_13_DIGITS_WITH_HEADER_CRLF_EOI</span> <span class="o">=</span> <span class="mi">11</span>
+        <span class="n">ASCII_13_DIGITS_NO_HEADER_CRLF_EOI</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="n">BINARY_8_BYTE_CRLF_EOI</span> <span class="o">=</span> <span class="mi">13</span>
+        <span class="n">BINARY_8_BYTE_EOI</span> <span class="o">=</span> <span class="mi">14</span>
+        <span class="n">ASCII_13_DIGITS_WITH_HEADER_COMMA</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="n">ASCII_13_DIGITS_WITH_HEADER_CRLF_EOI_4155_4156_COMPATIBLE</span> <span class="o">=</span> <span class="mi">21</span>
+        <span class="n">ASCII_13_DIGITS_NO_HEADER_CRLF_EOI_4155_4156_COMPATIBLE</span> <span class="o">=</span> <span class="mi">22</span>
+        <span class="n">ASCII_13_DIGITS_WITH_HEADER_COMMA_4155_4156_COMPATIBLE</span> <span class="o">=</span> <span class="mi">25</span>
+
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">ONLY_MEASUREMENT_DATA</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">PRIMARY_SOURCE_OUTPUT_DATA</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">SYNCHRONOUS_SWEEP_SOURCE_OUTPUT_DATA</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">SWEEP_SOURCE_1</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">SWEEP_SOURCE_2</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">SWEEP_SOURCE_3</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">SWEEP_SOURCE_4</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">SWEEP_SOURCE_5</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="n">SWEEP_SOURCE_6</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">SWEEP_SOURCE_7</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="n">SWEEP_SOURCE_8</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">SWEEP_SOURCE_9</span> <span class="o">=</span> <span class="mi">9</span>
+        <span class="n">SWEEP_SOURCE_10</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+<span class="k">class</span> <span class="nc">HVSMUOP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">SourceRange</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SINGLE_CH</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">PLUSMINUS_1500V</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">PLUS_3000V</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">MINUS_3000V</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">IMP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">MeasurementMode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">R_X</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">G_X</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">Z_THETA_RAD</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">Z_THETA_DEG</span> <span class="o">=</span> <span class="mi">11</span>
+        <span class="n">Y_THETA_RAD</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="n">Y_THETA_DEG</span> <span class="o">=</span> <span class="mi">21</span>
+        <span class="n">Cp_G</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="n">Cp_D</span> <span class="o">=</span> <span class="mi">101</span>
+        <span class="n">Cp_Q</span> <span class="o">=</span> <span class="mi">102</span>
+        <span class="n">Cp_Rp</span> <span class="o">=</span> <span class="mi">103</span>
+        <span class="n">Cs_Rs</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="n">Cs_D</span> <span class="o">=</span> <span class="mi">201</span>
+        <span class="n">Cs_Q</span> <span class="o">=</span> <span class="mi">202</span>
+        <span class="n">Lp_G</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="n">Lp_D</span> <span class="o">=</span> <span class="mi">301</span>
+        <span class="n">Lp_Q</span> <span class="o">=</span> <span class="mi">302</span>
+        <span class="n">Lp_Rp</span> <span class="o">=</span> <span class="mi">303</span>
+        <span class="n">Ls_Rs</span> <span class="o">=</span> <span class="mi">400</span>
+        <span class="n">Ls_D</span> <span class="o">=</span> <span class="mi">401</span>
+        <span class="n">Ls_Q</span> <span class="o">=</span> <span class="mi">402</span>
+
+    <span class="k">class</span> <span class="nc">Name</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="s1">&#39;Resistance&#39;</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="s1">&#39;Conductance&#39;</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="s1">&#39;Impedance&#39;</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="s1">&#39;Admittance&#39;</span>
+        <span class="n">Cp</span> <span class="o">=</span> <span class="s1">&#39;Parallel Capacitance&#39;</span>
+        <span class="n">Cs</span> <span class="o">=</span> <span class="s1">&#39;Series Capacitance&#39;</span>
+        <span class="n">Lp</span> <span class="o">=</span> <span class="s1">&#39;Parallel Inductance&#39;</span>
+        <span class="n">Ls</span> <span class="o">=</span> <span class="s1">&#39;Series Inductance&#39;</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="s1">&#39;Reactance&#39;</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="s1">&#39;Susceptance&#39;</span>
+        <span class="n">THETA_RAD</span> <span class="o">=</span> <span class="s1">&#39;Phase&#39;</span>
+        <span class="n">THETA_DEG</span> <span class="o">=</span> <span class="s1">&#39;Phase&#39;</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="s1">&#39;Dissipation Factor&#39;</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="s1">&#39;Quality Factor&#39;</span>
+        <span class="n">Rp</span> <span class="o">=</span> <span class="s1">&#39;Parallel Resistance&#39;</span>
+        <span class="n">Rs</span> <span class="o">=</span> <span class="s1">&#39;Series Resistance&#39;</span>
+
+    <span class="k">class</span> <span class="nc">Unit</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="s1">&#39;ohms&#39;</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="s1">&#39;ohms&#39;</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
+        <span class="n">Cp</span> <span class="o">=</span> <span class="s1">&#39;F&#39;</span>
+        <span class="n">Cs</span> <span class="o">=</span> <span class="s1">&#39;F&#39;</span>
+        <span class="n">Lp</span> <span class="o">=</span> <span class="s1">&#39;H&#39;</span>
+        <span class="n">Ls</span> <span class="o">=</span> <span class="s1">&#39;H&#39;</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="s1">&#39;ohms&#39;</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
+        <span class="n">THETA_RAD</span> <span class="o">=</span> <span class="s1">&#39;radian&#39;</span>
+        <span class="n">THETA_DEG</span> <span class="o">=</span> <span class="s1">&#39;degree&#39;</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">Q</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">Rp</span> <span class="o">=</span> <span class="s1">&#39;ohms&#39;</span>
+        <span class="n">Rs</span> <span class="o">=</span> <span class="s1">&#39;ohms&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">LIM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">VOLTAGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">CURRENT</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">LRN</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Type</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">OUTPUT_SWITCH</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">SLOT1_STATUS</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">SLOT2_STATUS</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">SLOT3_STATUS</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">SLOT4_STATUS</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">SLOT5_STATUS</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="n">SLOT6_STATUS</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">SLOT7_STATUS</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="n">SLOT8_STATUS</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">SLOT9_STATUS</span> <span class="o">=</span> <span class="mi">9</span>
+        <span class="n">SLOT10_STATUS</span> <span class="o">=</span> <span class="mi">10</span>
+
+        <span class="n">FILTER</span> <span class="o">=</span> <span class="mi">30</span>
+
+        <span class="n">TM_AV_CM_FMT_MM_SETTINGS</span> <span class="o">=</span> <span class="mi">31</span>
+
+        <span class="n">MEASUREMENT_RANGING_STATUS</span> <span class="o">=</span> <span class="mi">32</span>
+
+        <span class="n">STAIRCASE_SWEEP_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">33</span>
+
+        <span class="n">PULSED_SOURCE_SETTINGS</span> <span class="o">=</span> <span class="mi">34</span>
+
+        <span class="n">QUASI_PULSED_SOURCE_SETTINGS</span> <span class="o">=</span> <span class="mi">37</span>
+
+        <span class="n">DIGITAL_IO_SETTINGS</span> <span class="o">=</span> <span class="mi">38</span>
+
+        <span class="n">CHANNEL_MAPPING</span> <span class="o">=</span> <span class="mi">40</span>
+
+        <span class="n">SMU_MEASUREMENT_OPERATION</span> <span class="o">=</span> <span class="mi">46</span>
+
+        <span class="n">SAMPLING_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">47</span>
+
+        <span class="n">QUASI_STATIC_CV_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">49</span>
+
+        <span class="n">LINEAR_SEARCH_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">50</span>
+
+        <span class="n">BINARY_SEARCH_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">51</span>
+
+        <span class="n">SMU_RESISTOR_STATUS</span> <span class="o">=</span> <span class="mi">53</span>
+
+        <span class="n">AUTOR_RANGING_MODE</span> <span class="o">=</span> <span class="mi">54</span>
+
+        <span class="n">ADC_SETTINGS</span> <span class="o">=</span> <span class="mi">55</span>
+
+        <span class="n">ADC_AVERAGING_INTEGRATION_TIME_SETTINGS</span> <span class="o">=</span> <span class="mi">56</span>
+
+        <span class="n">SOURCE_MEASURE_WAIT_TIME</span> <span class="o">=</span> <span class="mi">57</span>
+
+        <span class="n">TRIGGER_SETTINGS</span> <span class="o">=</span> <span class="mi">58</span>
+
+        <span class="n">MULTI_CHANNEL_SWEEP_SOURCE_SETTINGS</span> <span class="o">=</span> <span class="mi">59</span>
+
+        <span class="n">TIMESTAMP_SETTING</span> <span class="o">=</span> <span class="mi">60</span>
+
+        <span class="n">DISPLAY_SETTING</span> <span class="o">=</span> <span class="mi">61</span>
+
+        <span class="n">ASU_CONNECTION_PATH</span> <span class="o">=</span> <span class="mi">62</span>
+
+        <span class="n">PICOAMPERE_RANGING_MODE</span> <span class="o">=</span> <span class="mi">63</span>
+
+        <span class="n">ASU_CONNECTION_STATUS_INDICATOR</span> <span class="o">=</span> <span class="mi">64</span>
+
+        <span class="n">MFCMU_MEASUREMENT_MODE</span> <span class="o">=</span> <span class="mi">70</span>
+
+        <span class="n">MFCMU_DATA_OUTPUT_MODE</span> <span class="o">=</span> <span class="mi">71</span>
+
+        <span class="n">MFCMU_ADC_SETTING</span> <span class="o">=</span> <span class="mi">72</span>
+
+        <span class="n">MFCMU_MEASUREMENT_RANGE</span> <span class="o">=</span> <span class="mi">73</span>
+
+        <span class="n">SCUU_CONNECTION_STATUS_INDICATOR</span> <span class="o">=</span> <span class="mi">80</span>
+
+        <span class="n">SCUU_CONNECTION_PATH</span> <span class="o">=</span> <span class="mi">81</span>
+
+        <span class="n">MFCMU_ADJUSTMENT_MODE</span> <span class="o">=</span> <span class="mi">90</span>
+
+        <span class="n">CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">100</span>
+
+        <span class="n">PULSED_SPOT_C_CV_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">101</span>
+
+        <span class="n">C_F_SWEEP_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">102</span>
+
+        <span class="n">CV_AC_LEVEL_SWEEP_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">103</span>
+
+        <span class="n">C_T_SAMPLING_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">104</span>
+
+        <span class="n">MULTI_CHANNEL_PULSED_SPOT_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">105</span>
+
+        <span class="n">MULTI_CHANNEL_PULSED_SWEEP_MEASUREMENT_SETTINGS</span> <span class="o">=</span> <span class="mi">106</span>
+
+        <span class="n">PARALLEL_MEASUREMENT_MODE_SETTING</span> <span class="o">=</span> <span class="mi">110</span>
+
+
+<span class="k">class</span> <span class="nc">LSM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">START_VAL</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STOP_VAL</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">OUTPUT_AT_SEARCH_TARGET</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">LSVM</span><span class="p">(</span><span class="n">BSVM</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">MCPNX</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">VOLTAGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">CURRENT</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">MCPWNX</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">VOLTAGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">CURRENT</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ML</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">LINEAR</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">LOG_10_PER_DECADE</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">LOG_25_PER_DECADE</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">LOG_50_PER_DECADE</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">LOG_100_PER_DECADE</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="n">LOG_250_PER_DECADE</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">LOG_500_PER_DECADE</span> <span class="o">=</span> <span class="mi">7</span>
+
+
+<span class="k">class</span> <span class="nc">MM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SPOT</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STAIRCASE_SWEEP</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">PULSED_SPOT</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">PULSED_SWEEP</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="n">STAIRCASE_SWEEP_WITH_PULSED_BIAS</span> <span class="o">=</span> <span class="mi">5</span>
+        <span class="n">QUASI_PULSED_SPOT</span> <span class="o">=</span> <span class="mi">9</span>
+        <span class="n">SAMPLING</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">QUASI_STATIC_CV</span> <span class="o">=</span> <span class="mi">13</span>
+        <span class="n">LINEAR_SEARCH</span> <span class="o">=</span> <span class="mi">14</span>
+        <span class="n">BINARY_SEARCH</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="n">MULTI_CHANNEL_SWEEP</span> <span class="o">=</span> <span class="mi">16</span>
+        <span class="n">SPOT_C</span> <span class="o">=</span> <span class="mi">17</span>
+        <span class="n">CV_DC_SWEEP</span> <span class="o">=</span> <span class="mi">18</span>
+        <span class="n">PULSED_SPOT_C</span> <span class="o">=</span> <span class="mi">19</span>
+        <span class="n">PULSED_SWEEP_CV</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="n">CF_SWEEP</span> <span class="o">=</span> <span class="mi">22</span>
+        <span class="n">CV_AC_SWEEP</span> <span class="o">=</span> <span class="mi">23</span>
+        <span class="n">CT_SAMPLING</span> <span class="o">=</span> <span class="mi">26</span>
+        <span class="n">MULTI_CHANNEL_PULSED_SPOT</span> <span class="o">=</span> <span class="mi">27</span>
+        <span class="n">MULTI_CHANNEL_PULSED_SWEEP</span> <span class="o">=</span> <span class="mi">28</span>
+
+
+<span class="k">class</span> <span class="nc">MSC</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">BASE_VALUE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">BIAS_VALUE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">ODSW</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">SwitchNormalState</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">NORMALLY_OPEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">NORMALLY_CLOSED</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">OSX</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Level</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">LOW</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">HIGH</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">EDGE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">QSM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">START</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STOP</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">QSZ</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">DISABLE</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ENABLE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">PERFORM_MEASUREMENT</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">RM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">DEFAULT</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">AUTO_UP</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">AUTO_UP_DOWN</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">SAP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Path</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SMU</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">AUX</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">SIM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">PULSE_GEN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ARB_WAVE_GEN</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">SPM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">DC_VOLTAGE</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">TWO_LEVEL_PULSE_SOURCE_1</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">TWO_LEVEL_PULSE_SOURCE_2</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">THREE_LEVEL_PULSE_SOURCE_1_AND_2</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">SPRM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">FREE_RUN</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">COUNT</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">DURATION</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">SPT</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Src</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">PULSE_SRC_1</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">PULSE_SRC_2</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">SPV</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Src</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">DC_BIAS_SRC</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">PULSE_SRC_1</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">PULSE_SRC_2</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">SRE</span><span class="p">(</span><span class="n">IntFlag</span><span class="p">):</span>
+    <span class="n">DATA_READY</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">WAIT</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">INTERLOCK_OPEN</span> <span class="o">=</span> <span class="mi">8</span>
+    <span class="n">SET_READY</span> <span class="o">=</span> <span class="mi">16</span>
+    <span class="n">ERROR</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">RQS</span> <span class="o">=</span> <span class="mi">64</span>
+
+
+<span class="k">class</span> <span class="nc">SSP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Path</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">FORCE1SENSE1_OPEN</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">OPEN_FORCE2SENSE2</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">FORCE1SENSE1_FORCE2SENSE2</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">CMUH_CMUL</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">STGP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">TriggerTiming</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">DISABLE_TRIGGER</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">SYNC_TO_PG_PULSE_OR_START_OF_ALWG_SEQUENCE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">ALWG_PATTERN_CHANGE_OR_START_OF_FIRST_PATTERN</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">START_OF_EVERY_ALWG_PATTERN</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">TGMO</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">EDGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">GATE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">TGP</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">TerminalType</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">INPUT</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">OUTPUT</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">class</span> <span class="nc">Polarity</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">POSITIVE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">NEGATIVE</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">class</span> <span class="nc">TriggerType</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The meaning of the Trigger Type value depends on the value of</span>
+<span class="sd">        TerminalType</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ZERO</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ONE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">TWO</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">THREE</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">TGSI</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">CASE1</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">CASE2</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">TGSO</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">EDGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">GATE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">TGXO</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">EDGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">GATE</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">TM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">XE_CMD_AND_GPIB_GET</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">XE_CMD</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">XE_CMD_AND_EXT_TRIGGER</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">XE_CMD_AND_MM_CMD</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="k">class</span> <span class="nc">TMACV</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Range</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+        <span class="n">MAX_0V016</span> <span class="o">=</span> <span class="s1">&#39;0.016&#39;</span>
+        <span class="n">MAX_0V032</span> <span class="o">=</span> <span class="s1">&#39;0.032&#39;</span>
+        <span class="n">MAX_0V064</span> <span class="o">=</span> <span class="s1">&#39;0.064&#39;</span>
+        <span class="n">MAX_0V125</span> <span class="o">=</span> <span class="s1">&#39;0.125&#39;</span>
+        <span class="n">MAX_0V250</span> <span class="o">=</span> <span class="s1">&#39;0.250&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">TMDCV</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Range</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">MFCMU_8V</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">MFCMU_12V</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="n">MFCMU_25V</span> <span class="o">=</span> <span class="mi">25</span>
+        <span class="n">SMU_100V</span> <span class="o">=</span> <span class="mi">100</span>
+
+
+<span class="k">class</span> <span class="nc">TST</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Option</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">RETURN_PASS_FAIL</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">PERFORM_TEST_AND_RETURN_PASS_FAIL</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">TTC</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Range</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">MAX_100OHM</span> <span class="o">=</span> <span class="mi">50</span>
+        <span class="n">MAX_300OHM</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="n">MAX_1KOHM</span> <span class="o">=</span> <span class="mi">300</span>
+        <span class="n">MAX_3KOHM</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="n">MAX_10KOHM</span> <span class="o">=</span> <span class="mi">3000</span>
+        <span class="n">MAX_30KOHM</span> <span class="o">=</span> <span class="mi">10000</span>
+        <span class="n">MAX_100KOHM</span> <span class="o">=</span> <span class="mi">30000</span>
+        <span class="n">MAX_300KOHM</span> <span class="o">=</span> <span class="mi">100000</span>
+        <span class="n">MAX</span> <span class="o">=</span> <span class="mi">300000</span>
+
+
+<span class="k">class</span> <span class="nc">UNT</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">MODULE_INFO_ONLY</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">MODULE_AND_MAINFRAME_INFO</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">VAR</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Type</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">INTEGER</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">FLOAT</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">WAT</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Type</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">SMU_SOURCE_WAIT_TIME</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">SMU_MEASURE_WAIT_TIME</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="n">MFCMU_MEASUREMENT_WAIT_TIME</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="k">class</span> <span class="nc">WM</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">START</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STOP</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">WMACV</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">START</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STOP</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">WMDCV</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">START</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STOP</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">WMFC</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Post</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">START</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">STOP</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">WNX</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">VOLTAGE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">CURRENT</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">WS</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">CONTINUE_IMMEDIATELY_IF_PENDING_TRIGGER</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">WAIT_IMMEDIATELY</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">class</span> <span class="nc">WSX</span><span class="p">:</span>
+    <span class="k">class</span> <span class="nc">Mode</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
+        <span class="n">CONTINUE_IMMEDIATELY_IF_PENDING_TRIGGER</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">WAIT_IMMEDIATELY</span> <span class="o">=</span> <span class="mi">2</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AimTTi Drivers &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Alazar Tech Drivers" href="AlazarTech.html" />
+    <link rel="prev" title="Agilent Drivers" href="Agilent.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">AimTTi Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi"><code class="docutils literal notranslate"><span class="pre">AimTTi</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.default_terminator"><code class="docutils literal notranslate"><span class="pre">AimTTi.default_terminator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_idn"><code class="docutils literal notranslate"><span class="pre">AimTTi.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_address"><code class="docutils literal notranslate"><span class="pre">AimTTi.get_address()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_IP"><code class="docutils literal notranslate"><span class="pre">AimTTi.get_IP()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_netMask"><code class="docutils literal notranslate"><span class="pre">AimTTi.get_netMask()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.visabackend"><code class="docutils literal notranslate"><span class="pre">AimTTi.visabackend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.visa_handle"><code class="docutils literal notranslate"><span class="pre">AimTTi.visa_handle</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.visalib"><code class="docutils literal notranslate"><span class="pre">AimTTi.visalib</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.parameters"><code class="docutils literal notranslate"><span class="pre">AimTTi.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.functions"><code class="docutils literal notranslate"><span class="pre">AimTTi.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.submodules"><code class="docutils literal notranslate"><span class="pre">AimTTi.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.instrument_modules"><code class="docutils literal notranslate"><span class="pre">AimTTi.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.log"><code class="docutils literal notranslate"><span class="pre">AimTTi.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.metadata"><code class="docutils literal notranslate"><span class="pre">AimTTi.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_netConfig"><code class="docutils literal notranslate"><span class="pre">AimTTi.get_netConfig()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.local_mode"><code class="docutils literal notranslate"><span class="pre">AimTTi.local_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.is_interface_locked"><code class="docutils literal notranslate"><span class="pre">AimTTi.is_interface_locked()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.lock_interface"><code class="docutils literal notranslate"><span class="pre">AimTTi.lock_interface()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.unlock_interface"><code class="docutils literal notranslate"><span class="pre">AimTTi.unlock_interface()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.volt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt_step_size"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.volt_step_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.curr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_range"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.curr_range</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_step_size"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.curr_step_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.output"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.output</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_volt_by_step_size"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.increment_volt_by_step_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_volt_by_step_size"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.decrement_volt_by_step_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_curr_by_step_size"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.increment_curr_by_step_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_curr_by_step_size"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.decrement_curr_by_step_size()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.save_setup"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.save_setup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.load_setup"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.load_setup()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.set_damping"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.set_damping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.parameters"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.functions"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.submodules"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.instrument_modules"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.log"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.metadata"><code class="docutils literal notranslate"><span class="pre">AimTTiChannel.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL068P"><code class="docutils literal notranslate"><span class="pre">AimTTiPL068P</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL155P"><code class="docutils literal notranslate"><span class="pre">AimTTiPL155P</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303P"><code class="docutils literal notranslate"><span class="pre">AimTTiPL303P</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303QMDP"><code class="docutils literal notranslate"><span class="pre">AimTTiPL303QMDP</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303QMTP"><code class="docutils literal notranslate"><span class="pre">AimTTiPL303QMTP</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL601"><code class="docutils literal notranslate"><span class="pre">AimTTiPL601</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiQL355TP"><code class="docutils literal notranslate"><span class="pre">AimTTiQL355TP</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.NotKnownModel"><code class="docutils literal notranslate"><span class="pre">NotKnownModel</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">AimTTi Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/AimTTi.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.AimTTi">
+<span id="aimtti-drivers"></span><span id="aimtti-api"></span><h1>AimTTi Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.AimTTi" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi.AimTTi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTi</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>Base class for Aim TTi PL-P series power supply.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiChannel</span></code></a>(parent, name, channel, **kwargs)</p></td>
+<td><p>This is the class that holds the output channels of AimTTi power supply.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL068P" title="qcodes.instrument_drivers.AimTTi.AimTTiPL068P"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiPL068P</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>This is the QCoDeS driver for the Aim TTi PL068-P series power supply.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL155P" title="qcodes.instrument_drivers.AimTTi.AimTTiPL155P"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiPL155P</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>This is the QCoDeS driver for the Aim TTi PL155-P series power supply.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303P" title="qcodes.instrument_drivers.AimTTi.AimTTiPL303P"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiPL303P</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>This is the QCoDeS driver for the Aim TTi PL303-P series power supply.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303QMDP" title="qcodes.instrument_drivers.AimTTi.AimTTiPL303QMDP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiPL303QMDP</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>This is the QCoDeS driver for the Aim TTi PL303QMD-P series power supply.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303QMTP" title="qcodes.instrument_drivers.AimTTi.AimTTiPL303QMTP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiPL303QMTP</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>This is the QCoDeS driver for the Aim TTi PL303QMT-P series power supply.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL601" title="qcodes.instrument_drivers.AimTTi.AimTTiPL601"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiPL601</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>This is the QCoDeS driver for the Aim TTi PL601-P series power supply.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiQL355TP" title="qcodes.instrument_drivers.AimTTi.AimTTiQL355TP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AimTTiQL355TP</span></code></a>(name, address, **kwargs)</p></td>
+<td><p>This is the QCoDeS driver for the Aim TTi QL355TP series power supply.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exceptions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.NotKnownModel" title="qcodes.instrument_drivers.AimTTi.NotKnownModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NotKnownModel</span></code></a></p></td>
+<td><p>An Error thrown when connecting to an unknown Aim TTi model</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>Base class for Aim TTi PL-P series power supply.
+This class should not be instantiated directly, but rather one of the
+subclasses corresponding to the specific model of the power supply should
+be used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.default_terminator" title="qcodes.instrument_drivers.AimTTi.AimTTi.default_terminator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_terminator</span></code></a></p></td>
+<td><p>The default terminator to use if the terminator is not specified when creating the instrument.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_idn" title="qcodes.instrument_drivers.AimTTi.AimTTi.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Returns the instrument identification including vendor, model, serial number and the firmware.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_address" title="qcodes.instrument_drivers.AimTTi.AimTTi.get_address"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_address</span></code></a>()</p></td>
+<td><p>Returns the bus address.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_IP" title="qcodes.instrument_drivers.AimTTi.AimTTi.get_IP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_IP</span></code></a>()</p></td>
+<td><p>Returns the IP address of the LAN interface, if the connection exists.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_netMask" title="qcodes.instrument_drivers.AimTTi.AimTTi.get_netMask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_netMask</span></code></a>()</p></td>
+<td><p>Returns the netmask of the LAN interface, if the connection exists.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_netConfig" title="qcodes.instrument_drivers.AimTTi.AimTTi.get_netConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_netConfig</span></code></a>()</p></td>
+<td><p>Returns the means by which an IP address is acquired, i.e., DHCP, AUTO or STATIC.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.local_mode" title="qcodes.instrument_drivers.AimTTi.AimTTi.local_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">local_mode</span></code></a>()</p></td>
+<td><p>Go to local mode until the next remote command is recieved.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.is_interface_locked" title="qcodes.instrument_drivers.AimTTi.AimTTi.is_interface_locked"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_interface_locked</span></code></a>()</p></td>
+<td><p>Returns '1' if the interface lock is owned by the requesting instance, '0' if there is no active lock and '-1' if the lock is unavailable.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.lock_interface" title="qcodes.instrument_drivers.AimTTi.AimTTi.lock_interface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">lock_interface</span></code></a>()</p></td>
+<td><p>Requests instrument interface lock.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi.unlock_interface" title="qcodes.instrument_drivers.AimTTi.AimTTi.unlock_interface"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unlock_interface</span></code></a>()</p></td>
+<td><p>Requests the release of instrument interface lock.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.default_terminator">
+<span class="sig-name descname"><span class="pre">default_terminator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.default_terminator" title="Link to this definition"></a></dt>
+<dd><p>The default terminator to use if the terminator is not specified when creating the instrument.
+None means use the default terminator from PyVisa.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Returns the instrument identification including vendor, model, serial
+number and the firmware.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.get_address">
+<span class="sig-name descname"><span class="pre">get_address</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.get_address"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_address" title="Link to this definition"></a></dt>
+<dd><p>Returns the bus address.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.get_IP">
+<span class="sig-name descname"><span class="pre">get_IP</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.get_IP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_IP" title="Link to this definition"></a></dt>
+<dd><p>Returns the IP address of the LAN interface, if the connection exists.
+If there is a pre-configured static IP and the instrument is not
+connected to a LAN interface, that static IP will be returned.
+Otherwise, the return value is ‘0.0.0.0’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.get_netMask">
+<span class="sig-name descname"><span class="pre">get_netMask</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.get_netMask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_netMask" title="Link to this definition"></a></dt>
+<dd><p>Returns the netmask of the LAN interface, if the connection exists.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.visabackend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.14.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.visa_handle" title="Link to this definition"></a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.visalib" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.get_netConfig">
+<span class="sig-name descname"><span class="pre">get_netConfig</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.get_netConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.get_netConfig" title="Link to this definition"></a></dt>
+<dd><p>Returns the means by which an IP address is acquired, i.e.,
+DHCP, AUTO or STATIC.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.local_mode">
+<span class="sig-name descname"><span class="pre">local_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.local_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.local_mode" title="Link to this definition"></a></dt>
+<dd><p>Go to local mode until the next remote command is recieved. This
+function does not release any active interface lock.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.is_interface_locked">
+<span class="sig-name descname"><span class="pre">is_interface_locked</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.is_interface_locked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.is_interface_locked" title="Link to this definition"></a></dt>
+<dd><p>Returns ‘1’ if the interface lock is owned by the requesting instance,
+‘0’ if there is no active lock and ‘-1’ if the lock is unavailable.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.lock_interface">
+<span class="sig-name descname"><span class="pre">lock_interface</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.lock_interface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.lock_interface" title="Link to this definition"></a></dt>
+<dd><p>Requests instrument interface lock. Returns ‘1’ if successful and
+‘-1’ if the lock is unavailable.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTi.unlock_interface">
+<span class="sig-name descname"><span class="pre">unlock_interface</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTi.unlock_interface"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTi.unlock_interface" title="Link to this definition"></a></dt>
+<dd><p>Requests the release of instrument interface lock. Returns ‘0’
+if successful and ‘-1’ if unsuccessful.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.Instrument" title="qcodes.instrument.instrument.Instrument"><span class="pre">Instrument</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<p>This is the class that holds the output channels of AimTTi power
+supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – The Instrument instance to which the channel is
+to be attached.</p></li>
+<li><p><strong>name</strong> – The ‘colloquial’ name of the channel.</p></li>
+<li><p><strong>channel</strong> – The name used by the AimTTi.</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">volt</span></code></a></p></td>
+<td><p>Parameter volt</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt_step_size" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">volt_step_size</span></code></a></p></td>
+<td><p>Parameter volt_step_size</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">curr</span></code></a></p></td>
+<td><p>Parameter curr</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_range" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_range"><code class="xref py py-obj docutils literal notranslate"><span class="pre">curr_range</span></code></a></p></td>
+<td><p>Set the current range of the output.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_step_size" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">curr_step_size</span></code></a></p></td>
+<td><p>Parameter curr_step_size</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.output" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.output"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output</span></code></a></p></td>
+<td><p>Parameter output</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_volt_by_step_size" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_volt_by_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">increment_volt_by_step_size</span></code></a>()</p></td>
+<td><p>A bound method that increases the voltage output of the corresponding channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">volt_step_size</span></code> parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_volt_by_step_size" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_volt_by_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decrement_volt_by_step_size</span></code></a>()</p></td>
+<td><p>A bound method that decreases the voltage output of the corresponding channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">volt_step_size</span></code> parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_curr_by_step_size" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_curr_by_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">increment_curr_by_step_size</span></code></a>()</p></td>
+<td><p>A bound method that increases the current output of the corresponding channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">curr_step_size</span></code> parameter.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_curr_by_step_size" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_curr_by_step_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decrement_curr_by_step_size</span></code></a>()</p></td>
+<td><p>A bound method that decreases the current output of the corresponding channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">curr_step_size</span></code> parameter.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.save_setup" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.save_setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_setup</span></code></a>(slot)</p></td>
+<td><p>A bound function that saves the output setup to the internal store specified by the numbers 0-9.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.load_setup" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.load_setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_setup</span></code></a>(slot)</p></td>
+<td><p>A bound function that loads the output setup from the internal store specified by the numbers 0-9.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.set_damping" title="qcodes.instrument_drivers.AimTTi.AimTTiChannel.set_damping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_damping</span></code></a>(val)</p></td>
+<td><p>Sets the current meter measurement averaging on and off.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt">
+<span class="sig-name descname"><span class="pre">volt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;volt&quot;,</span> <span class="pre">get_cmd=self._get_voltage_value,</span> <span class="pre">get_parser=float,</span> <span class="pre">set_cmd=f&quot;V{channel}</span> <span class="pre">{{}}&quot;,</span> <span class="pre">label=&quot;Voltage&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt" title="Link to this definition"></a></dt>
+<dd><p>Parameter volt</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt_step_size">
+<span class="sig-name descname"><span class="pre">volt_step_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;volt_step_size&quot;,</span> <span class="pre">get_cmd=self._get_voltage_step_size,</span> <span class="pre">get_parser=float,</span> <span class="pre">set_cmd=f&quot;DELTAV{channel}</span> <span class="pre">{{}}&quot;,</span> <span class="pre">label=&quot;Voltage</span> <span class="pre">Step</span> <span class="pre">Size&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.volt_step_size" title="Link to this definition"></a></dt>
+<dd><p>Parameter volt_step_size</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr">
+<span class="sig-name descname"><span class="pre">curr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;curr&quot;,</span> <span class="pre">get_cmd=self._get_current_value,</span> <span class="pre">get_parser=float,</span> <span class="pre">set_cmd=f&quot;I{channel}</span> <span class="pre">{{}}&quot;,</span> <span class="pre">label=&quot;Current&quot;,</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr" title="Link to this definition"></a></dt>
+<dd><p>Parameter curr</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_range">
+<span class="sig-name descname"><span class="pre">curr_range</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;curr_range&quot;,</span> <span class="pre">get_cmd=f&quot;IRANGE{channel}?&quot;,</span> <span class="pre">get_parser=int,</span> <span class="pre">set_cmd=self._set_current_range,</span> <span class="pre">label=&quot;Current</span> <span class="pre">Range&quot;,</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">vals=vals.Numbers(1,</span> <span class="pre">2),</span> <span class="pre">docstring=&quot;Set</span> <span class="pre">the</span> <span class="pre">current</span> <span class="pre">range</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">output.</span> <span class="pre">&quot;</span> <span class="pre">&quot;Here,</span> <span class="pre">the</span> <span class="pre">integer</span> <span class="pre">1</span> <span class="pre">is</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">Low</span> <span class="pre">range,</span> <span class="pre">&quot;</span> <span class="pre">&quot;and</span> <span class="pre">integer</span> <span class="pre">2</span> <span class="pre">is</span> <span class="pre">for</span> <span class="pre">the</span> <span class="pre">High</span> <span class="pre">range.&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_range" title="Link to this definition"></a></dt>
+<dd><p>Set the current range of the output. Here, the integer 1 is for the Low range, and integer 2 is for the High range.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_step_size">
+<span class="sig-name descname"><span class="pre">curr_step_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;curr_step_size&quot;,</span> <span class="pre">get_cmd=self._get_current_step_size,</span> <span class="pre">get_parser=float,</span> <span class="pre">set_cmd=f&quot;DELTAI{channel}</span> <span class="pre">{{}}&quot;,</span> <span class="pre">label=&quot;Current</span> <span class="pre">Step</span> <span class="pre">Size&quot;,</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.curr_step_size" title="Link to this definition"></a></dt>
+<dd><p>Parameter curr_step_size</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.output">
+<span class="sig-name descname"><span class="pre">output</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;output&quot;,</span> <span class="pre">get_cmd=f&quot;OP{channel}?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">set_cmd=f&quot;OP{channel}</span> <span class="pre">{{}}&quot;,</span> <span class="pre">val_mapping=create_on_off_val_mapping(on_val=1,</span> <span class="pre">off_val=0),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.output" title="Link to this definition"></a></dt>
+<dd><p>Parameter output</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_volt_by_step_size">
+<span class="sig-name descname"><span class="pre">increment_volt_by_step_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel.increment_volt_by_step_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_volt_by_step_size" title="Link to this definition"></a></dt>
+<dd><p>A bound method that increases the voltage output of the corresponding
+channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">volt_step_size</span></code>
+parameter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_volt_by_step_size">
+<span class="sig-name descname"><span class="pre">decrement_volt_by_step_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel.decrement_volt_by_step_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_volt_by_step_size" title="Link to this definition"></a></dt>
+<dd><p>A bound method that decreases the voltage output of the corresponding
+channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">volt_step_size</span></code>
+parameter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_curr_by_step_size">
+<span class="sig-name descname"><span class="pre">increment_curr_by_step_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel.increment_curr_by_step_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.increment_curr_by_step_size" title="Link to this definition"></a></dt>
+<dd><p>A bound method that increases the current output of the corresponding
+channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">curr_step_size</span></code>
+parameter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_curr_by_step_size">
+<span class="sig-name descname"><span class="pre">decrement_curr_by_step_size</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel.decrement_curr_by_step_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.decrement_curr_by_step_size" title="Link to this definition"></a></dt>
+<dd><p>A bound method that decreases the current output of the corresponding
+channel by an amount the step size set by the user via <code class="docutils literal notranslate"><span class="pre">curr_step_size</span></code>
+parameter.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.save_setup">
+<span class="sig-name descname"><span class="pre">save_setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel.save_setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.save_setup" title="Link to this definition"></a></dt>
+<dd><p>A bound function that saves the output setup to the internal
+store specified by the numbers 0-9.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.load_setup">
+<span class="sig-name descname"><span class="pre">load_setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel.load_setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.load_setup" title="Link to this definition"></a></dt>
+<dd><p>A bound function that loads the output setup from the internal
+store specified by the numbers 0-9.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.set_damping">
+<span class="sig-name descname"><span class="pre">set_damping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#AimTTiChannel.set_damping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.set_damping" title="Link to this definition"></a></dt>
+<dd><p>Sets the current meter measurement averaging on and off.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiChannel.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiChannel.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiPL068P">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiPL068P</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/Aim_TTi_PL068_P.html#AimTTiPL068P"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL068P" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi._AimTTi_PL_P.AimTTi"><code class="xref py py-class docutils literal notranslate"><span class="pre">AimTTi</span></code></a></p>
+<p>This is the QCoDeS driver for the Aim TTi PL068-P series power supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiPL155P">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiPL155P</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/Aim_TTi_PL155_P.html#AimTTiPL155P"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL155P" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi._AimTTi_PL_P.AimTTi"><code class="xref py py-class docutils literal notranslate"><span class="pre">AimTTi</span></code></a></p>
+<p>This is the QCoDeS driver for the Aim TTi PL155-P series power supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiPL303P">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiPL303P</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/Aim_TTi_PL303_P.html#AimTTiPL303P"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303P" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi._AimTTi_PL_P.AimTTi"><code class="xref py py-class docutils literal notranslate"><span class="pre">AimTTi</span></code></a></p>
+<p>This is the QCoDeS driver for the Aim TTi PL303-P series power supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiPL303QMDP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiPL303QMDP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/Aim_TTi_PL303QMD_P.html#AimTTiPL303QMDP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303QMDP" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi._AimTTi_PL_P.AimTTi"><code class="xref py py-class docutils literal notranslate"><span class="pre">AimTTi</span></code></a></p>
+<p>This is the QCoDeS driver for the Aim TTi PL303QMD-P series power supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiPL303QMTP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiPL303QMTP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/Aim_TTi_PL303QMT_P.html#AimTTiPL303QMTP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL303QMTP" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi._AimTTi_PL_P.AimTTi"><code class="xref py py-class docutils literal notranslate"><span class="pre">AimTTi</span></code></a></p>
+<p>This is the QCoDeS driver for the Aim TTi PL303QMT-P series power supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiPL601">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiPL601</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/Aim_TTi_PL601_P.html#AimTTiPL601"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiPL601" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi._AimTTi_PL_P.AimTTi"><code class="xref py py-class docutils literal notranslate"><span class="pre">AimTTi</span></code></a></p>
+<p>This is the QCoDeS driver for the Aim TTi PL601-P series power supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.AimTTiQL355TP">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">AimTTiQL355TP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/Aim_TTi_QL355_TP.html#AimTTiQL355TP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.AimTTiQL355TP" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#qcodes.instrument_drivers.AimTTi.AimTTi" title="qcodes.instrument_drivers.AimTTi._AimTTi_PL_P.AimTTi"><code class="xref py py-class docutils literal notranslate"><span class="pre">AimTTi</span></code></a></p>
+<p>This is the QCoDeS driver for the Aim TTi QL355TP series power supply.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – Name to use internally in QCoDeS.</p></li>
+<li><p><strong>address</strong> – VISA resource address</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.AimTTi.NotKnownModel">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.AimTTi.</span></span><span class="sig-name descname"><span class="pre">NotKnownModel</span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/AimTTi/_AimTTi_PL_P.html#NotKnownModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.AimTTi.NotKnownModel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Exception" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+<p>An Error thrown when connecting to an unknown Aim TTi model</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Agilent.html" class="btn btn-neutral float-left" title="Agilent Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="AlazarTech.html" class="btn btn-neutral float-right" title="Alazar Tech Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

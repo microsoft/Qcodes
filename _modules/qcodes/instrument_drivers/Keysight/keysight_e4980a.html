@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.Keysight.keysight_e4980a &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.Keysight.keysight_e4980a</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.Keysight.keysight_e4980a</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">from</span> <span class="nn">packaging</span> <span class="kn">import</span> <span class="n">version</span>
+<span class="kn">from</span> <span class="nn">pyvisa.errors</span> <span class="kn">import</span> <span class="n">VisaIOError</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">InstrumentBaseKWArgs</span><span class="p">,</span>
+    <span class="n">InstrumentChannel</span><span class="p">,</span>
+    <span class="n">VisaInstrument</span><span class="p">,</span>
+    <span class="n">VisaInstrumentKWArgs</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Group</span><span class="p">,</span>
+    <span class="n">GroupParameter</span><span class="p">,</span>
+    <span class="n">ManualParameter</span><span class="p">,</span>
+    <span class="n">MultiParameter</span><span class="p">,</span>
+    <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">ParamRawDataType</span><span class="p">,</span>
+    <span class="n">create_on_off_val_mapping</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.utils</span> <span class="kn">import</span> <span class="n">convert_legacy_version_to_supported_version</span>
+<span class="kn">from</span> <span class="nn">qcodes.validators</span> <span class="kn">import</span> <span class="n">Bool</span><span class="p">,</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">Ints</span><span class="p">,</span> <span class="n">Numbers</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+
+<div class="viewcode-block" id="KeysightE4980AMeasurementPair">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980AMeasurementPair">[docs]</a>
+<span class="k">class</span> <span class="nc">KeysightE4980AMeasurementPair</span><span class="p">(</span><span class="n">MultiParameter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Data class for E4980A measurement, which will always return two items</span>
+<span class="sd">    at once.</span>
+
+<span class="sd">    The two items are for two different parameters, depending on the measurement</span>
+<span class="sd">    function. Hence, the names of the two attributes are created from the</span>
+<span class="sd">    &quot;names&quot; tuple of the measurement functions.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        To create a measurement data with capacitance=1.2, and</span>
+<span class="sd">        dissipation_factor=3.4.</span>
+
+<span class="sd">        &gt;&gt;&gt; data = KeysightE4980AMeasurementPair(name=&quot;CPD&quot;,</span>
+<span class="sd">                                    names=(&quot;capacitance&quot;, &quot;dissipation_factor&quot;),</span>
+<span class="sd">                                    units=(&quot;F&quot;, &quot;&quot;))</span>
+<span class="sd">        &gt;&gt;&gt; data.set((1.2, 3.4))</span>
+<span class="sd">        &gt;&gt;&gt; data.get()</span>
+<span class="sd">        (1.2, 3.4)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">value</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">names</span><span class="p">:</span> <span class="s2">&quot;Sequence[str]&quot;</span><span class="p">,</span> <span class="n">units</span><span class="p">:</span> <span class="s2">&quot;Sequence[str]&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span>
+            <span class="n">shapes</span><span class="o">=</span><span class="p">((),</span> <span class="p">()),</span>
+            <span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">,</span>
+            <span class="n">setpoints</span><span class="o">=</span><span class="p">((),</span> <span class="p">()),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="mi">0</span><span class="p">})</span>
+
+<div class="viewcode-block" id="KeysightE4980AMeasurementPair.set_raw">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980AMeasurementPair.set_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">value</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="KeysightE4980AMeasurementPair.get_raw">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980AMeasurementPair.get_raw">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">ParamRawDataType</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span></div>
+</div>
+
+
+
+<span class="n">MeasurementPair</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span>
+<span class="s2">&quot;Alias for backwards compatibility&quot;</span>
+
+
+<div class="viewcode-block" id="KeysightE4980AMeasurements">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980AMeasurements">[docs]</a>
+<span class="k">class</span> <span class="nc">KeysightE4980AMeasurements</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    All the measurement function for E4980A LCR meter. See user&#39;s guide P353</span>
+<span class="sd">    https://literature.cdn.keysight.com/litweb/pdf/E4980-90230.pdf?id=789356</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">CPD</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;CPD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;dissipation_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">CPQ</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;CPQ&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;quality_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">CPG</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;CPG&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;conductance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">CPRP</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;CPRP&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;resistance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">CSD</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;CSD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;dissipation_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">CSQ</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s1">&#39;CSQ&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;quality_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">CSRS</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;CSRS&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;resistance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LPD</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LPD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;dissipation_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LPQ</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LPQ&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;quality_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LPG</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LPG&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;conductance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LPRP</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LPRP&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;resistance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LSD</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LSD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;dissipation_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LSQ</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LSQ&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;quality_factor&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LSRS</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LSRS&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;resistance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">LSRD</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;LSRD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;inductance&quot;</span><span class="p">,</span> <span class="s2">&quot;resistance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;H&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">RX</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;RX&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;resistance&quot;</span><span class="p">,</span> <span class="s2">&quot;reactance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Ohm&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">ZTD</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;ZTD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;impedance&quot;</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Ohm&quot;</span><span class="p">,</span> <span class="s2">&quot;Degree&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">ZTR</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;ZTR&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;impedance&quot;</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Ohm&quot;</span><span class="p">,</span> <span class="s2">&quot;Radiant&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">GB</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span><span class="s2">&quot;GB&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;conductance&quot;</span><span class="p">,</span> <span class="s2">&quot;susceptance&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">))</span>
+    <span class="n">YTD</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span><span class="s2">&quot;YTD&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;admittance&quot;</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Degree&quot;</span><span class="p">))</span>
+    <span class="n">YTR</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+        <span class="s2">&quot;YTR&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;admittance&quot;</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;Radiant&quot;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">VDID</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span><span class="s2">&quot;VDID&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;voltage&quot;</span><span class="p">,</span> <span class="s2">&quot;current&quot;</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;V&quot;</span><span class="p">,</span> <span class="s2">&quot;A&quot;</span><span class="p">))</span></div>
+
+
+
+<span class="n">E4980AMeasurements</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurements</span>
+<span class="s2">&quot;Alias for backwards compatibility&quot;</span>
+
+
+<div class="viewcode-block" id="KeysightE4980ACorrection">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980ACorrection">[docs]</a>
+<span class="k">class</span> <span class="nc">KeysightE4980ACorrection</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Module for correction settings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">VisaInstrument</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[InstrumentBaseKWArgs]&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">open</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;open&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:CORRection:OPEN&quot;</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Executes OPEN correction based on all frequency points.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes OPEN correction based on all frequency points.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_state</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;open_state&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:CORRection:OPEN:STATe?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:CORRection:OPEN:STATe </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Enables or disable OPEN correction&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enables or disable OPEN correction&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">short</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;short&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:CORRection:SHORt&quot;</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Executes SHORT correction based on all frequency points.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Executes SHORT correction based on all frequency points.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">short_state</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;short_state&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:CORRection:SHORt:STATe?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:CORRection:SHORt:STATe </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Enables or disable SHORT correction.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enables or disable SHORT correction.&quot;&quot;&quot;</span></div>
+
+
+
+<span class="n">Correction4980A</span> <span class="o">=</span> <span class="n">KeysightE4980ACorrection</span>
+<span class="s2">&quot;Alias for backwards compatibility&quot;</span>
+
+
+<div class="viewcode-block" id="KeysightE4980A">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980A">[docs]</a>
+<span class="k">class</span> <span class="nc">KeysightE4980A</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    QCodes driver for E4980A Precision LCR Meter</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="s2">&quot;Unpack[VisaInstrumentKWArgs]&quot;</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create an instance of the instrument.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name: Name of the instrument instance</span>
+<span class="sd">            address: Visa-resolvable instrument address.</span>
+<span class="sd">            terminator: Character to terminate messages with.</span>
+<span class="sd">            **kwargs: kwargs are forwarded to base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">idn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDN</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_firmware_a_02_10_or_above</span> <span class="o">=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+            <span class="n">convert_legacy_version_to_supported_version</span><span class="p">(</span><span class="n">idn</span><span class="p">[</span><span class="s2">&quot;firmware&quot;</span><span class="p">])</span>
+        <span class="p">)</span> <span class="o">&gt;=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">convert_legacy_version_to_supported_version</span><span class="p">(</span><span class="s2">&quot;A.02.10&quot;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_option_001</span> <span class="o">=</span> <span class="s1">&#39;001&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_options</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dc_bias_v_level_range</span><span class="p">:</span> <span class="n">Numbers</span> <span class="o">|</span> <span class="n">Enum</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_option_001</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_level_range</span> <span class="o">=</span> <span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_i_level_range</span> <span class="o">=</span> <span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_imp_range</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span>
+                                   <span class="mi">30000</span><span class="p">,</span> <span class="mi">100000</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dc_bias_v_level_range</span> <span class="o">=</span> <span class="n">Numbers</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_v_level_range</span> <span class="o">=</span> <span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_i_level_range</span> <span class="o">=</span> <span class="n">Numbers</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_imp_range</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">30000</span><span class="p">,</span>
+                                   <span class="mi">100000</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dc_bias_v_level_range</span> <span class="o">=</span> <span class="n">Enum</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measurement_pair</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+            <span class="s2">&quot;CPD&quot;</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;capacitance&quot;</span><span class="p">,</span> <span class="s2">&quot;dissipation_factor&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;F&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;frequency&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:FREQuency?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:FREQuency </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Hz&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Numbers</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Gets and sets the frequency for normal measurement.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets and sets the frequency for normal measurement.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_level</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;current_level&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_current_level</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_current_level</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_i_level_range</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Gets and sets the current level for measurement signal.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets and sets the current level for measurement signal.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">voltage_level</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;voltage_level&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_voltage_level</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_voltage_level</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_v_level_range</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Gets and sets the AC bias voltage level for measurement &quot;</span>
+            <span class="s2">&quot;signal.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets and sets the AC bias voltage level for measurement signal.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">measurement_function</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;measurement_function&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:FUNCtion:IMPedance?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_measurement</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter measurement_function&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">range</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;range&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:FUNCtion:IMPedance:RANGe?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_range</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;Ohm&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_imp_range</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Selects the impedance measurement range, also turns &quot;</span>
+            <span class="s2">&quot;the auto range function OFF.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Selects the impedance measurement range, also turns the auto range function OFF.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">imp_autorange_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;imp_autorange_enabled&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:FUNCtion:IMPedance:RANGe:AUTO?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:FUNCtion:IMPedance:RANGe:AUTO </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Enables the auto-range for impedance measurement.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enables the auto-range for impedance measurement.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dc_bias_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;dc_bias_enabled&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:BIAS:STATe?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:BIAS:STATe </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Bool</span><span class="p">(),</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Enables DC bias. DC bias is automatically turned &quot;</span>
+            <span class="s2">&quot;off after recalling the state from memory.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Enables DC bias. DC bias is automatically turned off after recalling the state from memory.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dc_bias_voltage_level</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;dc_bias_voltage_level&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:BIAS:VOLTage:LEVel?&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:BIAS:VOLTage:LEVel </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dc_bias_v_level_range</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Sets the DC bias voltage. Setting does not &quot;</span>
+            <span class="s2">&quot;implicitly turn the DC bias ON.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the DC bias voltage. Setting does not implicitly turn the DC bias ON.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">meas_time_mode</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;meas_time_mode&quot;</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;short&quot;</span><span class="p">:</span> <span class="s2">&quot;SHOR&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">:</span> <span class="s2">&quot;MED&quot;</span><span class="p">,</span> <span class="s2">&quot;long&quot;</span><span class="p">:</span> <span class="s2">&quot;LONG&quot;</span><span class="p">},</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter meas_time_mode&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaging_rate</span><span class="p">:</span> <span class="n">GroupParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;averaging_rate&quot;</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Ints</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">GroupParameter</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Averaging rate for the measurement.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Averaging rate for the measurement.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_aperture_group</span> <span class="o">=</span> <span class="n">Group</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">meas_time_mode</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">averaging_rate</span><span class="p">],</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:APERture </span><span class="si">{meas_time_mode}</span><span class="s2">,</span><span class="si">{averaging_rate}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:APERture?&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_firmware_a_02_10_or_above</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dc_bias_autorange_enabled</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+                <span class="s2">&quot;dc_bias_autorange_enabled&quot;</span><span class="p">,</span>
+                <span class="n">get_cmd</span><span class="o">=</span><span class="s2">&quot;:BIAS:RANGe:AUTO?&quot;</span><span class="p">,</span>
+                <span class="n">set_cmd</span><span class="o">=</span><span class="s2">&quot;:BIAS:RANGe:AUTO </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">vals</span><span class="o">=</span><span class="n">Bool</span><span class="p">(),</span>
+                <span class="n">val_mapping</span><span class="o">=</span><span class="n">create_on_off_val_mapping</span><span class="p">(</span><span class="n">on_val</span><span class="o">=</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">off_val</span><span class="o">=</span><span class="s2">&quot;0&quot;</span><span class="p">),</span>
+                <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;Enables DC Bias range AUTO setting. When DC bias &quot;</span>
+                <span class="s2">&quot;range is fixed (not AUTO), &#39;#&#39; is displayed in &quot;</span>
+                <span class="s2">&quot;the BIAS field of the display.&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Enables DC Bias range AUTO setting. When DC bias range is fixed (not AUTO), &#39;#&#39; is displayed in the BIAS field of the display.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">:</span> <span class="n">ManualParameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;signal_mode&quot;</span><span class="p">,</span>
+            <span class="n">initial_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">vals</span><span class="o">=</span><span class="n">Enum</span><span class="p">(</span><span class="s2">&quot;Voltage&quot;</span><span class="p">,</span> <span class="s2">&quot;Current&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">parameter_class</span><span class="o">=</span><span class="n">ManualParameter</span><span class="p">,</span>
+            <span class="n">docstring</span><span class="o">=</span><span class="s2">&quot;This parameter tracks the signal mode which is being set.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This parameter tracks the signal mode which is being set.&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="s2">&quot;_correction&quot;</span><span class="p">,</span> <span class="n">KeysightE4980ACorrection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;correction&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_signal_mode_on_driver_initialization</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">correction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeysightE4980ACorrection</span><span class="p">:</span>
+        <span class="n">submodule</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="p">[</span><span class="s1">&#39;_correction&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">KeysightE4980ACorrection</span><span class="p">,</span> <span class="n">submodule</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">measure_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_complex_impedance</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">measurement</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_measurement</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_set_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;:FUNCtion:IMPedance:RANGe </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imp_autorange_enabled</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_complex_impedance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the impedance in the format of (R, X), where R is the</span>
+<span class="sd">        resistance, and X is the reactance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">measurement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;:FETCH:IMPedance:CORRected?&quot;</span><span class="p">)</span>
+        <span class="n">r</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">measurement</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+        <span class="n">measurement_pair</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;RX&quot;</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;resistance&quot;</span><span class="p">,</span> <span class="s2">&quot;reactance&quot;</span><span class="p">),</span>
+            <span class="n">units</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Ohm&quot;</span><span class="p">,</span> <span class="s2">&quot;Ohm&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">measurement_pair</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="n">r</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">measurement_pair</span>
+
+    <span class="k">def</span> <span class="nf">_measurement</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a measurement result with the selected measurement function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">measurement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;:FETCH:IMPedance:FORMatted?&quot;</span><span class="p">)</span>
+        <span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">measurement</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">))</span>
+        <span class="n">measurement_pair</span> <span class="o">=</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_measurement_pair</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_measurement_pair</span><span class="o">.</span><span class="n">names</span><span class="p">,</span>
+            <span class="n">units</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_measurement_pair</span><span class="o">.</span><span class="n">units</span>
+        <span class="p">)</span>
+        <span class="n">measurement_pair</span><span class="o">.</span><span class="n">set</span><span class="p">((</span><span class="n">val1</span><span class="p">,</span> <span class="n">val2</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">measurement_pair</span>
+
+    <span class="k">def</span> <span class="nf">_set_measurement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">measurement_pair</span><span class="p">:</span> <span class="n">KeysightE4980AMeasurementPair</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Selects the measurement function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_measurement_pair</span> <span class="o">=</span> <span class="n">measurement_pair</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;:FUNCtion:IMPedance </span><span class="si">{</span><span class="n">measurement_pair</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_voltage_level</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets voltage level if signal is set with voltage level parameter</span>
+<span class="sd">        otherwise raises an error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Current&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cannot get voltage level as signal is set &quot;</span>
+                               <span class="s2">&quot;with current level parameter.&quot;</span><span class="p">)</span>
+
+        <span class="n">v_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;:VOLTage:LEVel?&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">v_level</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_voltage_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets voltage level</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">(</span><span class="s2">&quot;Voltage&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voltage_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;:VOLTage:LEVel </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_current_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets current level</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">(</span><span class="s2">&quot;Current&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">voltage_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;:CURRent:LEVel </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_current_level</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Gets current level if signal is set with current level parameter</span>
+<span class="sd">        otherwise raises an error.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;Voltage&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Cannot get current level as signal is set &quot;</span>
+                               <span class="s2">&quot;with voltage level parameter.&quot;</span><span class="p">)</span>
+
+        <span class="n">i_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;:CURRent:LEVel?&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">i_level</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_is_signal_mode_voltage_on_driver_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if signal is set with voltage_level param at instrument driver</span>
+<span class="sd">        initialization</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">voltage_level</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">VisaIOError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_set_signal_mode_on_driver_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets signal mode on driver initialization</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_signal_mode_voltage_on_driver_initialization</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">(</span><span class="s2">&quot;Voltage&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">voltage_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">signal_mode</span><span class="p">(</span><span class="s2">&quot;Current&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">voltage_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_level</span><span class="o">.</span><span class="n">snapshot_exclude</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_options</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns installed options numbers. Combinations of different installed</span>
+<span class="sd">        options are possible. Two of the possible options are Power/DC Bias</span>
+<span class="sd">        Enhance (option 001) and Bias Current Interface (option 002).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">options_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s1">&#39;*OPT?&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">options_raw</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">))</span>
+
+<div class="viewcode-block" id="KeysightE4980A.system_errors">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980A.system_errors">[docs]</a>
+    <span class="k">def</span> <span class="nf">system_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the oldest unread error message from the event log and removes</span>
+<span class="sd">        it from the log.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s2">&quot;:SYSTem:ERRor?&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightE4980A.clear_status">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980A.clear_status">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears the following:</span>
+<span class="sd">            Error Queue</span>
+<span class="sd">            Status Byte Register</span>
+<span class="sd">            Standard Event Status Register</span>
+<span class="sd">            Operation Status Event Register</span>
+<span class="sd">            Questionable Status Event Register (No Query)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;*CLS&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KeysightE4980A.reset">
+<a class="viewcode-back" href="../../../../drivers_api/Keysight.html#qcodes.instrument_drivers.Keysight.KeysightE4980A.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resets the instrument settings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;*RST&#39;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

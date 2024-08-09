@@ -1,0 +1,181 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Cryomagnetics 4G QCoDeS Driver Example\n",
+    "\n",
+    "This notebook showcases how to interfacing with a Cryomagnetics 4G power supply using the QCoDeS. The Cryomagnetics 4G power supply is commonly used in research settings for precise magnetic field control in experiments that include superconductivity studies and material science.\n",
+    "\n",
+    "## Setup\n",
+    "\n",
+    "First, ensure you have the required drivers and QCoDeS installed. The connection to the instrument is assumed to be via GPIB. Let's establish the connection and set up the initial parameters for the magnetic field control."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Connected to:  None (serial:None, firmware:None) in 0.03s\n"
+     ]
+    }
+   ],
+   "source": [
+    "from qcodes.instrument_drivers.cryomagnetics import CryomagneticsModel4G\n",
+    "\n",
+    "max_current_limits = {\n",
+    "    1: (45.0, 0.01),\n",
+    "    2: (67.24, 0.0138),\n",
+    "    3: (85, 0.0001),\n",
+    "    4: (95, 0.0001),\n",
+    "}\n",
+    "coil_constant = 0.13385  # T/A\n",
+    "\n",
+    "cryo_instrument = CryomagneticsModel4G(\n",
+    "    name='cryo_4g',\n",
+    "    address='GPIB::1::INSTR',\n",
+    "    max_current_limits=max_current_limits,\n",
+    "    coil_constant=coil_constant,\n",
+    "    pyvisa_sim_file=\"cryo4g.yaml\",\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Basic Operations\n",
+    "\n",
+    "The following sections demonstrate how to perform basic operations with the Cryomagnetics 4G instrument. We will cover setting and measuring the magnetic field, checking the magnet's operational state, and modifying the ramp rate for adjusting the magnetic field."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Coil constant = 0.13385 T/A\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Checking the coil constant\n",
+    "coil_constant = cryo_instrument.coil_constant\n",
+    "print(f'Coil constant = {coil_constant} T/A')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import time\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "\n",
+    "# Function to plot magnetic field over time\n",
+    "def plot_field_over_time(cryo_instr, target, duration):\n",
+    "    times = []\n",
+    "    fields = []\n",
+    "    start_time = time.time()\n",
+    "    while (time.time() - start_time) < duration:\n",
+    "        fields.append(cryo_instr.field())\n",
+    "        times.append(time.time() - start_time)\n",
+    "        time.sleep(0.5)\n",
+    "    plt.plot(times, fields, marker='o')\n",
+    "    plt.xlabel('Time (s)')\n",
+    "    plt.ylabel('Magnetic Field (T)')\n",
+    "    plt.title(f'Time vs Magnetic Field towards {target} T')\n",
+    "    plt.show()\n",
+    "\n",
+    "# Example usage:\n",
+    "# plot_field_over_time(cryo_instrument, 1.0, 60)  # plot for 60 seconds while setting the field to 1 T"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "\n",
+    "## Range and Rate Settings\n",
+    "\n",
+    "The Cryomagnetics4G.py driver provides functionality to manage the current ranges and ramp rates of the Cryomagnetics 4G superconducting magnet power supply. These settings are crucial for ensuring safe and efficient operation of the magnet within its specified limits.\n",
+    "\n",
+    "### Current Ranges\n",
+    "\n",
+    "The power supply has multiple current ranges, each with its own upper current limit. The `max_current_limits` parameter in the `CryomagneticsModel4G` class constructor allows you to specify these ranges and their corresponding limits. It is a dictionary where the keys represent the range indices, and the values are tuples containing the upper current limit and maximum rate for that range.\n",
+    "\n",
+    "For example:\n",
+    "```python\n",
+    "max_current_limits = {\n",
+    "    1: (45.0, 0.01),\n",
+    "    2: (67.24, 0.0138),\n",
+    "    3: (85, 0.0001),\n",
+    "    4: (95, 0.0001),\n",
+    "}\n",
+    "```\n",
+    "\n",
+    "In this example, there are four current ranges defined:\n",
+    "- Range 1: Upper current limit of 45.0 A and a maximum rate of 0.01 A/s.\n",
+    "- Range 2: Upper current limit of 67.24 A and a maximum rate of 0.0138 A/s.\n",
+    "- Range 3: Upper current limit of 85 A and a maximum rate of 0.0001 A/s.\n",
+    "- Range 4: Upper current limit of 95 A and a maximum rate of 0.0001 A/s.\n",
+    "\n",
+    "The driver automatically handles the selection of the appropriate range based on the current field value when setting the ramp rate.\n",
+    "\n",
+    "### Ramp Rates\n",
+    "\n",
+    "The `rate` parameter in the driver represents the ramp rate of the magnetic field in Tesla per minute. When setting the ramp rate, the driver ensures that it does not exceed the maximum rate specified for the corresponding current range.\n",
+    "\n",
+    "If an attempt is made to set a ramp rate that is outside the defined rate ranges, a `ValueError` is raised.\n",
+    "\n",
+    "### Initializing Range and Rate Settings\n",
+    "\n",
+    "During initialization, the driver sets up the current limits and maximum rates for each range on the instrument based on the provided `max_current_limits` parameter. This ensures that the instrument is properly configured with the specified limits.\n",
+    "\n",
+    "By carefully defining the current ranges and ramp rates, you can ensure that the magnet operates within its safe limits and optimize its performance based on your specific requirements.\n",
+    "\n",
+    "It is important to consult the manufacturer's documentation and specifications when determining the appropriate current limits and ramp rates for your specific magnet and experimental setup.\n",
+    "\n",
+    "### Note on Safety\n",
+    "\n",
+    "Always ensure the input parameters remain within the safe operating bounds of your instrument. Manual cross-checking and regular maintenance schedules are recommended to avoid equipment damage or accidents.\n",
+    "\n",
+    "For further information, consult the official documentation and user manuals provided by the manufacturer. Always prioritize safe operating practices and maintain the instrument according to the recommended guidelines."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

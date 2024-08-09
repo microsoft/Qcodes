@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Read data from cache &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Write data to cache" href="write_for_caching.html" />
+    <link rel="prev" title="Example Measurements with Real Instruments" href="../Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html" />
+    <link href="../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../The-Experiment-Container.html">The Experiment Container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Read data from cache</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/examples/DataSet/Cache/read_data_from_cache.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/Cache/read_data_from_cache.ipynb">docs/examples/DataSet/Cache/read_data_from_cache.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/Cache/read_data_from_cache.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Read-data-from-cache">
+<h1>Read data from cache<a class="headerlink" href="#Read-data-from-cache" title="Link to this heading"></a></h1>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="n">load_by_run_spec</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : C:\Users\Jens-Work\.qcodes\logs\command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : C:\Users\Jens-Work\.qcodes\logs\200804-23736-qcodes.log
+</pre></div></div>
+</div>
+<p>This notebook is meant to be used together with <a class="reference internal" href="write_for_caching.html"><span class="doc">Write data to cache</span></a> to demonstate the use of the datasets cache interactively from another process. It demonstrates how data can be read gradually into the cache as the data is written by the other notebook. This is intended to be useful for plotting or other monitoring of the data as it is written. In the line below insert the <code class="docutils literal notranslate"><span class="pre">captured_run_id</span></code> of the dataset being captured in the other notebook.</p>
+<p>The cache has the same format as the data read from <code class="docutils literal notranslate"><span class="pre">dataset.get_parameter_data</span></code></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dataset_run_id</span> <span class="o">=</span> <span class="mi">170</span>
+<span class="n">ds</span> <span class="o">=</span> <span class="n">load_by_run_spec</span><span class="p">(</span><span class="n">captured_run_id</span><span class="o">=</span><span class="n">dataset_run_id</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Here we will print the data as it is read from the database. As can be seen the number of datapoints grows as the data is written to the dataset and read back into the cache. Note that the cache only reads new datapoints and does not require the entire data to be reread from the database.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">data</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">ds</span><span class="o">.</span><span class="n">completed</span><span class="p">:</span>
+        <span class="k">break</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101,
+       1.26262626, 1.51515152, 1.76767677, 2.02020202])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 ]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101,
+       1.26262626, 1.51515152, 1.76767677, 2.02020202, 2.27272727,
+       2.52525253, 2.77777778, 3.03030303, 3.28282828])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101,
+       1.26262626, 1.51515152, 1.76767677, 2.02020202, 2.27272727,
+       2.52525253, 2.77777778, 3.03030303, 3.28282828, 3.53535354,
+       3.78787879, 4.04040404, 4.29292929, 4.54545455])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101,
+       1.26262626, 1.51515152, 1.76767677, 2.02020202, 2.27272727,
+       2.52525253, 2.77777778, 3.03030303, 3.28282828, 3.53535354,
+       3.78787879, 4.04040404, 4.29292929, 4.54545455, 4.7979798 ,
+       5.05050505, 5.3030303 , 5.55555556, 5.80808081])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101,
+       1.26262626, 1.51515152, 1.76767677, 2.02020202, 2.27272727,
+       2.52525253, 2.77777778, 3.03030303, 3.28282828, 3.53535354,
+       3.78787879, 4.04040404, 4.29292929, 4.54545455, 4.7979798 ,
+       5.05050505, 5.3030303 , 5.55555556, 5.80808081, 6.06060606,
+       6.31313131, 6.56565657, 6.81818182, 7.07070707])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652, 1.24241502,
+       1.14786241, 0.70820501, 1.00223568, 1.03322718]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101,
+       1.26262626, 1.51515152, 1.76767677, 2.02020202, 2.27272727,
+       2.52525253, 2.77777778, 3.03030303, 3.28282828, 3.53535354,
+       3.78787879, 4.04040404, 4.29292929, 4.54545455, 4.7979798 ,
+       5.05050505, 5.3030303 , 5.55555556, 5.80808081, 6.06060606,
+       6.31313131, 6.56565657, 6.81818182, 7.07070707, 7.32323232,
+       7.57575758, 7.82828283, 8.08080808, 8.33333333])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652, 1.24241502,
+       1.14786241, 0.70820501, 1.00223568, 1.03322718, 0.84584845,
+       0.75458588, 0.7183519 , 0.77026242, 0.87493324]), &#39;dac_ch1&#39;: array([0.        , 0.25252525, 0.50505051, 0.75757576, 1.01010101,
+       1.26262626, 1.51515152, 1.76767677, 2.02020202, 2.27272727,
+       2.52525253, 2.77777778, 3.03030303, 3.28282828, 3.53535354,
+       3.78787879, 4.04040404, 4.29292929, 4.54545455, 4.7979798 ,
+       5.05050505, 5.3030303 , 5.55555556, 5.80808081, 6.06060606,
+       6.31313131, 6.56565657, 6.81818182, 7.07070707, 7.32323232,
+       7.57575758, 7.82828283, 8.08080808, 8.33333333, 8.58585859,
+       8.83838384, 9.09090909, 9.34343434, 9.5959596 ])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652, 1.24241502,
+       1.14786241, 0.70820501, 1.00223568, 1.03322718, 0.84584845,
+       0.75458588, 0.7183519 , 0.77026242, 0.87493324, 0.74312331,
+       0.70260914, 0.51703849, 0.63249996, 0.55123235]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652, 1.24241502,
+       1.14786241, 0.70820501, 1.00223568, 1.03322718, 0.84584845,
+       0.75458588, 0.7183519 , 0.77026242, 0.87493324, 0.74312331,
+       0.70260914, 0.51703849, 0.63249996, 0.55123235, 0.54686047,
+       0.45702373, 0.34336841, 0.39462052, 0.42183136]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652, 1.24241502,
+       1.14786241, 0.70820501, 1.00223568, 1.03322718, 0.84584845,
+       0.75458588, 0.7183519 , 0.77026242, 0.87493324, 0.74312331,
+       0.70260914, 0.51703849, 0.63249996, 0.55123235, 0.54686047,
+       0.45702373, 0.34336841, 0.39462052, 0.42183136, 0.34064474,
+       0.19263888, 0.33376233, 0.40571299, 0.30248277]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652, 1.24241502,
+       1.14786241, 0.70820501, 1.00223568, 1.03322718, 0.84584845,
+       0.75458588, 0.7183519 , 0.77026242, 0.87493324, 0.74312331,
+       0.70260914, 0.51703849, 0.63249996, 0.55123235, 0.54686047,
+       0.45702373, 0.34336841, 0.39462052, 0.42183136, 0.34064474,
+       0.19263888, 0.33376233, 0.40571299, 0.30248277, 0.38082725,
+       0.38076513, 0.36496263, 0.36835082, 0.23406347]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204, 4.63105405, 4.42728866, 4.38829264, 4.22625556,
+       3.82653766, 3.67129649, 3.34695112, 3.40300734, 3.21666924,
+       3.10543365, 2.83800252, 2.88099671, 2.6835489 , 2.46641422,
+       2.40653038, 2.26613887, 2.02905696, 1.88625026, 2.1919164 ,
+       1.77698013, 1.74489802, 1.62200398, 1.60651668, 1.34105113,
+       1.34898369, 1.27445697, 1.36462193, 1.03507652, 1.24241502,
+       1.14786241, 0.70820501, 1.00223568, 1.03322718, 0.84584845,
+       0.75458588, 0.7183519 , 0.77026242, 0.87493324, 0.74312331,
+       0.70260914, 0.51703849, 0.63249996, 0.55123235, 0.54686047,
+       0.45702373, 0.34336841, 0.39462052, 0.42183136, 0.34064474,
+       0.19263888, 0.33376233, 0.40571299, 0.30248277, 0.38082725,
+       0.38076513, 0.36496263, 0.36835082, 0.23406347, 0.1774725 ,
+       0.20164293, 0.08147221, 0.19006361, 0.27811192]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204e+00, 4.63105405e+00, 4.42728866e+00, 4.38829264e+00,
+       4.22625556e+00, 3.82653766e+00, 3.67129649e+00, 3.34695112e+00,
+       3.40300734e+00, 3.21666924e+00, 3.10543365e+00, 2.83800252e+00,
+       2.88099671e+00, 2.68354890e+00, 2.46641422e+00, 2.40653038e+00,
+       2.26613887e+00, 2.02905696e+00, 1.88625026e+00, 2.19191640e+00,
+       1.77698013e+00, 1.74489802e+00, 1.62200398e+00, 1.60651668e+00,
+       1.34105113e+00, 1.34898369e+00, 1.27445697e+00, 1.36462193e+00,
+       1.03507652e+00, 1.24241502e+00, 1.14786241e+00, 7.08205010e-01,
+       1.00223568e+00, 1.03322718e+00, 8.45848447e-01, 7.54585884e-01,
+       7.18351898e-01, 7.70262423e-01, 8.74933242e-01, 7.43123311e-01,
+       7.02609142e-01, 5.17038488e-01, 6.32499960e-01, 5.51232346e-01,
+       5.46860465e-01, 4.57023732e-01, 3.43368411e-01, 3.94620518e-01,
+       4.21831359e-01, 3.40644737e-01, 1.92638882e-01, 3.33762328e-01,
+       4.05712990e-01, 3.02482773e-01, 3.80827248e-01, 3.80765125e-01,
+       3.64962625e-01, 3.68350820e-01, 2.34063467e-01, 1.77472496e-01,
+       2.01642930e-01, 8.14722053e-02, 1.90063612e-01, 2.78111925e-01,
+       7.63892972e-02, 1.94479267e-01, 8.01744167e-02, 7.59798796e-02,
+       1.79640524e-03]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([5.09018204e+00, 4.63105405e+00, 4.42728866e+00, 4.38829264e+00,
+       4.22625556e+00, 3.82653766e+00, 3.67129649e+00, 3.34695112e+00,
+       3.40300734e+00, 3.21666924e+00, 3.10543365e+00, 2.83800252e+00,
+       2.88099671e+00, 2.68354890e+00, 2.46641422e+00, 2.40653038e+00,
+       2.26613887e+00, 2.02905696e+00, 1.88625026e+00, 2.19191640e+00,
+       1.77698013e+00, 1.74489802e+00, 1.62200398e+00, 1.60651668e+00,
+       1.34105113e+00, 1.34898369e+00, 1.27445697e+00, 1.36462193e+00,
+       1.03507652e+00, 1.24241502e+00, 1.14786241e+00, 7.08205010e-01,
+       1.00223568e+00, 1.03322718e+00, 8.45848447e-01, 7.54585884e-01,
+       7.18351898e-01, 7.70262423e-01, 8.74933242e-01, 7.43123311e-01,
+       7.02609142e-01, 5.17038488e-01, 6.32499960e-01, 5.51232346e-01,
+       5.46860465e-01, 4.57023732e-01, 3.43368411e-01, 3.94620518e-01,
+       4.21831359e-01, 3.40644737e-01, 1.92638882e-01, 3.33762328e-01,
+       4.05712990e-01, 3.02482773e-01, 3.80827248e-01, 3.80765125e-01,
+       3.64962625e-01, 3.68350820e-01, 2.34063467e-01, 1.77472496e-01,
+       2.01642930e-01, 8.14722053e-02, 1.90063612e-01, 2.78111925e-01,
+       7.63892972e-02, 1.94479267e-01, 8.01744167e-02, 7.59798796e-02,
+       1.79640524e-03, 4.91518425e-02, 3.31965049e-02, 2.04110616e-01,
+       2.77579567e-01, 3.77598384e-02]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717, 17.42424242,
+       17.67676768, 17.92929293, 18.18181818, 18.43434343])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([ 5.09018204e+00,  4.63105405e+00,  4.42728866e+00,  4.38829264e+00,
+        4.22625556e+00,  3.82653766e+00,  3.67129649e+00,  3.34695112e+00,
+        3.40300734e+00,  3.21666924e+00,  3.10543365e+00,  2.83800252e+00,
+        2.88099671e+00,  2.68354890e+00,  2.46641422e+00,  2.40653038e+00,
+        2.26613887e+00,  2.02905696e+00,  1.88625026e+00,  2.19191640e+00,
+        1.77698013e+00,  1.74489802e+00,  1.62200398e+00,  1.60651668e+00,
+        1.34105113e+00,  1.34898369e+00,  1.27445697e+00,  1.36462193e+00,
+        1.03507652e+00,  1.24241502e+00,  1.14786241e+00,  7.08205010e-01,
+        1.00223568e+00,  1.03322718e+00,  8.45848447e-01,  7.54585884e-01,
+        7.18351898e-01,  7.70262423e-01,  8.74933242e-01,  7.43123311e-01,
+        7.02609142e-01,  5.17038488e-01,  6.32499960e-01,  5.51232346e-01,
+        5.46860465e-01,  4.57023732e-01,  3.43368411e-01,  3.94620518e-01,
+        4.21831359e-01,  3.40644737e-01,  1.92638882e-01,  3.33762328e-01,
+        4.05712990e-01,  3.02482773e-01,  3.80827248e-01,  3.80765125e-01,
+        3.64962625e-01,  3.68350820e-01,  2.34063467e-01,  1.77472496e-01,
+        2.01642930e-01,  8.14722053e-02,  1.90063612e-01,  2.78111925e-01,
+        7.63892972e-02,  1.94479267e-01,  8.01744167e-02,  7.59798796e-02,
+        1.79640524e-03,  4.91518425e-02,  3.31965049e-02,  2.04110616e-01,
+        2.77579567e-01,  3.77598384e-02, -4.87514711e-02,  7.07750349e-02,
+        3.92361083e-02,  9.63022559e-02,  4.22623356e-02]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717, 17.42424242,
+       17.67676768, 17.92929293, 18.18181818, 18.43434343, 18.68686869,
+       18.93939394, 19.19191919, 19.44444444, 19.6969697 ])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([ 5.09018204e+00,  4.63105405e+00,  4.42728866e+00,  4.38829264e+00,
+        4.22625556e+00,  3.82653766e+00,  3.67129649e+00,  3.34695112e+00,
+        3.40300734e+00,  3.21666924e+00,  3.10543365e+00,  2.83800252e+00,
+        2.88099671e+00,  2.68354890e+00,  2.46641422e+00,  2.40653038e+00,
+        2.26613887e+00,  2.02905696e+00,  1.88625026e+00,  2.19191640e+00,
+        1.77698013e+00,  1.74489802e+00,  1.62200398e+00,  1.60651668e+00,
+        1.34105113e+00,  1.34898369e+00,  1.27445697e+00,  1.36462193e+00,
+        1.03507652e+00,  1.24241502e+00,  1.14786241e+00,  7.08205010e-01,
+        1.00223568e+00,  1.03322718e+00,  8.45848447e-01,  7.54585884e-01,
+        7.18351898e-01,  7.70262423e-01,  8.74933242e-01,  7.43123311e-01,
+        7.02609142e-01,  5.17038488e-01,  6.32499960e-01,  5.51232346e-01,
+        5.46860465e-01,  4.57023732e-01,  3.43368411e-01,  3.94620518e-01,
+        4.21831359e-01,  3.40644737e-01,  1.92638882e-01,  3.33762328e-01,
+        4.05712990e-01,  3.02482773e-01,  3.80827248e-01,  3.80765125e-01,
+        3.64962625e-01,  3.68350820e-01,  2.34063467e-01,  1.77472496e-01,
+        2.01642930e-01,  8.14722053e-02,  1.90063612e-01,  2.78111925e-01,
+        7.63892972e-02,  1.94479267e-01,  8.01744167e-02,  7.59798796e-02,
+        1.79640524e-03,  4.91518425e-02,  3.31965049e-02,  2.04110616e-01,
+        2.77579567e-01,  3.77598384e-02, -4.87514711e-02,  7.07750349e-02,
+        3.92361083e-02,  9.63022559e-02,  4.22623356e-02,  1.01317360e-01,
+        2.59996578e-01,  8.26043027e-02,  5.08969423e-02,  5.08602072e-02]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717, 17.42424242,
+       17.67676768, 17.92929293, 18.18181818, 18.43434343, 18.68686869,
+       18.93939394, 19.19191919, 19.44444444, 19.6969697 , 19.94949495,
+       20.2020202 , 20.45454545, 20.70707071, 20.95959596])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([ 5.09018204e+00,  4.63105405e+00,  4.42728866e+00,  4.38829264e+00,
+        4.22625556e+00,  3.82653766e+00,  3.67129649e+00,  3.34695112e+00,
+        3.40300734e+00,  3.21666924e+00,  3.10543365e+00,  2.83800252e+00,
+        2.88099671e+00,  2.68354890e+00,  2.46641422e+00,  2.40653038e+00,
+        2.26613887e+00,  2.02905696e+00,  1.88625026e+00,  2.19191640e+00,
+        1.77698013e+00,  1.74489802e+00,  1.62200398e+00,  1.60651668e+00,
+        1.34105113e+00,  1.34898369e+00,  1.27445697e+00,  1.36462193e+00,
+        1.03507652e+00,  1.24241502e+00,  1.14786241e+00,  7.08205010e-01,
+        1.00223568e+00,  1.03322718e+00,  8.45848447e-01,  7.54585884e-01,
+        7.18351898e-01,  7.70262423e-01,  8.74933242e-01,  7.43123311e-01,
+        7.02609142e-01,  5.17038488e-01,  6.32499960e-01,  5.51232346e-01,
+        5.46860465e-01,  4.57023732e-01,  3.43368411e-01,  3.94620518e-01,
+        4.21831359e-01,  3.40644737e-01,  1.92638882e-01,  3.33762328e-01,
+        4.05712990e-01,  3.02482773e-01,  3.80827248e-01,  3.80765125e-01,
+        3.64962625e-01,  3.68350820e-01,  2.34063467e-01,  1.77472496e-01,
+        2.01642930e-01,  8.14722053e-02,  1.90063612e-01,  2.78111925e-01,
+        7.63892972e-02,  1.94479267e-01,  8.01744167e-02,  7.59798796e-02,
+        1.79640524e-03,  4.91518425e-02,  3.31965049e-02,  2.04110616e-01,
+        2.77579567e-01,  3.77598384e-02, -4.87514711e-02,  7.07750349e-02,
+        3.92361083e-02,  9.63022559e-02,  4.22623356e-02,  1.01317360e-01,
+        2.59996578e-01,  8.26043027e-02,  5.08969423e-02,  5.08602072e-02,
+        1.75200177e-01,  1.04186273e-01, -9.93148538e-02, -7.89883156e-02,
+        4.67718832e-02]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717, 17.42424242,
+       17.67676768, 17.92929293, 18.18181818, 18.43434343, 18.68686869,
+       18.93939394, 19.19191919, 19.44444444, 19.6969697 , 19.94949495,
+       20.2020202 , 20.45454545, 20.70707071, 20.95959596, 21.21212121,
+       21.46464646, 21.71717172, 21.96969697, 22.22222222])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([ 5.09018204e+00,  4.63105405e+00,  4.42728866e+00,  4.38829264e+00,
+        4.22625556e+00,  3.82653766e+00,  3.67129649e+00,  3.34695112e+00,
+        3.40300734e+00,  3.21666924e+00,  3.10543365e+00,  2.83800252e+00,
+        2.88099671e+00,  2.68354890e+00,  2.46641422e+00,  2.40653038e+00,
+        2.26613887e+00,  2.02905696e+00,  1.88625026e+00,  2.19191640e+00,
+        1.77698013e+00,  1.74489802e+00,  1.62200398e+00,  1.60651668e+00,
+        1.34105113e+00,  1.34898369e+00,  1.27445697e+00,  1.36462193e+00,
+        1.03507652e+00,  1.24241502e+00,  1.14786241e+00,  7.08205010e-01,
+        1.00223568e+00,  1.03322718e+00,  8.45848447e-01,  7.54585884e-01,
+        7.18351898e-01,  7.70262423e-01,  8.74933242e-01,  7.43123311e-01,
+        7.02609142e-01,  5.17038488e-01,  6.32499960e-01,  5.51232346e-01,
+        5.46860465e-01,  4.57023732e-01,  3.43368411e-01,  3.94620518e-01,
+        4.21831359e-01,  3.40644737e-01,  1.92638882e-01,  3.33762328e-01,
+        4.05712990e-01,  3.02482773e-01,  3.80827248e-01,  3.80765125e-01,
+        3.64962625e-01,  3.68350820e-01,  2.34063467e-01,  1.77472496e-01,
+        2.01642930e-01,  8.14722053e-02,  1.90063612e-01,  2.78111925e-01,
+        7.63892972e-02,  1.94479267e-01,  8.01744167e-02,  7.59798796e-02,
+        1.79640524e-03,  4.91518425e-02,  3.31965049e-02,  2.04110616e-01,
+        2.77579567e-01,  3.77598384e-02, -4.87514711e-02,  7.07750349e-02,
+        3.92361083e-02,  9.63022559e-02,  4.22623356e-02,  1.01317360e-01,
+        2.59996578e-01,  8.26043027e-02,  5.08969423e-02,  5.08602072e-02,
+        1.75200177e-01,  1.04186273e-01, -9.93148538e-02, -7.89883156e-02,
+        4.67718832e-02,  2.30729507e-01,  1.07824779e-01, -6.21695672e-02,
+        9.31542864e-02,  1.26643167e-01]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717, 17.42424242,
+       17.67676768, 17.92929293, 18.18181818, 18.43434343, 18.68686869,
+       18.93939394, 19.19191919, 19.44444444, 19.6969697 , 19.94949495,
+       20.2020202 , 20.45454545, 20.70707071, 20.95959596, 21.21212121,
+       21.46464646, 21.71717172, 21.96969697, 22.22222222, 22.47474747,
+       22.72727273, 22.97979798, 23.23232323, 23.48484848])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([ 5.09018204e+00,  4.63105405e+00,  4.42728866e+00,  4.38829264e+00,
+        4.22625556e+00,  3.82653766e+00,  3.67129649e+00,  3.34695112e+00,
+        3.40300734e+00,  3.21666924e+00,  3.10543365e+00,  2.83800252e+00,
+        2.88099671e+00,  2.68354890e+00,  2.46641422e+00,  2.40653038e+00,
+        2.26613887e+00,  2.02905696e+00,  1.88625026e+00,  2.19191640e+00,
+        1.77698013e+00,  1.74489802e+00,  1.62200398e+00,  1.60651668e+00,
+        1.34105113e+00,  1.34898369e+00,  1.27445697e+00,  1.36462193e+00,
+        1.03507652e+00,  1.24241502e+00,  1.14786241e+00,  7.08205010e-01,
+        1.00223568e+00,  1.03322718e+00,  8.45848447e-01,  7.54585884e-01,
+        7.18351898e-01,  7.70262423e-01,  8.74933242e-01,  7.43123311e-01,
+        7.02609142e-01,  5.17038488e-01,  6.32499960e-01,  5.51232346e-01,
+        5.46860465e-01,  4.57023732e-01,  3.43368411e-01,  3.94620518e-01,
+        4.21831359e-01,  3.40644737e-01,  1.92638882e-01,  3.33762328e-01,
+        4.05712990e-01,  3.02482773e-01,  3.80827248e-01,  3.80765125e-01,
+        3.64962625e-01,  3.68350820e-01,  2.34063467e-01,  1.77472496e-01,
+        2.01642930e-01,  8.14722053e-02,  1.90063612e-01,  2.78111925e-01,
+        7.63892972e-02,  1.94479267e-01,  8.01744167e-02,  7.59798796e-02,
+        1.79640524e-03,  4.91518425e-02,  3.31965049e-02,  2.04110616e-01,
+        2.77579567e-01,  3.77598384e-02, -4.87514711e-02,  7.07750349e-02,
+        3.92361083e-02,  9.63022559e-02,  4.22623356e-02,  1.01317360e-01,
+        2.59996578e-01,  8.26043027e-02,  5.08969423e-02,  5.08602072e-02,
+        1.75200177e-01,  1.04186273e-01, -9.93148538e-02, -7.89883156e-02,
+        4.67718832e-02,  2.30729507e-01,  1.07824779e-01, -6.21695672e-02,
+        9.31542864e-02,  1.26643167e-01,  1.39736772e-01, -1.04234412e-01,
+       -1.24168823e-02,  1.54129210e-02,  7.51947885e-02]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717, 17.42424242,
+       17.67676768, 17.92929293, 18.18181818, 18.43434343, 18.68686869,
+       18.93939394, 19.19191919, 19.44444444, 19.6969697 , 19.94949495,
+       20.2020202 , 20.45454545, 20.70707071, 20.95959596, 21.21212121,
+       21.46464646, 21.71717172, 21.96969697, 22.22222222, 22.47474747,
+       22.72727273, 22.97979798, 23.23232323, 23.48484848, 23.73737374,
+       23.98989899, 24.24242424, 24.49494949, 24.74747475])}}
+{&#39;dmm_v1&#39;: {&#39;dmm_v1&#39;: array([ 5.09018204e+00,  4.63105405e+00,  4.42728866e+00,  4.38829264e+00,
+        4.22625556e+00,  3.82653766e+00,  3.67129649e+00,  3.34695112e+00,
+        3.40300734e+00,  3.21666924e+00,  3.10543365e+00,  2.83800252e+00,
+        2.88099671e+00,  2.68354890e+00,  2.46641422e+00,  2.40653038e+00,
+        2.26613887e+00,  2.02905696e+00,  1.88625026e+00,  2.19191640e+00,
+        1.77698013e+00,  1.74489802e+00,  1.62200398e+00,  1.60651668e+00,
+        1.34105113e+00,  1.34898369e+00,  1.27445697e+00,  1.36462193e+00,
+        1.03507652e+00,  1.24241502e+00,  1.14786241e+00,  7.08205010e-01,
+        1.00223568e+00,  1.03322718e+00,  8.45848447e-01,  7.54585884e-01,
+        7.18351898e-01,  7.70262423e-01,  8.74933242e-01,  7.43123311e-01,
+        7.02609142e-01,  5.17038488e-01,  6.32499960e-01,  5.51232346e-01,
+        5.46860465e-01,  4.57023732e-01,  3.43368411e-01,  3.94620518e-01,
+        4.21831359e-01,  3.40644737e-01,  1.92638882e-01,  3.33762328e-01,
+        4.05712990e-01,  3.02482773e-01,  3.80827248e-01,  3.80765125e-01,
+        3.64962625e-01,  3.68350820e-01,  2.34063467e-01,  1.77472496e-01,
+        2.01642930e-01,  8.14722053e-02,  1.90063612e-01,  2.78111925e-01,
+        7.63892972e-02,  1.94479267e-01,  8.01744167e-02,  7.59798796e-02,
+        1.79640524e-03,  4.91518425e-02,  3.31965049e-02,  2.04110616e-01,
+        2.77579567e-01,  3.77598384e-02, -4.87514711e-02,  7.07750349e-02,
+        3.92361083e-02,  9.63022559e-02,  4.22623356e-02,  1.01317360e-01,
+        2.59996578e-01,  8.26043027e-02,  5.08969423e-02,  5.08602072e-02,
+        1.75200177e-01,  1.04186273e-01, -9.93148538e-02, -7.89883156e-02,
+        4.67718832e-02,  2.30729507e-01,  1.07824779e-01, -6.21695672e-02,
+        9.31542864e-02,  1.26643167e-01,  1.39736772e-01, -1.04234412e-01,
+       -1.24168823e-02,  1.54129210e-02,  7.51947885e-02,  2.09858889e-02]), &#39;dac_ch1&#39;: array([ 0.        ,  0.25252525,  0.50505051,  0.75757576,  1.01010101,
+        1.26262626,  1.51515152,  1.76767677,  2.02020202,  2.27272727,
+        2.52525253,  2.77777778,  3.03030303,  3.28282828,  3.53535354,
+        3.78787879,  4.04040404,  4.29292929,  4.54545455,  4.7979798 ,
+        5.05050505,  5.3030303 ,  5.55555556,  5.80808081,  6.06060606,
+        6.31313131,  6.56565657,  6.81818182,  7.07070707,  7.32323232,
+        7.57575758,  7.82828283,  8.08080808,  8.33333333,  8.58585859,
+        8.83838384,  9.09090909,  9.34343434,  9.5959596 ,  9.84848485,
+       10.1010101 , 10.35353535, 10.60606061, 10.85858586, 11.11111111,
+       11.36363636, 11.61616162, 11.86868687, 12.12121212, 12.37373737,
+       12.62626263, 12.87878788, 13.13131313, 13.38383838, 13.63636364,
+       13.88888889, 14.14141414, 14.39393939, 14.64646465, 14.8989899 ,
+       15.15151515, 15.4040404 , 15.65656566, 15.90909091, 16.16161616,
+       16.41414141, 16.66666667, 16.91919192, 17.17171717, 17.42424242,
+       17.67676768, 17.92929293, 18.18181818, 18.43434343, 18.68686869,
+       18.93939394, 19.19191919, 19.44444444, 19.6969697 , 19.94949495,
+       20.2020202 , 20.45454545, 20.70707071, 20.95959596, 21.21212121,
+       21.46464646, 21.71717172, 21.96969697, 22.22222222, 22.47474747,
+       22.72727273, 22.97979798, 23.23232323, 23.48484848, 23.73737374,
+       23.98989899, 24.24242424, 24.49494949, 24.74747475, 25.        ])}}
+</pre></div></div>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html" class="btn btn-neutral float-left" title="Example Measurements with Real Instruments" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="write_for_caching.html" class="btn btn-neutral float-right" title="Write data to cache" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

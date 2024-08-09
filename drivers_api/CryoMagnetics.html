@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cryomagnetics Drivers &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Galil Drivers" href="Galil.html" />
+    <link rel="prev" title="Basel Drivers" href="Basel.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Cryomagnetics Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException"><code class="docutils literal notranslate"><span class="pre">Cryomagnetics4GException</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GWarning"><code class="docutils literal notranslate"><span class="pre">Cryomagnetics4GWarning</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.KG_TO_TESLA"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.KG_TO_TESLA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.default_terminator"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.default_terminator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.units"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.units</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ramping_state_check_interval"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.ramping_state_check_interval</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.field"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.field</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.rate"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vmag"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.Vmag</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vout"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.Vout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Iout"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.Iout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.quenched_state_reset"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.quenched_state_reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.operating_mode"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.operating_mode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.zero_current"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.zero_current()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.reset"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.magnet_operating_state"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.magnet_operating_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.set_field"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.set_field()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.wait_while_ramping"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.wait_while_ramping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visabackend"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.visabackend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visa_handle"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.visa_handle</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visalib"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.visalib</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.parameters"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.functions"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.submodules"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.instrument_modules"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.log"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.metadata"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.write_raw"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.write_raw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ask_raw"><code class="docutils literal notranslate"><span class="pre">CryomagneticsModel4G.ask_raw()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState"><code class="docutils literal notranslate"><span class="pre">CryomagneticsOperatingState</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.ramping"><code class="docutils literal notranslate"><span class="pre">CryomagneticsOperatingState.ramping</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.holding"><code class="docutils literal notranslate"><span class="pre">CryomagneticsOperatingState.holding</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.standby"><code class="docutils literal notranslate"><span class="pre">CryomagneticsOperatingState.standby</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.quench_condition_present"><code class="docutils literal notranslate"><span class="pre">CryomagneticsOperatingState.quench_condition_present</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.power_module_failure"><code class="docutils literal notranslate"><span class="pre">CryomagneticsOperatingState.power_module_failure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.can_start_ramping"><code class="docutils literal notranslate"><span class="pre">CryomagneticsOperatingState.can_start_ramping()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Oxford.html">Oxford Instruments Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">Cryomagnetics Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/CryoMagnetics.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.cryomagnetics">
+<span id="cryomagnetics-drivers"></span><span id="cryomagnetics-api"></span><h1>Cryomagnetics Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.cryomagnetics" title="Link to this heading"></a></h1>
+<p><strong>Exceptions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException" title="qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cryomagnetics4GException</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GWarning" title="qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GWarning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cryomagnetics4GWarning</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CryomagneticsModel4G</span></code></a>(name, address, ...)</p></td>
+<td><p>Driver for the Cryomagnetics Model 4G superconducting magnet power supply.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CryomagneticsOperatingState</span></code></a>([ramping, ...])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.cryomagnetics.</span></span><span class="sig-name descname"><span class="pre">Cryomagnetics4GException</span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#Cryomagnetics4GException"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Exception" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GWarning">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.cryomagnetics.</span></span><span class="sig-name descname"><span class="pre">Cryomagnetics4GWarning</span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#Cryomagnetics4GWarning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GWarning" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#Warning" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Warning</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.cryomagnetics.</span></span><span class="sig-name descname"><span class="pre">CryomagneticsModel4G</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_current_limits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coil_constant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>Driver for the Cryomagnetics Model 4G superconducting magnet power supply.</p>
+<p>This driver provides an interface to control and communicate with the Cryomagnetics Model 4G
+superconducting magnet power supply using the VISA protocol. It allows setting and reading
+the magnetic field, ramp rate, and various other parameters of the instrument.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – The name of the instrument instance.</p></li>
+<li><p><strong>address</strong> – The VISA resource name of the instrument.</p></li>
+<li><p><strong>max_current_limits</strong> – A dictionary specifying the maximum
+current limits and rates for each range. The keys are the range indices, and the values
+are tuples containing the upper current limit and maximum rate for that range.</p></li>
+<li><p><strong>coil_constant</strong> – The coil constant of the magnet in Tesla per Amp.</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.KG_TO_TESLA" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.KG_TO_TESLA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KG_TO_TESLA</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.default_terminator" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.default_terminator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_terminator</span></code></a></p></td>
+<td><p>The default terminator to use if the terminator is not specified when creating the instrument.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.units" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">units</span></code></a></p></td>
+<td><p>Field Units</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ramping_state_check_interval" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ramping_state_check_interval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramping_state_check_interval</span></code></a></p></td>
+<td><p>Parameter ramping_state_check_interval</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.field" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></a></p></td>
+<td><p>Magnetic Field in Tesla</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.rate" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rate</span></code></a></p></td>
+<td><p>Rate for magnetic field T/min</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vmag" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vmag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vmag</span></code></a></p></td>
+<td><p>Magnet sense voltage</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vout" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vout"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vout</span></code></a></p></td>
+<td><p>Magnet output voltage</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Iout" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Iout"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Iout</span></code></a></p></td>
+<td><p>Magnet output field/current</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.quenched_state_reset" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.quenched_state_reset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quenched_state_reset</span></code></a>()</p></td>
+<td><p>Resets the device's quenched state.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.operating_mode" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.operating_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">operating_mode</span></code></a>([remote])</p></td>
+<td><p>Sets the device's operating mode to either remote or local.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.zero_current" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.zero_current"><code class="xref py py-obj docutils literal notranslate"><span class="pre">zero_current</span></code></a>()</p></td>
+<td><p>Sets the device current to zero.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.reset" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.reset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reset</span></code></a>()</p></td>
+<td><p>Resets the device to its default settings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.magnet_operating_state" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.magnet_operating_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">magnet_operating_state</span></code></a>()</p></td>
+<td><p>Retrieves the current operating state of the magnet.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.set_field" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.set_field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_field</span></code></a>(field_setpoint[, block])</p></td>
+<td><p>Sets the magnetic field strength in Tesla using ULIM, LLIM, and SWEEP commands.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.wait_while_ramping" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.wait_while_ramping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wait_while_ramping</span></code></a>(value[, threshold])</p></td>
+<td><p>Waits while the magnet is ramping, checking the status byte instead of field value.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.write_raw" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.write_raw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_raw</span></code></a>(cmd)</p></td>
+<td><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.write</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ask_raw" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ask_raw"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask_raw</span></code></a>(cmd)</p></td>
+<td><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.ask</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.KG_TO_TESLA">
+<span class="sig-name descname"><span class="pre">KG_TO_TESLA</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.1</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.KG_TO_TESLA" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.default_terminator">
+<span class="sig-name descname"><span class="pre">default_terminator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.default_terminator" title="Link to this definition"></a></dt>
+<dd><p>The default terminator to use if the terminator is not specified when creating the instrument.
+None means use the default terminator from PyVisa.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.units">
+<span class="sig-name descname"><span class="pre">units</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;units&quot;,</span> <span class="pre">set_cmd=&quot;UNITS</span> <span class="pre">{}&quot;,</span> <span class="pre">get_cmd=&quot;UNITS?&quot;,</span> <span class="pre">get_parser=str,</span> <span class="pre">vals=Enum(&quot;A&quot;,</span> <span class="pre">&quot;kG&quot;,</span> <span class="pre">&quot;T&quot;),</span> <span class="pre">docstring=&quot;Field</span> <span class="pre">Units&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.units" title="Link to this definition"></a></dt>
+<dd><p>Field Units</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ramping_state_check_interval">
+<span class="sig-name descname"><span class="pre">ramping_state_check_interval</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ramping_state_check_interval&quot;,</span> <span class="pre">initial_value=0.05,</span> <span class="pre">unit=&quot;s&quot;,</span> <span class="pre">vals=Numbers(0,</span> <span class="pre">10),</span> <span class="pre">set_cmd=None,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ramping_state_check_interval" title="Link to this definition"></a></dt>
+<dd><p>Parameter ramping_state_check_interval</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.field">
+<span class="sig-name descname"><span class="pre">field</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;field&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">set_cmd=self.set_field,</span> <span class="pre">get_cmd=self._get_field,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(-9.001,</span> <span class="pre">9.001),</span> <span class="pre">docstring=&quot;Magnetic</span> <span class="pre">Field</span> <span class="pre">in</span> <span class="pre">Tesla&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.field" title="Link to this definition"></a></dt>
+<dd><p>Magnetic Field in Tesla</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.rate">
+<span class="sig-name descname"><span class="pre">rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;rate&quot;,</span> <span class="pre">unit=&quot;T/min&quot;,</span> <span class="pre">get_cmd=self._get_rate,</span> <span class="pre">set_cmd=self._set_rate,</span> <span class="pre">get_parser=float,</span> <span class="pre">docstring=&quot;Rate</span> <span class="pre">for</span> <span class="pre">magnetic</span> <span class="pre">field</span> <span class="pre">T/min&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.rate" title="Link to this definition"></a></dt>
+<dd><p>Rate for magnetic field T/min</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vmag">
+<span class="sig-name descname"><span class="pre">Vmag</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;Vmag&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">get_cmd=&quot;VMAG?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(-10,</span> <span class="pre">10),</span> <span class="pre">docstring=&quot;Magnet</span> <span class="pre">sense</span> <span class="pre">voltage&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vmag" title="Link to this definition"></a></dt>
+<dd><p>Magnet sense voltage</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vout">
+<span class="sig-name descname"><span class="pre">Vout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;Vout&quot;,</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">get_cmd=&quot;VOUT?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">vals=Numbers(-12.8,</span> <span class="pre">12.8),</span> <span class="pre">docstring=&quot;Magnet</span> <span class="pre">output</span> <span class="pre">voltage&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Vout" title="Link to this definition"></a></dt>
+<dd><p>Magnet output voltage</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Iout">
+<span class="sig-name descname"><span class="pre">Iout</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;Iout&quot;,</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">get_cmd=&quot;IOUT?&quot;,</span> <span class="pre">get_parser=float,</span> <span class="pre">docstring=&quot;Magnet</span> <span class="pre">output</span> <span class="pre">field/current&quot;,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.Iout" title="Link to this definition"></a></dt>
+<dd><p>Magnet output field/current</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.quenched_state_reset">
+<span class="sig-name descname"><span class="pre">quenched_state_reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.quenched_state_reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.quenched_state_reset" title="Link to this definition"></a></dt>
+<dd><p>Resets the device’s quenched state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.operating_mode">
+<span class="sig-name descname"><span class="pre">operating_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remote</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.operating_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.operating_mode" title="Link to this definition"></a></dt>
+<dd><p>Sets the device’s operating mode to either remote or local.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>remote</strong> – If True, sets to remote mode, otherwise sets to local mode.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.zero_current">
+<span class="sig-name descname"><span class="pre">zero_current</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.zero_current"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.zero_current" title="Link to this definition"></a></dt>
+<dd><p>Sets the device current to zero.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.reset" title="Link to this definition"></a></dt>
+<dd><p>Resets the device to its default settings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.magnet_operating_state">
+<span class="sig-name descname"><span class="pre">magnet_operating_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState" title="qcodes.instrument_drivers.cryomagnetics._cryomagnetics4g.CryomagneticsOperatingState"><span class="pre">CryomagneticsOperatingState</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.magnet_operating_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.magnet_operating_state" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the current operating state of the magnet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>An object representing the current operating state of the magnet.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState">CryomagneticsOperatingState</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException" title="qcodes.instrument_drivers.cryomagnetics.Cryomagnetics4GException"><strong>Cryomagnetics4GException</strong></a> – If the magnet is in a state that prevents ramping, such as quench condition,
+    power module failure, or already ramping.</p>
+</dd>
+</dl>
+<p>The operating state is determined by querying the status byte (<cite>*STB?</cite>) of the instrument. The status byte is
+interpreted as follows:
+- Bit 0: Holding (not ramping)
+- Bit 1: Ramping
+- Bit 2: Standby
+- Bit 4: Quench condition present
+- Bit 8: Power module failure</p>
+<p>If the magnet is in a state that prevents ramping (quench condition, power module failure, or already ramping),
+an exception is raised with an appropriate error message. The error message is also logged using the instrument’s
+logger.</p>
+<p>If the magnet is in a valid state for ramping, a CryomagneticsOperatingState object is returned, representing
+the current operating state of the magnet.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.set_field">
+<span class="sig-name descname"><span class="pre">set_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">field_setpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.set_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.set_field" title="Link to this definition"></a></dt>
+<dd><p>Sets the magnetic field strength in Tesla using ULIM, LLIM, and SWEEP commands.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>field_setpoint</strong> – The desired magnetic field strength in Tesla.</p></li>
+<li><p><strong>block</strong> – If True, the method will block until the field reaches the setpoint.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Cryo4GException</strong> – If the power supply is not in a state where it can start ramping.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.wait_while_ramping">
+<span class="sig-name descname"><span class="pre">wait_while_ramping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-05</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState" title="qcodes.instrument_drivers.cryomagnetics._cryomagnetics4g.CryomagneticsOperatingState"><span class="pre">CryomagneticsOperatingState</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.wait_while_ramping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.wait_while_ramping" title="Link to this definition"></a></dt>
+<dd><p>Waits while the magnet is ramping, checking the status byte instead of field value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visabackend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.14.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visa_handle" title="Link to this definition"></a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.visalib" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.write_raw">
+<span class="sig-name descname"><span class="pre">write_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.write_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.write_raw" title="Link to this definition"></a></dt>
+<dd><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.write</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – The command to send to the instrument.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ask_raw">
+<span class="sig-name descname"><span class="pre">ask_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsModel4G.ask_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsModel4G.ask_raw" title="Link to this definition"></a></dt>
+<dd><p>Low-level interface to <code class="docutils literal notranslate"><span class="pre">visa_handle.ask</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – The command to send to the instrument.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The instrument’s response.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.cryomagnetics.</span></span><span class="sig-name descname"><span class="pre">CryomagneticsOperatingState</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ramping</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'bool'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'bool'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standby</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'bool'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quench_condition_present</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'bool'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">power_module_failure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="s"><span class="pre">'bool'</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsOperatingState"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.ramping" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.ramping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramping</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.holding" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.holding"><code class="xref py py-obj docutils literal notranslate"><span class="pre">holding</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.standby" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.standby"><code class="xref py py-obj docutils literal notranslate"><span class="pre">standby</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.quench_condition_present" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.quench_condition_present"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quench_condition_present</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.power_module_failure" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.power_module_failure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">power_module_failure</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.can_start_ramping" title="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.can_start_ramping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">can_start_ramping</span></code></a>()</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.ramping">
+<span class="sig-name descname"><span class="pre">ramping</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.ramping" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.holding">
+<span class="sig-name descname"><span class="pre">holding</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.holding" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.standby">
+<span class="sig-name descname"><span class="pre">standby</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.standby" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.quench_condition_present">
+<span class="sig-name descname"><span class="pre">quench_condition_present</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.quench_condition_present" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.power_module_failure">
+<span class="sig-name descname"><span class="pre">power_module_failure</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.power_module_failure" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.can_start_ramping">
+<span class="sig-name descname"><span class="pre">can_start_ramping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/cryomagnetics/_cryomagnetics4g.html#CryomagneticsOperatingState.can_start_ramping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.cryomagnetics.CryomagneticsOperatingState.can_start_ramping" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Basel.html" class="btn btn-neutral float-left" title="Basel Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Galil.html" class="btn btn-neutral float-right" title="Galil Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

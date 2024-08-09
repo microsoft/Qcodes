@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oxford Instruments Drivers &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="QDev Drivers" href="QDev.html" />
+    <link rel="prev" title="MiniCircuits Drivers" href="Minicircuits.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Instrument Drivers</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="Agilent.html">Agilent Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AimTTi.html">AimTTi Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="AlazarTech.html">Alazar Tech Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="American_magnetics.html">American Magnetics Inc Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Basel.html">Basel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CryoMagnetics.html">Cryomagnetics Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Galil.html">Galil Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="HP.html">Hewlett Packard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Harvard.html">Harvard Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Ithaco.html">Ithaco Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keithley.html">Keithley Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Keysight.html">Keysight Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Lakeshore.html">Lakeshore Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Minicircuits.html">MiniCircuits Drivers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Oxford Instruments Drivers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.voltage"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.voltage</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.current</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_persistent"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.current_persistent</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_target"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.current_target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_target"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.field_target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_ramp_rate"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.current_ramp_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_ramp_rate"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.field_ramp_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.field</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_persistent"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.field_persistent</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ATOB"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.ATOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_status"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.ramp_status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_to_target"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.ramp_to_target()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.parameters"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.functions"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.submodules"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.instrument_modules"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.log"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.metadata"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS.metadata</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.default_terminator"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.default_terminator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_target"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.field_target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_measured"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.field_measured</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_ramp_rate"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.field_ramp_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visabackend"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.visabackend</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visa_handle"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.visa_handle</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visalib"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.visalib</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.parameters"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.functions"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.submodules"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.instrument_modules"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.log"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.metadata"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.get_idn"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.update_field"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.update_field()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.is_ramping"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.is_ramping()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.set_new_field_limits"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.set_new_field_limits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ramp"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.ramp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ask"><code class="docutils literal notranslate"><span class="pre">OxfordMercuryiPS.ask()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton"><code class="docutils literal notranslate"><span class="pre">OxfordTriton</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.time"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.action"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.action</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.status"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_control_channel"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_control_channel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_mode"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_ramp"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_ramp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_setpoint"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_setpoint</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_p"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_p</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_i"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_i</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_d"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_rate"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_range"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.pid_range</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_status"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.magnet_status</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.magnet_sweeprate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate_insta"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.magnet_sweeprate_insta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.B"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.B</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.Bx"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.Bx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.By"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.By</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.Bz"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.Bz</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweep_time"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.magnet_sweep_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.turb1_speed"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.turb1_speed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.chan_alias"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.chan_alias</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.chan_temp_names"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.chan_temp_names</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.set_B"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.set_B()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.get_idn"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.get_idn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.parameters"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.parameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.functions"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.functions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.submodules"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.submodules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.instrument_modules"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.instrument_modules</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.log"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.log</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.metadata"><code class="docutils literal notranslate"><span class="pre">OxfordTriton.metadata</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="QDev.html">QDev Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="QuantumDesign.html">Quantum Design Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Rigol.html">Rigol Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RohdeSchwarz.html">Rohde &amp; Schwarz Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SRS.html">Stanford Research Systems Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="SignalHound.html">Signal Hound Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Stahl.html">Stahl Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Tektronix.html">Tektronix Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Weinschel.html">Weinschel Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Yokogawa.html">Yokogawa Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Zhinst.html">Zurich Instruments Drivers</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Instrument Drivers</a></li>
+      <li class="breadcrumb-item active">Oxford Instruments Drivers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/drivers_api/Oxford.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.instrument_drivers.oxford">
+<span id="oxford-instruments-drivers"></span><span id="oxford-api"></span><h1>Oxford Instruments Drivers<a class="headerlink" href="#module-qcodes.instrument_drivers.oxford" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OxfordMercuryWorkerPS</span></code></a>(parent, name, UID, ...)</p></td>
+<td><p>Class to hold a worker power supply for the Oxford MercuryiPS</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OxfordMercuryiPS</span></code></a>(name, address, *[, ...])</p></td>
+<td><p>Driver class for the QCoDeS Oxford Instruments MercuryiPS magnet power supply</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton" title="qcodes.instrument_drivers.oxford.OxfordTriton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OxfordTriton</span></code></a>(name[, address, port, ...])</p></td>
+<td><p>Triton Driver</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.oxford.</span></span><span class="sig-name descname"><span class="pre">OxfordMercuryWorkerPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.VisaInstrument"><span class="pre">VisaInstrument</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">UID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryWorkerPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentChannel" title="qcodes.instrument.channel.InstrumentChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentChannel</span></code></a></p>
+<p>Class to hold a worker power supply for the Oxford MercuryiPS</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parent</strong> – The Instrument instance of the MercuryiPS</p></li>
+<li><p><strong>name</strong> – The ‘colloquial’ name of the PS</p></li>
+<li><p><strong>UID</strong> – The UID as used internally by the MercuryiPS, e.g.
+‘GRPX’</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.voltage" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.voltage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">voltage</span></code></a></p></td>
+<td><p>Parameter voltage</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current</span></code></a></p></td>
+<td><p>Parameter current</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_persistent" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_persistent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_persistent</span></code></a></p></td>
+<td><p>Parameter current_persistent</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_target" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_target</span></code></a></p></td>
+<td><p>Parameter current_target</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_target" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_target</span></code></a></p></td>
+<td><p>Parameter field_target</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_ramp_rate" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_ramp_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">current_ramp_rate</span></code></a></p></td>
+<td><p>Parameter current_ramp_rate</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_ramp_rate" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_ramp_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_ramp_rate</span></code></a></p></td>
+<td><p>Parameter field_ramp_rate</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field</span></code></a></p></td>
+<td><p>Parameter field</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_persistent" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_persistent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_persistent</span></code></a></p></td>
+<td><p>Parameter field_persistent</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ATOB" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ATOB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ATOB</span></code></a></p></td>
+<td><p>Parameter ATOB</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_status" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_status</span></code></a></p></td>
+<td><p>Parameter ramp_status</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_to_target" title="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_to_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp_to_target</span></code></a>()</p></td>
+<td><p>Unconditionally ramp this PS to its target</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.voltage">
+<span class="sig-name descname"><span class="pre">voltage</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;voltage&quot;,</span> <span class="pre">label=&quot;Output</span> <span class="pre">voltage&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:VOLT&quot;),</span> <span class="pre">unit=&quot;V&quot;,</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.voltage" title="Link to this definition"></a></dt>
+<dd><p>Parameter voltage</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current">
+<span class="sig-name descname"><span class="pre">current</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current&quot;,</span> <span class="pre">label=&quot;Output</span> <span class="pre">current&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:CURR&quot;),</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current" title="Link to this definition"></a></dt>
+<dd><p>Parameter current</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_persistent">
+<span class="sig-name descname"><span class="pre">current_persistent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current_persistent&quot;,</span> <span class="pre">label=&quot;Output</span> <span class="pre">persistent</span> <span class="pre">current&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:PCUR&quot;),</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_persistent" title="Link to this definition"></a></dt>
+<dd><p>Parameter current_persistent</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_target">
+<span class="sig-name descname"><span class="pre">current_target</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current_target&quot;,</span> <span class="pre">label=&quot;Target</span> <span class="pre">current&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:CSET&quot;),</span> <span class="pre">unit=&quot;A&quot;,</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_target" title="Link to this definition"></a></dt>
+<dd><p>Parameter current_target</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_target">
+<span class="sig-name descname"><span class="pre">field_target</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field_target&quot;,</span> <span class="pre">label=&quot;Target</span> <span class="pre">field&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:FSET&quot;),</span> <span class="pre">set_cmd=partial(self._param_setter,</span> <span class="pre">&quot;SIG:FSET&quot;),</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_target" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_target</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_ramp_rate">
+<span class="sig-name descname"><span class="pre">current_ramp_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;current_ramp_rate&quot;,</span> <span class="pre">label=&quot;Ramp</span> <span class="pre">rate</span> <span class="pre">(current)&quot;,</span> <span class="pre">unit=&quot;A/s&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:RCST&quot;),</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1</span> <span class="pre">/</span> <span class="pre">60),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.current_ramp_rate" title="Link to this definition"></a></dt>
+<dd><p>Parameter current_ramp_rate</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_ramp_rate">
+<span class="sig-name descname"><span class="pre">field_ramp_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field_ramp_rate&quot;,</span> <span class="pre">label=&quot;Ramp</span> <span class="pre">rate</span> <span class="pre">(field)&quot;,</span> <span class="pre">unit=&quot;T/s&quot;,</span> <span class="pre">set_cmd=partial(self._param_setter,</span> <span class="pre">&quot;SIG:RFST&quot;),</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:RFST&quot;),</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1</span> <span class="pre">/</span> <span class="pre">60),</span> <span class="pre">set_parser=lambda</span> <span class="pre">x:</span> <span class="pre">x</span> <span class="pre">*</span> <span class="pre">60,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_ramp_rate" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_ramp_rate</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field">
+<span class="sig-name descname"><span class="pre">field</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field&quot;,</span> <span class="pre">label=&quot;Field</span> <span class="pre">strength&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:FLD&quot;),</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field" title="Link to this definition"></a></dt>
+<dd><p>Parameter field</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_persistent">
+<span class="sig-name descname"><span class="pre">field_persistent</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;field_persistent&quot;,</span> <span class="pre">label=&quot;Persistent</span> <span class="pre">field</span> <span class="pre">strength&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;SIG:PFLD&quot;),</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.field_persistent" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_persistent</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ATOB">
+<span class="sig-name descname"><span class="pre">ATOB</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ATOB&quot;,</span> <span class="pre">label=&quot;Current</span> <span class="pre">to</span> <span class="pre">field</span> <span class="pre">ratio&quot;,</span> <span class="pre">unit=&quot;A/T&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;ATOB&quot;),</span> <span class="pre">get_parser=partial(_signal_parser,</span> <span class="pre">1),</span> <span class="pre">set_cmd=partial(self._param_setter,</span> <span class="pre">&quot;ATOB&quot;),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ATOB" title="Link to this definition"></a></dt>
+<dd><p>Parameter ATOB</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_status">
+<span class="sig-name descname"><span class="pre">ramp_status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">&quot;ramp_status&quot;,</span> <span class="pre">label=&quot;Ramp</span> <span class="pre">status&quot;,</span> <span class="pre">get_cmd=partial(self._param_getter,</span> <span class="pre">&quot;ACTN&quot;),</span> <span class="pre">set_cmd=self._ramp_status_setter,</span> <span class="pre">get_parser=_response_preparser,</span> <span class="pre">val_mapping={</span> <span class="pre">&quot;HOLD&quot;:</span> <span class="pre">&quot;HOLD&quot;,</span> <span class="pre">&quot;TO</span> <span class="pre">SET&quot;:</span> <span class="pre">&quot;RTOS&quot;,</span> <span class="pre">&quot;CLAMP&quot;:</span> <span class="pre">&quot;CLMP&quot;,</span> <span class="pre">&quot;TO</span> <span class="pre">ZERO&quot;:</span> <span class="pre">&quot;RTOZ&quot;,</span> <span class="pre">},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_status" title="Link to this definition"></a></dt>
+<dd><p>Parameter ramp_status</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_to_target">
+<span class="sig-name descname"><span class="pre">ramp_to_target</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryWorkerPS.ramp_to_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_to_target" title="Link to this definition"></a></dt>
+<dd><p>Unconditionally ramp this PS to its target</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.oxford.</span></span><span class="sig-name descname"><span class="pre">OxfordMercuryiPS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field_limits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrumentKWArgs" title="qcodes.instrument.VisaInstrumentKWArgs"><span class="pre">VisaInstrumentKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryiPS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.VisaInstrument" title="qcodes.instrument.visa.VisaInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">VisaInstrument</span></code></a></p>
+<p>Driver class for the QCoDeS Oxford Instruments MercuryiPS magnet power
+supply</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – The name to give this instrument internally in QCoDeS</p></li>
+<li><p><strong>address</strong> – The VISA resource of the instrument. Note that a
+socket connection to port 7020 must be made</p></li>
+<li><p><strong>field_limits</strong> – A function describing the allowed field
+range (T). The function shall take (x, y, z) as an input and
+return a boolean describing whether that field value is
+acceptable.</p></li>
+<li><p><strong>**kwargs</strong> – kwargs are forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.default_terminator" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.default_terminator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_terminator</span></code></a></p></td>
+<td><p>The default terminator to use if the terminator is not specified when creating the instrument.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_target" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_target</span></code></a></p></td>
+<td><p>Parameter field_target</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_measured" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_measured"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_measured</span></code></a></p></td>
+<td><p>Parameter field_measured</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_ramp_rate" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_ramp_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">field_ramp_rate</span></code></a></p></td>
+<td><p>Parameter field_ramp_rate</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.get_idn" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Parse the raw non-SCPI compliant IDN string into an IDN dict</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.update_field" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.update_field"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_field</span></code></a>()</p></td>
+<td><p>Update all the field components.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.is_ramping" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.is_ramping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_ramping</span></code></a>()</p></td>
+<td><p>Returns True if any axis has a ramp status that is either 'TO SET' or 'TO ZERO'</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.set_new_field_limits" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.set_new_field_limits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_new_field_limits</span></code></a>(limit_func)</p></td>
+<td><p>Assign a new field limit function to the driver</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ramp" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ramp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ramp</span></code></a>([mode])</p></td>
+<td><p>Ramp the fields to their present target value</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ask" title="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ask</span></code></a>(cmd)</p></td>
+<td><p>Since Oxford Instruments implement their own version of a SCPI-like language, we implement our own reader.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.default_terminator">
+<span class="sig-name descname"><span class="pre">default_terminator</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'\n'</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.default_terminator" title="Link to this definition"></a></dt>
+<dd><p>The default terminator to use if the terminator is not specified when creating the instrument.
+None means use the default terminator from PyVisa.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_target">
+<span class="sig-name descname"><span class="pre">field_target</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;field_target&quot;,</span> <span class="pre">label=&quot;target</span> <span class="pre">field&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=self._get_target_field,</span> <span class="pre">set_cmd=self._set_target_field,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_target" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_target</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_measured">
+<span class="sig-name descname"><span class="pre">field_measured</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;field_measured&quot;,</span> <span class="pre">label=&quot;measured</span> <span class="pre">field&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=self._get_field,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_measured" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_measured</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_ramp_rate">
+<span class="sig-name descname"><span class="pre">field_ramp_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;field_ramp_rate&quot;,</span> <span class="pre">label=&quot;ramp</span> <span class="pre">rate&quot;,</span> <span class="pre">unit=&quot;T/s&quot;,</span> <span class="pre">get_cmd=self._get_ramp_rate,</span> <span class="pre">set_cmd=self._set_ramp_rate,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.field_ramp_rate" title="Link to this definition"></a></dt>
+<dd><p>Parameter field_ramp_rate</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visabackend">
+<span class="sig-name descname"><span class="pre">visabackend</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visabackend</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visabackend" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visa_handle">
+<span class="sig-name descname"><span class="pre">visa_handle</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://pyvisa.readthedocs.io/en/stable/api/resources.html#pyvisa.resources.MessageBasedResource" title="(in PyVISA v1.14.1)"><span class="pre">pyvisa.resources.MessageBasedResource</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visa_handle</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visa_handle" title="Link to this definition"></a></dt>
+<dd><p>The VISA resource used by this instrument.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visalib">
+<span class="sig-name descname"><span class="pre">visalib</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">visalib</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.visalib" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryiPS.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Parse the raw non-SCPI compliant IDN string into an IDN dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The normal IDN dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.update_field">
+<span class="sig-name descname"><span class="pre">update_field</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryiPS.update_field"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.update_field" title="Link to this definition"></a></dt>
+<dd><p>Update all the field components.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.is_ramping">
+<span class="sig-name descname"><span class="pre">is_ramping</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryiPS.is_ramping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.is_ramping" title="Link to this definition"></a></dt>
+<dd><p>Returns True if any axis has a ramp status that is either ‘TO SET’ or
+‘TO ZERO’</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.set_new_field_limits">
+<span class="sig-name descname"><span class="pre">set_new_field_limits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">limit_func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../api/validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryiPS.set_new_field_limits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.set_new_field_limits" title="Link to this definition"></a></dt>
+<dd><p>Assign a new field limit function to the driver</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>limit_func</strong> – must be a function mapping (Bx, By, Bz) -&gt; True/False
+where True means that the field is INSIDE the allowed region</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ramp">
+<span class="sig-name descname"><span class="pre">ramp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'safe'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryiPS.ramp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ramp" title="Link to this definition"></a></dt>
+<dd><p>Ramp the fields to their present target value</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mode</strong> – how to ramp, either ‘simul’, ‘simul-block’ or ‘safe’. In
+‘simul’ and ‘simul-block’ mode, the fields are ramping
+simultaneously in a non-blocking mode and blocking mode,
+respectively. There is no safety check that the safe zone is not
+exceeded. In ‘safe’ mode, the fields are ramped one-by-one in a
+blocking way that ensures that the total field stays within the
+safe region (provided that this region is convex).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ask">
+<span class="sig-name descname"><span class="pre">ask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/MercuryiPS_VISA.html#OxfordMercuryiPS.ask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ask" title="Link to this definition"></a></dt>
+<dd><p>Since Oxford Instruments implement their own version of a SCPI-like
+language, we implement our own reader. Note that this command is used
+for getting and setting (asking and writing) alike.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cmd</strong> – the command to send to the instrument</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.instrument_drivers.oxford.</span></span><span class="sig-name descname"><span class="pre">OxfordTriton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'\r\n'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmpfile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unpack</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentBaseKWArgs" title="qcodes.instrument.InstrumentBaseKWArgs"><span class="pre">InstrumentBaseKWArgs</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/triton.html#OxfordTriton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.IPInstrument" title="qcodes.instrument.ip.IPInstrument"><code class="xref py py-class docutils literal notranslate"><span class="pre">IPInstrument</span></code></a></p>
+<p>Triton Driver</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> – name of the cryostat.</p></li>
+<li><p><strong>address</strong> – IP-address of the fridge computer. Defaults to None.</p></li>
+<li><p><strong>port</strong> – port of the oxford program running on the fridge computer.
+The relevant port can be found in the manual for the fridge
+or looked up on the fridge computer. Defaults to None.</p></li>
+<li><p><strong>terminator</strong> – Defaults to ‘rn’</p></li>
+<li><p><strong>tmpfile</strong> – an exported windows registry file from the registry
+path:
+<cite>[HKEY_CURRENT_USERSoftwareOxford InstrumentsTriton System ControlThermometry]</cite>
+and is used to extract the available temperature channels.</p></li>
+<li><p><strong>timeout</strong> – Defaults to 20.</p></li>
+<li><p><strong>**kwargs</strong> – Forwarded to base class.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Status: beta-version.</p>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>fetch registry directly from fridge-computer</p>
+</div>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.time" title="qcodes.instrument_drivers.oxford.OxfordTriton.time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time</span></code></a></p></td>
+<td><p>Parameter time</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.action" title="qcodes.instrument_drivers.oxford.OxfordTriton.action"><code class="xref py py-obj docutils literal notranslate"><span class="pre">action</span></code></a></p></td>
+<td><p>Parameter action</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.status" title="qcodes.instrument_drivers.oxford.OxfordTriton.status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status</span></code></a></p></td>
+<td><p>Parameter status</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_control_channel" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_control_channel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_control_channel</span></code></a></p></td>
+<td><p>Parameter pid_control_channel</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_mode" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_mode</span></code></a></p></td>
+<td><p>Parameter pid_mode</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_ramp" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_ramp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_ramp</span></code></a></p></td>
+<td><p>Parameter pid_ramp</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_setpoint" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_setpoint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_setpoint</span></code></a></p></td>
+<td><p>Parameter pid_setpoint</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_p" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_p"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_p</span></code></a></p></td>
+<td><p>Parameter pid_p</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_i" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_i"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_i</span></code></a></p></td>
+<td><p>Parameter pid_i</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_d" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_d</span></code></a></p></td>
+<td><p>Parameter pid_d</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_rate" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_rate</span></code></a></p></td>
+<td><p>Parameter pid_rate</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_range" title="qcodes.instrument_drivers.oxford.OxfordTriton.pid_range"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pid_range</span></code></a></p></td>
+<td><p>Parameter pid_range</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_status" title="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">magnet_status</span></code></a></p></td>
+<td><p>Parameter magnet_status</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate" title="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">magnet_sweeprate</span></code></a></p></td>
+<td><p>Parameter magnet_sweeprate</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate_insta" title="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate_insta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">magnet_sweeprate_insta</span></code></a></p></td>
+<td><p>Parameter magnet_sweeprate_insta</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.B" title="qcodes.instrument_drivers.oxford.OxfordTriton.B"><code class="xref py py-obj docutils literal notranslate"><span class="pre">B</span></code></a></p></td>
+<td><p>Parameter B</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.Bx" title="qcodes.instrument_drivers.oxford.OxfordTriton.Bx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bx</span></code></a></p></td>
+<td><p>Parameter Bx</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.By" title="qcodes.instrument_drivers.oxford.OxfordTriton.By"><code class="xref py py-obj docutils literal notranslate"><span class="pre">By</span></code></a></p></td>
+<td><p>Parameter By</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.Bz" title="qcodes.instrument_drivers.oxford.OxfordTriton.Bz"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bz</span></code></a></p></td>
+<td><p>Parameter Bz</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweep_time" title="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweep_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">magnet_sweep_time</span></code></a></p></td>
+<td><p>Parameter magnet_sweep_time</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.turb1_speed" title="qcodes.instrument_drivers.oxford.OxfordTriton.turb1_speed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">turb1_speed</span></code></a></p></td>
+<td><p>Parameter turb1_speed</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.set_B" title="qcodes.instrument_drivers.oxford.OxfordTriton.set_B"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_B</span></code></a>(x, y, z, s)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.instrument_drivers.oxford.OxfordTriton.get_idn" title="qcodes.instrument_drivers.oxford.OxfordTriton.get_idn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_idn</span></code></a>()</p></td>
+<td><p>Return the Instrument Identifier Message</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.time">
+<span class="sig-name descname"><span class="pre">time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;time&quot;,</span> <span class="pre">label=&quot;System</span> <span class="pre">Time&quot;,</span> <span class="pre">get_cmd=&quot;READ:SYS:TIME&quot;,</span> <span class="pre">get_parser=self._parse_time,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.time" title="Link to this definition"></a></dt>
+<dd><p>Parameter time</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.action">
+<span class="sig-name descname"><span class="pre">action</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;action&quot;,</span> <span class="pre">label=&quot;Current</span> <span class="pre">action&quot;,</span> <span class="pre">get_cmd=&quot;READ:SYS:DR:ACTN&quot;,</span> <span class="pre">get_parser=self._parse_action,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.action" title="Link to this definition"></a></dt>
+<dd><p>Parameter action</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.status">
+<span class="sig-name descname"><span class="pre">status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;status&quot;,</span> <span class="pre">label=&quot;Status&quot;,</span> <span class="pre">get_cmd=&quot;READ:SYS:DR:STATUS&quot;,</span> <span class="pre">get_parser=self._parse_status,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.status" title="Link to this definition"></a></dt>
+<dd><p>Parameter status</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_control_channel">
+<span class="sig-name descname"><span class="pre">pid_control_channel</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_control_channel&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">control</span> <span class="pre">channel&quot;,</span> <span class="pre">get_cmd=self._get_control_channel,</span> <span class="pre">set_cmd=self._set_control_channel,</span> <span class="pre">vals=Ints(1,</span> <span class="pre">16),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_control_channel" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_control_channel</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_mode">
+<span class="sig-name descname"><span class="pre">pid_mode</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_mode&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">Mode&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;MODE&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;MODE&quot;),</span> <span class="pre">val_mapping={&quot;on&quot;:</span> <span class="pre">&quot;ON&quot;,</span> <span class="pre">&quot;off&quot;:</span> <span class="pre">&quot;OFF&quot;},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_mode" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_mode</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_ramp">
+<span class="sig-name descname"><span class="pre">pid_ramp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_ramp&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">ramp</span> <span class="pre">enabled&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;RAMP:ENAB&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;RAMP:ENAB&quot;),</span> <span class="pre">val_mapping={&quot;on&quot;:</span> <span class="pre">&quot;ON&quot;,</span> <span class="pre">&quot;off&quot;:</span> <span class="pre">&quot;OFF&quot;},</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_ramp" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_ramp</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_setpoint">
+<span class="sig-name descname"><span class="pre">pid_setpoint</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_setpoint&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">temperature</span> <span class="pre">setpoint&quot;,</span> <span class="pre">unit=&quot;K&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;TSET&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;TSET&quot;),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_setpoint" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_setpoint</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_p">
+<span class="sig-name descname"><span class="pre">pid_p</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_p&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">proportionality&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;P&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;P&quot;),</span> <span class="pre">vals=Numbers(0,</span> <span class="pre">1e3),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_p" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_p</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_i">
+<span class="sig-name descname"><span class="pre">pid_i</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_i&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">intergral&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;I&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;I&quot;),</span> <span class="pre">vals=Numbers(0,</span> <span class="pre">1e3),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_i" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_i</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_d">
+<span class="sig-name descname"><span class="pre">pid_d</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_d&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">derivative&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;D&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;D&quot;),</span> <span class="pre">vals=Numbers(0,</span> <span class="pre">1e3),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_d" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_d</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_rate">
+<span class="sig-name descname"><span class="pre">pid_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_rate&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">ramp</span> <span class="pre">rate&quot;,</span> <span class="pre">unit=&quot;K/min&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;RAMP:RATE&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;RAMP:RATE&quot;),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_rate" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_rate</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.pid_range">
+<span class="sig-name descname"><span class="pre">pid_range</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;pid_range&quot;,</span> <span class="pre">label=&quot;PID</span> <span class="pre">heater</span> <span class="pre">range&quot;,</span> <span class="pre">#</span> <span class="pre">TODO:</span> <span class="pre">The</span> <span class="pre">units</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">software</span> <span class="pre">are</span> <span class="pre">mA,</span> <span class="pre">how</span> <span class="pre">to</span> <span class="pre">#</span> <span class="pre">do</span> <span class="pre">this</span> <span class="pre">correctly?</span> <span class="pre">unit=&quot;mA&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_param,</span> <span class="pre">&quot;RANGE&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_param,</span> <span class="pre">&quot;RANGE&quot;),</span> <span class="pre">vals=Enum(*self._heater_range_curr),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.pid_range" title="Link to this definition"></a></dt>
+<dd><p>Parameter pid_range</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_status">
+<span class="sig-name descname"><span class="pre">magnet_status</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;magnet_status&quot;,</span> <span class="pre">label=&quot;Magnet</span> <span class="pre">status&quot;,</span> <span class="pre">unit=&quot;&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_B_param,</span> <span class="pre">&quot;ACTN&quot;),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_status" title="Link to this definition"></a></dt>
+<dd><p>Parameter magnet_status</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate">
+<span class="sig-name descname"><span class="pre">magnet_sweeprate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;magnet_sweeprate&quot;,</span> <span class="pre">label=&quot;Magnet</span> <span class="pre">sweep</span> <span class="pre">rate&quot;,</span> <span class="pre">unit=&quot;T/min&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_B_param,</span> <span class="pre">&quot;RVST:RATE&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_magnet_sweeprate_param),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate" title="Link to this definition"></a></dt>
+<dd><p>Parameter magnet_sweeprate</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate_insta">
+<span class="sig-name descname"><span class="pre">magnet_sweeprate_insta</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;magnet_sweeprate_insta&quot;,</span> <span class="pre">label=&quot;Instantaneous</span> <span class="pre">magnet</span> <span class="pre">sweep</span> <span class="pre">rate&quot;,</span> <span class="pre">unit=&quot;T/min&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_B_param,</span> <span class="pre">&quot;RFST&quot;),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweeprate_insta" title="Link to this definition"></a></dt>
+<dd><p>Parameter magnet_sweeprate_insta</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.B">
+<span class="sig-name descname"><span class="pre">B</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;B&quot;,</span> <span class="pre">label=&quot;Magnetic</span> <span class="pre">field&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_B_param,</span> <span class="pre">&quot;VECT&quot;),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.B" title="Link to this definition"></a></dt>
+<dd><p>Parameter B</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.Bx">
+<span class="sig-name descname"><span class="pre">Bx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;Bx&quot;,</span> <span class="pre">label=&quot;Magnetic</span> <span class="pre">field</span> <span class="pre">x-component&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_Bcomp_param,</span> <span class="pre">&quot;VECTBx&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_Bx_param),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.Bx" title="Link to this definition"></a></dt>
+<dd><p>Parameter Bx</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.By">
+<span class="sig-name descname"><span class="pre">By</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;By&quot;,</span> <span class="pre">label=&quot;Magnetic</span> <span class="pre">field</span> <span class="pre">y-component&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_Bcomp_param,</span> <span class="pre">&quot;VECTBy&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_By_param),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.By" title="Link to this definition"></a></dt>
+<dd><p>Parameter By</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.Bz">
+<span class="sig-name descname"><span class="pre">Bz</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;Bz&quot;,</span> <span class="pre">label=&quot;Magnetic</span> <span class="pre">field</span> <span class="pre">z-component&quot;,</span> <span class="pre">unit=&quot;T&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_Bcomp_param,</span> <span class="pre">&quot;VECTBz&quot;),</span> <span class="pre">set_cmd=partial(self._set_control_Bz_param),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.Bz" title="Link to this definition"></a></dt>
+<dd><p>Parameter Bz</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweep_time">
+<span class="sig-name descname"><span class="pre">magnet_sweep_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;magnet_sweep_time&quot;,</span> <span class="pre">label=&quot;Magnet</span> <span class="pre">sweep</span> <span class="pre">time&quot;,</span> <span class="pre">unit=&quot;T/min&quot;,</span> <span class="pre">get_cmd=partial(self._get_control_B_param,</span> <span class="pre">&quot;RVST:TIME&quot;),</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.magnet_sweep_time" title="Link to this definition"></a></dt>
+<dd><p>Parameter magnet_sweep_time</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.turb1_speed">
+<span class="sig-name descname"><span class="pre">turb1_speed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Parameter" title="qcodes.parameters.Parameter"><span class="pre">Parameter</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">self.add_parameter(</span> <span class="pre">name=&quot;turb1_speed&quot;,</span> <span class="pre">label=self.pump_label_dict[&quot;TURB1&quot;]</span> <span class="pre">+</span> <span class="pre">&quot;</span> <span class="pre">speed&quot;,</span> <span class="pre">unit=&quot;Hz&quot;,</span> <span class="pre">get_cmd=&quot;READ:DEV:TURB1:PUMP:SIG:SPD&quot;,</span> <span class="pre">get_parser=self._get_parser_pump_speed,</span> <span class="pre">)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.turb1_speed" title="Link to this definition"></a></dt>
+<dd><p>Parameter turb1_speed</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.chan_alias">
+<span class="sig-name descname"><span class="pre">chan_alias</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.chan_alias" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.chan_temp_names">
+<span class="sig-name descname"><span class="pre">chan_temp_names</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.chan_temp_names" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.set_B">
+<span class="sig-name descname"><span class="pre">set_B</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/triton.html#OxfordTriton.set_B"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.set_B" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.get_idn">
+<span class="sig-name descname"><span class="pre">get_idn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/qcodes/instrument_drivers/oxford/triton.html#OxfordTriton.get_idn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.get_idn" title="Link to this definition"></a></dt>
+<dd><p>Return the Instrument Identifier Message</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.ParameterBase" title="qcodes.parameters.ParameterBase"><span class="pre">ParameterBase</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.parameters" title="Link to this definition"></a></dt>
+<dd><p>All the parameters supported by this instrument.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_parameter()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.functions">
+<span class="sig-name descname"><span class="pre">functions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/parameters/index.html#qcodes.parameters.Function" title="qcodes.parameters.Function"><span class="pre">Function</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.functions" title="Link to this definition"></a></dt>
+<dd><p>All the functions supported by this
+instrument. Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_function()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.submodules">
+<span class="sig-name descname"><span class="pre">submodules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.ChannelTuple" title="qcodes.instrument.ChannelTuple"><span class="pre">ChannelTuple</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.submodules" title="Link to this definition"></a></dt>
+<dd><p>All the submodules of this instrument
+such as channel lists or logical groupings of parameters.
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.instrument_modules">
+<span class="sig-name descname"><span class="pre">instrument_modules</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../api/instrument/index.html#qcodes.instrument.InstrumentModule" title="qcodes.instrument.InstrumentModule"><span class="pre">InstrumentModule</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.instrument_modules" title="Link to this definition"></a></dt>
+<dd><p>All the <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentModule</span></code> of this instrument
+Usually populated via <code class="xref py py-meth docutils literal notranslate"><span class="pre">add_submodule()</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.log">
+<span class="sig-name descname"><span class="pre">log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">InstrumentLoggerAdapter</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">get_instrument_logger(self,</span> <span class="pre">__name__)</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.log" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.instrument_drivers.oxford.OxfordTriton.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#qcodes.instrument_drivers.oxford.OxfordTriton.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Minicircuits.html" class="btn btn-neutral float-left" title="MiniCircuits Drivers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="QDev.html" class="btn btn-neutral float-right" title="QDev Drivers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.logger &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="qcodes.math_utils" href="../math_utils/index.html" />
+    <link rel="prev" title="qcodes.interactive_widget" href="../interactive_widget.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">QCoDes API documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#qcodes-api">QCoDeS API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">qcodes.logger</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.LogCapture"><code class="docutils literal notranslate"><span class="pre">LogCapture</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.capture_dataframe"><code class="docutils literal notranslate"><span class="pre">capture_dataframe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.console_level"><code class="docutils literal notranslate"><span class="pre">console_level()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.filter_instrument"><code class="docutils literal notranslate"><span class="pre">filter_instrument()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.flush_telemetry_traces"><code class="docutils literal notranslate"><span class="pre">flush_telemetry_traces()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.get_console_handler"><code class="docutils literal notranslate"><span class="pre">get_console_handler()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.get_file_handler"><code class="docutils literal notranslate"><span class="pre">get_file_handler()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.get_instrument_logger"><code class="docutils literal notranslate"><span class="pre">get_instrument_logger()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.get_level_code"><code class="docutils literal notranslate"><span class="pre">get_level_code()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.get_level_name"><code class="docutils literal notranslate"><span class="pre">get_level_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.get_log_file_name"><code class="docutils literal notranslate"><span class="pre">get_log_file_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.handler_level"><code class="docutils literal notranslate"><span class="pre">handler_level()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.log_to_dataframe"><code class="docutils literal notranslate"><span class="pre">log_to_dataframe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.logfile_to_dataframe"><code class="docutils literal notranslate"><span class="pre">logfile_to_dataframe()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.start_all_logging"><code class="docutils literal notranslate"><span class="pre">start_all_logging()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.start_command_history_logger"><code class="docutils literal notranslate"><span class="pre">start_command_history_logger()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.start_logger"><code class="docutils literal notranslate"><span class="pre">start_logger()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.logger.time_difference"><code class="docutils literal notranslate"><span class="pre">time_difference()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../station.html">qcodes.station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">QCoDes API documentation</a></li>
+      <li class="breadcrumb-item active">qcodes.logger</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/logger/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.logger">
+<span id="qcodes-logger"></span><span id="logger-api"></span><h1>qcodes.logger<a class="headerlink" href="#module-qcodes.logger" title="Link to this heading"></a></h1>
+<p>The <a class="reference internal" href="#module-qcodes.logger" title="qcodes.logger"><code class="xref py py-mod docutils literal notranslate"><span class="pre">qcodes.logger</span></code></a> module provides functionality to enable
+logging of errors and debug information from QCoDeS using the default python
+<a class="reference external" href="https://docs.python.org/3.10/library/logging.html#module-logging" title="(in Python v3.10)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> module. It also logs command history logging when
+using IPython/Jupyter.</p>
+<p>The module also provides functionality to filter log messages by instrument
+and functions to extract log messages to <a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.2.2)"><code class="xref py py-class docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code></a> s</p>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.LogCapture" title="qcodes.logger.LogCapture"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LogCapture</span></code></a>(logger, level)</p></td>
+<td><p>Context manager to grab all log messages, optionally from a specific logger.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Functions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.capture_dataframe" title="qcodes.logger.capture_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">capture_dataframe</span></code></a>([level, logger])</p></td>
+<td><p>Context manager to capture the logs in a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.console_level" title="qcodes.logger.console_level"><code class="xref py py-obj docutils literal notranslate"><span class="pre">console_level</span></code></a>(level)</p></td>
+<td><p>Context manager to temporarily change the level of the qcodes console handler.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.filter_instrument" title="qcodes.logger.filter_instrument"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_instrument</span></code></a>(instrument[, handler, level])</p></td>
+<td><p>Context manager that adds a filter that only enables the log messages of the supplied instruments to pass.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.flush_telemetry_traces" title="qcodes.logger.flush_telemetry_traces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">flush_telemetry_traces</span></code></a>()</p></td>
+<td><p>Flush the traces of the telemetry logger.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.get_console_handler" title="qcodes.logger.get_console_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_console_handler</span></code></a>()</p></td>
+<td><p>Get handle that prints messages from the root logger to the console.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.get_file_handler" title="qcodes.logger.get_file_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_file_handler</span></code></a>()</p></td>
+<td><p>Get a handle that streams messages from the root logger to the qcodes log file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.get_instrument_logger" title="qcodes.logger.get_instrument_logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_instrument_logger</span></code></a>(instrument_instance[, ...])</p></td>
+<td><p>Returns an <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentLoggerAdapter</span></code> that can be used to log messages including <code class="docutils literal notranslate"><span class="pre">instrument_instance</span></code> as  an additional context.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.get_level_code" title="qcodes.logger.get_level_code"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_level_code</span></code></a>(level)</p></td>
+<td><p>Get a logging level code from either a logging level string or a logging level code.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.get_level_name" title="qcodes.logger.get_level_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_level_name</span></code></a>(level)</p></td>
+<td><p>Get a logging level name from either a logging level code or logging level name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.get_log_file_name" title="qcodes.logger.get_log_file_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_log_file_name</span></code></a>()</p></td>
+<td><p>Get the full path to the log file currently used.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.handler_level" title="qcodes.logger.handler_level"><code class="xref py py-obj docutils literal notranslate"><span class="pre">handler_level</span></code></a>(level, handler)</p></td>
+<td><p>Context manager to temporarily change the level of handlers.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.log_to_dataframe" title="qcodes.logger.log_to_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_to_dataframe</span></code></a>(log[, columns, separator])</p></td>
+<td><p>Return the provided or default log string as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.logfile_to_dataframe" title="qcodes.logger.logfile_to_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logfile_to_dataframe</span></code></a>([logfile, columns, ...])</p></td>
+<td><p>Return the provided or default logfile as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.start_all_logging" title="qcodes.logger.start_all_logging"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_all_logging</span></code></a>()</p></td>
+<td><p>Starts python log module logging and ipython command history logging.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.start_command_history_logger" title="qcodes.logger.start_command_history_logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_command_history_logger</span></code></a>([log_dir])</p></td>
+<td><p>Start logging of the history of the interactive command shell.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.logger.start_logger" title="qcodes.logger.start_logger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_logger</span></code></a>()</p></td>
+<td><p>Start logging of messages passed through the python logging module.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.logger.time_difference" title="qcodes.logger.time_difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_difference</span></code></a>(firsttimes, secondtimes[, ...])</p></td>
+<td><p>Calculate the time differences between two series containing time stamp strings as their values.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.logger.LogCapture">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">LogCapture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger:</span> <span class="pre">~logging.Logger</span> <span class="pre">=</span> <span class="pre">&lt;RootLogger</span> <span class="pre">root</span> <span class="pre">(WARNING)&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#LogCapture"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.LogCapture" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Context manager to grab all log messages, optionally
+from a specific logger.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">LogCapture</span><span class="p">()</span> <span class="k">as</span> <span class="n">logs</span><span class="p">:</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">code_that_makes_logs</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">log_str</span> <span class="o">=</span> <span class="n">logs</span><span class="o">.</span><span class="n">value</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.capture_dataframe">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">capture_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LevelType</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.Logger" title="(in Python v3.10)"><span class="pre">logging.Logger</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/logging.handlers.html#logging.StreamHandler" title="(in Python v3.10)"><span class="pre">logging.StreamHandler</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pd.DataFrame</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/log_analysis.html#capture_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.capture_dataframe" title="Link to this definition"></a></dt>
+<dd><p>Context manager to capture the logs in a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code></p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">logger</span><span class="o">.</span><span class="n">capture_dataframe</span><span class="p">()</span> <span class="k">as</span> <span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="n">cb</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">qdac</span><span class="o">.</span><span class="n">ch01</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># some commands</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">data_frame</span> <span class="o">=</span> <span class="n">cb</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level</strong> – Level at which to capture.</p></li>
+<li><p><strong>logger</strong> – Logger used to capture the data. Will default to root logger if
+None is supplied.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of handler that is used to capture the log messages and callback
+that returns the cumulative <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code> at any given
+point (within the context)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.console_level">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">console_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#console_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.console_level" title="Link to this definition"></a></dt>
+<dd><p>Context manager to temporarily change the level of the qcodes console
+handler.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">logger</span><span class="o">.</span><span class="n">console_level</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">root_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;this is now visible&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>level</strong> – Level to set the console handler to.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.filter_instrument">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">filter_instrument</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instrument</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../instrument/index.html#qcodes.instrument.InstrumentBase" title="qcodes.instrument.InstrumentBase"><span class="pre">InstrumentBase</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../instrument/index.html#qcodes.instrument.InstrumentBase" title="qcodes.instrument.InstrumentBase"><span class="pre">InstrumentBase</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.Handler" title="(in Python v3.10)"><span class="pre">logging.Handler</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.Handler" title="(in Python v3.10)"><span class="pre">logging.Handler</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">LevelType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/instrument_logger.html#filter_instrument"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.filter_instrument" title="Link to this definition"></a></dt>
+<dd><p>Context manager that adds a filter that only enables the log messages of
+the supplied instruments to pass.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">h1</span><span class="p">,</span> <span class="n">h2</span> <span class="o">=</span> <span class="n">logger</span><span class="o">.</span><span class="n">get_console_handler</span><span class="p">(),</span> <span class="n">logger</span><span class="o">.</span><span class="n">get_file_handler</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">logger</span><span class="o">.</span><span class="n">filter_instruments</span><span class="p">((</span><span class="n">qdac</span><span class="p">,</span> <span class="n">dmm2</span><span class="p">),</span> <span class="n">handler</span><span class="o">=</span><span class="p">[</span><span class="n">h1</span><span class="p">,</span> <span class="n">h2</span><span class="p">]):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">qdac</span><span class="o">.</span><span class="n">ch01</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># logged</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">v1</span> <span class="o">=</span> <span class="n">dmm2</span><span class="o">.</span><span class="n">v</span><span class="p">()</span> <span class="c1"># logged</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">v2</span> <span class="o">=</span> <span class="n">keithley</span><span class="o">.</span><span class="n">v</span><span class="p">()</span>  <span class="c1"># not logged</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>instrument</strong> – The instrument or sequence of instruments to enable
+messages from.</p></li>
+<li><p><strong>level</strong> – Level to set the handlers to.</p></li>
+<li><p><strong>handler</strong> – Single or sequence of handlers to change.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.flush_telemetry_traces">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">flush_telemetry_traces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#flush_telemetry_traces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.flush_telemetry_traces" title="Link to this definition"></a></dt>
+<dd><p>Flush the traces of the telemetry logger. If telemetry is not enabled, this
+function does nothing.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.get_console_handler">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">get_console_handler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.Handler" title="(in Python v3.10)"><span class="pre">Handler</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#get_console_handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.get_console_handler" title="Link to this definition"></a></dt>
+<dd><p>Get handle that prints messages from the root logger to the console.
+Returns <code class="docutils literal notranslate"><span class="pre">None</span></code> if <a class="reference internal" href="#qcodes.logger.start_logger" title="qcodes.logger.start_logger"><code class="xref py py-func docutils literal notranslate"><span class="pre">start_logger()</span></code></a> has not been called.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.get_file_handler">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">get_file_handler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.Handler" title="(in Python v3.10)"><span class="pre">Handler</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#get_file_handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.get_file_handler" title="Link to this definition"></a></dt>
+<dd><p>Get a handle that streams messages from the root logger to the qcodes log
+file. To setup call <a class="reference internal" href="#qcodes.logger.start_logger" title="qcodes.logger.start_logger"><code class="xref py py-func docutils literal notranslate"><span class="pre">start_logger()</span></code></a>.
+Returns <code class="docutils literal notranslate"><span class="pre">None</span></code> if <a class="reference internal" href="#qcodes.logger.start_logger" title="qcodes.logger.start_logger"><code class="xref py py-func docutils literal notranslate"><span class="pre">start_logger()</span></code></a> has not been called.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.get_instrument_logger">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">get_instrument_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instrument_instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../instrument/index.html#qcodes.instrument.InstrumentBase" title="qcodes.instrument.InstrumentBase"><span class="pre">InstrumentBase</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">logger_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">InstrumentLoggerAdapter</span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/instrument_logger.html#get_instrument_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.get_instrument_logger" title="Link to this definition"></a></dt>
+<dd><p>Returns an <code class="xref py py-class docutils literal notranslate"><span class="pre">InstrumentLoggerAdapter</span></code> that can be used to log
+messages
+including <code class="docutils literal notranslate"><span class="pre">instrument_instance</span></code> as  an additional context.</p>
+<p>The <a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.LoggerAdapter" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">logging.LoggerAdapter</span></code></a> object can be used as any logger.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>instrument_instance</strong> – The instrument instance to be added to the context
+of the log record.</p></li>
+<li><p><strong>logger_name</strong> – Name of the logger to which the records will be passed.
+If <cite>None</cite>, defaults to the root logger.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.LoggerAdapter" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">logging.LoggerAdapter</span></code></a> instance, that can be used for instrument
+specific logging.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.get_level_code">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">get_level_code</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#get_level_code"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.get_level_code" title="Link to this definition"></a></dt>
+<dd><p>Get a logging level code from either a logging level string or a logging
+level code. Will return the output of <a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.getLevelName" title="(in Python v3.10)"><code class="xref py py-func docutils literal notranslate"><span class="pre">logging.getLevelName()</span></code></a> if
+called with a str. If called with an int it will return the int supplied.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.get_level_name">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">get_level_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#get_level_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.get_level_name" title="Link to this definition"></a></dt>
+<dd><p>Get a logging level name from either a logging level code or logging level
+name. Will return the output of <a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.getLevelName" title="(in Python v3.10)"><code class="xref py py-func docutils literal notranslate"><span class="pre">logging.getLevelName()</span></code></a> if called with
+an int. If called with a str it will return the str supplied.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.get_log_file_name">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">get_log_file_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#get_log_file_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.get_log_file_name" title="Link to this definition"></a></dt>
+<dd><p>Get the full path to the log file currently used.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.handler_level">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">handler_level</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">handler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.Handler" title="(in Python v3.10)"><span class="pre">Handler</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/logging.html#logging.Handler" title="(in Python v3.10)"><span class="pre">logging.Handler</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#handler_level"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.handler_level" title="Link to this definition"></a></dt>
+<dd><p>Context manager to temporarily change the level of handlers.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">logger</span><span class="o">.</span><span class="n">handler_level</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span> <span class="n">handler</span><span class="o">=</span><span class="p">[</span><span class="n">h1</span><span class="p">,</span> <span class="n">h1</span><span class="p">]):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">root_logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;this is now visible&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level</strong> – Level to set the handlers to.</p></li>
+<li><p><strong>handler</strong> – Handle or sequence of handlers which to change.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.log_to_dataframe">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">log_to_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/log_analysis.html#log_to_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.log_to_dataframe" title="Link to this definition"></a></dt>
+<dd><p>Return the provided or default log string as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p>
+<p>Unless <code class="xref py py-data docutils literal notranslate"><span class="pre">qcodes.logger.logger.LOGGING_SEPARATOR</span></code> or
+<code class="xref py py-data docutils literal notranslate"><span class="pre">qcodes.logger.logger.FORMAT_STRING_DICT</span></code> have been changed using the
+default for the columns and separator arguments is encouraged.</p>
+<p>Lines starting with a digit are ignored. In the log setup of
+<code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.logger.logger.start_logger()</span></code>
+Traceback messages are also logged. These start with a digit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>log</strong> – Log content.</p></li>
+<li><p><strong>columns</strong> – Column headers for the returned dataframe, defaults to
+columns used by handlers set up by
+<code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.logger.logger.start_logger()</span></code>.</p></li>
+<li><p><strong>separator</strong> – Separator of the log file to separate the columns, defaults
+to separator used by handlers set up by
+<code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.logger.logger.start_logger()</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code> containing the log content.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.logfile_to_dataframe">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">logfile_to_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logfile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.DataFrame</span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/log_analysis.html#logfile_to_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.logfile_to_dataframe" title="Link to this definition"></a></dt>
+<dd><p>Return the provided or default logfile as a <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code>.</p>
+<p>Unless <code class="xref py py-data docutils literal notranslate"><span class="pre">qcodes.logger.logger.LOGGING_SEPARATOR</span></code> or
+<code class="xref py py-data docutils literal notranslate"><span class="pre">qcodes.logger.logger.FORMAT_STRING_DICT</span></code> have been changed using
+the default for the columns and separator arguments is encouraged.</p>
+<p>Lines starting with a digit are ignored. In the log setup of
+<code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.logger.logger.start_logger()</span></code>
+Traceback messages are also logged. These start with a digit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>logfile</strong> – Name of the logfile, defaults to current default log file.</p></li>
+<li><p><strong>columns</strong> – Column headers for the returned dataframe, defaults to
+columns used by handlers set up by
+<code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.logger.logger.start_logger()</span></code>.</p></li>
+<li><p><strong>separator</strong> – Separator of the logfile to separate the columns,
+defaults to separator used by handlers set up by
+<code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.logger.logger.start_logger()</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.DataFrame</span></code> containing the logfile content.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.start_all_logging">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">start_all_logging</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#start_all_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.start_all_logging" title="Link to this definition"></a></dt>
+<dd><p>Starts python log module logging and ipython command history logging.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.start_command_history_logger">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">start_command_history_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#start_command_history_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.start_command_history_logger" title="Link to this definition"></a></dt>
+<dd><p>Start logging of the history of the interactive command shell.
+Works only with IPython and Jupyter. Call function again to set new path
+to log file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>log_dir</strong> – directory where log shall be stored to. If left out, defaults
+to <code class="docutils literal notranslate"><span class="pre">~/.qcodes/logs/command_history.log</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.start_logger">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">start_logger</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/logger/logger.html#start_logger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.start_logger" title="Link to this definition"></a></dt>
+<dd><p>Start logging of messages passed through the python logging module.
+This sets up logging to a time based logging.
+This means that all logging messages on or above
+<code class="docutils literal notranslate"><span class="pre">filelogginglevel</span></code> will be written to <cite>pythonlog.log</cite>
+All logging messages on or above <code class="docutils literal notranslate"><span class="pre">consolelogginglevel</span></code>
+will be written to stderr.
+<code class="docutils literal notranslate"><span class="pre">filelogginglevel</span></code> and <code class="docutils literal notranslate"><span class="pre">consolelogginglevel</span></code> are defined in the
+<code class="docutils literal notranslate"><span class="pre">qcodesrc.json</span></code> file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.logger.time_difference">
+<span class="sig-prename descclassname"><span class="pre">qcodes.logger.</span></span><span class="sig-name descname"><span class="pre">time_difference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">firsttimes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secondtimes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pd.Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_first_series_labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pd.Series</span></span></span><a class="reference internal" href="../../_modules/qcodes/logger/log_analysis.html#time_difference"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.logger.time_difference" title="Link to this definition"></a></dt>
+<dd><p>Calculate the time differences between two series
+containing time stamp strings as their values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>firsttimes</strong> – The oldest times</p></li>
+<li><p><strong>secondtimes</strong> – The youngest times</p></li>
+<li><p><strong>use_first_series_labels</strong> – If true, the returned Series
+has the same labels as firsttimes. Else it has
+the labels of secondtimes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <code class="xref py py-class docutils literal notranslate"><span class="pre">pd.Series</span></code>  with float values of the time difference (s)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../interactive_widget.html" class="btn btn-neutral float-left" title="qcodes.interactive_widget" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../math_utils/index.html" class="btn btn-neutral float-right" title="qcodes.math_utils" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

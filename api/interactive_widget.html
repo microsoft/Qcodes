@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.interactive_widget &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="qcodes.logger" href="logger/index.html" />
+    <link rel="prev" title="qcodes.instrument" href="instrument/index.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">QCoDes API documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#qcodes-api">QCoDeS API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">qcodes.interactive_widget</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.interactive_widget.experiments_widget"><code class="docutils literal notranslate"><span class="pre">experiments_widget()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.interactive_widget.nested_dict_browser"><code class="docutils literal notranslate"><span class="pre">nested_dict_browser()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="station.html">qcodes.station</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utils/index.html">qcodes.utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">QCoDes API documentation</a></li>
+      <li class="breadcrumb-item active">qcodes.interactive_widget</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/api/interactive_widget.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.interactive_widget">
+<span id="qcodes-interactive-widget"></span><span id="interactive-widget-api"></span><h1>qcodes.interactive_widget<a class="headerlink" href="#module-qcodes.interactive_widget" title="Link to this heading"></a></h1>
+<p>This file contains functions to displays an interactive widget
+with information about <a class="reference internal" href="dataset/index.html#qcodes.dataset.experiments" title="qcodes.dataset.experiments"><code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.dataset.experiments()</span></code></a>.</p>
+<p><strong>Functions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.interactive_widget.experiments_widget" title="qcodes.interactive_widget.experiments_widget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">experiments_widget</span></code></a>([db, data_sets, sort_by])</p></td>
+<td><p>Displays an interactive widget that shows the <a class="reference internal" href="dataset/index.html#qcodes.dataset.experiments" title="qcodes.dataset.experiments"><code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.dataset.experiments()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.interactive_widget.nested_dict_browser" title="qcodes.interactive_widget.nested_dict_browser"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nested_dict_browser</span></code></a>(nested_dict[, nested_keys])</p></td>
+<td><p>Returns a widget to interactive browse a nested dictionary.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.interactive_widget.experiments_widget">
+<span class="sig-prename descclassname"><span class="pre">qcodes.interactive_widget.</span></span><span class="sig-name descname"><span class="pre">experiments_widget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_sets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="dataset/index.html#qcodes.dataset.DataSetProtocol" title="qcodes.dataset.DataSetProtocol"><span class="pre">DataSetProtocol</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_by</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'timestamp'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'run_id'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'run_id'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">VBox</span></span></span><a class="reference internal" href="../_modules/qcodes/interactive_widget.html#experiments_widget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.interactive_widget.experiments_widget" title="Link to this definition"></a></dt>
+<dd><p>Displays an interactive widget that shows the <a class="reference internal" href="dataset/index.html#qcodes.dataset.experiments" title="qcodes.dataset.experiments"><code class="xref py py-func docutils literal notranslate"><span class="pre">qcodes.dataset.experiments()</span></code></a>.</p>
+<p>With the edit button in the column <code class="docutils literal notranslate"><span class="pre">Notes</span></code> one can make persistent
+changes to the <a class="reference internal" href="dataset/index.html#qcodes.dataset.DataSetProtocol" title="qcodes.dataset.DataSetProtocol"><code class="xref py py-class docutils literal notranslate"><span class="pre">qcodes.dataset.DataSetProtocol</span></code></a>s attribute
+<code class="docutils literal notranslate"><span class="pre">metadata</span></code> in the key “widget_notes”.
+Expanding the coordinates or variables buttons, reveals more options, such
+as plotting or the ability to easily browse
+the <a class="reference internal" href="dataset/index.html#qcodes.dataset.DataSetProtocol" title="qcodes.dataset.DataSetProtocol"><code class="xref py py-class docutils literal notranslate"><span class="pre">qcodes.dataset.DataSetProtocol</span></code></a>s snapshot.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>db</strong> – Optionally pass a database file, if no database has been loaded.</p></li>
+<li><p><strong>data_sets</strong> – Sequence of <a class="reference internal" href="dataset/index.html#qcodes.dataset.DataSetProtocol" title="qcodes.dataset.DataSetProtocol"><code class="xref py py-class docutils literal notranslate"><span class="pre">qcodes.dataset.DataSetProtocol</span></code></a>s.
+If datasets are explicitly provided via this argument, the <code class="docutils literal notranslate"><span class="pre">db</span></code>
+argument has no effect.</p></li>
+<li><p><strong>sort_by</strong> – Sort datasets in widget by either “timestamp” (newest first),
+“run_id” or None (no predefined sorting).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.interactive_widget.nested_dict_browser">
+<span class="sig-prename descclassname"><span class="pre">qcodes.interactive_widget.</span></span><span class="sig-name descname"><span class="pre">nested_dict_browser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nested_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nested_keys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Box</span></span></span><a class="reference internal" href="../_modules/qcodes/interactive_widget.html#nested_dict_browser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.interactive_widget.nested_dict_browser" title="Link to this definition"></a></dt>
+<dd><p>Returns a widget to interactive browse a nested dictionary.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="instrument/index.html" class="btn btn-neutral float-left" title="qcodes.instrument" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="logger/index.html" class="btn btn-neutral float-right" title="qcodes.logger" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

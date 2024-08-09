@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.utils &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="qcodes.validators" href="../validators/index.html" />
+    <link rel="prev" title="qcodes.station" href="../station.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">QCoDes API documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#qcodes-api">QCoDeS API</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../calibrations/index.html">qcodes.calibrations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../configuration/index.html">qcodes.configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset/index.html">qcodes.dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../extensions/index.html">qcodes.extensions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../instrument/index.html">qcodes.instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../interactive_widget.html">qcodes.interactive_widget</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../logger/index.html">qcodes.logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../math_utils/index.html">qcodes.math_utils</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../metadatable/index.html">qcodes.metadatable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../monitor/index.html">qcodes.monitor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../parameters/index.html">qcodes.parameters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../plotting/index.html">qcodes.plotting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../station.html">qcodes.station</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">qcodes.utils</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.DelayedKeyboardInterrupt"><code class="docutils literal notranslate"><span class="pre">DelayedKeyboardInterrupt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.DelegateAttributes"><code class="docutils literal notranslate"><span class="pre">DelegateAttributes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.NumpyJSONEncoder"><code class="docutils literal notranslate"><span class="pre">NumpyJSONEncoder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.ParameterDiff"><code class="docutils literal notranslate"><span class="pre">ParameterDiff</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.QCoDeSDeprecationWarning"><code class="docutils literal notranslate"><span class="pre">QCoDeSDeprecationWarning</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.RespondingThread"><code class="docutils literal notranslate"><span class="pre">RespondingThread</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.attribute_set_to"><code class="docutils literal notranslate"><span class="pre">attribute_set_to()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.checked_getattr"><code class="docutils literal notranslate"><span class="pre">checked_getattr()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.getattr_indexed"><code class="docutils literal notranslate"><span class="pre">getattr_indexed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.checked_getattr_indexed"><code class="docutils literal notranslate"><span class="pre">checked_getattr_indexed()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.convert_legacy_version_to_supported_version"><code class="docutils literal notranslate"><span class="pre">convert_legacy_version_to_supported_version()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.deep_update"><code class="docutils literal notranslate"><span class="pre">deep_update()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.deprecate"><code class="docutils literal notranslate"><span class="pre">deprecate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.diff_param_values"><code class="docutils literal notranslate"><span class="pre">diff_param_values()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.extract_param_values"><code class="docutils literal notranslate"><span class="pre">extract_param_values()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.full_class"><code class="docutils literal notranslate"><span class="pre">full_class()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.get_all_installed_package_versions"><code class="docutils literal notranslate"><span class="pre">get_all_installed_package_versions()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.get_qcodes_path"><code class="docutils literal notranslate"><span class="pre">get_qcodes_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.get_qcodes_user_path"><code class="docutils literal notranslate"><span class="pre">get_qcodes_user_path()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.is_function"><code class="docutils literal notranslate"><span class="pre">is_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.is_qcodes_installed_editably"><code class="docutils literal notranslate"><span class="pre">is_qcodes_installed_editably()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.issue_deprecation_warning"><code class="docutils literal notranslate"><span class="pre">issue_deprecation_warning()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.list_of_data_to_maybe_ragged_nd_array"><code class="docutils literal notranslate"><span class="pre">list_of_data_to_maybe_ragged_nd_array()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.partial_with_docstring"><code class="docutils literal notranslate"><span class="pre">partial_with_docstring()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.qcodes_abstractmethod"><code class="docutils literal notranslate"><span class="pre">qcodes_abstractmethod()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.strip_attrs"><code class="docutils literal notranslate"><span class="pre">strip_attrs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#qcodes.utils.thread_map"><code class="docutils literal notranslate"><span class="pre">thread_map()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../validators/index.html">qcodes.validators</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">QCoDes API documentation</a></li>
+      <li class="breadcrumb-item active">qcodes.utils</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/utils/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-qcodes.utils">
+<span id="qcodes-utils"></span><span id="utils-api"></span><h1>qcodes.utils<a class="headerlink" href="#module-qcodes.utils" title="Link to this heading"></a></h1>
+<p><strong>Classes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.DelayedKeyboardInterrupt" title="qcodes.utils.DelayedKeyboardInterrupt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DelayedKeyboardInterrupt</span></code></a>([context])</p></td>
+<td><p>A context manager to wrap a piece of code to ensure that a KeyboardInterrupt is not triggered by a SIGINT during the execution of this context.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.DelegateAttributes" title="qcodes.utils.DelegateAttributes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DelegateAttributes</span></code></a>()</p></td>
+<td><p>Mixin class to create attributes of this object by delegating them to one or more dictionaries and/or objects.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.NumpyJSONEncoder" title="qcodes.utils.NumpyJSONEncoder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NumpyJSONEncoder</span></code></a>(*[, skipkeys, ...])</p></td>
+<td><p>This JSON encoder adds support for serializing types that the built-in <code class="docutils literal notranslate"><span class="pre">json</span></code> module does not support out-of-the-box.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.ParameterDiff" title="qcodes.utils.ParameterDiff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterDiff</span></code></a>(left_only, right_only, changed)</p></td>
+<td><p>Create new instance of ParameterDiff(left_only, right_only, changed)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.RespondingThread" title="qcodes.utils.RespondingThread"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RespondingThread</span></code></a>(target[, args, kwargs])</p></td>
+<td><p>Thread subclass for parallelizing execution.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Exceptions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.QCoDeSDeprecationWarning" title="qcodes.utils.QCoDeSDeprecationWarning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QCoDeSDeprecationWarning</span></code></a></p></td>
+<td><p>A DeprecationWarning used internally in QCoDeS.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Functions:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.attribute_set_to" title="qcodes.utils.attribute_set_to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attribute_set_to</span></code></a>(object_, attribute_name, ...)</p></td>
+<td><p>This context manager allows to change a given attribute of a given object to a new value, and the original value is reverted upon exit of the context manager.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.checked_getattr" title="qcodes.utils.checked_getattr"><code class="xref py py-obj docutils literal notranslate"><span class="pre">checked_getattr</span></code></a>(instance, attribute, ...)</p></td>
+<td><p>Like <code class="docutils literal notranslate"><span class="pre">getattr</span></code> but raises type error if not of expected type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.getattr_indexed" title="qcodes.utils.getattr_indexed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">getattr_indexed</span></code></a>(instance, attribute)</p></td>
+<td><p>Similar to <code class="docutils literal notranslate"><span class="pre">getattr</span></code> but allows indexing the returned attribute.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.checked_getattr_indexed" title="qcodes.utils.checked_getattr_indexed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">checked_getattr_indexed</span></code></a>(instance, attribute, ...)</p></td>
+<td><p>Like <code class="docutils literal notranslate"><span class="pre">getattr_indexed</span></code> but raises type error if not of expected type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.convert_legacy_version_to_supported_version" title="qcodes.utils.convert_legacy_version_to_supported_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convert_legacy_version_to_supported_version</span></code></a>(ver)</p></td>
+<td><p>Convert a legacy version str containing single chars rather than numbers to a regular version string.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.deep_update" title="qcodes.utils.deep_update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deep_update</span></code></a>(dest, update)</p></td>
+<td><p>Recursively update one JSON structure with another.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.deprecate" title="qcodes.utils.deprecate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deprecate</span></code></a>([reason, alternative])</p></td>
+<td><p>A utility function to decorate deprecated functions and classes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.diff_param_values" title="qcodes.utils.diff_param_values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">diff_param_values</span></code></a>(left_snapshot, right_snapshot)</p></td>
+<td><p>Given two snapshots, returns the differences between parameter values in each.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.extract_param_values" title="qcodes.utils.extract_param_values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">extract_param_values</span></code></a>(snapshot)</p></td>
+<td><p>Given a snapshot, returns a dictionary from instrument and parameter names onto parameter values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.full_class" title="qcodes.utils.full_class"><code class="xref py py-obj docutils literal notranslate"><span class="pre">full_class</span></code></a>(obj)</p></td>
+<td><p>The full importable path to an object's class.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.get_all_installed_package_versions" title="qcodes.utils.get_all_installed_package_versions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_all_installed_package_versions</span></code></a>()</p></td>
+<td><p>Return a dictionary of the currently installed packages and their versions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.get_qcodes_path" title="qcodes.utils.get_qcodes_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_qcodes_path</span></code></a>(*subfolder)</p></td>
+<td><p>Return full file path of the QCoDeS module.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.get_qcodes_user_path" title="qcodes.utils.get_qcodes_user_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_qcodes_user_path</span></code></a>(*file_parts)</p></td>
+<td><p>Get <code class="docutils literal notranslate"><span class="pre">~/.qcodes</span></code> path or if defined the path defined in the <code class="docutils literal notranslate"><span class="pre">QCODES_USER_PATH</span></code> environment variable.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.is_function" title="qcodes.utils.is_function"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_function</span></code></a>(f, arg_count[, coroutine])</p></td>
+<td><p>Check and require a function that can accept the specified number of positional arguments, which either is or is not a coroutine type casting &quot;functions&quot; are allowed, but only in the 1-argument form.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.is_qcodes_installed_editably" title="qcodes.utils.is_qcodes_installed_editably"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_qcodes_installed_editably</span></code></a>()</p></td>
+<td><p>Try to ask pip whether QCoDeS is installed in editable mode and return the answer a boolean.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.issue_deprecation_warning" title="qcodes.utils.issue_deprecation_warning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">issue_deprecation_warning</span></code></a>(what[, reason, ...])</p></td>
+<td><p>Issue a <cite>QCoDeSDeprecationWarning</cite> with a consistently formatted message</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.list_of_data_to_maybe_ragged_nd_array" title="qcodes.utils.list_of_data_to_maybe_ragged_nd_array"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_of_data_to_maybe_ragged_nd_array</span></code></a>(...[, ...])</p></td>
+<td><p>Convert a (nested) Sequence of data to numpy arrays.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.partial_with_docstring" title="qcodes.utils.partial_with_docstring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">partial_with_docstring</span></code></a>(func, docstring, **kwargs)</p></td>
+<td><p>We want to have a partial function which will allow us to access the docstring through the python built-in help function.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.qcodes_abstractmethod" title="qcodes.utils.qcodes_abstractmethod"><code class="xref py py-obj docutils literal notranslate"><span class="pre">qcodes_abstractmethod</span></code></a>(funcobj)</p></td>
+<td><p>A decorator indicating abstract methods.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.strip_attrs" title="qcodes.utils.strip_attrs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_attrs</span></code></a>(obj[, whitelist])</p></td>
+<td><p>Irreversibly remove all direct instance attributes of object, to help with disposal, breaking circular references.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.thread_map" title="qcodes.utils.thread_map"><code class="xref py py-obj docutils literal notranslate"><span class="pre">thread_map</span></code></a>(callables[, args, kwargs])</p></td>
+<td><p>Evaluate a sequence of callables in separate threads, returning a list of their return values.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.utils.DelayedKeyboardInterrupt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">DelayedKeyboardInterrupt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">AttributeValue</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/utils/delaykeyboardinterrupt.html#DelayedKeyboardInterrupt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.DelayedKeyboardInterrupt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A context manager to wrap a piece of code to ensure that a
+KeyboardInterrupt is not triggered by a SIGINT during the execution of
+this context. A second SIGINT will trigger the KeyboardInterrupt
+immediately.</p>
+<p>Inspired by <a class="reference external" href="https://stackoverflow.com/questions/842557/how-to-prevent-a-block-of-code-from-being-interrupted-by-keyboardinterrupt-in-py">https://stackoverflow.com/questions/842557/how-to-prevent-a-block-of-code-from-being-interrupted-by-keyboardinterrupt-in-py</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>context</strong> – A dictionary of attributes to be logged when the
+KeyboardInterrupt is triggered. This is useful for debugging
+where the interrupt was triggered. The attributes should be compatible
+with OpenTelemetry’s Attributes type.</p>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.DelayedKeyboardInterrupt.signal_received" title="qcodes.utils.DelayedKeyboardInterrupt.signal_received"><code class="xref py py-obj docutils literal notranslate"><span class="pre">signal_received</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.DelayedKeyboardInterrupt.old_handler" title="qcodes.utils.DelayedKeyboardInterrupt.old_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">old_handler</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.DelayedKeyboardInterrupt.handler" title="qcodes.utils.DelayedKeyboardInterrupt.handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">handler</span></code></a>(sig, frame)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.DelayedKeyboardInterrupt.forceful_handler" title="qcodes.utils.DelayedKeyboardInterrupt.forceful_handler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forceful_handler</span></code></a>(frame)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.DelayedKeyboardInterrupt.signal_received">
+<span class="sig-name descname"><span class="pre">signal_received</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FrameType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#qcodes.utils.DelayedKeyboardInterrupt.signal_received" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.DelayedKeyboardInterrupt.old_handler">
+<span class="sig-name descname"><span class="pre">old_handler</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FrameType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#qcodes.utils.DelayedKeyboardInterrupt.old_handler" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.utils.DelayedKeyboardInterrupt.handler">
+<span class="sig-name descname"><span class="pre">handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sig</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrameType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/delaykeyboardinterrupt.html#DelayedKeyboardInterrupt.handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.DelayedKeyboardInterrupt.handler" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.utils.DelayedKeyboardInterrupt.forceful_handler">
+<span class="sig-name descname"><span class="pre">forceful_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">FrameType</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/delaykeyboardinterrupt.html#DelayedKeyboardInterrupt.forceful_handler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.DelayedKeyboardInterrupt.forceful_handler" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.utils.DelegateAttributes">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">DelegateAttributes</span></span><a class="reference internal" href="../../_modules/qcodes/utils/attribute_helpers.html#DelegateAttributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.DelegateAttributes" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Mixin class to create attributes of this object by
+delegating them to one or more dictionaries and/or objects.</p>
+<p>Also fixes <code class="docutils literal notranslate"><span class="pre">__dir__</span></code> so the delegated attributes will show up
+in <code class="docutils literal notranslate"><span class="pre">dir()</span></code> and <code class="docutils literal notranslate"><span class="pre">autocomplete</span></code>.</p>
+<dl class="simple">
+<dt>Attribute resolution order:</dt><dd><ol class="arabic simple">
+<li><p>Real attributes of this object.</p></li>
+<li><p>Keys of each dictionary in <code class="docutils literal notranslate"><span class="pre">delegate_attr_dicts</span></code> (in order).</p></li>
+<li><p>Attributes of each object in <code class="docutils literal notranslate"><span class="pre">delegate_attr_objects</span></code> (in order).</p></li>
+</ol>
+</dd>
+</dl>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.DelegateAttributes.delegate_attr_dicts" title="qcodes.utils.DelegateAttributes.delegate_attr_dicts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delegate_attr_dicts</span></code></a></p></td>
+<td><p>A list of names (strings) of dictionaries which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>, whose keys should be treated as attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.DelegateAttributes.delegate_attr_objects" title="qcodes.utils.DelegateAttributes.delegate_attr_objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">delegate_attr_objects</span></code></a></p></td>
+<td><p>A list of names (strings) of objects which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>, whose attributes should be passed through to <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.DelegateAttributes.omit_delegate_attrs" title="qcodes.utils.DelegateAttributes.omit_delegate_attrs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">omit_delegate_attrs</span></code></a></p></td>
+<td><p>A list of attribute names (strings) to <em>not</em> delegate to any other dictionary or object.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.DelegateAttributes.delegate_attr_dicts">
+<span class="sig-name descname"><span class="pre">delegate_attr_dicts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.ClassVar" title="(in Python v3.10)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#qcodes.utils.DelegateAttributes.delegate_attr_dicts" title="Link to this definition"></a></dt>
+<dd><p>A list of names (strings) of dictionaries
+which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>, whose keys should
+be treated as attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.DelegateAttributes.delegate_attr_objects">
+<span class="sig-name descname"><span class="pre">delegate_attr_objects</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.ClassVar" title="(in Python v3.10)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#qcodes.utils.DelegateAttributes.delegate_attr_objects" title="Link to this definition"></a></dt>
+<dd><p>A list of names (strings) of objects
+which are (or will be) attributes of <code class="docutils literal notranslate"><span class="pre">self</span></code>, whose attributes
+should be passed through to <code class="docutils literal notranslate"><span class="pre">self</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.DelegateAttributes.omit_delegate_attrs">
+<span class="sig-name descname"><span class="pre">omit_delegate_attrs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.ClassVar" title="(in Python v3.10)"><span class="pre">ClassVar</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#qcodes.utils.DelegateAttributes.omit_delegate_attrs" title="Link to this definition"></a></dt>
+<dd><p>A list of attribute names (strings)
+to <em>not</em> delegate to any other dictionary or object.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.utils.NumpyJSONEncoder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">NumpyJSONEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipkeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensure_ascii</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_circular</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_nan</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/utils/json_utils.html#NumpyJSONEncoder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.NumpyJSONEncoder" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">JSONEncoder</span></code></p>
+<p>This JSON encoder adds support for serializing types that the built-in
+<code class="docutils literal notranslate"><span class="pre">json</span></code> module does not support out-of-the-box. See the docstring of the
+<code class="docutils literal notranslate"><span class="pre">default</span></code> method for the description of all conversions.</p>
+<p>Constructor for JSONEncoder, with sensible defaults.</p>
+<p>If skipkeys is false, then it is a TypeError to attempt
+encoding of keys that are not str, int, float or None.  If
+skipkeys is True, such items are simply skipped.</p>
+<p>If ensure_ascii is true, the output is guaranteed to be str
+objects with all incoming non-ASCII characters escaped.  If
+ensure_ascii is false, the output can contain non-ASCII characters.</p>
+<p>If check_circular is true, then lists, dicts, and custom encoded
+objects will be checked for circular references during encoding to
+prevent an infinite recursion (which would cause an RecursionError).
+Otherwise, no such check takes place.</p>
+<p>If allow_nan is true, then NaN, Infinity, and -Infinity will be
+encoded as such.  This behavior is not JSON specification compliant,
+but is consistent with most JavaScript based encoders and decoders.
+Otherwise, it will be a ValueError to encode such floats.</p>
+<p>If sort_keys is true, then the output of dictionaries will be
+sorted by key; this is useful for regression tests to ensure
+that JSON serializations can be compared on a day-to-day basis.</p>
+<p>If indent is a non-negative integer, then JSON array
+elements and object members will be pretty-printed with that
+indent level.  An indent level of 0 will only insert newlines.
+None is the most compact representation.</p>
+<p>If specified, separators should be an (item_separator, key_separator)
+tuple.  The default is (’, ‘, ‘: ‘) if <em>indent</em> is <code class="docutils literal notranslate"><span class="pre">None</span></code> and
+(‘,’, ‘: ‘) otherwise.  To get the most compact JSON representation,
+you should specify (‘,’, ‘:’) to eliminate whitespace.</p>
+<p>If specified, default is a function that gets called for objects
+that can’t otherwise be serialized.  It should return a JSON encodable
+version of the object or raise a <code class="docutils literal notranslate"><span class="pre">TypeError</span></code>.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.NumpyJSONEncoder.default" title="qcodes.utils.NumpyJSONEncoder.default"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default</span></code></a>(o)</p></td>
+<td><p>List of conversions that this encoder performs:</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.utils.NumpyJSONEncoder.default">
+<span class="sig-name descname"><span class="pre">default</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">o</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/json_utils.html#NumpyJSONEncoder.default"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.NumpyJSONEncoder.default" title="Link to this definition"></a></dt>
+<dd><p>List of conversions that this encoder performs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">numpy.generic</span></code> (all integer, floating, and other types) gets
+converted to its python equivalent using its <code class="docutils literal notranslate"><span class="pre">item</span></code> method (see
+<code class="docutils literal notranslate"><span class="pre">numpy</span></code> docs for more information,
+<a class="reference external" href="https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html">https://docs.scipy.org/doc/numpy/reference/arrays.scalars.html</a>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> gets converted to python list using its <code class="docutils literal notranslate"><span class="pre">tolist</span></code>
+method.</p></li>
+<li><p>Complex number (a number that conforms to <code class="docutils literal notranslate"><span class="pre">numbers.Complex</span></code> ABC) gets
+converted to a dictionary with fields <code class="docutils literal notranslate"><span class="pre">re</span></code> and <code class="docutils literal notranslate"><span class="pre">im</span></code> containing floating
+numbers for the real and imaginary parts respectively, and a field
+<code class="docutils literal notranslate"><span class="pre">__dtype__</span></code> containing value <code class="docutils literal notranslate"><span class="pre">complex</span></code>.</p></li>
+<li><p>Numbers with uncertainties  (numbers that conforms to
+<code class="docutils literal notranslate"><span class="pre">uncertainties.UFloat</span></code>) get converted to a dictionary with fields
+<code class="docutils literal notranslate"><span class="pre">nominal_value</span></code> and <code class="docutils literal notranslate"><span class="pre">std_dev</span></code> containing floating numbers for the
+nominal and uncertainty parts respectively, and a field
+<code class="docutils literal notranslate"><span class="pre">__dtype__</span></code> containing value <code class="docutils literal notranslate"><span class="pre">UFloat</span></code>.</p></li>
+<li><p>Object with a <code class="docutils literal notranslate"><span class="pre">_JSONEncoder</span></code> method get converted the return value of
+that method.</p></li>
+<li><p>Objects which support the pickle protocol get converted using the
+data provided by that protocol.</p></li>
+<li><p>Other objects which cannot be serialized get converted to their
+string representation (using the <code class="docutils literal notranslate"><span class="pre">str</span></code> function).</p></li>
+</ul>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.utils.ParameterDiff">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">ParameterDiff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">left_only</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_only</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">changed</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/utils/snapshot_helpers.html#ParameterDiff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.ParameterDiff" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.NamedTuple" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NamedTuple</span></code></a></p>
+<p>Create new instance of ParameterDiff(left_only, right_only, changed)</p>
+<p><strong>Attributes:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.ParameterDiff.left_only" title="qcodes.utils.ParameterDiff.left_only"><code class="xref py py-obj docutils literal notranslate"><span class="pre">left_only</span></code></a></p></td>
+<td><p>Alias for field number 0</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.ParameterDiff.right_only" title="qcodes.utils.ParameterDiff.right_only"><code class="xref py py-obj docutils literal notranslate"><span class="pre">right_only</span></code></a></p></td>
+<td><p>Alias for field number 1</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.ParameterDiff.changed" title="qcodes.utils.ParameterDiff.changed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">changed</span></code></a></p></td>
+<td><p>Alias for field number 2</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.ParameterDiff.left_only">
+<span class="sig-name descname"><span class="pre">left_only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#qcodes.utils.ParameterDiff.left_only" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.ParameterDiff.right_only">
+<span class="sig-name descname"><span class="pre">right_only</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#qcodes.utils.ParameterDiff.right_only" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="qcodes.utils.ParameterDiff.changed">
+<span class="sig-name descname"><span class="pre">changed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#qcodes.utils.ParameterDiff.changed" title="Link to this definition"></a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="qcodes.utils.QCoDeSDeprecationWarning">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">QCoDeSDeprecationWarning</span></span><a class="reference internal" href="../../_modules/qcodes/utils/deprecate.html#QCoDeSDeprecationWarning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.QCoDeSDeprecationWarning" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/exceptions.html#RuntimeWarning" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeWarning</span></code></a></p>
+<p>A DeprecationWarning used internally in QCoDeS. This
+fixes <cite>DeprecationWarning</cite> being suppressed by default.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="qcodes.utils.RespondingThread">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">RespondingThread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/qcodes/utils/threading_utils.html#RespondingThread"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.RespondingThread" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.10/library/threading.html#threading.Thread" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Thread</span></code></a>, <a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Generic" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code></a>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">T</span></code>]</p>
+<p>Thread subclass for parallelizing execution. Behaves like a
+regular thread but returns a value from target, and propagates
+exceptions back to the main thread when this value is collected.</p>
+<p>The <cite>output</cite> method joins the thread, then checks for errors and
+returns the output value.</p>
+<p>so, if you have a function <cite>f</cite> where <cite>f(1, 2, a=3) == 4</cite>, then:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">thread</span> <span class="o">=</span> <span class="n">RespondingThread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">f</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># do other things while this is running</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">thread</span><span class="o">.</span><span class="n">output</span><span class="p">()</span>  <span class="c1"># out is 4</span>
+</pre></div>
+</div>
+<p>This constructor should always be called with keyword arguments. Arguments are:</p>
+<p><em>group</em> should be None; reserved for future extension when a ThreadGroup
+class is implemented.</p>
+<p><em>target</em> is the callable object to be invoked by the run()
+method. Defaults to None, meaning nothing is called.</p>
+<p><em>name</em> is the thread name. By default, a unique name is constructed of
+the form “Thread-N” where N is a small decimal number.</p>
+<p><em>args</em> is a list or tuple of arguments for the target invocation. Defaults to ().</p>
+<p><em>kwargs</em> is a dictionary of keyword arguments for the target
+invocation. Defaults to {}.</p>
+<p>If a subclass overrides the constructor, it must make sure to invoke
+the base class constructor (Thread.__init__()) before doing anything
+else to the thread.</p>
+<p><strong>Methods:</strong></p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#qcodes.utils.RespondingThread.run" title="qcodes.utils.RespondingThread.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>()</p></td>
+<td><p>Method representing the thread's activity.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#qcodes.utils.RespondingThread.output" title="qcodes.utils.RespondingThread.output"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output</span></code></a>([timeout])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.utils.RespondingThread.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/threading_utils.html#RespondingThread.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.RespondingThread.run" title="Link to this definition"></a></dt>
+<dd><p>Method representing the thread’s activity.</p>
+<p>You may override this method in a subclass. The standard run() method
+invokes the callable object passed to the object’s constructor as the
+target argument, if any, with sequential and keyword arguments taken
+from the args and kwargs arguments, respectively.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="qcodes.utils.RespondingThread.output">
+<span class="sig-name descname"><span class="pre">output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#float" title="(in Python v3.10)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/threading_utils.html#RespondingThread.output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.RespondingThread.output" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.attribute_set_to">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">attribute_set_to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object_</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/attribute_helpers.html#attribute_set_to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.attribute_set_to" title="Link to this definition"></a></dt>
+<dd><p>This context manager allows to change a given attribute of a given object
+to a new value, and the original value is reverted upon exit of the context
+manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>object</strong> – The object which attribute value is to be changed.</p></li>
+<li><p><strong>attribute_name</strong> – The name of the attribute that is to be changed.</p></li>
+<li><p><strong>new_value</strong> – The new value to which the attribute of the object is
+to be changed.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.checked_getattr">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">checked_getattr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#type" title="(in Python v3.10)"><span class="pre">type</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#type" title="(in Python v3.10)"><span class="pre">type</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/attribute_helpers.html#checked_getattr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.checked_getattr" title="Link to this definition"></a></dt>
+<dd><p>Like <code class="docutils literal notranslate"><span class="pre">getattr</span></code> but raises type error if not of expected type.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.getattr_indexed">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">getattr_indexed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/attribute_helpers.html#getattr_indexed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.getattr_indexed" title="Link to this definition"></a></dt>
+<dd><p>Similar to <code class="docutils literal notranslate"><span class="pre">getattr</span></code> but allows indexing the returned attribute.
+Returning a default value is _not_ supported.</p>
+<p>The indices are decimal digits surrounded by square brackets.
+Chained indexing is supported, but the string should not contain
+any whitespace between consecutive indices.</p>
+<p>Example: <cite>getattr_indexed(some_object, “list_of_lists_field[1][2]”)</cite></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.checked_getattr_indexed">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">checked_getattr_indexed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">expected_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#type" title="(in Python v3.10)"><span class="pre">type</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#type" title="(in Python v3.10)"><span class="pre">type</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/attribute_helpers.html#checked_getattr_indexed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.checked_getattr_indexed" title="Link to this definition"></a></dt>
+<dd><p>Like <code class="docutils literal notranslate"><span class="pre">getattr_indexed</span></code> but raises type error if not of expected type.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.convert_legacy_version_to_supported_version">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">convert_legacy_version_to_supported_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ver</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/installation_info.html#convert_legacy_version_to_supported_version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.convert_legacy_version_to_supported_version" title="Link to this definition"></a></dt>
+<dd><p>Convert a legacy version str containing single chars rather than
+numbers to a regular version string. This is done by replacing a char
+by its ASCII code (using <code class="docutils literal notranslate"><span class="pre">ord</span></code>). This assumes that the version number
+only uses at most a single char per level and only ASCII chars.</p>
+<p>It also splits off anything that comes after the first <code class="docutils literal notranslate"><span class="pre">-</span></code> in the version str.</p>
+<p>This is meant to pass versions like <code class="docutils literal notranslate"><span class="pre">'A.02.17-02.40-02.17-00.52-04-01'</span></code>
+primarily used by Keysight instruments.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.deep_update">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">deep_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.10)"><span class="pre">MutableMapping</span></a><span class="p"><span class="pre">[</span></span><span class="pre">K</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.10)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><span class="pre">L</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.10)"><span class="pre">MutableMapping</span></a><span class="p"><span class="pre">[</span></span><span class="pre">K</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">L</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/deep_update_utils.html#deep_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.deep_update" title="Link to this definition"></a></dt>
+<dd><p>Recursively update one JSON structure with another.</p>
+<p>Only dives into nested dicts; lists get replaced completely.
+If the original value is a dictionary and the new value is not, or vice versa,
+we also replace the value completely.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.deprecate">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">deprecate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.10)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/deprecate.html#deprecate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.deprecate" title="Link to this definition"></a></dt>
+<dd><p>A utility function to decorate deprecated functions and classes.</p>
+<p>Note that this is not recommended to be used for deprecation any new code.
+It is recommended to use typing_extensions.deprecated (which will be added
+to the std lib as warnings.deprecated in python 3.13)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reason</strong> – The reason of deprecation.</p></li>
+<li><p><strong>alternative</strong> – The alternative function or class to put in use instead of
+the deprecated one.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.diff_param_values">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">diff_param_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">left_snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#qcodes.utils.ParameterDiff" title="qcodes.utils.snapshot_helpers.ParameterDiff"><span class="pre">ParameterDiff</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/snapshot_helpers.html#diff_param_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.diff_param_values" title="Link to this definition"></a></dt>
+<dd><p>Given two snapshots, returns the differences between parameter values
+in each.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.extract_param_values">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">extract_param_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">snapshot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#tuple" title="(in Python v3.10)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/snapshot_helpers.html#extract_param_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.extract_param_values" title="Link to this definition"></a></dt>
+<dd><p>Given a snapshot, returns a dictionary from
+instrument and parameter names onto parameter values.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.full_class">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">full_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><span class="pre">object</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/full_class.html#full_class"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.full_class" title="Link to this definition"></a></dt>
+<dd><p>The full importable path to an object’s class.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.get_all_installed_package_versions">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">get_all_installed_package_versions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/installation_info.html#get_all_installed_package_versions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.get_all_installed_package_versions" title="Link to this definition"></a></dt>
+<dd><p>Return a dictionary of the currently installed packages and their versions.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.get_qcodes_path">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">get_qcodes_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">subfolder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/path_helpers.html#get_qcodes_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.get_qcodes_path" title="Link to this definition"></a></dt>
+<dd><p>Return full file path of the QCoDeS module. Additional arguments will be
+appended as subfolder.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.get_qcodes_user_path">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">get_qcodes_user_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">file_parts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/path_helpers.html#get_qcodes_user_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.get_qcodes_user_path" title="Link to this definition"></a></dt>
+<dd><p>Get <code class="docutils literal notranslate"><span class="pre">~/.qcodes</span></code> path or if defined the path defined in the
+<code class="docutils literal notranslate"><span class="pre">QCODES_USER_PATH</span></code> environment variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>path to the user qcodes directory</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.is_function">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">is_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coroutine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/function_helpers.html#is_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.is_function" title="Link to this definition"></a></dt>
+<dd><p>Check and require a function that can accept the specified number of
+positional arguments, which either is or is not a coroutine
+type casting “functions” are allowed, but only in the 1-argument form.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> – Function to check.</p></li>
+<li><p><strong>arg_count</strong> – Number of argument f should accept.</p></li>
+<li><p><strong>coroutine</strong> – Is a coroutine.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>is function and accepts the specified number of arguments.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.is_qcodes_installed_editably">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">is_qcodes_installed_editably</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/installation_info.html#is_qcodes_installed_editably"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.is_qcodes_installed_editably" title="Link to this definition"></a></dt>
+<dd><p>Try to ask pip whether QCoDeS is installed in editable mode and return
+the answer a boolean. Returns None if pip somehow did not respond as
+expected.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.issue_deprecation_warning">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">issue_deprecation_warning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">what</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stacklevel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/deprecate.html#issue_deprecation_warning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.issue_deprecation_warning" title="Link to this definition"></a></dt>
+<dd><p>Issue a <cite>QCoDeSDeprecationWarning</cite> with a consistently formatted message</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.list_of_data_to_maybe_ragged_nd_array">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">list_of_data_to_maybe_ragged_nd_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#type" title="(in Python v3.10)"><span class="pre">type</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">np.ndarray</span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/numpy_utils.html#list_of_data_to_maybe_ragged_nd_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.list_of_data_to_maybe_ragged_nd_array" title="Link to this definition"></a></dt>
+<dd><p>Convert a (nested) Sequence of data to numpy arrays. Handle that
+the elements of the sequence may not have the same length in which
+case the returned array will be of dtype object.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.partial_with_docstring">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">partial_with_docstring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docstring</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/partial_utils.html#partial_with_docstring"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.partial_with_docstring" title="Link to this definition"></a></dt>
+<dd><p>We want to have a partial function which will allow us to access the docstring
+through the python built-in help function. This is particularly important
+for client-facing driver methods, whose arguments might not be obvious.</p>
+<p>Consider the follow example why this is needed:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="o">...</span> <span class="k">pass</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="s2">&quot;bla&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">help</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="c1"># this will print the docstring of partial and not the docstring set above</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>func</strong> – A function that its docstring will be accessed.</p></li>
+<li><p><strong>docstring</strong> – The docstring of the corresponding function.</p></li>
+<li><p><strong>**kwargs</strong> – Keyword arguments passed to the function.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.qcodes_abstractmethod">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">qcodes_abstractmethod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcobj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="pre">input</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">output</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="../validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="pre">input</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">output</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/abstractmethod.html#qcodes_abstractmethod"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.qcodes_abstractmethod" title="Link to this definition"></a></dt>
+<dd><p>A decorator indicating abstract methods.</p>
+<p>This is heavily inspired by the decorator of the same name in
+the ABC standard library. But we make our own version because
+we actually want to allow the class with the abstract method to be
+instantiated and we will use this property to detect if the
+method is abstract and should be overwritten.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.strip_attrs">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">strip_attrs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3.10/library/functions.html#object" title="(in Python v3.10)"><span class="pre">object</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">whitelist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../../_modules/qcodes/utils/attribute_helpers.html#strip_attrs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.strip_attrs" title="Link to this definition"></a></dt>
+<dd><p>Irreversibly remove all direct instance attributes of object, to help with
+disposal, breaking circular references.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>obj</strong> – Object to be stripped.</p></li>
+<li><p><strong>whitelist</strong> – List of names that are not stripped from the object.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="qcodes.utils.thread_map">
+<span class="sig-prename descclassname"><span class="pre">qcodes.utils.</span></span><span class="sig-name descname"><span class="pre">thread_map</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callables</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../validators/index.html#qcodes.validators.Callable" title="qcodes.validators.Callable"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">T</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../validators/index.html#qcodes.validators.Sequence" title="qcodes.validators.Sequence"><span class="pre">Sequence</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#dict" title="(in Python v3.10)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3.10/library/stdtypes.html#list" title="(in Python v3.10)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><span class="pre">T</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3.10/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/qcodes/utils/threading_utils.html#thread_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#qcodes.utils.thread_map" title="Link to this definition"></a></dt>
+<dd><p>Evaluate a sequence of callables in separate threads, returning
+a list of their return values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>callables</strong> – A sequence of callables.</p></li>
+<li><p><strong>args</strong> (<em>Optional</em>) – A sequence of sequences containing the positional
+arguments for each callable.</p></li>
+<li><p><strong>kwargs</strong> (<em>Optional</em>) – A sequence of dicts containing the keyword arguments
+for each callable.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../station.html" class="btn btn-neutral float-left" title="qcodes.station" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../validators/index.html" class="btn btn-neutral float-right" title="qcodes.validators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

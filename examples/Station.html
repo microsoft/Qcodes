@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Station &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Complex Numbers" href="Parameters/Complex_Parameters.html" />
+    <link rel="prev" title="QCoDeS config" href="Configuring_QCoDeS.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#basic-examples">Basic examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Configuring_QCoDeS.html">QCoDeS config</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Station</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#What-is-a-Station?">What is a Station?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#How-to-create-a-Station-and-work-with-it?">How to create a Station and work with it?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Snapshot-of-a-Station">Snapshot of a Station</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Configuring-the-Station-by-using-a-YAML-configuration-file">Configuring the Station by using a YAML configuration file</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">Station</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/Station.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/Station.ipynb">docs/examples/Station.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/Station.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="Station">
+<h1>Station<a class="headerlink" href="#Station" title="Link to this heading"></a></h1>
+<p>In this tutorial, the following topics shall be covered:</p>
+<ul class="simple">
+<li><p>What is a station</p></li>
+<li><p>How to create it, and work with it</p></li>
+<li><p>Snapshot of a station</p></li>
+<li><p>Configuring station using a YAML configuration file</p></li>
+</ul>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Useful imports:</span>
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.mock_instruments</span> <span class="kn">import</span> <span class="n">DummyInstrument</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+<span class="kn">from</span> <span class="nn">qcodes.station</span> <span class="kn">import</span> <span class="n">Station</span>
+</pre></div>
+</div>
+</div>
+<section id="What-is-a-Station?">
+<h2>What is a Station?<a class="headerlink" href="#What-is-a-Station?" title="Link to this heading"></a></h2>
+<p>Experimental setups are generally large as they consist of many instruments. Each instrument in a given setup tends to be quite complex due to the fact that each comprises a variety of adjustable parameters and other stateful parts. As a result, it deems useful to have a bucket in which the necessary information concerning the instruments that are going to be used in a particular experiment can be conveniently stored, and accessed.</p>
+<p>The concept of a station, in essence, is a programmatical representation of such a bucket. Instruments, parameters, and other “components” can be added to a station. The user gets a station instance that can be referred to in order to access those “components”.</p>
+<p>A station can be configured from a text file which simplifies the initialisation of the instruments. In particular, in this tutorial, we shall provide an example configuration of a station by using a YAML file.</p>
+<p>A special use case of a station in an experiment would be the capturing of the state of an experimental setup, known as a snapshot. We shall devote a subsection for the concept of a snapshot.</p>
+</section>
+<section id="How-to-create-a-Station-and-work-with-it?">
+<h2>How to create a Station and work with it?<a class="headerlink" href="#How-to-create-a-Station-and-work-with-it?" title="Link to this heading"></a></h2>
+<p>Let us, first, create a dummy parameter, and a dummy instrument which we shall use throughout the tutorial.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># A dummy self-standing parameter</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Parameter P&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;kg&#39;</span><span class="p">,</span> <span class="n">set_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">p</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># A dummy instrument with three parameters</span>
+<span class="n">instr</span> <span class="o">=</span> <span class="n">DummyInstrument</span><span class="p">(</span><span class="s1">&#39;instr&#39;</span><span class="p">,</span> <span class="n">gates</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">,</span> <span class="s1">&#39;gain&#39;</span><span class="p">])</span>
+<span class="n">instr</span><span class="o">.</span><span class="n">gain</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<section id="Creating-a-Station">
+<h3>Creating a Station<a class="headerlink" href="#Creating-a-Station" title="Link to this heading"></a></h3>
+<p>We create a <code class="docutils literal notranslate"><span class="pre">Station</span></code> object and add previously defined parameter and instrument as its components as follows:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">()</span>
+
+<span class="n">station</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="n">station</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">instr</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;instr&#39;
+</pre></div></div>
+</div>
+<p>It is straightforward to verify if the station contains our parameter and instrument:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now station contains both `p` and `instr`</span>
+<span class="n">station</span><span class="o">.</span><span class="n">components</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;p&#39;: &lt;qcodes.parameters.parameter.Parameter: p at 140186466459472&gt;,
+ &#39;instr&#39;: &lt;DummyInstrument: instr&gt;}
+</pre></div></div>
+</div>
+<p>Note that it is also possible to add components to a station via arguments of its constructor:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">instr</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Accessing-Station-components">
+<h3>Accessing Station components<a class="headerlink" href="#Accessing-Station-components" title="Link to this heading"></a></h3>
+<p>Now that the components have been added to the station, it is possible to access them as its attributes (by using the “dot” notation). With this feature, users can use tab-completion to find the instrument in the station they’d like to access.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let&#39;s confirm that station&#39;s `p` is</span>
+<span class="c1"># actually the `p` parameter defined above</span>
+<span class="k">assert</span> <span class="n">station</span><span class="o">.</span><span class="n">p</span> <span class="ow">is</span> <span class="n">p</span>
+</pre></div>
+</div>
+</div>
+<p>It is also possible to access a component or a sub component of a instrument directly via its name. For example, if we want to access the parameter <code class="docutils literal notranslate"><span class="pre">input</span></code> of the instrument <code class="docutils literal notranslate"><span class="pre">instr</span></code>, we can do the following:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">input_name</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">instr</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">full_name</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">input_name</span><span class="p">)</span>
+<span class="n">param</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="n">input_name</span><span class="p">)</span>
+<span class="n">param</span> <span class="ow">is</span> <span class="n">instr</span><span class="o">.</span><span class="n">input</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+instr_input
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+True
+</pre></div></div>
+</div>
+</section>
+<section id="Removing-components-from-a-Station">
+<h3>Removing components from a Station<a class="headerlink" href="#Removing-components-from-a-Station" title="Link to this heading"></a></h3>
+<p>Removing components from a station should be done with <code class="docutils literal notranslate"><span class="pre">remove_component</span></code> method - the name of the component that is to be removed should be passed as the argument of the method:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">station</span><span class="o">.</span><span class="n">remove_component</span><span class="p">(</span><span class="s1">&#39;p&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;qcodes.parameters.parameter.Parameter: p at 140186466459472&gt;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now station contains only `instr`</span>
+<span class="n">station</span><span class="o">.</span><span class="n">components</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{&#39;instr&#39;: &lt;DummyInstrument: instr&gt;}
+</pre></div></div>
+</div>
+</section>
+<section id="Default-Station">
+<h3>Default Station<a class="headerlink" href="#Default-Station" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">Station</span></code> class is designed in such a way that it always contains a reference to a <code class="docutils literal notranslate"><span class="pre">default</span></code> station object (the <code class="docutils literal notranslate"><span class="pre">Station.default</span></code> attribute). The constructor of the station object has a <code class="docutils literal notranslate"><span class="pre">default</span></code> keyword argument that allows to specify whether the resulting instance shall be stored as a default station, or not.</p>
+<p>This feature is a convenience. Other objects which consume an instance of <code class="docutils literal notranslate"><span class="pre">Station</span></code> as an argument (for example, <code class="docutils literal notranslate"><span class="pre">Measurement</span></code>) can now implement a logic to resort to <code class="docutils literal notranslate"><span class="pre">Station.default</span></code> in case a <code class="docutils literal notranslate"><span class="pre">Station</span></code> instance was not explicitly given to them.</p>
+</section>
+</section>
+<section id="Snapshot-of-a-Station">
+<h2>Snapshot of a Station<a class="headerlink" href="#Snapshot-of-a-Station" title="Link to this heading"></a></h2>
+<p>The station has a <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> method that allows to create a collective, single snapshot of all the instruments, parameters, and submodules that have been added to it. It would be very time-consuming for the user to manually go through every instrument and parameter, and collect the snapshot data.</p>
+<p>For example, the <code class="docutils literal notranslate"><span class="pre">Measurement</span></code> object accepts a station argument exactly for the purpose of storing a snapshot of the whole experimental setup next to the measured data.</p>
+<p>Read more about snapshots in general, how to work with them, station’s snapshot in particular, and more – in <a class="reference internal" href="DataSet/Working%20with%20snapshots.html"><span class="doc">this notebook</span></a>.</p>
+</section>
+<section id="Configuring-the-Station-by-using-a-YAML-configuration-file">
+<h2>Configuring the Station by using a YAML configuration file<a class="headerlink" href="#Configuring-the-Station-by-using-a-YAML-configuration-file" title="Link to this heading"></a></h2>
+<p>The instantiation of the instruments, setting up the proper initial values of the corresponding parameters and similar pre-specifications of a measurement constitutes the initialization portion of the code. In general, this portion can be quite long and tedious to maintain. For example, consider a case in which a certain instrument is no longer needed. In this case a common practice is commenting out the lines of initialization script which are related to the said instrument, and re-run the
+initialization script. The latter may easily cause a bloaded code with possible repetitions. In another case, we may want to share initialization scripts among collaborators and fail to do so as it is difficult due to the fact that even similar experiments may require different instantiations.</p>
+<p>These (and more) concerns are to be solved by a YAML configuration file of the <code class="docutils literal notranslate"><span class="pre">Station</span></code> object (formerly known as the <code class="docutils literal notranslate"><span class="pre">StationConfigurator</span></code>).</p>
+<p>The YAML configuration file allows one to statically and uniformly specify settings of all the instruments (and their parameters) that the measurement setup (the “physical” station) consists of, and load them with those settings on demand. The <code class="docutils literal notranslate"><span class="pre">Station</span></code> object implements convenient methods for this procedure.</p>
+<p>The YAML configuration file, if used, is stored in the station as a attribute with the name <code class="docutils literal notranslate"><span class="pre">config</span></code>, and is thus included in the snapshot of the whole station.</p>
+<p>Note that we are not obliged to use the YAML configuration file to set up a <code class="docutils literal notranslate"><span class="pre">Station</span></code> (see, for example, the section “How to create a Station and work with it” of this tutorial).</p>
+<p>In what follows, we shall discuss:</p>
+<ul class="simple">
+<li><p>The structure of the YAML configuration file</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Station</span></code>s methods related to working with the YAML configuration</p></li>
+<li><p>Entries in QCoDeS configuration that are related to <code class="docutils literal notranslate"><span class="pre">Station</span></code></p></li>
+</ul>
+<section id="Example-of-YAML-Station-configuration">
+<h3>Example of YAML Station configuration<a class="headerlink" href="#Example-of-YAML-Station-configuration" title="Link to this heading"></a></h3>
+<p>Here, we provide an example YAML station configuration file. All the fields within the configuration file are explained via inline comments that should not be disregarded. A careful inspection of the comments by the reader is strongly recomended for a clear understanding.</p>
+<p>In particular, here, we would like to underline the difference between <code class="docutils literal notranslate"><span class="pre">parameters</span></code> and <code class="docutils literal notranslate"><span class="pre">add_parameters</span></code> sections. In this example file for the <code class="docutils literal notranslate"><span class="pre">QDac</span></code> instrument, we define a <code class="docutils literal notranslate"><span class="pre">Bx</span></code> parameter as a new, additional parameter. The <code class="docutils literal notranslate"><span class="pre">Bx</span></code> parameter will have the properties such as <code class="docutils literal notranslate"><span class="pre">limits</span></code>, <code class="docutils literal notranslate"><span class="pre">scale</span></code>, etc. <strong>different</strong> from its “source” parameter <code class="docutils literal notranslate"><span class="pre">ch02.v</span></code> that it controls. Specifically, this means that when setting <code class="docutils literal notranslate"><span class="pre">Bx</span></code> to <code class="docutils literal notranslate"><span class="pre">2.0</span></code>:</p>
+<ol class="arabic simple">
+<li><p>the value of <code class="docutils literal notranslate"><span class="pre">2.0</span></code> is being validated against the limits of <code class="docutils literal notranslate"><span class="pre">Bx</span></code> (<code class="docutils literal notranslate"><span class="pre">0.0,</span> <span class="pre">3.0</span></code>),</p></li>
+<li><p>then the raw (“scaled”) value of <code class="docutils literal notranslate"><span class="pre">130.468</span></code> (<code class="docutils literal notranslate"><span class="pre">=</span> <span class="pre">2.0</span> <span class="pre">*</span> <span class="pre">65.234</span></code>) is passed to the <code class="docutils literal notranslate"><span class="pre">ch02.v</span></code> parameter,</p></li>
+<li><p>then that value of <code class="docutils literal notranslate"><span class="pre">130.468</span></code> is validated against the limits of <code class="docutils literal notranslate"><span class="pre">ch02.v</span></code> (<code class="docutils literal notranslate"><span class="pre">0.0,</span> <span class="pre">1.5e+3</span></code>),</p></li>
+<li><p>then the raw (“scaled”) value of <code class="docutils literal notranslate"><span class="pre">1.30468</span></code> (<code class="docutils literal notranslate"><span class="pre">=</span> <span class="pre">130.468</span> <span class="pre">*</span> <span class="pre">0.01</span></code>) is finally passed to the physical instrument.</p></li>
+</ol>
+<p>We also note that in the exponential represantations of numbers, it is required to provide <code class="docutils literal notranslate"><span class="pre">+</span></code> and <code class="docutils literal notranslate"><span class="pre">-</span></code> signs after <code class="docutils literal notranslate"><span class="pre">e</span></code>, e.g., we write <code class="docutils literal notranslate"><span class="pre">7.8334e+5</span></code> and <code class="docutils literal notranslate"><span class="pre">2.5e-23</span></code>. Refer to YAML file format specification for more information.</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example YAML Station configuration file</span>
+<span class="c1">#</span>
+<span class="c1"># This file gets snapshotted and can be read back from the JSON</span>
+<span class="c1"># snapshot for every experiment run.</span>
+<span class="c1">#</span>
+<span class="c1"># All fields are optional unless explicitly mentioned otherwise.</span>
+<span class="c1">#</span>
+<span class="c1"># As in all YAML files a one-line notation can also be used</span>
+<span class="c1"># instead of nesting notation.</span>
+<span class="c1">#</span>
+<span class="c1"># The file starts with a list of loadable instruments instances,</span>
+<span class="c1"># i.e. there can be two entries for two instruments of the same</span>
+<span class="c1"># type if you want to specify two different use cases</span>
+<span class="c1"># e.g. &quot;dmm1-readout&quot; and &quot;dmm1-calibration&quot;.</span>
+<span class="c1">#</span>
+<span class="nt">instruments</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Each instrument is specified by its name.</span>
+<span class="w">  </span><span class="c1"># This name is what is looked up by the `load_instrument`</span>
+<span class="w">  </span><span class="c1"># method of `Station`.</span>
+<span class="w">  </span><span class="c1"># Simulated instruments can also be specified here, just put</span>
+<span class="w">  </span><span class="c1"># the path to the simulation .yaml file as the value of the</span>
+<span class="w">  </span><span class="c1"># &quot;init&quot;-&gt;&quot;visalib&quot; field (see below for an example of the</span>
+<span class="w">  </span><span class="c1"># &quot;init&quot; section as well as an example of specifying</span>
+<span class="w">  </span><span class="c1"># a simulated instrument).</span>
+<span class="w">  </span><span class="nt">qdac</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Full import path to the python class of the instrument</span>
+<span class="w">    </span><span class="c1"># driver</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qcodes.instrument_drivers.QDev.QDevQDac</span>
+<span class="w">    </span><span class="c1"># Visa address of the instrument.</span>
+<span class="w">    </span><span class="c1"># Note that this field can also be specified in the</span>
+<span class="w">    </span><span class="c1"># &quot;init&quot; section (see below) but the address specified</span>
+<span class="w">    </span><span class="c1"># here will overrule the address from the &quot;init&quot; section.</span>
+<span class="w">    </span><span class="c1"># Essentially, specifying address here allows avoiding</span>
+<span class="w">    </span><span class="c1"># the &quot;init&quot; section completely when address is the only</span>
+<span class="w">    </span><span class="c1"># necessary argument that the instrument driver needs.</span>
+<span class="w">    </span><span class="c1"># For obvious reasons, this field is required for VISA</span>
+<span class="w">    </span><span class="c1"># instruments.</span>
+<span class="w">    </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ASRL4::INSTR</span>
+<span class="w">    </span><span class="c1"># If an instrument with this name is already instantiated,</span>
+<span class="w">    </span><span class="c1"># and this field is true, then the existing instrument</span>
+<span class="w">    </span><span class="c1"># instance will be closed before instantiating this new one.</span>
+<span class="w">    </span><span class="c1"># If this field is false, or left out, closing will not</span>
+<span class="w">    </span><span class="c1"># happen.</span>
+<span class="w">    </span><span class="nt">enable_forced_reconnect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="c1">#</span>
+<span class="w">    </span><span class="c1"># The &quot;init&quot; section specifies constant arguments that are</span>
+<span class="w">    </span><span class="c1"># to be passed to the __init__ function of the instrument.</span>
+<span class="w">    </span><span class="c1"># Note that it is the instrument&#39;s driver class that defines</span>
+<span class="w">    </span><span class="c1"># the allowed arguments, for example, here &quot;update_currents&quot;</span>
+<span class="w">    </span><span class="c1"># is an argument that is specific to &quot;QDac&quot; driver.</span>
+<span class="w">    </span><span class="nt">init</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">terminator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">\n</span>
+<span class="w">      </span><span class="nt">update_currents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="c1">#</span>
+<span class="w">    </span><span class="c1"># Setting up properties of parameters that already exist on</span>
+<span class="w">    </span><span class="c1"># the instrument.</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># Each parameter is specified by its name from the</span>
+<span class="w">      </span><span class="c1"># instrument driver class.</span>
+<span class="w">      </span><span class="c1"># Note that &quot;dot: notation can be used to specify</span>
+<span class="w">      </span><span class="c1"># parameters in (sub)channels and submodules.</span>
+<span class="w">      </span><span class="nt">ch01.v</span><span class="p">:</span>
+<span class="w">        </span><span class="c1"># If an alias is specified, the parameter becomes</span>
+<span class="w">        </span><span class="c1"># accessible under another name, so that you can write</span>
+<span class="w">        </span><span class="c1"># `qdac.cutter_gate(0.2)` instead of `qdac.ch01.v(0.2)`.</span>
+<span class="w">        </span><span class="c1"># Note that the parameter instance does not get copied,</span>
+<span class="w">        </span><span class="c1"># so that `(qdac.ch01.v is qdac.cutter_gate) == True`.</span>
+<span class="w">        </span><span class="nt">alias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cutter_gate</span>
+<span class="w">        </span><span class="c1"># Set new label.</span>
+<span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Cutter Gate Voltage</span>
+<span class="w">        </span><span class="c1"># Set new unit.</span>
+<span class="w">        </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mV</span>
+<span class="w">        </span><span class="c1"># Set new scale.</span>
+<span class="w">        </span><span class="nt">scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+<span class="w">        </span><span class="c1"># Set new post_delay.</span>
+<span class="w">        </span><span class="nt">post_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">        </span><span class="c1"># Set new inter_delay.</span>
+<span class="w">        </span><span class="nt">inter_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+<span class="w">        </span><span class="c1"># Set new step.</span>
+<span class="w">        </span><span class="nt">step</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-4</span>
+<span class="w">        </span><span class="c1"># If this field is given, and contains an array of two</span>
+<span class="w">        </span><span class="c1"># numbers like here, then the parameter</span>
+<span class="w">        </span><span class="c1"># gets a new `Numbers` validator with these values as</span>
+<span class="w">        </span><span class="c1"># lower and upper limits, respectively (in this case, it</span>
+<span class="w">        </span><span class="c1"># is `Numbers(-0.1, 0.1)`).</span>
+<span class="w">        </span><span class="nt">limits</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">-0.1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">0.1</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="c1"># Set the parameter to this given initial value upon</span>
+<span class="w">        </span><span class="c1"># instrument initialization.</span>
+<span class="w">        </span><span class="c1"># Note that if the current value on the physical</span>
+<span class="w">        </span><span class="c1"># instrument is different, the parameter will be ramped</span>
+<span class="w">        </span><span class="c1"># with the delays and step specified in this file.</span>
+<span class="w">        </span><span class="nt">initial_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+<span class="w">        </span><span class="c1"># In case this values equals to true, upon loading this</span>
+<span class="w">        </span><span class="c1"># instrument from this configuration this parameter will</span>
+<span class="w">        </span><span class="c1"># be appended to the list of parameters that are</span>
+<span class="w">        </span><span class="c1"># displayed in QCoDeS `Monitor`.</span>
+<span class="w">        </span><span class="nt">monitor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">      </span><span class="c1"># As in all YAML files a one-line notation can also be</span>
+<span class="w">      </span><span class="c1"># used, here is an example.</span>
+<span class="w">      </span><span class="nt">ch02.v</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">scale</span><span class="p">:</span><span class="w"> </span><span class="nv">0.01</span><span class="p p-Indicator">,</span><span class="nt"> limits</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1.5e+3</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="p p-Indicator">,</span><span class="nt"> label</span><span class="p">:</span><span class="w"> </span><span class="nv">my label</span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="nt">ch04.v</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">alias</span><span class="p">:</span><span class="w"> </span><span class="nv">Q1lplg1</span><span class="p p-Indicator">,</span><span class="nt"> monitor</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="c1">#</span>
+<span class="w">    </span><span class="c1"># This section allows to add new parameters to the</span>
+<span class="w">    </span><span class="c1"># instrument instance which are based on existing parameters</span>
+<span class="w">    </span><span class="c1"># of the instrument. This functionality is based on the use</span>
+<span class="w">    </span><span class="c1"># of the `DelegateParameter` class.</span>
+<span class="w">    </span><span class="nt">add_parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># For example, here we define a parameter that represents</span>
+<span class="w">      </span><span class="c1"># magnetic field control. Setting and getting this</span>
+<span class="w">      </span><span class="c1"># parameter will actually set/get a specific DAC channel.</span>
+<span class="w">      </span><span class="c1"># So this new magnetic field parameter is playing a role</span>
+<span class="w">      </span><span class="c1"># of a convenient proxy - it is much more convenient to</span>
+<span class="w">      </span><span class="c1"># perform a measurement where &quot;Bx&quot; is changed in tesla as</span>
+<span class="w">      </span><span class="c1"># opposed to where some channel of some DAC is changed in</span>
+<span class="w">      </span><span class="c1"># volts and one has to clutter the measurement code with</span>
+<span class="w">      </span><span class="c1"># the mess of conversion factors and more.</span>
+<span class="w">      </span><span class="c1"># Every new parameter definition starts with a name of</span>
+<span class="w">      </span><span class="c1"># the new parameter.</span>
+<span class="w">      </span><span class="nt">Bx</span><span class="p">:</span>
+<span class="w">        </span><span class="c1"># This field specifies the parameter which &quot;getter&quot; and</span>
+<span class="w">        </span><span class="c1"># &quot;setter&quot; will be used when calling `get`/`set` on this</span>
+<span class="w">        </span><span class="c1"># new parameter.</span>
+<span class="w">        </span><span class="c1"># Required field.</span>
+<span class="w">        </span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ch02.v</span>
+<span class="w">        </span><span class="c1"># Set the label. Otherwise, the one of the source parameter</span>
+<span class="w">        </span><span class="c1"># will be used.</span>
+<span class="w">        </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Magnetic Field X-Component</span>
+<span class="w">        </span><span class="c1"># Set the unit. Otherwise, the one of the source parameter</span>
+<span class="w">        </span><span class="c1"># will be used.</span>
+<span class="w">        </span><span class="nt">unit</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">T</span>
+<span class="w">        </span><span class="c1"># Other fields have the same purpose and behavior as for</span>
+<span class="w">        </span><span class="c1"># the entries in the `add_parameter` section.</span>
+<span class="w">        </span><span class="nt">scale</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">65.243</span>
+<span class="w">        </span><span class="nt">inter_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+<span class="w">        </span><span class="nt">post_delay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span>
+<span class="w">        </span><span class="nt">step</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+<span class="w">        </span><span class="nt">limits</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">0.0</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3.0</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">initial_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">        </span><span class="c1"># For the sake of example, we decided not to monitor this</span>
+<span class="w">        </span><span class="c1"># parameter in QCoDeS `Monitor`.</span>
+<span class="w">        </span><span class="c1">#monitor: true</span>
+<span class="w">  </span><span class="c1">#</span>
+<span class="w">  </span><span class="c1"># More example instruments, just for the sake of example.</span>
+<span class="w">  </span><span class="c1"># Note that configuring simulated instruments also works,</span>
+<span class="w">  </span><span class="c1"># see the use of &#39;visalib&#39; argument field below</span>
+<span class="w">  </span><span class="nt">dmm1</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qcodes.instrument_drivers.agilent.Agilent34401A</span>
+<span class="w">    </span><span class="nt">enable_forced_reconnect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GPIB::1::65535::INSTR</span>
+<span class="w">    </span><span class="nt">init</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">visalib</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;Agilent_34400A.yaml@sim&#39;</span>
+<span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">volt</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">monitor</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">mock_dac</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qcodes.instrument_drivers.mock_instruments.DummyInstrument</span>
+<span class="w">    </span><span class="nt">enable_forced_reconnect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">init</span><span class="p">:</span>
+<span class="w">      </span><span class="c1"># To pass an list of items use {}.</span>
+<span class="w">      </span><span class="nt">gates</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="s">&quot;ch1&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;ch2&quot;</span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">add_parameters</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">Bx</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">source</span><span class="p">:</span><span class="w"> </span><span class="nv">ch1</span><span class="p p-Indicator">,</span><span class="nt"> label</span><span class="p">:</span><span class="w"> </span><span class="nv">Bx</span><span class="p p-Indicator">,</span><span class="nt"> unit</span><span class="p">:</span><span class="w"> </span><span class="nv">T</span><span class="p p-Indicator">,</span>
+<span class="nt">           scale</span><span class="p">:</span><span class="w"> </span><span class="nv">28</span><span class="p p-Indicator">,</span><span class="nt"> limits</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">-1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">],</span><span class="nt"> monitor</span><span class="p">:</span><span class="w"> </span><span class="nv">true</span><span class="p p-Indicator">}</span>
+<span class="w">  </span><span class="nt">mock_dac2</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">qcodes.instrument_drivers.mock_instruments.DummyInstrument</span>
+<span class="w">    </span><span class="nt">enable_forced_reconnect</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</section>
+<section id="QCoDeS-configuration-entries-related-to-Station">
+<h3>QCoDeS configuration entries related to Station<a class="headerlink" href="#QCoDeS-configuration-entries-related-to-Station" title="Link to this heading"></a></h3>
+<p>QCoDeS configuration contains entries that are related to the <code class="docutils literal notranslate"><span class="pre">Station</span></code> and its YAML configuration file. Refer to <a class="reference external" href="http://microsoft.github.io/Qcodes/user/configuration.html?highlight=station#default-config">the description of the ‘station’ section in QCoDeS config</a> for more specific information.</p>
+</section>
+<section id="Using-Station-with-YAML-configuration-files">
+<h3>Using Station with YAML configuration files<a class="headerlink" href="#Using-Station-with-YAML-configuration-files" title="Link to this heading"></a></h3>
+<p>In this section, we shall briefly describe the usage of <code class="docutils literal notranslate"><span class="pre">Station</span></code> with YAML configuration files. For more details, we refer to the docstrings of the methods of the <code class="docutils literal notranslate"><span class="pre">Station</span></code> class.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">Station</span></code> can be created with or without one or more YAML configuration files. With YAML configuration files, <code class="docutils literal notranslate"><span class="pre">Station</span></code> can be created by passing the file names (or file names with absolute path) to <code class="docutils literal notranslate"><span class="pre">Station</span></code>’s constructor. File names and location resolution also takes into account related entries in the <code class="docutils literal notranslate"><span class="pre">'station'</span></code> section of the QCoDeS configuration. We refer to corresponding documentation for more information.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">(</span><span class="n">config_file</span><span class="o">=</span><span class="s1">&#39;qutech_station_25.yaml&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">(</span><span class="n">config_file</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;example_1.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;example_2.yaml&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Alternatively, <code class="docutils literal notranslate"><span class="pre">load_config_file</span></code> or <code class="docutils literal notranslate"><span class="pre">load_config_files</span></code> methods can be called on an already instantiated Station to load the configuration files.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">load_config_file</span></code> method can be used for loading 1 configuration file.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">load_config_files</span></code> method can be used for loading 1 or more configuration files. If multiple configuration files are provided, this method first merges them into one temporary file and then loads that into the station. Please note that, the merged file is temporary and not saved on the disk.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">()</span>
+<span class="n">station</span><span class="o">.</span><span class="n">load_config_file</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;Q:</span><span class="se">\\</span><span class="s1">station_data</span><span class="se">\\</span><span class="s1">qutech_station_25.yaml&#39;</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">station</span> <span class="o">=</span> <span class="n">Station</span><span class="p">()</span>
+<span class="n">station</span><span class="o">.</span><span class="n">load_config_files</span><span class="p">(</span><span class="s1">&#39;example_1.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;example_2.yaml&#39;</span><span class="p">,</span> <span class="s1">&#39;example_3.yaml&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>In case the configuration is already available as a YAML string, then that configuration can be loaded using <code class="docutils literal notranslate"><span class="pre">Station</span></code>’s <code class="docutils literal notranslate"><span class="pre">load_config</span></code> method. We refer to it’s docstring and signature for more information.</p>
+<p>Once the YAML configuration is loaded, the <code class="docutils literal notranslate"><span class="pre">load_instrument</span></code> method of the <code class="docutils literal notranslate"><span class="pre">Station</span></code> can be used to instantiate a particular instrument that is described in the YAML configuration. Calling this method not only will return an instance of the instantiated instrument, but will also add it to the station object.</p>
+<p>For example, to instantiate the <code class="docutils literal notranslate"><span class="pre">qdac</span></code> instrument from the YAML configuration example from the previous section, it is sufficient to execute the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">loaded_qdac</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">load_instrument</span><span class="p">(</span><span class="s1">&#39;qdac&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note the <code class="docutils literal notranslate"><span class="pre">load_instrument</span></code>’s <code class="docutils literal notranslate"><span class="pre">revive_instance</span></code> argument, as well as <code class="docutils literal notranslate"><span class="pre">enable_force_reconnect</span></code> setting from the YAML configuration - these define what to do in case an instrument with the given name has already been instantiated in this python session.</p>
+<p>There is a more convenient way to load the instruments. Upon load of the YAML configuration, convenient <code class="docutils literal notranslate"><span class="pre">load_&lt;instrument</span> <span class="pre">name&gt;</span></code> methods are being generated on the <code class="docutils literal notranslate"><span class="pre">Station</span></code> object. Users can make use of tab-completion in their development environments to list what instruments can be loaded by the station object from the loaded YAML configuration. For example, loading the QDac instrument can, alternatively, be done via:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">conveniently_loaded_qdac</span> <span class="o">=</span> <span class="n">station</span><span class="o">.</span><span class="n">load_qdac</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>We note that instruments are instantiated only when <code class="docutils literal notranslate"><span class="pre">load_*</span></code> methods are called. This means that loading a YAML configuration does NOT automatically instantiate anything.</p>
+<p>For the instruments that are loaded with the <code class="docutils literal notranslate"><span class="pre">load_*</span></code> methods, it is recommended to use <code class="docutils literal notranslate"><span class="pre">Station</span></code>’s <code class="docutils literal notranslate"><span class="pre">close_and_remove_instrument</span></code> method for closing and removing those from the station.</p>
+</section>
+<section id="Setting-up-Visual-Studio-Code-to-work-with-station-files">
+<h3>Setting up Visual Studio Code to work with station files<a class="headerlink" href="#Setting-up-Visual-Studio-Code-to-work-with-station-files" title="Link to this heading"></a></h3>
+<p>VSCode can be conveniently used to work with station files. The <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml">YAML extension by Red Hat</a>, allows to use JSON schemas to validate and auto-complete YAML files.</p>
+<p><img alt="vscode" src="../_images/vscode_integration.gif" /></p>
+<p><strong>Quick setup steps</strong></p>
+<ul class="simple">
+<li><p>install <a class="reference external" href="https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml">YAML extension by Red Hat</a></p></li>
+<li><p>run <code class="docutils literal notranslate"><span class="pre">qcodes.utils.installation.register_station_schema_with_vscode()</span></code></p></li>
+<li><p>make sure your station file has the extension <code class="docutils literal notranslate"><span class="pre">.station.yaml</span></code></p></li>
+</ul>
+<p><strong>Setup details</strong></p>
+<p>To associate the qcodes station schema with <code class="docutils literal notranslate"><span class="pre">*.station.yaml</span></code> files you can either run</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.utils.installation</span> <span class="kn">import</span> <span class="n">register_station_schema_with_vscode</span>
+
+<span class="c1"># if statement for CI only</span>
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s1">&#39;win32&#39;</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;%APPDATA%&#39;</span><span class="p">,</span> <span class="s1">&#39;Code&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;settings.json&#39;</span><span class="p">))):</span>
+    <span class="n">register_station_schema_with_vscode</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>or manually add the following to your vscode user/workspace settings:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>&quot;yaml.schemas&quot;: {
+        &quot;file:///path/to/home/schemas/station.schema.json&quot;: &quot;*.station.yaml&quot;
+    }
+</pre></div>
+</div>
+<p>To get autocompletion for instruments from other packages run</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">qcodes</span>
+<span class="kn">import</span> <span class="nn">qcodes_contrib_drivers</span>
+<span class="kn">import</span> <span class="nn">zhinst</span>
+<span class="n">qcodes</span><span class="o">.</span><span class="n">station</span><span class="o">.</span><span class="n">update_config_schema</span><span class="p">(</span><span class="n">qcodes_contrib_drivers</span><span class="p">,</span> <span class="n">zhinst</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">qcodes_contrib_drivers</span></code> and <code class="docutils literal notranslate"><span class="pre">zhinst</span></code> are example packages that are available in the python environment where qcodes is running from.</p>
+<p><strong>Beware</strong> that the generated schema file is not python-environment aware. To circumvent that, you can manually generate a schema file for each environment and register them as a workspace setting in vscode.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expandvars</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;%APPDATA%&#39;</span><span class="p">,</span> <span class="s1">&#39;Code&#39;</span><span class="p">,</span> <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="s1">&#39;settings.json&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&#39;%APPDATA%/Code/User/settings.json&#39;
+</pre></div></div>
+</div>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {}, "version_major": 2, "version_minor": 0}
+</script></section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Configuring_QCoDeS.html" class="btn btn-neutral float-left" title="QCoDeS config" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Parameters/Complex_Parameters.html" class="btn btn-neutral float-right" title="Complex Numbers" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

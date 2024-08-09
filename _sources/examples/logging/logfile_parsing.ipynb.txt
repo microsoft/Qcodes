@@ -1,0 +1,427 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Logfile parsing"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Here, we provide an example concerning how to benefit from QCoDeS logs by simple analysis and visualisation."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Logging hadn't been started.\n",
+      "Activating auto-logging. Current session state plus future input saved.\n",
+      "Filename       : C:\\Users\\jenielse\\.qcodes\\logs\\command_history.log\n",
+      "Mode           : append\n",
+      "Output logging : True\n",
+      "Raw input log  : False\n",
+      "Timestamping   : True\n",
+      "State          : active\n",
+      "Qcodes Logfile : C:\\Users\\jenielse\\.qcodes\\logs\\220603-13972-qcodes.log\n"
+     ]
+    }
+   ],
+   "source": [
+    "%matplotlib inline\n",
+    "import os\n",
+    "from zipfile import ZipFile\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "from qcodes.logger import log_to_dataframe, time_difference"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# put the 30MB into a zip file\n",
+    "filepath = os.path.join(os.getcwd(), 'static', 'pythonlog.zip')\n",
+    "with ZipFile(filepath) as z:\n",
+    "    with z.open('pythonlog.log', 'r') as f:\n",
+    "        my_log = [line.decode() for line in f]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "True"
+      ]
+     },
+     "execution_count": 3,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "os.path.exists(filepath)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "logdata = log_to_dataframe(my_log, separator=' - ', columns=['time', 'module', 'function', 'loglevel', 'message'])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The `logdata` is, now, a nice and tidy `DataFrame` that one can further manipulate to extract more information, if needed."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>time</th>\n",
+       "      <th>module</th>\n",
+       "      <th>function</th>\n",
+       "      <th>loglevel</th>\n",
+       "      <th>message</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>2018-05-10 16:01:50,497</td>\n",
+       "      <td>qcodes.instrument_drivers.QDev.QDac_channels</td>\n",
+       "      <td>write</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Writing to instrument qdac: wav 2 0 0 0;set 2 ...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>2018-05-10 16:01:50,546</td>\n",
+       "      <td>qcodes.instrument.visa</td>\n",
+       "      <td>ask_raw</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Querying instrument SR860_120: OUTP? 2\\r\\n</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>2018-05-10 16:01:50,552</td>\n",
+       "      <td>qcodes.instrument.visa</td>\n",
+       "      <td>ask_raw</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Got response from instrument SR860_120: 8.9832...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>2018-05-10 16:01:50,553</td>\n",
+       "      <td>qcodes.instrument.visa</td>\n",
+       "      <td>ask_raw</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Querying instrument SR860_120: SLVL?\\r\\n</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>2018-05-10 16:01:50,561</td>\n",
+       "      <td>qcodes.instrument.visa</td>\n",
+       "      <td>ask_raw</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Got response from instrument SR860_120: 9.9999...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>...</th>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "      <td>...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>255146</th>\n",
+       "      <td>2018-05-10 17:12:03,208</td>\n",
+       "      <td>qcodes.instrument.visa</td>\n",
+       "      <td>ask_raw</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Querying instrument SR860_120: OUTP? 2\\r\\n</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>255147</th>\n",
+       "      <td>2018-05-10 17:12:14,257</td>\n",
+       "      <td>qcodes.data.data_set</td>\n",
+       "      <td>finalize</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Finalising the DataSet. Writing.\\r\\n</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>255148</th>\n",
+       "      <td>2018-05-10 17:12:14,258</td>\n",
+       "      <td>qcodes.data.gnuplot_format</td>\n",
+       "      <td>write</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Attempting to write the following group: qdac_...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>255149</th>\n",
+       "      <td>2018-05-10 17:12:14,259</td>\n",
+       "      <td>qcodes.data.gnuplot_format</td>\n",
+       "      <td>write</td>\n",
+       "      <td>DEBUG</td>\n",
+       "      <td>Wrote to file from 40200 to 40201\\r\\n</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>255150</th>\n",
+       "      <td>2018-05-10 17:12:14,378</td>\n",
+       "      <td>qdev_wrappers.sweep_functions</td>\n",
+       "      <td>_do_measurement</td>\n",
+       "      <td>ERROR</td>\n",
+       "      <td>Exception in doND\\r\\n</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "<p>255151 rows × 5 columns</p>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "                           time                                        module  \\\n",
+       "0       2018-05-10 16:01:50,497  qcodes.instrument_drivers.QDev.QDac_channels   \n",
+       "1       2018-05-10 16:01:50,546                        qcodes.instrument.visa   \n",
+       "2       2018-05-10 16:01:50,552                        qcodes.instrument.visa   \n",
+       "3       2018-05-10 16:01:50,553                        qcodes.instrument.visa   \n",
+       "4       2018-05-10 16:01:50,561                        qcodes.instrument.visa   \n",
+       "...                         ...                                           ...   \n",
+       "255146  2018-05-10 17:12:03,208                        qcodes.instrument.visa   \n",
+       "255147  2018-05-10 17:12:14,257                          qcodes.data.data_set   \n",
+       "255148  2018-05-10 17:12:14,258                    qcodes.data.gnuplot_format   \n",
+       "255149  2018-05-10 17:12:14,259                    qcodes.data.gnuplot_format   \n",
+       "255150  2018-05-10 17:12:14,378                 qdev_wrappers.sweep_functions   \n",
+       "\n",
+       "               function loglevel  \\\n",
+       "0                 write    DEBUG   \n",
+       "1               ask_raw    DEBUG   \n",
+       "2               ask_raw    DEBUG   \n",
+       "3               ask_raw    DEBUG   \n",
+       "4               ask_raw    DEBUG   \n",
+       "...                 ...      ...   \n",
+       "255146          ask_raw    DEBUG   \n",
+       "255147         finalize    DEBUG   \n",
+       "255148            write    DEBUG   \n",
+       "255149            write    DEBUG   \n",
+       "255150  _do_measurement    ERROR   \n",
+       "\n",
+       "                                                  message  \n",
+       "0       Writing to instrument qdac: wav 2 0 0 0;set 2 ...  \n",
+       "1              Querying instrument SR860_120: OUTP? 2\\r\\n  \n",
+       "2       Got response from instrument SR860_120: 8.9832...  \n",
+       "3                Querying instrument SR860_120: SLVL?\\r\\n  \n",
+       "4       Got response from instrument SR860_120: 9.9999...  \n",
+       "...                                                   ...  \n",
+       "255146         Querying instrument SR860_120: OUTP? 2\\r\\n  \n",
+       "255147               Finalising the DataSet. Writing.\\r\\n  \n",
+       "255148  Attempting to write the following group: qdac_...  \n",
+       "255149              Wrote to file from 40200 to 40201\\r\\n  \n",
+       "255150                              Exception in doND\\r\\n  \n",
+       "\n",
+       "[255151 rows x 5 columns]"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "logdata"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "data = logdata"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Get the query time for the SR860\n",
+    "\n",
+    "We know that the log file documents an experiment quering an SR860 for R and amplitude over and over. Let us analyse and visualise query response times."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "qstr_R = r'Querying instrument SR860_120: OUTP\\? 2'  # remember to escape\n",
+    "queries_R = data[data.message.str.contains(qstr_R)]\n",
+    "responses_R = data.loc[queries_R.index + 1]\n",
+    "\n",
+    "qstr_lvl = r'Querying instrument SR860_120: SLVL\\?'  # remember to escape\n",
+    "queries_lvl = data[data.message.str.contains(qstr_lvl)][:-1]\n",
+    "responses_lvl = data.loc[queries_lvl.index + 1]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Find the elapsed times"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "elapsed_times_R = time_difference(queries_R.time, responses_R.time)\n",
+    "elapsed_times_lvl =  time_difference(queries_lvl.time, responses_lvl.time)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Visualise!"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<matplotlib.legend.Legend at 0x1a32dbd2520>"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    },
+    {
+     "data": {
+      "image/png": "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",
+      "text/plain": [
+       "<Figure size 432x288 with 1 Axes>"
+      ]
+     },
+     "metadata": {
+      "needs_background": "light"
+     },
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "from pandas.plotting import register_matplotlib_converters\n",
+    "\n",
+    "register_matplotlib_converters()\n",
+    "\n",
+    "fig, ax = plt.subplots(1,1)\n",
+    "ax.plot(queries_R.time.str.replace(',', '.').astype(\"datetime64[ns]\"), elapsed_times_R, '.', label='R')\n",
+    "ax.plot(queries_lvl.time.str.replace(',', '.').astype(\"datetime64[ns]\"), elapsed_times_lvl, '.', label='LVL')\n",
+    "fig.autofmt_xdate()\n",
+    "ax.set_ylabel('Response time (s)')\n",
+    "plt.legend()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.12"
+  },
+  "toc": {
+   "base_numbering": 1,
+   "nav_menu": {},
+   "number_sections": true,
+   "sideBar": true,
+   "skip_h1_title": false,
+   "title_cell": "Table of Contents",
+   "title_sidebar": "Contents",
+   "toc_cell": false,
+   "toc_position": {},
+   "toc_section_display": true,
+   "toc_window_display": false
+  },
+  "widgets": {
+   "application/vnd.jupyter.widget-state+json": {
+    "state": {},
+    "version_major": 2,
+    "version_minor": 0
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.oxford.MercuryiPS_VISA &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.oxford.MercuryiPS_VISA</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.oxford.MercuryiPS_VISA</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.typing</span> <span class="k">as</span> <span class="nn">npt</span>
+<span class="kn">from</span> <span class="nn">packaging</span> <span class="kn">import</span> <span class="n">version</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">InstrumentBaseKWArgs</span><span class="p">,</span>
+    <span class="n">InstrumentChannel</span><span class="p">,</span>
+    <span class="n">VisaInstrument</span><span class="p">,</span>
+    <span class="n">VisaInstrumentKWArgs</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.math_utils</span> <span class="kn">import</span> <span class="n">FieldVector</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+
+    <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Unpack</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">visalog</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;qcodes.instrument.visa&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_response_preparser</span><span class="p">(</span><span class="n">bare_resp</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Pre-parse response from the instrument</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">bare_resp</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_signal_parser</span><span class="p">(</span><span class="n">our_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a response string into a correct SI value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        our_scaling: Whatever scale we might need to apply to get from</span>
+<span class="sd">            e.g. A/min to A/s.</span>
+<span class="sd">        response: What comes back from instrument.ask</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># there might be a scale before the unit. We only want to deal in SI</span>
+    <span class="c1"># units, so we translate the scale</span>
+    <span class="n">scale_to_factor</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;n&#39;</span><span class="p">:</span> <span class="mf">1e-9</span><span class="p">,</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="s1">&#39;m&#39;</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">,</span>
+                       <span class="s1">&#39;k&#39;</span><span class="p">:</span> <span class="mf">1e3</span><span class="p">,</span> <span class="s1">&#39;M&#39;</span><span class="p">:</span> <span class="mf">1e6</span><span class="p">}</span>
+
+    <span class="n">numchars</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span> <span class="s1">&#39;7&#39;</span><span class="p">,</span> <span class="s1">&#39;8&#39;</span><span class="p">,</span> <span class="s1">&#39;9&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">]</span>
+
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_response_preparser</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+    <span class="n">digits</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">response</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">numchars</span><span class="p">)</span>
+    <span class="n">scale_and_unit</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">digits</span><span class="p">)</span> <span class="p">:]</span>
+    <span class="k">if</span> <span class="n">scale_and_unit</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">their_scaling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">scale_and_unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">scale_to_factor</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">their_scaling</span> <span class="o">=</span> <span class="n">scale_to_factor</span><span class="p">[</span><span class="n">scale_and_unit</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">their_scaling</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">digits</span><span class="p">)</span><span class="o">*</span><span class="n">their_scaling</span><span class="o">*</span><span class="n">our_scaling</span>
+
+
+<div class="viewcode-block" id="OxfordMercuryWorkerPS">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS">[docs]</a>
+<span class="k">class</span> <span class="nc">OxfordMercuryWorkerPS</span><span class="p">(</span><span class="n">InstrumentChannel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to hold a worker power supply for the Oxford MercuryiPS</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="p">:</span> <span class="n">VisaInstrument</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">UID</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">InstrumentBaseKWArgs</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            parent: The Instrument instance of the MercuryiPS</span>
+<span class="sd">            name: The &#39;colloquial&#39; name of the PS</span>
+<span class="sd">            UID: The UID as used internally by the MercuryiPS, e.g.</span>
+<span class="sd">                &#39;GRPX&#39;</span>
+<span class="sd">            **kwargs: Forwarded to base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">UID</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid UID. Must be axis group name or device &#39;</span>
+                             <span class="s1">&#39;name, e.g. &quot;GRPX&quot; or &quot;PSU.M1&quot;&#39;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uid</span> <span class="o">=</span> <span class="n">UID</span>
+
+        <span class="c1"># The firmware update from 2.5 -&gt; 2.6 changed the command</span>
+        <span class="c1"># syntax slightly</span>
+        <span class="k">if</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_instrument</span><span class="o">.</span><span class="n">firmware</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;2.6&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">psu_string</span> <span class="o">=</span> <span class="s2">&quot;SPSU&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">psu_string</span> <span class="o">=</span> <span class="s2">&quot;PSU&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">voltage</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;voltage&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Output voltage&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:VOLT&quot;</span><span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;V&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter voltage&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;current&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Output current&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:CURR&quot;</span><span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter current&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_persistent</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;current_persistent&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Output persistent current&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:PCUR&quot;</span><span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter current_persistent&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_target</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;current_target&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Target current&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:CSET&quot;</span><span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter current_target&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_target</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;field_target&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Target field&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:FSET&quot;</span><span class="p">),</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_setter</span><span class="p">,</span> <span class="s2">&quot;SIG:FSET&quot;</span><span class="p">),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter field_target&quot;&quot;&quot;</span>
+
+        <span class="c1"># NB: The current ramp rate follows the field ramp rate</span>
+        <span class="c1"># (converted via the ATOB param)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_ramp_rate</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;current_ramp_rate&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Ramp rate (current)&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A/s&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:RCST&quot;</span><span class="p">),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">60</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter current_ramp_rate&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;field_ramp_rate&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Ramp rate (field)&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T/s&quot;</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_setter</span><span class="p">,</span> <span class="s2">&quot;SIG:RFST&quot;</span><span class="p">),</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:RFST&quot;</span><span class="p">),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="mi">60</span><span class="p">),</span>
+            <span class="n">set_parser</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter field_ramp_rate&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;field&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Field strength&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:FLD&quot;</span><span class="p">),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter field&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_persistent</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;field_persistent&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Persistent field strength&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;SIG:PFLD&quot;</span><span class="p">),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter field_persistent&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ATOB</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;ATOB&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Current to field ratio&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;A/T&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;ATOB&quot;</span><span class="p">),</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">_signal_parser</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_setter</span><span class="p">,</span> <span class="s2">&quot;ATOB&quot;</span><span class="p">),</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter ATOB&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;ramp_status&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Ramp status&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_getter</span><span class="p">,</span> <span class="s2">&quot;ACTN&quot;</span><span class="p">),</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_ramp_status_setter</span><span class="p">,</span>
+            <span class="n">get_parser</span><span class="o">=</span><span class="n">_response_preparser</span><span class="p">,</span>
+            <span class="n">val_mapping</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">&quot;HOLD&quot;</span><span class="p">:</span> <span class="s2">&quot;HOLD&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;TO SET&quot;</span><span class="p">:</span> <span class="s2">&quot;RTOS&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;CLAMP&quot;</span><span class="p">:</span> <span class="s2">&quot;CLMP&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;TO ZERO&quot;</span><span class="p">:</span> <span class="s2">&quot;RTOZ&quot;</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter ramp_status&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="OxfordMercuryWorkerPS.ramp_to_target">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryWorkerPS.ramp_to_target">[docs]</a>
+    <span class="k">def</span> <span class="nf">ramp_to_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Unconditionally ramp this PS to its target</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;CLAMP&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">(</span><span class="s1">&#39;HOLD&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">(</span><span class="s1">&#39;TO SET&#39;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_ramp_status_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">status_now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">status_now</span> <span class="o">==</span> <span class="s1">&#39;CLAMP&#39;</span> <span class="ow">and</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s1">&#39;RTOS&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error in ramping unit </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="si">}</span><span class="s1">: &#39;</span>
+                             <span class="s1">&#39;Can not ramp to target value; power supply is &#39;</span>
+                             <span class="s1">&#39;clamped. Unclamp first by setting ramp status &#39;</span>
+                             <span class="s1">&#39;to HOLD.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_param_setter</span><span class="p">,</span> <span class="s1">&#39;ACTN&#39;</span><span class="p">)(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_param_getter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">get_cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        General getter function for parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            get_cmd: raw string for the command, e.g. &#39;SIG:VOLT&#39;</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The response. Cf. MercuryiPS.ask for how much is returned</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dressed_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;READ:DEV:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">psu_string</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">get_cmd</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">dressed_cmd</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">resp</span>
+
+    <span class="k">def</span> <span class="nf">_param_setter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">set_cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        General setter function for parameters</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            set_cmd: raw string for the command, e.g. &#39;SIG:FSET&#39;</span>
+<span class="sd">            value: Value to set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dressed_cmd</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;SET:DEV:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">uid</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">psu_string</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">set_cmd</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="c1"># the instrument always very verbosely responds</span>
+        <span class="c1"># the return value of `ask`</span>
+        <span class="c1"># holds the value reported back by the instrument</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parent</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="n">dressed_cmd</span><span class="p">)</span></div>
+
+
+        <span class="c1"># TODO: we could use the opportunity to check that we did set/achieve</span>
+        <span class="c1">#  the intended value</span>
+
+
+<span class="n">MercuryWorkerPS</span> <span class="o">=</span> <span class="n">OxfordMercuryWorkerPS</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Alias for backwards compatibility</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="OxfordMercuryiPS">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryiPS">[docs]</a>
+<span class="k">class</span> <span class="nc">OxfordMercuryiPS</span><span class="p">(</span><span class="n">VisaInstrument</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Driver class for the QCoDeS Oxford Instruments MercuryiPS magnet power</span>
+<span class="sd">    supply</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">default_terminator</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">field_limits</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">VisaInstrumentKWArgs</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            name: The name to give this instrument internally in QCoDeS</span>
+<span class="sd">            address: The VISA resource of the instrument. Note that a</span>
+<span class="sd">                socket connection to port 7020 must be made</span>
+<span class="sd">            field_limits: A function describing the allowed field</span>
+<span class="sd">                range (T). The function shall take (x, y, z) as an input and</span>
+<span class="sd">                return a boolean describing whether that field value is</span>
+<span class="sd">                acceptable.</span>
+<span class="sd">            **kwargs: kwargs are forwarded to base class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">field_limits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span><span class="p">(</span><span class="nb">callable</span><span class="p">(</span><span class="n">field_limits</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Got wrong type of field_limits. Must be a &#39;</span>
+                             <span class="s1">&#39;function from (x, y, z) -&gt; Bool. Received &#39;</span>
+                             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">field_limits</span><span class="p">)</span><span class="si">}</span><span class="s1"> instead.&#39;</span><span class="p">)</span>
+
+        <span class="n">pyvisa_sim_file</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pyvisa_sim_file&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># ensure that a socket is used unless we are in simulation mode</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="n">address</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;SOCKET&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">address</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;@sim&quot;</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">pyvisa_sim_file</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Incorrect VISA resource name. Must be of type &quot;</span>
+                <span class="s2">&quot;TCPIP0::XXX.XXX.XXX.XXX::7020::SOCKET.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">firmware</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">IDN</span><span class="p">()[</span><span class="s1">&#39;firmware&#39;</span><span class="p">]</span>
+
+        <span class="c1"># TODO: Query instrument to ensure which PSUs are actually present</span>
+        <span class="k">for</span> <span class="n">grp</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;GRPX&#39;</span><span class="p">,</span> <span class="s1">&#39;GRPY&#39;</span><span class="p">,</span> <span class="s1">&#39;GRPZ&#39;</span><span class="p">]:</span>
+            <span class="n">psu_name</span> <span class="o">=</span> <span class="n">grp</span>
+            <span class="n">psu</span> <span class="o">=</span> <span class="n">OxfordMercuryWorkerPS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">psu_name</span><span class="p">,</span> <span class="n">grp</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_submodule</span><span class="p">(</span><span class="n">psu_name</span><span class="p">,</span> <span class="n">psu</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_field_limits</span> <span class="o">=</span> <span class="p">(</span><span class="n">field_limits</span> <span class="k">if</span> <span class="n">field_limits</span> <span class="k">else</span>
+                              <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_vector</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPX</span><span class="o">.</span><span class="n">field</span><span class="p">(),</span>
+                                          <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPY</span><span class="o">.</span><span class="n">field</span><span class="p">(),</span>
+                                          <span class="n">z</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPZ</span><span class="o">.</span><span class="n">field</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">coord</span><span class="p">,</span> <span class="n">unit</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;theta&#39;</span><span class="p">,</span>   <span class="s1">&#39;phi&#39;</span><span class="p">,</span>     <span class="s1">&#39;rho&#39;</span><span class="p">],</span>
+                <span class="p">[</span><span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;degrees&#39;</span><span class="p">,</span> <span class="s1">&#39;degrees&#39;</span><span class="p">,</span> <span class="s1">&#39;T&#39;</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s1">_target&#39;</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1"> target field&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                               <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_component</span><span class="p">,</span> <span class="n">coord</span><span class="p">),</span>
+                               <span class="n">set_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_target</span><span class="p">,</span> <span class="n">coord</span><span class="p">))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s1">_measured&#39;</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1"> measured field&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                               <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_measured</span><span class="p">,</span> <span class="p">[</span><span class="n">coord</span><span class="p">]))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s1">_ramp&#39;</span><span class="p">,</span>
+                               <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1"> ramp field&#39;</span><span class="p">,</span>
+                               <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                               <span class="n">docstring</span><span class="o">=</span><span class="s1">&#39;A safe ramp for each coordinate&#39;</span><span class="p">,</span>
+                               <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_component</span><span class="p">,</span> <span class="n">coord</span><span class="p">),</span>
+                               <span class="n">set_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_target_and_ramp</span><span class="p">,</span>
+                                               <span class="n">coord</span><span class="p">,</span> <span class="s1">&#39;safe&#39;</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">coord</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;theta&#39;</span><span class="p">,</span> <span class="s1">&#39;phi&#39;</span><span class="p">,</span> <span class="s1">&#39;rho&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="si">}</span><span class="s1">_simulramp&#39;</span><span class="p">,</span>
+                                   <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1"> ramp field&#39;</span><span class="p">,</span>
+                                   <span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span>
+                                   <span class="n">docstring</span><span class="o">=</span><span class="s1">&#39;A simultaneous blocking ramp for&#39;</span>
+                                             <span class="s1">&#39; a combined coordinate&#39;</span><span class="p">,</span>
+                                   <span class="n">get_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_component</span><span class="p">,</span> <span class="n">coord</span><span class="p">),</span>
+                                   <span class="n">set_cmd</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_target_and_ramp</span><span class="p">,</span>
+                                                   <span class="n">coord</span><span class="p">,</span> <span class="s1">&#39;simul_block&#39;</span><span class="p">))</span>
+
+        <span class="c1"># FieldVector-valued parameters #</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_target</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;field_target&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;target field&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_target_field</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_target_field</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter field_target&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_measured</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;field_measured&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;measured field&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_field</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter field_measured&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;field_ramp_rate&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ramp rate&quot;</span><span class="p">,</span>
+            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;T/s&quot;</span><span class="p">,</span>
+            <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_ramp_rate</span><span class="p">,</span>
+            <span class="n">set_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_ramp_rate</span><span class="p">,</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter field_ramp_rate&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect_message</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_get_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_vector</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="n">coordinate</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_get_target_field</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldVector</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FieldVector</span><span class="p">(</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="n">coord</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component</span><span class="p">(</span><span class="n">coord</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="s1">&#39;xyz&#39;</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_ramp_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldVector</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FieldVector</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPX</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">(),</span>
+            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPY</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">(),</span>
+            <span class="n">z</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPZ</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">(),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_ramp_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rate</span><span class="p">:</span> <span class="n">FieldVector</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GRPX</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">(</span><span class="n">rate</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GRPY</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">(</span><span class="n">rate</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">GRPZ</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">(</span><span class="n">rate</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_measured</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the measured value of a coordinate. Measures all three fields</span>
+<span class="sd">        and computes whatever coordinate we asked for.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">meas_field</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPX</span><span class="o">.</span><span class="n">field</span><span class="p">(),</span>
+                                 <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPY</span><span class="o">.</span><span class="n">field</span><span class="p">(),</span>
+                                 <span class="n">z</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">GRPZ</span><span class="o">.</span><span class="n">field</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coordinates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">meas_field</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="o">*</span><span class="n">coordinates</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">meas_field</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="o">*</span><span class="n">coordinates</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_field</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldVector</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">FieldVector</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">x_measured</span><span class="p">(),</span>
+            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">y_measured</span><span class="p">(),</span>
+            <span class="n">z</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">z_measured</span><span class="p">()</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_target</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The function to set a target value for a coordinate, i.e. the set_cmd</span>
+<span class="sd">        for the XXX_target parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># first validate the new target</span>
+        <span class="n">valid_vec</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">()</span>
+        <span class="n">valid_vec</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_vector</span><span class="p">)</span>
+        <span class="n">valid_vec</span><span class="o">.</span><span class="n">set_component</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">coordinate</span><span class="p">:</span> <span class="n">target</span><span class="p">})</span>
+        <span class="n">components</span> <span class="o">=</span> <span class="n">valid_vec</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field_limits</span><span class="p">(</span><span class="o">*</span><span class="n">components</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Cannot set </span><span class="si">{</span><span class="n">coordinate</span><span class="si">}</span><span class="s1"> target to </span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s1">, &#39;</span>
+                             <span class="s1">&#39;that would violate the field_limits. &#39;</span><span class="p">)</span>
+
+        <span class="c1"># update our internal target cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_vector</span><span class="o">.</span><span class="n">set_component</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">coordinate</span><span class="p">:</span> <span class="n">target</span><span class="p">})</span>
+
+        <span class="c1"># actually assign the target on the workers</span>
+        <span class="n">cartesian_targ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_vector</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">targ</span><span class="p">,</span> <span class="n">worker</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">cartesian_targ</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">OxfordMercuryWorkerPS</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a MercuryWorkerPS but got &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">worker</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">field_target</span><span class="p">(</span><span class="n">targ</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_set_target_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldVector</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="s1">&#39;xyz&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_set_target</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="n">coord</span><span class="p">])</span>
+
+<div class="viewcode-block" id="OxfordMercuryiPS.get_idn">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.get_idn">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_idn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse the raw non-SCPI compliant IDN string into an IDN dict</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The normal IDN dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">raw_idn_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ask</span><span class="p">(</span><span class="s1">&#39;*IDN?&#39;</span><span class="p">)</span>
+        <span class="n">resps</span> <span class="o">=</span> <span class="n">raw_idn_string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+
+        <span class="n">idn_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">resps</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="s2">&quot;vendor&quot;</span><span class="p">:</span> <span class="n">resps</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="s2">&quot;serial&quot;</span><span class="p">:</span> <span class="n">resps</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+            <span class="s2">&quot;firmware&quot;</span><span class="p">:</span> <span class="n">resps</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">idn_dict</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_ramp_simultaneously</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ramp all three fields to their target simultaneously at their given</span>
+<span class="sd">        ramp rates. NOTE: there is NO guarantee that this does not take you</span>
+<span class="sd">        out of your safe region. Use with care.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">OxfordMercuryWorkerPS</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a MercuryWorkerPS but got &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">worker</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">ramp_to_target</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_ramp_simultaneously_blocking</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ramp all three fields to their target simultaneously at their given</span>
+<span class="sd">        ramp rates. NOTE: there is NO guarantee that this does not take you</span>
+<span class="sd">        out of your safe region. Use with care. This function is BLOCKING.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ramp_simultaneously</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">OxfordMercuryWorkerPS</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a MercuryWorkerPS but got &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">worker</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># wait for the ramp to finish, we don&#39;t care about the order</span>
+            <span class="k">while</span> <span class="n">worker</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;TO SET&#39;</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_field</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_ramp_safely</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ramp all three fields to their target using the &#39;first-down-then-up&#39;</span>
+<span class="sd">        sequential ramping procedure. This function is BLOCKING.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">meas_vals</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_measured</span><span class="p">([</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">targ_vals</span><span class="p">:</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_target_vector</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">targ_vals</span> <span class="o">-</span> <span class="n">meas_vals</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">worker</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">()))[</span><span class="n">order</span><span class="p">]:</span>
+            <span class="n">worker</span><span class="o">.</span><span class="n">ramp_to_target</span><span class="p">()</span>
+            <span class="c1"># now just wait for the ramp to finish</span>
+            <span class="c1"># (unless we are testing)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">visabackend</span> <span class="o">==</span> <span class="s1">&#39;sim&#39;</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">while</span> <span class="n">worker</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;TO SET&#39;</span><span class="p">:</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_field</span><span class="p">()</span>
+
+<div class="viewcode-block" id="OxfordMercuryiPS.update_field">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.update_field">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_field</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update all the field components.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;theta&#39;</span><span class="p">,</span> <span class="s1">&#39;phi&#39;</span><span class="p">,</span> <span class="s1">&#39;rho&#39;</span><span class="p">]</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_field</span><span class="p">()</span>
+        <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">_measured&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="OxfordMercuryiPS.is_ramping">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.is_ramping">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_ramping</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True if any axis has a ramp status that is either &#39;TO SET&#39; or</span>
+<span class="sd">        &#39;TO ZERO&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ramping_statuus</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;TO SET&#39;</span><span class="p">,</span> <span class="s1">&#39;TO ZERO&#39;</span><span class="p">]</span>
+        <span class="n">is_x_ramping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GRPX</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">()</span> <span class="ow">in</span> <span class="n">ramping_statuus</span>
+        <span class="n">is_y_ramping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GRPY</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">()</span> <span class="ow">in</span> <span class="n">ramping_statuus</span>
+        <span class="n">is_z_ramping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">GRPZ</span><span class="o">.</span><span class="n">ramp_status</span><span class="p">()</span> <span class="ow">in</span> <span class="n">ramping_statuus</span>
+
+        <span class="k">return</span> <span class="n">is_x_ramping</span> <span class="ow">or</span> <span class="n">is_y_ramping</span> <span class="ow">or</span> <span class="n">is_z_ramping</span></div>
+
+
+<div class="viewcode-block" id="OxfordMercuryiPS.set_new_field_limits">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.set_new_field_limits">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_new_field_limits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">,</span>
+                                                         <span class="nb">float</span><span class="p">,</span>
+                                                         <span class="nb">float</span><span class="p">],</span> <span class="nb">bool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assign a new field limit function to the driver</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            limit_func: must be a function mapping (Bx, By, Bz) -&gt; True/False</span>
+<span class="sd">              where True means that the field is INSIDE the allowed region</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># first check that the current target is allowed</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">limit_func</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_vector</span><span class="o">.</span><span class="n">get_components</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Can not assign new limit function; present &#39;</span>
+                             <span class="s1">&#39;target is illegal. Please change the target &#39;</span>
+                             <span class="s1">&#39;and try again.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_field_limits</span> <span class="o">=</span> <span class="n">limit_func</span></div>
+
+
+<div class="viewcode-block" id="OxfordMercuryiPS.ramp">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ramp">[docs]</a>
+    <span class="k">def</span> <span class="nf">ramp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;safe&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ramp the fields to their present target value</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            mode: how to ramp, either &#39;simul&#39;, &#39;simul-block&#39; or &#39;safe&#39;. In</span>
+<span class="sd">              &#39;simul&#39; and &#39;simul-block&#39; mode, the fields are ramping</span>
+<span class="sd">              simultaneously in a non-blocking mode and blocking mode,</span>
+<span class="sd">              respectively. There is no safety check that the safe zone is not</span>
+<span class="sd">              exceeded. In &#39;safe&#39; mode, the fields are ramped one-by-one in a</span>
+<span class="sd">              blocking way that ensures that the total field stays within the</span>
+<span class="sd">              safe region (provided that this region is convex).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;simul&#39;</span><span class="p">,</span> <span class="s1">&#39;safe&#39;</span><span class="p">,</span> <span class="s1">&#39;simul_block&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Invalid ramp mode. Please provide either &quot;simul&quot;&#39;</span>
+                             <span class="s1">&#39;, &quot;safe&quot; or &quot;simul_block&quot;.&#39;</span><span class="p">)</span>
+
+        <span class="n">meas_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_measured</span><span class="p">([</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;z&#39;</span><span class="p">])</span>
+        <span class="c1"># we asked for three coordinates, so we know that we got a list</span>
+        <span class="n">meas_vals</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">meas_vals</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">cur</span><span class="p">,</span> <span class="n">worker</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">meas_vals</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">submodules</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">worker</span><span class="p">,</span> <span class="n">OxfordMercuryWorkerPS</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected a MercuryWorkerPS but got &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">worker</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">worker</span><span class="o">.</span><span class="n">field_target</span><span class="p">()</span> <span class="o">!=</span> <span class="n">cur</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">worker</span><span class="o">.</span><span class="n">field_ramp_rate</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Can not ramp </span><span class="si">{</span><span class="n">worker</span><span class="si">}</span><span class="s1">; ramp rate set to&#39;</span>
+                                     <span class="s1">&#39; zero!&#39;</span><span class="p">)</span>
+
+        <span class="c1"># then the actual ramp</span>
+        <span class="p">{</span><span class="s1">&#39;simul&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ramp_simultaneously</span><span class="p">,</span>
+         <span class="s1">&#39;safe&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ramp_safely</span><span class="p">,</span>
+         <span class="s1">&#39;simul_block&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ramp_simultaneously_blocking</span><span class="p">}[</span><span class="n">mode</span><span class="p">]()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_set_target_and_ramp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinate</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convenient method to combine setting target and ramping&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_target</span><span class="p">(</span><span class="n">coordinate</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">mode</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OxfordMercuryiPS.ask">
+<a class="viewcode-back" href="../../../../drivers_api/Oxford.html#qcodes.instrument_drivers.oxford.OxfordMercuryiPS.ask">[docs]</a>
+    <span class="k">def</span> <span class="nf">ask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cmd</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Since Oxford Instruments implement their own version of a SCPI-like</span>
+<span class="sd">        language, we implement our own reader. Note that this command is used</span>
+<span class="sd">        for getting and setting (asking and writing) alike.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cmd: the command to send to the instrument</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">visalog</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Writing to instrument </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">cmd</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visa_handle</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">visalog</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got instrument response: </span><span class="si">{</span><span class="n">resp</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;INVALID&#39;</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid command. Got response: </span><span class="si">{</span><span class="n">resp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">base_resp</span> <span class="o">=</span> <span class="n">resp</span>
+        <span class="c1"># if the command was not invalid, it can either be a SET or a READ</span>
+        <span class="c1"># SET:</span>
+        <span class="k">elif</span> <span class="n">resp</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;VALID&#39;</span><span class="p">):</span>
+            <span class="n">base_resp</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># READ:</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># For &quot;normal&quot; commands only (e.g. &#39;*IDN?&#39; is excepted):</span>
+            <span class="c1"># the response of a valid command echoes back said command,</span>
+            <span class="c1"># thus we remove that part</span>
+            <span class="n">base_cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;READ:&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="n">base_resp</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;STAT:</span><span class="si">{</span><span class="n">base_cmd</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">base_resp</span></div>
+</div>
+
+
+
+<span class="n">MercuryiPS</span> <span class="o">=</span> <span class="n">OxfordMercuryiPS</span>
+<span class="sd">&quot;&quot;&quot;Alias for backwards compatibility&quot;&quot;&quot;</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

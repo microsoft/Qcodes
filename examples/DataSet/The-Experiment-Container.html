@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Experiment Container &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Threaded data acquisition" href="Threaded%20data%20acquisition.html" />
+    <link rel="prev" title="Saving data in the background" href="Saving_data_in_the_background.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#dataset">DataSet</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Accessing-data-in-DataSet.html">Accessing data in a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Benchmarking.html">Dataset Benchmarking</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DataSet-class-walkthrough.html">DataSet class walkthrough</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Database.html">Databases</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Datasaver_Builder.html">Using <code class="docutils literal notranslate"><span class="pre">datasaver_builder</span></code> and <code class="docutils literal notranslate"><span class="pre">dond_into</span></code> to streamline measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dataset_Performance.html">DataSet Performance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Exporting-data-to-other-file-formats.html">Exporting QCoDes Datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Extracting-runs-from-one-DB-file-to-another.html">Extracting runs from one DB file to another</a></li>
+<li class="toctree-l3"><a class="reference internal" href="InMemoryDataSet.html">In memory dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Linking%20to%20parent%20datasets.html">Linking to parent datasets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Measuring%20X%20as%20a%20function%20of%20time.html">Measuring X as a function of time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20Plotting%20Tutorial.html">Offline Plotting Tutorial</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20categorical%20data.html">Offline plotting with categorical data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Offline%20plotting%20with%20complex%20data.html">Offline plotting with complex data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Paramtypes%20explained.html">Paramtypes explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Pedestrian%20example%20of%20subscribing%20to%20a%20DataSet.html">Pedestrian example of subscribing to a DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using QCoDeS parameters and DataSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Saving_data_in_the_background.html">Saving data in the background</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">The Experiment Container</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Required-imports">Required imports</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#The-experiments-inside-the-database">The experiments inside the database</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Threaded%20data%20acquisition.html">Threaded data acquisition</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_doNd_functions_in_comparison_to_Measurement_context_manager_for_performing_measurements.html">Using doNd functions in comparison to Measurement context manager for performing measurements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Using_register_name.html">Using the <code class="docutils literal notranslate"><span class="pre">register_name</span></code> kwarg to select how a parameter is saved to a dataset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working%20with%20snapshots.html">Working with snapshots</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Working-With-Pandas-and-XArray.html">Working with Pandas and XArray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="import-data-from-legacy-dat-files.html">Importing data from legacy .dat files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subscriber%20json%20exporter.html">Subscriber with JSON export</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Real_instruments/Example%20Measurements%20with%20Real%20Instruments.html">Example Measurements with Real Instruments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/read_data_from_cache.html">Read data from cache</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Cache/write_for_caching.html">Write data to cache</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#drivers">Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">The Experiment Container</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/DataSet/The-Experiment-Container.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/DataSet/The-Experiment-Container.ipynb">docs/examples/DataSet/The-Experiment-Container.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/DataSet/The-Experiment-Container.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="The-Experiment-Container">
+<h1>The Experiment Container<a class="headerlink" href="#The-Experiment-Container" title="Link to this heading"></a></h1>
+<p>This notebook explains how the database works as an experiment container.</p>
+<section id="Required-imports">
+<h2>Required imports<a class="headerlink" href="#Required-imports" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.dataset</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">connect</span><span class="p">,</span>
+    <span class="n">experiments</span><span class="p">,</span>
+    <span class="n">get_default_experiment_id</span><span class="p">,</span>
+    <span class="n">initialise_or_create_database_at</span><span class="p">,</span>
+    <span class="n">load_experiment</span><span class="p">,</span>
+    <span class="n">load_experiment_by_name</span><span class="p">,</span>
+    <span class="n">load_last_experiment</span><span class="p">,</span>
+    <span class="n">load_or_create_experiment</span><span class="p">,</span>
+    <span class="n">new_data_set</span><span class="p">,</span>
+    <span class="n">new_experiment</span><span class="p">,</span>
+    <span class="n">reset_default_experiment_id</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Logging hadn&#39;t been started.
+Activating auto-logging. Current session state plus future input saved.
+Filename       : /home/runner/.qcodes/logs/command_history.log
+Mode           : append
+Output logging : True
+Raw input log  : False
+Timestamping   : True
+State          : active
+Qcodes Logfile : /home/runner/.qcodes/logs/240809-17834-qcodes.log
+</pre></div></div>
+</div>
+</section>
+<section id="The-experiments-inside-the-database">
+<h2>The experiments inside the database<a class="headerlink" href="#The-experiments-inside-the-database" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">&#39;exp_container_tutorial.db&#39;</span><span class="p">)</span>
+<span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">db_file_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The database holds a certain number of <strong>experiments</strong>. They may be viewed:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">experiments</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[]
+</pre></div></div>
+</div>
+<p>Not surprisingly, our new database is empty.</p>
+<p>We now introduce a term that we call the <strong>default experiment</strong>. In short, it is the experiment that will be used for a QCoDeS <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>, if the user do not explicitly pass an experiment into objects that create that <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>. In another word, that <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> will be belong to the default experiment. We do not want to go into the details of <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> here, and refer to the <a class="reference external" href="https://microsoft.github.io/Qcodes/examples/DataSet/DataSet-class-walkthrough.html">DataSet notebook</a> and
+<a class="reference external" href="https://microsoft.github.io/Qcodes/examples/DataSet/Performing-measurements-using-qcodes-parameters-and-dataset.html">Performing measurements using qcodes parameters and dataset</a> for what we mean from <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> and how we can pass an experiment explicitly.</p>
+<p>By default, the last experiment in the database is the default experiment. The default experiment can be changed if another experiment in the database is created or loaded. We will explore this in this notebook.</p>
+<p>Users should not worry about checking the default experiment in their normal workflow, but in this notebook, we show how it works to let them have an idea what the default experiment is and how it changes.</p>
+<p>We need a connection to our database to get which experiment is the default one:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conn</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">db_file_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Because our database is empty now, asking for the default experiment will rasie an error asking to create an experiment. So, let’s add some experiments to explore more:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp_a</span> <span class="o">=</span> <span class="n">new_experiment</span><span class="p">(</span><span class="s1">&#39;first_exp&#39;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;old_sample&#39;</span><span class="p">)</span>
+<span class="n">exp_b</span> <span class="o">=</span> <span class="n">new_experiment</span><span class="p">(</span><span class="s1">&#39;second_exp&#39;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;slightly_newer_sample&#39;</span><span class="p">)</span>
+<span class="n">exp_c</span> <span class="o">=</span> <span class="n">load_or_create_experiment</span><span class="p">(</span><span class="s1">&#39;third_exp&#39;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;brand_new_sample&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We recommend using the <code class="docutils literal notranslate"><span class="pre">load_or_create_experiment</span></code> function as the primary function dealing with experiments, not only because it is the most versatile function, but also because it can prevent creating duplicate experiments in one database.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">experiments</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[first_exp#old_sample#1@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+ ------------------------------------------------------------------------------------------------------,
+ second_exp#slightly_newer_sample#2@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+ ------------------------------------------------------------------------------------------------------------------,
+ third_exp#brand_new_sample#3@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+ ------------------------------------------------------------------------------------------------------------]
+</pre></div></div>
+</div>
+<p>We notice that each experiment is labelled by an integer number, which is the <code class="docutils literal notranslate"><span class="pre">exp_id</span></code>. This ID can be used when looking up properties of each experiment.</p>
+<p>Let’s check to see which experiment is the default now:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_default_experiment_id</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3
+</pre></div></div>
+</div>
+<p>The latest created or loaded experiment in the database becomes the default experiment, and the function returns the <code class="docutils literal notranslate"><span class="pre">exp_id</span></code> of that experiment, which in this case it is <code class="docutils literal notranslate"><span class="pre">exp_c</span></code> with <code class="docutils literal notranslate"><span class="pre">exp_id</span></code> of 3.</p>
+<p>Let us add some <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> to our experiments. For the sake of clarity, we don’t add any data to the <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> here, and refer to the above-mentioned notebooks for the details. Note that the <code class="docutils literal notranslate"><span class="pre">new_data_set</span></code> function is used here ONLY for the sake of exercise and should NOT be used in the actual experiment.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">new_data_set</span><span class="p">(</span><span class="s1">&#39;run_a&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+run_a #1@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+----------------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>Since the default experiment is exp_c (<code class="docutils literal notranslate"><span class="pre">exp_id</span></code>=3), the above <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> belongs to this experiment.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp_c</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+third_exp#brand_new_sample#3@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------------
+1-run_a-1-None-0
+</pre></div></div>
+</div>
+<p>Let’s load another experiment (<code class="docutils literal notranslate"><span class="pre">exp_b</span></code>). We know that the latest created/ loaded experiment should be the default experiment, meaning any new <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> should belong to this experiment:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">load_or_create_experiment</span><span class="p">(</span><span class="s1">&#39;second_exp&#39;</span><span class="p">,</span> <span class="n">sample_name</span><span class="o">=</span><span class="s1">&#39;slightly_newer_sample&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+second_exp#slightly_newer_sample#2@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>Let’s confirm that actually the second experiment (<code class="docutils literal notranslate"><span class="pre">exp_id</span></code>=2) is the default now:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_default_experiment_id</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">new_data_set</span><span class="p">(</span><span class="s1">&#39;first_run_b&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+first_run_b #2@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+----------------------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">new_data_set</span><span class="p">(</span><span class="s1">&#39;second_run_b&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+second_run_b #3@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+-----------------------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>Two above <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>s should belong to <code class="docutils literal notranslate"><span class="pre">exp_b</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp_b</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+second_exp#slightly_newer_sample#2@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------------------
+2-first_run_b-1-None-0
+3-second_run_b-2-None-0
+</pre></div></div>
+</div>
+<p>We can also explicitly use <code class="docutils literal notranslate"><span class="pre">exp_id</span></code> in creating <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>s, so let’s add a <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> to the first experiment:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">new_data_set</span><span class="p">(</span><span class="s1">&#39;first_run&#39;</span><span class="p">,</span> <span class="n">exp_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+first_run #4@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+--------------------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp_a</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+first_exp#old_sample#1@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------
+4-first_run-1-None-0
+</pre></div></div>
+</div>
+<p>The default experiment gets reset upon initialization of a database. Let’s check this by initializing our database again (note that our database is not empty anymore):</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">initialise_or_create_database_at</span><span class="p">(</span><span class="n">db_file_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The default experiment was <code class="docutils literal notranslate"><span class="pre">exp_id</span></code>=2. As we initialized our database again, the default experiment has been reset, meaning the last experiment in the database should be the default one now (we know the last experiment in the database is <code class="docutils literal notranslate"><span class="pre">exp_id</span></code>=3). Let’s check this:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_default_experiment_id</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3
+</pre></div></div>
+</div>
+<p>Users may not need to use the reset function explicitly, but in the case they want to use it, here we show how to do that:</p>
+<p>First, we load an experiment other than the last experiment and check the default experiment is the just loaded experiment:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">load_experiment</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+first_exp#old_sample#1@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------
+4-first_run-1-None-0
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_default_experiment_id</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1
+</pre></div></div>
+</div>
+<p>Now, we reset the default experiment and expect to see the last experiment (<code class="docutils literal notranslate"><span class="pre">exp_id</span></code>=3) is the default one:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">reset_default_experiment_id</span><span class="p">()</span> <span class="c1"># the explicit database connection can be used as an optional argument</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">get_default_experiment_id</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+3
+</pre></div></div>
+</div>
+<p>Let’s make sure it is truly the default experiment by creating a new <code class="docutils literal notranslate"><span class="pre">DataSet</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">new_data_set</span><span class="p">(</span><span class="s1">&#39;default_run&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+default_run #5@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+----------------------------------------------------------------------------------------------
+</pre></div></div>
+</div>
+<p>This <code class="docutils literal notranslate"><span class="pre">DataSet</span></code> should belong to <code class="docutils literal notranslate"><span class="pre">exp_c</span></code>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">exp_c</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+third_exp#brand_new_sample#3@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------------
+1-run_a-1-None-0
+5-default_run-2-None-0
+</pre></div></div>
+</div>
+<p>There are a few other useful functions to load experiments:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">load_experiment_by_name</span><span class="p">(</span><span class="s1">&#39;second_exp&#39;</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="s1">&#39;slightly_newer_sample&#39;</span><span class="p">)</span>  <span class="c1"># loads using name and sample</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+second_exp#slightly_newer_sample#2@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------------------
+2-first_run_b-1-None-0
+3-second_run_b-2-None-0
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">load_last_experiment</span><span class="p">()</span> <span class="c1"># loads the last experiment in the database</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+third_exp#brand_new_sample#3@/home/runner/work/Qcodes/Qcodes/docs/examples/DataSet/exp_container_tutorial.db
+------------------------------------------------------------------------------------------------------------
+1-run_a-1-None-0
+5-default_run-2-None-0
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Saving_data_in_the_background.html" class="btn btn-neutral float-left" title="Saving data in the background" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Threaded%20data%20acquisition.html" class="btn btn-neutral float-right" title="Threaded data acquisition" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

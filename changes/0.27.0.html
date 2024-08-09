@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog for QCoDeS 0.27.0 &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Changelog for QCoDeS 0.26.0" href="0.26.0.html" />
+    <link rel="prev" title="Changelog for QCoDeS 0.28.0" href="0.28.0.html" />
+    <link href="../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Changelogs</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="unreleased.html">Unreleased</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.47.0.html">0.47.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.46.0.html">0.46.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.45.0.html">0.45.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.44.1.html">0.44.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.44.0.html">0.44.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.43.0.html">0.43.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.42.1.html">0.42.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.42.0.html">0.42.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.41.1.html">0.41.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.41.0.html">0.41.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.40.0.html">0.40.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.39.1.html">0.39.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.39.0.html">0.39.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.38.1.html">0.38.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.38.0.html">0.38.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.37.0.html">0.37.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.36.1.html">0.36.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.36.0.html">0.36.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.2.html">0.35.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.1.html">0.35.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.0.html">0.35.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.35.0b1.html">0.35.0b1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.34.1.html">0.34.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.34.0.html">0.34.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.33.0.html">0.33.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.32.0.html">0.32.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.31.0.html">0.31.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.30.1.html">0.30.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.30.0.html">0.30.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.29.1.html">0.29.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.29.0.html">0.29.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.28.0.html">0.28.0</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">0.27.0</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#breaking-changes">Breaking Changes:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#new">New:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#improved">Improved:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#improved-drivers">Improved drivers:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#under-the-hood">Under the hood:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="0.26.0.html">0.26.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.25.0.html">0.25.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.24.0.html">0.24.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.23.0.html">0.23.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.22.0.html">0.22.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.21.0.html">0.21.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.20.1.html">0.20.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.20.0.html">0.20.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.2.html">0.19.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.1.html">0.19.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.19.0.html">0.19.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.18.0.html">0.18.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.17.0.html">0.17.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.16.0.html">0.16.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.15.0.html">0.15.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.15.0a1.html">0.15.0a1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.14.0.html">0.14.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.13.0.html">0.13.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.12.1.html">0.12.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.12.0.html">0.12.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.11.0.html">0.11.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.10.0.html">0.10.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.9.0.html">0.9.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.8.1.html">0.8.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.8.0.html">0.8.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.7.0.html">0.7.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.6.0.html">0.6.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.2.html">0.5.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.1.html">0.5.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.5.0.html">0.5.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.4.0.html">0.4.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.3.0.html">0.3.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.2.1.html">0.2.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.2.0.html">0.2.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.11.html">0.1.11</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.10.html">0.1.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.9.html">0.1.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.7.html">0.1.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.6.html">0.1.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.5.html">0.1.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.4.html">0.1.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.3.html">0.1.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.2.html">0.1.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="0.1.0.html">0.1.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Changelogs</a></li>
+      <li class="breadcrumb-item active">Changelog for QCoDeS 0.27.0</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/changes/0.27.0.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="changelog-for-qcodes-0-27-0">
+<h1>Changelog for QCoDeS 0.27.0<a class="headerlink" href="#changelog-for-qcodes-0-27-0" title="Link to this heading"></a></h1>
+<p>The July 2021 release of QCoDeS.</p>
+<section id="breaking-changes">
+<h2>Breaking Changes:<a class="headerlink" href="#breaking-changes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>DelegateInstrument takes <cite>parameters</cite> as an optional, keyworded input argument. Any arguments passed as positional arguments after this one will break with this change. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3089">#3089</a>)</p></li>
+</ul>
+</section>
+<section id="new">
+<h2>New:<a class="headerlink" href="#new" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>A generalized N-dimensional <code class="docutils literal notranslate"><span class="pre">dond</span></code> function has been created to work with sweep objects and measurement parameters. Currently available
+sweep objects are <code class="docutils literal notranslate"><span class="pre">LinSweep</span></code> and <code class="docutils literal notranslate"><span class="pre">LogSweep</span></code> that can be used for <cite>dond</cite> measurements. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/2990">#2990</a>)</p></li>
+<li><p>The default value for <cite>default_parameter_name</cite> in the Loop QCoDeS dataset changed from <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> to <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">amplitude</span></code> value interferes with datasets where one of the setpoint arrays is called <cite>amplitude</cite>. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3095">#3095</a>)</p></li>
+<li><p>Abstract parameters has been added which allow one to create abstract instrument types that have parameters which can be overwritten in a subclass allowing the creation of instruments
+subclasses with a well-defined api. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3125">#3125</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3217">#3217</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3197">#3197</a>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DataSetProtocol</span></code> created to define the protocol that datasets must implement to be able to act as a storage device for the measurement class. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3075">#3075</a>, <a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3092">#3092</a>)</p></li>
+<li><p>Enable exporting complex numbers to netcdf. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3126">#3126</a>)</p></li>
+</ul>
+</section>
+<section id="improved">
+<h2>Improved:<a class="headerlink" href="#improved" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>DelegateInstrument can now support instrument channels. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3089">#3089</a>)</p></li>
+<li><p>Decouple measurement name from dataset results table name to allow special characters in the measurement name. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3185">#3185</a>)</p></li>
+<li><p>Update the get started document with installing and using spyder and jupyter. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3179">#3179</a>)</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">underlying_instrument</span></code> property to <code class="docutils literal notranslate"><span class="pre">_BaseParameter</span></code> and use it in <code class="docutils literal notranslate"><span class="pre">call_params_threaded</span></code> instead of <code class="docutils literal notranslate"><span class="pre">root_instrument</span></code>. (3127)</p></li>
+<li><p>Ensure that the per array metadata is also exported to dataarrays and not just datasets. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3116">#3116</a>)</p></li>
+<li><p>Use threaded setting from config in doNd functions, and make <code class="docutils literal notranslate"><span class="pre">process_params_meas</span></code> public. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3096">#3096</a>)</p></li>
+<li><p>Don’t allow metadata tags that are not valid python identifiers (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3192">#3192</a>)</p></li>
+<li><p>Pulled out <code class="docutils literal notranslate"><span class="pre">dataframe_to_csv</span></code> into it’s own submodule <code class="docutils literal notranslate"><span class="pre">export_to_csv</span></code> from the <code class="docutils literal notranslate"><span class="pre">data_set</span></code> submodule for easier reuse. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3061">#3061</a>)</p></li>
+</ul>
+</section>
+<section id="improved-drivers">
+<h2>Improved drivers:<a class="headerlink" href="#improved-drivers" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Fix to Rohde &amp; Schwarz ZNB driver for setting npts in CW mode. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3168">#3168</a>)</p></li>
+<li><p>Update Keithley 2600 SMU current parameter to be aware of if current compliance is hit during measurement. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3160">#3160</a>)</p></li>
+<li><p>Alazar ATS drivers: Fix buffer size for mode=’TS’ and buffers_per_acquisition &gt; 1. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3118">#3118</a>)</p></li>
+<li><p>New parameter <code class="docutils literal notranslate"><span class="pre">complex_voltage</span></code> has been added to the SR830 lockin amplifier. (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3078">#3078</a>)</p></li>
+</ul>
+</section>
+<section id="under-the-hood">
+<h2>Under the hood:<a class="headerlink" href="#under-the-hood" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Add logging to measurement runs in doNd functions (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3206">#3206</a>)</p></li>
+<li><p>Fix to speed up and properly set experiment in delegate device test (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3199">#3199</a>)</p></li>
+<li><p>Remove bare wait test due to random failures (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3198">#3198</a>)</p></li>
+<li><p>Revert checking of abstract parameters in post init due to unintended side effects (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3197">#3197</a>)</p></li>
+<li><p>Use public interface for instrument in parameters (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3187">#3187</a>)</p></li>
+<li><p>Fix numpy deprecation for ragged arrays (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3184">#3184</a>)</p></li>
+<li><p>Add documentation to explain automatic CI (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3169">#3169</a>)</p></li>
+<li><p>Give threads time to start in tests (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3167">#3167</a>)</p></li>
+<li><p>Minimum changes to allow type checking to pass with numpy 1.21 (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3150">#3150</a>)</p></li>
+<li><p>Add customDimensionsFilter to inject custom dim, and inject pythonExecutable (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3143">#3143</a>)</p></li>
+<li><p>Add export info metadata to dataset (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3135">#3135</a>)</p></li>
+<li><p>Pin typing packages the same way as other test dependancies do (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3123">#3123</a>)</p></li>
+<li><p>Do not preserve gh pages branch history significantly reducing the size of the full clone of the QCoDeS repository (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3122">#3122</a>)</p></li>
+<li><p>Add typing packages to conda CI (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3115">#3115</a>)</p></li>
+<li><p>Fix link to pyvisa intersphinx (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3106">#3106</a>)</p></li>
+<li><p>Compare shapes in <code class="docutils literal notranslate"><span class="pre">RunDescriber</span></code> equality method (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3105">#3105</a>)</p></li>
+<li><p>Fix invalid array syntax in json schema (<a class="reference external" href="https://github.com/QCoDeS/Qcodes/pull/3097">#3097</a>)</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="0.28.0.html" class="btn btn-neutral float-left" title="Changelog for QCoDeS 0.28.0" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="0.26.0.html" class="btn btn-neutral float-right" title="Changelog for QCoDeS 0.26.0" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

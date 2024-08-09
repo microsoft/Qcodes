@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.instrument_drivers.AlazarTech.ATS_acquisition_controllers &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.instrument_drivers.AlazarTech.ATS_acquisition_controllers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.instrument_drivers.AlazarTech.ATS_acquisition_controllers</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.ATS</span> <span class="kn">import</span> <span class="n">AcquisitionController</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">Parameter</span>
+
+
+<span class="c1"># DFT AcquisitionController</span>
+<div class="viewcode-block" id="DemodulationAcquisitionController">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController">[docs]</a>
+<span class="k">class</span> <span class="nc">DemodulationAcquisitionController</span><span class="p">(</span><span class="n">AcquisitionController</span><span class="p">[</span><span class="nb">float</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This class represents an example acquisition controller. End users will</span>
+<span class="sd">    probably want to use something more sophisticated. It will average all</span>
+<span class="sd">    buffers and then perform a fourier transform on the resulting average trace</span>
+<span class="sd">    for one frequency component. The amplitude of the result of channel_a will</span>
+<span class="sd">    be returned.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name: name for this acquisition_conroller as an instrument</span>
+
+<span class="sd">        alazar_name: the name of the alazar instrument such that this controller</span>
+<span class="sd">            can communicate with the Alazar</span>
+
+<span class="sd">        demodulation_frequency: the selected component for the fourier transform</span>
+
+<span class="sd">        **kwargs: kwargs are forwarded to the Instrument base class</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">alazar_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+            <span class="n">demodulation_frequency</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">demodulation_frequency</span> <span class="o">=</span> <span class="n">demodulation_frequency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acquisitionkwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">records_per_buffer</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers_per_acquisition</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_channels</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cos_list</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sin_list</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># make a call to the parent class and by extension, create the parameter</span>
+        <span class="c1"># structure of this class</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">alazar_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acquisition</span><span class="p">:</span> <span class="n">Parameter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_parameter</span><span class="p">(</span>
+            <span class="s2">&quot;acquisition&quot;</span><span class="p">,</span> <span class="n">get_cmd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">do_acquisition</span>
+        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Parameter acquisition&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DemodulationAcquisitionController.update_acquisitionkwargs">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController.update_acquisitionkwargs">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_acquisitionkwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This method must be used to update the kwargs used for the acquisition</span>
+<span class="sd">        with the alazar_driver.acquire</span>
+<span class="sd">        :param kwargs:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">acquisitionkwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DemodulationAcquisitionController.do_acquisition">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController.do_acquisition">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_acquisition</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        this method performs an acquisition, which is the get_cmd for the</span>
+<span class="sd">        acquisiion parameter of this instrument</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_alazar</span><span class="p">()</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">acquisition_controller</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                                           <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisitionkwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="DemodulationAcquisitionController.pre_start_capture">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController.pre_start_capture">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_start_capture</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        See AcquisitionController</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">alazar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_alazar</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span> <span class="o">=</span> <span class="n">alazar</span><span class="o">.</span><span class="n">samples_per_record</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">records_per_buffer</span> <span class="o">=</span> <span class="n">alazar</span><span class="o">.</span><span class="n">records_per_buffer</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffers_per_acquisition</span> <span class="o">=</span> <span class="n">alazar</span><span class="o">.</span><span class="n">buffers_per_acquisition</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">sample_speed</span> <span class="o">=</span> <span class="n">alazar</span><span class="o">.</span><span class="n">get_sample_rate</span><span class="p">()</span>
+        <span class="n">integer_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span><span class="p">)</span>
+        <span class="n">angle_list</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">demodulation_frequency</span> <span class="o">/</span> <span class="n">sample_speed</span> <span class="o">*</span>
+                      <span class="n">integer_list</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cos_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sin_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle_list</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span> <span class="o">*</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">records_per_buffer</span> <span class="o">*</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">number_of_channels</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DemodulationAcquisitionController.pre_acquire">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController.pre_acquire">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        See AcquisitionController</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># this could be used to start an Arbitrary Waveform Generator, etc...</span>
+        <span class="c1"># using this method ensures that the contents are executed AFTER the</span>
+        <span class="c1"># Alazar card starts listening for a trigger pulse</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="DemodulationAcquisitionController.handle_buffer">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController.handle_buffer">[docs]</a>
+    <span class="k">def</span> <span class="nf">handle_buffer</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">buffer</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">buffer_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        See AcquisitionController</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">+=</span> <span class="n">buffer</span></div>
+
+
+<div class="viewcode-block" id="DemodulationAcquisitionController.post_acquire">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController.post_acquire">[docs]</a>
+    <span class="k">def</span> <span class="nf">post_acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        See AcquisitionController</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">alazar</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_alazar</span><span class="p">()</span>
+        <span class="c1"># average all records in a buffer</span>
+        <span class="n">records_per_acquisition</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers_per_acquisition</span> <span class="o">*</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">records_per_buffer</span><span class="p">)</span>
+        <span class="n">recordA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">records_per_buffer</span><span class="p">):</span>
+            <span class="n">i0</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span>
+            <span class="n">i1</span> <span class="o">=</span> <span class="n">i0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span>
+            <span class="n">recordA</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">i0</span><span class="p">:</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="n">records_per_acquisition</span>
+
+        <span class="n">recordB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">records_per_buffer</span><span class="p">):</span>
+            <span class="n">i0</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
+            <span class="n">i1</span> <span class="o">=</span> <span class="n">i0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span>
+            <span class="n">recordB</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">i0</span><span class="p">:</span><span class="n">i1</span><span class="p">]</span> <span class="o">/</span> <span class="n">records_per_acquisition</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_channels</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># fit channel A and channel B</span>
+            <span class="n">res1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">recordA</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">recordB</span><span class="p">)</span>
+            <span class="c1">#return [alazar.signal_to_volt(1, res1[0] + 127.5),</span>
+            <span class="c1">#        alazar.signal_to_volt(2, res2[0] + 127.5),</span>
+            <span class="c1">#        res1[1], res2[1],</span>
+            <span class="c1">#        (r es1[1] - res2[1]) % 360]</span>
+            <span class="k">return</span> <span class="n">alazar</span><span class="o">.</span><span class="n">signal_to_volt</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">res1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">127.5</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Could not find CHANNEL_B during data extraction&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DemodulationAcquisitionController.fit">
+<a class="viewcode-back" href="../../../../drivers_api/AlazarTech.html#qcodes.instrument_drivers.AlazarTech.DemodulationAcquisitionController.fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buf</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        the DFT is implemented in this method</span>
+<span class="sd">        :param buf: buffer to perform the transform on</span>
+<span class="sd">        :return: return amplitude and phase of the resulted transform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Discrete Fourier Transform</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">RePart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">buf</span> <span class="o">-</span> <span class="mf">127.5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cos_list</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span>
+        <span class="n">ImPart</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">buf</span> <span class="o">-</span> <span class="mf">127.5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sin_list</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples_per_record</span>
+
+        <span class="c1"># the factor of 2 in the amplitude is due to the fact that there is</span>
+        <span class="c1"># a negative frequency as well</span>
+        <span class="n">ampl</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">RePart</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">ImPart</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># see manual page 52!!! (using unsigned data)</span>
+        <span class="k">return</span> <span class="n">ampl</span><span class="p">,</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="n">ImPart</span><span class="p">,</span> <span class="n">RePart</span><span class="p">)</span> <span class="o">*</span> <span class="mi">360</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="k">class</span> <span class="nc">Demodulation_AcquisitionController</span><span class="p">(</span><span class="n">DemodulationAcquisitionController</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Alias for backwards compatibility. Will eventually be deprecated and removed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">pass</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

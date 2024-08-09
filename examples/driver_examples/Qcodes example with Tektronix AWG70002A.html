@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" sizes="310x346" href="../../_static/qcodes_favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QCoDeS Example with Tektronix AWG70002A &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="QCoDeS Example with Tektronix TPS2012" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html" />
+    <link rel="prev" title="QCoDeS Example with Tektronix AWG5014" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html" />
+    <link href="../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples of using QCoDeS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basic-examples">Basic examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#parameters">Parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#dataset">DataSet</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plotting">Plotting</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#drivers">Drivers</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Keysight%20E4980A%20LCR%20meter.html">QCoDeS Example with Keysight E4980A LCR meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20Example%20with%20Yokogawa%20GS200%20and%20Keithley%207510.html">QCoDeS Example with Yokogawa GS200 and Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Aim%20TTi%20PL601-P.html">QCoDeS example with Aim TTi PL601-P</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20DelegateInstrument.html">Qcodes example with DelegateInstrument driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Galil%20DMC4133%20Controller.html">QCoDeS example with Galil DMC4133 Controller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20InstrumentGroup%20and%20DelegateInstrument.html">Qcodes example with InstrumentGroup driver</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCoDeS%20example%20with%20Keithley%203706A%20System%20Switch.html">QCoDeS example with Keithley 3706A System Switch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Keithley%20S46.html">QCoDeS Example with Tektronix Keithley S46</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Rigol%20DG1062.html">QCoDeS Example with the Rigol DG 1062 Instrument</a></li>
+<li class="toctree-l3"><a class="reference internal" href="QCodes%20example%20with%20Tektronix%20DPO%2072004C.html">QCoDeS example with Textronix DPO 7200xx scopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20AMI430.html">QCoDeS Example with AMI430</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Agilent%2034400A.html">QCoDeS Example with Agilent 34400A</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Alazar%20ATS9360.html">QCoDeS Example with Alazar ATS 9360</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Basel%20SP983c%20Preamp.html">Qcodes example with Basel SP983c Preamp and its Remote SP983a</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Cryomagnetics4G.html">Cryomagnetics 4G QCoDeS Driver Example</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20DynaCool%20PPMS.html">QCoDeS Example with DynaCool PPMS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20HP8753D.html">QCoDeS Example with HP8753D</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Ithaco.html">QCoDeS Example with Itacho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%202600.html">QCoDeS Example with with Keithley 2600 series</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keithley%207510.html">QCoDeS Example with Tektronix Keithley 7510 Multimeter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2033500B.html">QCoDeS Example with Keysight 33500B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20344xxA.html">QCoDeS Example with Keysight 344xxA</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%2034980A%20Switch%20Mainframe%20and%20Modules.html">QCoDeS Example with Keysight 34980A Multifunction Switch / Measure Mainframe and Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B1500%20Parameter%20Analyzer.html">Qcodes example with Keysight B1500 Semiconductor Parameter Analyzer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20B2200%20Series%20Femto%20Leakage%20Switch%20Matrix.html">QCoDeS Example with Keysight B2200 Series Femto Leakage Switch Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Infiniium%20Oscilloscope.html">QCoDeS Example with Keysight Infiniium Oscilloscopes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20N9030B.html">Qcodes example with Keysight N9030B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Keysight%20Network%20Analyzer.html">QCoDeS Example with Keysight Network Analyzers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20325.html">QCoDeS Example with Lakeshore 325</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Lakeshore%20336%20or%20372%20-%20Bluefors%20T%20control.html">QCoDeS Example with the Lakeshore Model 372 to Control the Temperature of the Bluefors Fridge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Minicircuits%20Switch%20boxes%20%28USB-XSPDT%29.html">QCoDeS Example with Minicircuits Switch Boxes Controlled via USB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Mercury%20iPS.html">QCoDeS Example with Mercury iPS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Oxford%20Triton.html">QCoDeS Example with Oxford Triton</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20QDev_QDac.html">QCoDeS Example with QDac_channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DP832.html">QCoDeS Example with Rigol DP832 Power Supply</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rigol%20DS1074Z.html">QCoDeS Example with the Rigol DS 1074 Z oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20RTO%201000%20series%20Oscilloscope.html">QCoDeS Example with Rohde Schwarz RTO 1000 Series Oscilloscope</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20SGS100A.html">QCoDeS Example with Rohde Schwarz SGS100A RF source</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Rohde%20Schwarz%20ZNB.html">QCoDeS Example with Rohde Schwarz ZNB20/8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stahl.html">QCoDeS Example with the Stahl Bias Sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR830.html">QCoDeS Example with Stanford SR830</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Stanford%20SR86x%20with%20buffered%20readout.html">QCoDeS Example with Standford Research SR86x Lock-in Amplifier with Buffered Readout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html">QCoDeS Example with Tektronix AWG5014</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">QCoDeS Example with Tektronix AWG70002A</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Function-Generator-Style-Operation">Function Generator Style Operation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#AWG-Style-Operation">AWG Style Operation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Making-and-sending-sequences">Making and sending sequences</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Tektronix%20TPS2012.html">QCoDeS Example with Tektronix TPS2012</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20Yokogawa%20GS2xx.html">QCoDeS Example with Yokogawa GS200/GS210</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%20example%20with%20keithley%202450.html">QCoDeS Example with Tektronix Keithley 2450 Source Meter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes%2Bbroadbean%20example%20with%20Tektronix%20AWG5208.html">QCoDeS+Broadbean Example with Tektronix AWG5208</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B.html">QCoDeS Example with Signal Hound USB-SA124B</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Qcodes-example-with-Signal-Hound-USB-SA124B-ParameterWithSetpoints.html">QCoDeS Example with Signal Hound USB-SA124B ParameterWithSetpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#writing-drivers">Writing Drivers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#logging">Logging</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples of using QCoDeS</a></li>
+      <li class="breadcrumb-item active">QCoDeS Example with Tektronix AWG70002A</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/examples/driver_examples/Qcodes example with Tektronix AWG70002A.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="admonition note">
+  <p>This page was generated from
+    <a class="reference external"
+    href="https://github.com/qcodes/qcodes/blob/main/docs/examples/driver_examples/Qcodes example with Tektronix AWG70002A.ipynb">docs/examples/driver_examples/Qcodes example with Tektronix AWG70002A.ipynb</a>.
+    Interactive online version:
+    <a href="https://mybinder.org/v2/gh/qcodes/qcodes/main?filepath=docs/examples/driver_examples/Qcodes example with Tektronix AWG70002A.ipynb"><img
+alt="Binder badge"
+    src="https://mybinder.org/badge_logo.svg"
+    style="vertical-align:text-bottom"></a>.
+  </p>
+  <script>
+    if (document.location.host) {
+      var p = document.currentScript.previousSibling.previousSibling;
+      var a = document.createElement('a');
+      a.innerHTML = 'View in <em>nbviewer</em>';
+      a.href = `https://nbviewer.jupyter.org/url${
+        (window.location.protocol == 'https:' ? 's/' : '/') +
+        window.location.host +
+        window.location.pathname.slice(0, -4) }ipynb`;
+      a.classList.add('reference');
+      a.classList.add('external');
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+    }
+  </script>
+</div><section id="QCoDeS-Example-with-Tektronix-AWG70002A">
+<h1>QCoDeS Example with Tektronix AWG70002A<a class="headerlink" href="#QCoDeS-Example-with-Tektronix-AWG70002A" title="Link to this heading"></a></h1>
+<p>The Tektronix awg70002A can operate in two modes: function generator mode or AWG mode. This example notebook briefly covers both.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> notebook
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">qcodes.instrument_drivers.tektronix</span> <span class="kn">import</span> <span class="n">TektronixAWG70002A</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">awg</span> <span class="o">=</span> <span class="n">TektronixAWG70002A</span><span class="p">(</span><span class="s1">&#39;awg&#39;</span><span class="p">,</span> <span class="s1">&#39;TCPIP0::172.20.2.243::inst0::INSTR&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Connected to: TEKTRONIX AWG70002A (serial:B020397, firmware:FV:5.3.0128.0) in 0.54s
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let&#39;s have a look at the available parameters</span>
+
+<span class="n">awg</span><span class="o">.</span><span class="n">print_readable_snapshot</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+awg:
+        parameter               value
+--------------------------------------------------------------------------------
+IDN                      :      {&#39;firmware&#39;: &#39;FV:5.3.0128.0&#39;, &#39;model&#39;: &#39;AWG70002A&#39;...
+clock_external_frequency :      6.25e+09 (Hz)
+clock_source             :      Internal
+current_directory        :      &#34;\Users\OEM\Documents&#34;
+mode                     :      AWG
+sample_rate              :      2.5e+10 (Sa/s)
+timeout                  :      10 (s)
+awg_ch1:
+        parameter        value
+--------------------------------------------------------------------------------
+awg_amplitude     :     0.5 (V)
+fgen_amplitude    :     0.074 (V)
+fgen_dclevel      :     0 (V)
+fgen_frequency    :     1e+07 (Hz)
+fgen_offset       :     0.12 (V)
+fgen_period       :     1e-07 (s)
+fgen_phase        :     25 (degrees)
+fgen_signalpath   :     direct
+fgen_symmetry     :     50 (%)
+fgen_type         :     EXPONENTIALDECAY
+marker1_high      :     0.1 (V)
+marker1_low       :     -0.4 (V)
+marker1_waitvalue :     HIGH
+marker2_high      :     0.1 (V)
+marker2_low       :     -0.4 (V)
+marker2_waitvalue :     HIGH
+resolution        :     8
+state             :     1
+awg_ch2:
+        parameter        value
+--------------------------------------------------------------------------------
+awg_amplitude     :     0.3 (V)
+fgen_amplitude    :     0.5 (V)
+fgen_dclevel      :     0 (V)
+fgen_frequency    :     1e+07 (Hz)
+fgen_offset       :     0 (V)
+fgen_period       :     1e-07 (s)
+fgen_phase        :     0 (degrees)
+fgen_signalpath   :     direct
+fgen_symmetry     :     50 (%)
+fgen_type         :     TRIANGLE
+marker1_high      :     1.4 (V)
+marker1_low       :     0 (V)
+marker1_waitvalue :     LOW
+marker2_high      :     1 (V)
+marker2_low       :     0 (V)
+marker2_waitvalue :     LOW
+resolution        :     8
+state             :     0
+</pre></div></div>
+</div>
+<section id="Function-Generator-Style-Operation">
+<h2>Function Generator Style Operation<a class="headerlink" href="#Function-Generator-Style-Operation" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the intrument mode to function generator</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s1">&#39;FGEN&#39;</span><span class="p">)</span>
+
+<span class="c1"># Build some signal</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">fgen_type</span><span class="p">(</span><span class="s1">&#39;EXPONENTIALDECAY&#39;</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">fgen_frequency</span><span class="p">(</span><span class="mf">10e6</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">fgen_amplitude</span><span class="p">(</span><span class="mf">0.074</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">fgen_offset</span><span class="p">(</span><span class="mf">0.12</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">fgen_phase</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span>
+
+<span class="c1"># Switch channel 1 on</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Start outputting...</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># switch off the output eventually</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+<span class="c1"># and disable the channel</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="AWG-Style-Operation">
+<h2>AWG Style Operation<a class="headerlink" href="#AWG-Style-Operation" title="Link to this heading"></a></h2>
+<p>The instrument can be operated as an awg where the user uploads arrays describing the waveforms.</p>
+<p>Each channel operates in one of three resolution modes:</p>
+<ul class="simple">
+<li><p>8 bit signal + 2 markers</p></li>
+<li><p>9 bit signal + 1 marker</p></li>
+<li><p>10 bit signal with no markers</p></li>
+</ul>
+<p>Waveforms can be sent to the waveform list via <code class="docutils literal notranslate"><span class="pre">.wfmx</span></code> files. A <code class="docutils literal notranslate"><span class="pre">.wfmx</span></code> file can contain marker data. If the resolution of the instrument does not allow for markers, these are simply ignored.</p>
+<section id="Making-and-sending-waveforms-to-the-waveform-list">
+<h3>Making and sending waveforms to the waveform list<a class="headerlink" href="#Making-and-sending-waveforms-to-the-waveform-list" title="Link to this heading"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set the instrument in awg mode</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s1">&#39;AWG&#39;</span><span class="p">)</span>
+<span class="c1"># set the resolution to 8 bits plus two markers</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">resolution</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># clear the sequence list and waveform list (NOT ALWAYS A GOOD IDEA! BE CAREFUL!)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">clearSequenceList</span><span class="p">()</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">clearWaveformList</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let us make a sine, upload it and play it</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">50000</span>  <span class="c1"># minimal length allowed is 2400 points</span>
+
+<span class="n">m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">))))</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">))))</span>
+
+<span class="n">ramp</span> <span class="o">=</span> <span class="mf">0.075</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="n">mysine</span> <span class="o">=</span> <span class="mf">0.1</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">N</span><span class="p">))</span> <span class="o">+</span> <span class="n">ramp</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">mysine</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The .wfmx file needs a name in the memory of the instrument</span>
+<span class="c1"># The name of the waveform in the waveform list is that same name</span>
+<span class="c1"># with no .wfmx extension</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;examplewaveform1.wfmx&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># now compile the binary file</span>
+<span class="n">wfmx_file</span> <span class="o">=</span> <span class="n">awg</span><span class="o">.</span><span class="n">makeWFMXFile</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mf">0.350</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># and send it and load it into memory</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">sendWFMXFile</span><span class="p">(</span><span class="n">wfmx_file</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">loadWFMXFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The waveform is now in the waveform list</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">waveformList</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&#39;examplewaveform1&#39;]
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># now assign it to channel 1</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.wfmx&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Switch channel 1 on</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Start outputting...</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># switch off the output eventually</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+<span class="c1"># and disable the channel</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">awg</span><span class="o">.</span><span class="n">ch2</span><span class="o">.</span><span class="n">setWaveform</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.wfmx&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">awg</span><span class="o">.</span><span class="n">ch2</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="Making-and-sending-sequences">
+<h2>Making and sending sequences<a class="headerlink" href="#Making-and-sending-sequences" title="Link to this heading"></a></h2>
+<p>Sequences are much better off being generated using the broadbean module, but for now let’s reduce the number of moving parts and compose a little sequence by hand.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># set the instrument in awg mode</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">mode</span><span class="p">(</span><span class="s1">&#39;AWG&#39;</span><span class="p">)</span>
+<span class="c1"># set the resolution to 8 bits plus two markers</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">resolution</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let&#39;s make a sequence where a sine plays on one channel while the other channel ramps</span>
+<span class="c1"># and then the roles reverse</span>
+
+<span class="c1"># As a preparation, let&#39;s set both channels to 300 mV peak-to-peak</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">awg_amplitude</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch2</span><span class="o">.</span><span class="n">awg_amplitude</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+
+<span class="n">N</span> <span class="o">=</span> <span class="mi">20000</span>  <span class="c1"># minimally 2400</span>
+
+<span class="n">SR</span> <span class="o">=</span> <span class="mf">1e9</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">(</span><span class="n">SR</span><span class="p">)</span>  <span class="c1"># set the sample rate on the instrument</span>
+<span class="n">ramp_target</span> <span class="o">=</span> <span class="mf">0.1</span>  <span class="c1"># ramp target (V)</span>
+
+<span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="o">/</span><span class="n">SR</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+<span class="n">sinesignal</span> <span class="o">=</span> <span class="mf">0.15</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">SR</span><span class="o">/</span><span class="n">N</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">time</span><span class="p">)</span>
+<span class="n">m1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">))))</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">N</span><span class="o">/</span><span class="mi">2</span><span class="p">))))</span>
+<span class="n">rampsignal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ramp_target</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
+
+<span class="c1"># Then we compose and upload a .seqx file in 6 steps</span>
+
+<span class="c1"># Step 1: cast the waveform data into the .wfmx format</span>
+<span class="c1"># To make a .wfmx, we need to know the amplitude of the output channel</span>
+<span class="n">ch1_amp</span> <span class="o">=</span> <span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">awg_amplitude</span><span class="p">()</span>
+<span class="n">ch2_amp</span> <span class="o">=</span> <span class="n">awg</span><span class="o">.</span><span class="n">ch2</span><span class="o">.</span><span class="n">awg_amplitude</span><span class="p">()</span>
+
+<span class="c1">#wfm_ch1_n1 = awg.makeWFMXFile(np.array([sinesignal, m1, m2]), ch1_amp)</span>
+<span class="c1">#wfm_ch1_n2 = awg.makeWFMXFile(np.array([rampsignal, m1, m2]), ch1_amp)</span>
+<span class="c1">#wfm_ch2_n1 = awg.makeWFMXFile(np.array([rampsignal, m1, m2]), ch2_amp)</span>
+<span class="c1">#wfm_ch2_n2 = awg.makeWFMXFile(np.array([sinesignal, m1, m2]), ch2_amp)</span>
+
+
+<span class="n">wfm_ch1_n1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sinesignal</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">])</span>
+<span class="n">wfm_ch1_n2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rampsignal</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">])</span>
+<span class="n">wfm_ch2_n1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">rampsignal</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">])</span>
+<span class="n">wfm_ch2_n2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sinesignal</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">])</span>
+
+<span class="c1"># Step 2: decide on sequencing information</span>
+<span class="c1"># This information is provided as lists of the same length as the</span>
+<span class="c1"># sequence</span>
+<span class="n">trig_waits</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># 0: off, 1: trigA, 2: trigB, 3: EXT</span>
+<span class="n">nreps</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># 0 corresponds to infinite</span>
+<span class="n">event_jumps</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="c1"># 0: off, 1: trigA, 2: trigB, 3: EXT</span>
+<span class="n">event_jump_to</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># irrelevant if event-jump is 0, else the sequence pos. to jump to</span>
+<span class="n">go_to</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># 0 means next</span>
+
+<span class="c1"># Step 3: make the .seqx file</span>
+<span class="c1"># The sequence must be given a name</span>
+
+<span class="n">seqname</span> <span class="o">=</span> <span class="s1">&#39;tutorial_sequence&#39;</span>
+
+<span class="n">wfms</span> <span class="o">=</span> <span class="p">[[</span><span class="n">wfm_ch1_n1</span><span class="p">,</span> <span class="n">wfm_ch1_n2</span><span class="p">],</span> <span class="p">[</span><span class="n">wfm_ch2_n1</span><span class="p">,</span> <span class="n">wfm_ch2_n2</span><span class="p">]]</span>
+
+<span class="n">seqx</span> <span class="o">=</span> <span class="n">awg</span><span class="o">.</span><span class="n">makeSEQXFile</span><span class="p">(</span><span class="n">trig_waits</span><span class="p">,</span>
+                        <span class="n">nreps</span><span class="p">,</span>
+                        <span class="n">event_jumps</span><span class="p">,</span>
+                        <span class="n">event_jump_to</span><span class="p">,</span>
+                        <span class="n">go_to</span><span class="p">,</span>
+                        <span class="n">wfms</span><span class="p">,</span>
+                        <span class="p">[</span><span class="n">ch1_amp</span><span class="p">,</span> <span class="n">ch2_amp</span><span class="p">],</span>
+                        <span class="n">seqname</span><span class="p">)</span>
+
+<span class="c1"># Step 4: Transfer the seqx file</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">sendSEQXFile</span><span class="p">(</span><span class="n">seqx</span><span class="p">,</span> <span class="s1">&#39;thursday.seqx&#39;</span><span class="p">)</span>
+
+<span class="c1"># Step 5: Load the seqx file</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">loadSEQXFile</span><span class="p">(</span><span class="s1">&#39;thursday.seqx&#39;</span><span class="p">)</span>
+<span class="c1"># Now the sequence should appear in the sequencelist, but it is not yet assigned to channels</span>
+
+<span class="c1"># Step 6: Assign tracks from the sequence to the channels</span>
+<span class="c1"># Unlike older/other AWG models, this can be done on a per-channel basis</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">setSequenceTrack</span><span class="p">(</span><span class="n">seqname</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch2</span><span class="o">.</span><span class="n">setSequenceTrack</span><span class="p">(</span><span class="n">seqname</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now play it!</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch1</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">ch2</span><span class="o">.</span><span class="n">state</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">play</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">awg</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Finally irreversibly tear down the instrument</span>
+<span class="n">awg</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Qcodes%20example%20with%20Tektronix%20AWG5014C.html" class="btn btn-neutral float-left" title="QCoDeS Example with Tektronix AWG5014" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Qcodes%20example%20with%20Tektronix%20TPS2012.html" class="btn btn-neutral float-right" title="QCoDeS Example with Tektronix TPS2012" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

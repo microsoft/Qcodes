@@ -1,0 +1,989 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# QCoDeS Example with AMI430"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Summary of automated tests that the driver goes through\n",
+    "\n",
+    "We have performed a lot of stand alone tests (tests with mocked hardware) in `tests/test_ami430_visa.py`. In particular, we have tested: \n",
+    "- If the driver remembers the internal setpoints if these are given in cartesian, spherical and cylindrical coordinates\n",
+    "- Check that we send to correct setpoint instructions to the individual instruments if inputs are cartesian, spherical or cylindrical coordinates\n",
+    "- Test that we can call the measured parameters (e.g. cartesian_measured) without exceptions occurring. \n",
+    "- Check that instruments which need to ramp down are given adjustment instructions first\n",
+    "- Check that field limit exceptions are raised properly\n",
+    "- Check that the driver remembers theta and phi coordinates even if the vector norm is zero. \n",
+    "- Test that a warning is issued when the maximum ramp rate is increased \n",
+    "- Test that an exception is raised when we try to set a ramp rate which is higher then the maximum allowed value.\n",
+    "\n",
+    "Furthermore, in `tests/test_field_vector.py` we have tested if the cartesian to spherical/cylindrical coordinate transformations and visa-versa has been correctly implemented by asserting symmetry rules. "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Connecting to the individual axis instruments"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "import time\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "import numpy as np\n",
+    "\n",
+    "from qcodes.instrument_drivers.american_magnetics import AMIModel430, AMIModel4303D\n",
+    "from qcodes.math_utils.field_vector import FieldVector"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Connected to: AMERICAN MAGNETICS INC. 430 (serial:2.01, firmware:None) in 0.60s\n",
+      "Connected to: AMERICAN MAGNETICS INC. 430 (serial:2.01, firmware:None) in 0.62s\n",
+      "Connected to: AMERICAN MAGNETICS INC. 430 (serial:2.01, firmware:None) in 0.57s\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Check if we can establish communication with the power sources\n",
+    "ix = AMIModel430(\"x\", address=\"TCPIP0::169.254.146.116::7180::SOCKET\")\n",
+    "iy = AMIModel430(\"y\", address=\"TCPIP0::169.254.136.91::7180::SOCKET\")\n",
+    "iz = AMIModel430(\"z\", address=\"TCPIP0::169.254.21.127::7180::SOCKET\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Working with a single axis\n",
+    "\n",
+    "On individual instruments (individual axes), we:\n",
+    "\n",
+    "- Test that we can correctly set current values of individual sources\n",
+    "- Test that we can correctly measure current values of individual sources \n",
+    "- Test that we can put the sources in paused mode \n",
+    "- Test that the ramp rates are properly set "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "coil constant = 0.076 T/A\n",
+      "current rating = 79.1 A\n",
+      "current ramp rate limit = 0.06 A/s\n"
+     ]
+    }
+   ],
+   "source": [
+    "# lets test an individual instrument first. We select the z axis.\n",
+    "instrument = iz\n",
+    "\n",
+    "# Since the set method of the driver only excepts fields in Tesla and we want to check if the correct\n",
+    "# currents are applied, we need to convert target currents to target fields. For this reason we need\n",
+    "# the coil constant.\n",
+    "coil_const = instrument._coil_constant\n",
+    "current_rating = instrument._current_rating\n",
+    "current_ramp_limit = instrument._current_ramp_limit\n",
+    "print(f\"coil constant = {coil_const} T/A\")\n",
+    "print(f\"current rating = {current_rating} A\")\n",
+    "print(f\"current ramp rate limit = {current_ramp_limit} A/s\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Target field is 0.076 T\n",
+      "Measured field is 0.07604 T\n",
+      "Measured current is = 1.0005263157894737 A\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Let see if we can set and get the field in Tesla\n",
+    "target_current = 1.0  # [A]  The current we want to set\n",
+    "target_field = coil_const * target_current  # [T]\n",
+    "print(f\"Target field is {target_field} T\")\n",
+    "instrument.field(target_field)\n",
+    "\n",
+    "field = instrument.field()  # This gives us the measured field\n",
+    "print(f\"Measured field is {field} T\")\n",
+    "# The current should be\n",
+    "current = field / coil_const\n",
+    "print(f\"Measured current is = {current} A\")\n",
+    "# We have verified with manual inspection that the current has indeed ben reached"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "image/png": "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",
+      "text/plain": [
+       "<matplotlib.figure.Figure at 0x15197f0>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "slope = 0.9993355432517128. A value close to one means the correct ramp times are used\n",
+      "offset = 7.364001916301564. An offset indicates that there is a fixed delay is added to a ramp request\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Verify that the ramp rate is indeed how it is specified\n",
+    "ramp_rate = instrument.ramp_rate()  # get the ramp rate\n",
+    "instrument.field(0)  # make sure we are back at zero amps\n",
+    "\n",
+    "target_fields = [0.1, 0.3, 0.7, 1.5]  # [T]\n",
+    "t_setting = []\n",
+    "t_actual = []\n",
+    "\n",
+    "for target_field in target_fields:\n",
+    "\n",
+    "    current_field = instrument.field()\n",
+    "    ts = abs(target_field - current_field) / ramp_rate\n",
+    "    t_setting.append(ts)\n",
+    "\n",
+    "    tb = time.time()\n",
+    "    instrument.field(target_field)\n",
+    "    te = time.time()\n",
+    "    ta = te - tb\n",
+    "    t_actual.append(ta)\n",
+    "\n",
+    "fig, ax = plt.subplots()\n",
+    "ax.plot(t_setting, t_actual, \".-\")\n",
+    "plt.xlabel(\"ramp time calculated from settings [s]\")\n",
+    "plt.ylabel(\"measured ramp time [s]\")\n",
+    "plt.show()\n",
+    "slope, offset = np.polyfit(t_setting, t_actual, 1)\n",
+    "print(\n",
+    "    f\"slope = {slope}. A value close to one means the correct ramp times are used\"\n",
+    ")\n",
+    "print(\n",
+    "    f\"offset = {offset}. An offset indicates that there is a fixed delay is added to a ramp request\"\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {
+    "collapsed": true,
+    "jupyter": {
+     "outputs_hidden": true
+    }
+   },
+   "outputs": [],
+   "source": [
+    "# Lets move back to zero Amp\n",
+    "instrument.field(0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Note on maximum current ramp rate\n",
+    "\n",
+    "The maximum current ramp rate can be increased to a desired value via setting the `current_ramp_limit` parameter. However, this should be done conservatively to avoid quenching the magnet. We strongly recommend to consult to the manual of your particular magnet before making any changes."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Working with the 3D driver, controlling all 3 axes\n",
+    "\n",
+    "With the 3D driver, we:\n",
+    "\n",
+    "- Test that the correct set points are reached if we give inputs in cartesian, spherical or cylindrical coordinates \n",
+    "- Test that we can set theta and phi to non-zero values which are remembered if r is ramped from zero to r > 0. \n",
+    "- Test that instruments are ramped up and down in the correct order, with ramp downs occuring before ramp ups.\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def field_is_along_z_and_less_that_3_t(x, y, z):\n",
+    "    # We can have higher field along the z-axis if x and y are zero.\n",
+    "    return  x == 0 and y == 0 and z < 3\n",
+    "def field_is_less_than_2_t(x, y, z):\n",
+    "    return np.linalg.norm([x, y, z]) < 2\n",
+    "# Lets test the 3D driver now.\n",
+    "field_limit = (\n",
+    "    [  # If any of the field limit functions are satisfied we are in the safe zone.\n",
+    "        field_is_along_z_and_less_that_3_t,\n",
+    "        field_is_less_than_2_t,\n",
+    "    ]\n",
+    ")\n",
+    "\n",
+    "i3d = AMIModel4303D(\"AMI430_3D\", ix, iy, iz, field_limit=field_limit)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {
+    "collapsed": true,
+    "jupyter": {
+     "outputs_hidden": true
+    }
+   },
+   "outputs": [],
+   "source": [
+    "def current_to_field(name, current):\n",
+    "    \"\"\"We cannot set currents directly, so we need to calculate what fields need to be generated for\n",
+    "    the desired currents\"\"\"\n",
+    "    instrument = {\"x\": ix, \"y\": iy, \"z\": iz}[name]\n",
+    "    coil_constant = instrument._coil_constant  #  [T/A]\n",
+    "    field = current * coil_constant\n",
+    "    return field"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "field target = [0.0386, 0.0121, 0.11399999999999999]\n",
+      "field measured = [0.03816, 0.01211, 0.11384]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Lets see if we can set a certain current using cartesian coordinates\n",
+    "current_target = [1.0, 0.5, 1.5]\n",
+    "# calculate the fields needed\n",
+    "field_target = [current_to_field(n, v) for n, v in zip([\"x\", \"y\", \"z\"], current_target)]\n",
+    "print(f\"field target = {field_target}\")\n",
+    "i3d.cartesian(field_target)\n",
+    "field_measured = i3d.cartesian_measured()\n",
+    "print(f\"field measured = {field_measured}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "field target = [0.1209643335863923, 19.536859161547078, 17.404721375291402]\n",
+      "field measured = [0.12077462481829535, 19.424782613847988, 17.532727661391853]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Lets move back to 0,0,0\n",
+    "i3d.cartesian([0, 0, 0])\n",
+    "\n",
+    "# Lets see if we can set a certain current using spherical coordinates\n",
+    "current_target = [1.0, 0.5, 1.5]\n",
+    "# calculate the fields needed\n",
+    "field_target_cartesian = [\n",
+    "    current_to_field(n, v) for n, v in zip([\"x\", \"y\", \"z\"], current_target)\n",
+    "]\n",
+    "# calculate the field target in spherical coordinates\n",
+    "field_target_spherical = FieldVector(*field_target_cartesian).get_components(\n",
+    "    \"r\", \"theta\", \"phi\"\n",
+    ")\n",
+    "\n",
+    "print(f\"field target = {field_target_spherical}\")\n",
+    "i3d.spherical(field_target_spherical)\n",
+    "field_measured = i3d.spherical_measured()\n",
+    "print(f\"field measured = {field_measured}\")\n",
+    "# Like before, we see that the current target of 1.0, 0.5, 1.5 A for x, y and z have indeed been reached"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "field target = [0.040452070404368677, 17.404721375291402, 0.11399999999999999]\n",
+      "field measured = [0.040235668255914431, 17.51627743673798, 0.11365]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Lets move back to 0,0,0\n",
+    "i3d.cartesian([0, 0, 0])\n",
+    "\n",
+    "# Lets see if we can set a certain current using cylindrical coordinates\n",
+    "current_target = [1.0, 0.5, 1.5]\n",
+    "# calculate the fields needed\n",
+    "field_target_cartesian = [\n",
+    "    current_to_field(n, v) for n, v in zip([\"x\", \"y\", \"z\"], current_target)\n",
+    "]\n",
+    "# calculate the field target in cylindrical coordinates\n",
+    "field_target_cylindrical = FieldVector(*field_target_cartesian).get_components(\n",
+    "    \"rho\", \"phi\", \"z\"\n",
+    ")\n",
+    "\n",
+    "print(f\"field target = {field_target_cylindrical}\")\n",
+    "i3d.cylindrical(field_target_cylindrical)\n",
+    "field_measured = i3d.cylindrical_measured()\n",
+    "print(f\"field measured = {field_measured}\")\n",
+    "# Like before, we see that the current target of 1.0, 0.5, 1.5 A for x, y and z have indeed been reached"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "field target = [0.0386, 0.01815, 0.076]\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Test that ramping up and down occurs in the right order,\n",
+    "# that is, first, ramp axes that have ramp down,\n",
+    "# and only then ramp axes that have to ramp up.\n",
+    "current_target = [1.0, 0.75, 1.0]  # We ramp down the z, ramp up y and keep x the same\n",
+    "# We should see that z is adjusted first, then y.\n",
+    "# calculate the fields needed\n",
+    "field_target = [current_to_field(n, v) for n, v in zip([\"x\", \"y\", \"z\"], current_target)]\n",
+    "print(f\"field target = {field_target}\")\n",
+    "i3d.cartesian(field_target)\n",
+    "# Manual inspection has shown that z is indeed ramped down before y is ramped up"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "error successfully raised. The driver does not let you do stupid stuff\n"
+     ]
+    }
+   ],
+   "source": [
+    "# check that an exception is raised when we try to set a field which is out side of the safety limits\n",
+    "try:\n",
+    "    i3d.cartesian([2.1, 0, 0])\n",
+    "    print(\"something went wrong... we should not be able to do this :-(\")\n",
+    "except Exception:\n",
+    "    print(\"error successfully raised. The driver does not let you do stupid stuff\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1: Measured field = [-0.00013, -1e-05, 3e-05] T\n",
+      "1: Theta measured = 98.72079692816342\n",
+      "1: Phi measured = 180.0\n",
+      "2: Measured field = [0.10484, -0.08797, 0.37558] T\n",
+      "2: Theta measured = 20.032264760097508. We see that the input theta of 20.0 has been remembered\n",
+      "2: Phi measured = -40.007172479040996. We see that the input phi of -40.0 has been remembered\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Check that the driver remembers theta/phi values if the set point norm is zero\n",
+    "\n",
+    "# lets go back to zero field\n",
+    "i3d.cartesian([0, 0, 0])\n",
+    "# Lets set theta and phi to a non zero value but keep the field magnitude at zero\n",
+    "field_target_spherical = [0, 20.0, -40.0]\n",
+    "i3d.spherical(field_target_spherical)\n",
+    "field_measured = i3d.cartesian_measured()\n",
+    "print(f\"1: Measured field = {field_measured} T\")\n",
+    "\n",
+    "# Note that theta_measured and phi_measured will give random values based on noisy current reading\n",
+    "# close to zero (this cannot be avoided)\n",
+    "theta_measured = i3d.theta_measured()\n",
+    "print(f\"1: Theta measured = {theta_measured}\")\n",
+    "phi_measured = i3d.phi_measured()\n",
+    "print(f\"1: Phi measured = {phi_measured}\")\n",
+    "\n",
+    "# now lets set the r value\n",
+    "i3d.field(0.4)\n",
+    "\n",
+    "field_measured = i3d.cartesian_measured()\n",
+    "print(f\"2: Measured field = {field_measured} T\")\n",
+    "# Now the measured angles should be as we intended\n",
+    "theta_measured = i3d.theta_measured()\n",
+    "print(\n",
+    "    f\"2: Theta measured = {theta_measured}. We see that the input theta of {field_target_spherical[1]} has been \"\n",
+    "    \"remembered\"\n",
+    ")\n",
+    "\n",
+    "phi_measured = i3d.phi_measured()\n",
+    "print(\n",
+    "    f\"2: Phi measured = {phi_measured}. We see that the input phi of {field_target_spherical[2]} has been \"\n",
+    "    \"remembered\"\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Simultaneous ramping mode"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The 3D driver has a ``ramp_mode`` parameter whose default value is ``\"default\"``. In this mode, the ramping of all the 3 axes is sequential e.g. first X axis is ramped until its setpoint, then Y axis, then Z axis. In order to ramp all the three axis together, simultaneously, there exists another ramp mode called ``\"simultaneous\"``:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.ramp_mode(\"simultaneous\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Thanks to all there axes instruments being swept together, the magnetic field changes along the vector from the current/initial field value towards the setpoint value. Use the simultaneous mode either by setting ``vector_ramp_rate`` parameter, or by calling ``ramp_simultaneously`` convenience method."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To return to the default ramp mode, set the ramp mode parameter to ``\"default\"``:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.ramp_mode(\"default\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "``vector_ramp_rate`` parameter corresponds to the desired ramp rate along the vector from the current magnetic field value to the setpoint value. To initiate the ramp, use any of the already familiar parameters that set the field setpoint value, e.g. ``i3d.cartesian([0.1, 0.2, 0.3])``. Use the ``vector_ramp_rate`` approach if you would like to sweep all axes simultaneously *at a given ramp rate along the vector towards the setpoint value*:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.ramp_mode(\"simultaneous\")\n",
+    "i3d.vector_ramp_rate(0.05)  # requires all axes to have same ramp rate units!!!\n",
+    "x = 0\n",
+    "y = 0\n",
+    "z = 0\n",
+    "i3d.cartesian((x, y, z))  # or any other parameter call that initiates a ramp"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The ``vector_ramp_rate`` parameter assumes that the given value is in the same ramp units as the units of all the three individual axis instruments. If not all axis instruments have the same ramp rate units, an exception will be raised."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "``ramp_simultaneously`` method takes the sweep duration as it's argument, and uses it to calculate the corresponding vector ramp rate, and initiate the ramp. Use the ``ramp_simultaneously`` approach if you would like to sweep all axes simultaneously *in a given time* along the vector towards the setpoint value:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.ramp_simultaneously(setpoint=FieldVector(0.5, 1.0, 0.01), duration=2)\n",
+    "# See the docstring of this method for details"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The ``ramp_simultaneously`` method assumes that the given setpoint value as well as the given duration are in the same units as the units of all the three individual axis instruments. If not all axis instruments have the same units for ramp rate and field, an exception will be raised."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "If ``block_during_ramp`` parameter is set to ``False``, then the call that initiated the ramp (either ``ramp_simultaneously`` or call to a field setpoint parameter) will return right after the ramp is initiated. Otherwise, the calls will block until the ramp is complete (that is, until all 3 axes stopped ramping)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.block_during_ramp(False)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "The driver comes with convenient methods that can be used in the measurement code to implement checks for completion of the ramping process (e.g. for waiting until the ramping is complete): ``i3d.wait_while_all_axes_ramping`` that blocks until the ramping is complete (check that ramping state every ``i3d.ramping_state_check_interval`` seconds), and ``i3d.any_axis_is_ramping`` that returns ``True``/``False`` based on whether the ramping is still in process or completed."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.any_axis_is_ramping()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.wait_while_all_axes_ramping()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.ramping_state_check_interval(0.5)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "**NOTE** that ramping with the ``\"simultaneous\"`` mode changes the ramp rates of the individual magnet axes. The implementation is such that, given the current and the setpoint magnetic field vectors together with either vector ramp rate (``vector_ramp_rate`` parameter) or the desired ramp duration (``ramp_simultaneously`` method), the required ramp rates of the individual axes are calculated and then set via the ``ramp_rate`` parameters of the individual magnet axes. Once the individual ramp rates are set to new values, the ramping is initiated on all axes (almost) at the same time. However, the values of the individual ramp rates can be **restored** by calling ``wait_while_all_axes_ramping``. It is advised to call ``wait_while_all_axes_ramping`` especially for non-blocking ramps (``block_during_ramp`` parameter set to ``False``) as not only your code waits for the ramp to finish but also ensures that the magnet is in a known good (original) state before doing the next operation. Note that if ``block_during_ramp`` parameter is set to ``True``, ``wait_while_all_axes_ramping`` method is called automatically by the ramping logic, thus the ramp rates of the individual magnet axes are **restored** after the ramp is finished. Below is an example of performing a non-blocking simultaneous ramp (with ``block_during_ramp`` parameter set to ``False``) and using ``wait_while_all_axes_ramping`` to wait for the ramp to finish and also to restore the ramp rates of the individual magnet axes:\n",
+    "\n",
+    "```python\n",
+    "# Let's assume that these are the original values\n",
+    "# of the ramp rates of the individual axes\n",
+    "ix.ramp_rate(0.01)\n",
+    "iy.ramp_rate(0.02)\n",
+    "iz.ramp_rate(0.03)\n",
+    "\n",
+    "# And let's assume that for this measurement we\n",
+    "# don't want the ramp calls to block, but we DO\n",
+    "# want to restore the original values of the ramp\n",
+    "# rates of the inidividual axes\n",
+    "i3d.block_during_ramp(False)\n",
+    "\n",
+    "# Starting the ramp will change the values of the ramp rates \n",
+    "# of the individual axes\n",
+    "i3d.ramp_simultaneously(setpoint=FieldVector(0.5, 1.0, 0.01), duration=2)\n",
+    "\n",
+    "# .. or initiate the ramp using ``vector_ramp_rate`` with\n",
+    "# a field setpoint parameter\n",
+    "# i3d.vector_ramp_rate(0.34)\n",
+    "# i3d.cartesian((0.5, 1.0, 0.01))\n",
+    "\n",
+    "# ...\n",
+    "# Here comes your code of the measurement that you'd like to do\n",
+    "# while the magnet ramping\n",
+    "# ...\n",
+    "\n",
+    "# Here the ramp rates of the individual axes are still different\n",
+    "# from their original values\n",
+    "assert ix.ramp_rate() != 0.01\n",
+    "assert iy.ramp_rate() != 0.02\n",
+    "assert iz.ramp_rate() != 0.03\n",
+    "\n",
+    "# And now, let's wait for the ramping to finish which will also\n",
+    "# restore the ramp rates of the individual magnet axes to their\n",
+    "# original values\n",
+    "i3d.wait_while_all_axes_ramping()\n",
+    "\n",
+    "# So here, the ramp rates of the individual axes are already\n",
+    "# restored to their original/initial values\n",
+    "assert ix.ramp_rate() == 0.01\n",
+    "assert iy.ramp_rate() == 0.02\n",
+    "assert iz.ramp_rate() == 0.03\n",
+    "```"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "For user convenience, the calculation methods between vactor ramp rate, sweep duration, and individual ramp rates for axes are exposed: see ``i3d.calculate_axes_ramp_rates_from_vector_ramp_rate``, ``i3d.calculate_vector_ramp_rate_from_duration``, ``i3d.calculate_axes_ramp_rates_for`` methods."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Use the ``i3d.pause`` method to request all three axes instruments to pause ramping:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "i3d.pause()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Note that the results of testing on the real instruments show that:\n",
+    "- if the requested field change is 0 for one/two/all-three axes, ramping still \"simply works\", e.g. the instrument attempts to ramp, finds that it's already in the right place, and stops ramping\n",
+    "- if the requested field change for a given axis results in a ramp rate that is less than minimal ramp rate, the instrument still ramps to the corresponding setpoint value at some small ramp rate\n",
+    "- when a ramp rate of an individual magnet axis is changed during an ongoing ramp (started without blocking), the ramp rate is in fact changed on the fly for the active ramp"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Dond while ramping "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Lets now look at how the simultaneous ramp mode can be integrated with a typical measurement. The idea is to start the ramp and then do a dond scan with a fixed delay until the ramp is completed."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import time\n",
+    "\n",
+    "import xarray as xr\n",
+    "\n",
+    "from qcodes.dataset import LinSweep, dond, load_or_create_experiment\n",
+    "from qcodes.instrument_drivers.mock_instruments import (\n",
+    "    DummyInstrument,\n",
+    "    DummyInstrumentWithMeasurement,\n",
+    ")\n",
+    "from qcodes.parameters import ElapsedTimeParameter"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# preparatory mocking of physical setup\n",
+    "dac = DummyInstrument(\"dac\", gates=[\"ch1\", \"ch2\"])\n",
+    "dmm = DummyInstrumentWithMeasurement(\"dmm\", setter_instr=dac)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "tutorial_exp = load_or_create_experiment(\"doNd_while_ramping\", sample_name=\"no sample\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "sweep_1 = LinSweep(dac.ch1, 0, 1, 5, 0)\n",
+    "sweep_2 = LinSweep(dac.ch2, 0, 1, 10, 0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "time_p = ElapsedTimeParameter(\"time\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "FieldVector(x=0.0, y=0.0, z=0.0)"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "zero_field = FieldVector(x=0.0, y=0.0, z=0.0)\n",
+    "zero_field"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "FieldVector(x=0.02, y=0.02, z=0.02)"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "setpoint = FieldVector(x=0.02, y=0.02, z=0.02)\n",
+    "setpoint"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "First we start with a example that is independent of the magnets but shows how we can measure a 2D scan as a function of time.\n",
+    "Note that we keep the timing logic minimal, so the points may not be equidistant in time. This can be extended if needed."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Starting experimental run with id: 205. Using 'qcodes.utils.dataset.doNd.dond'\n",
+      "Starting experimental run with id: 206. Using 'qcodes.utils.dataset.doNd.dond'\n",
+      "Starting experimental run with id: 207. Using 'qcodes.utils.dataset.doNd.dond'\n",
+      "Starting experimental run with id: 208. Using 'qcodes.utils.dataset.doNd.dond'\n"
+     ]
+    }
+   ],
+   "source": [
+    "elapsed_time = 0\n",
+    "timed_datasets = []\n",
+    "\n",
+    "time_p.reset_clock()\n",
+    "\n",
+    "while elapsed_time < 2:\n",
+    "    ds, _, _ = dond(sweep_1, sweep_2, dmm.v1, additional_setpoints=(time_p,))\n",
+    "    timed_datasets.append(ds)\n",
+    "    time.sleep(0.5)\n",
+    "    elapsed_time = time_p.get()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "To visualize this lets merge the datasets using xarray"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<xarray.plot.facetgrid.FacetGrid at 0x21280446f08>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    },
+    {
+     "data": {
+      "image/png": "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",
+      "text/plain": [
+       "<Figure size 936x216 with 5 Axes>"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "timed_xarray_datasets = [ds.to_xarray_dataset() for ds in timed_datasets]\n",
+    "merged_dataset = xr.merge(timed_xarray_datasets)\n",
+    "merged_dataset.dmm_v1.plot(col=\"time\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now, let's do the same but while also ramping the magnetic field. We'll use the ``ramp_simultaneously`` method here:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "ramp_datasets = []\n",
+    "\n",
+    "# Required for ``ramp_simultaneously`` to return\n",
+    "# immediately after initiating a ramp\n",
+    "i3d.block_during_ramp(False)\n",
+    "\n",
+    "# Assuming the field is in T and time in minutes\n",
+    "i3d.ramp_simultaneously(setpoint=setpoint, duration=2.0)\n",
+    "\n",
+    "time_p.reset_clock()  # Let's also store the elapsed time\n",
+    "\n",
+    "while i3d.any_axis_is_ramping():  # Should be clear without additional explanation ;)\n",
+    "\n",
+    "    # Run the 2D scan measurement\n",
+    "    ds, _, _ = dond(\n",
+    "        sweep_1,\n",
+    "        sweep_2,\n",
+    "        dmm.v1,\n",
+    "        additional_setpoints=(time_p, ix.field, iy.field, iy.field),\n",
+    "    )\n",
+    "\n",
+    "    # Collect the dataset for later processing\n",
+    "    ramp_datasets.append(ds)\n",
+    "\n",
+    "    # Optionally, wait until the field changed sufficiently\n",
+    "    # enough for this measurement\n",
+    "    time.sleep(0.5)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Now the resulting ``ramp_datasets`` can be merged along time/field-x/field-y/field-z axes, as desired (see above), and used further, e.g. plotted."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.8"
+  },
+  "nbsphinx": {
+   "execute": "never"
+  },
+  "widgets": {
+   "application/vnd.jupyter.widget-state+json": {
+    "state": {},
+    "version_major": 2,
+    "version_minor": 0
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

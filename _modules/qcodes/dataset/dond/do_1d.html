@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>qcodes.dataset.dond.do_1d &mdash; QCoDeS 0.48.0.dev4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=487b5dff"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link href="../../../../_static/style.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            QCoDeS
+          </a>
+              <div class="version">
+                0.48.0.dev4+main.g7a593295a
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../start/index.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/15_minutes_to_QCoDeS.html">15 minutes to QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../examples/index.html">Examples of using QCoDeS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../community/index.html">Community Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../dataset/index.html">DataSet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/index.html">QCoDes API documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../drivers_api/index.html">Instrument Drivers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changes/index.html">Changelogs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../help.html">Get Help</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">QCoDeS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">qcodes.dataset.dond.do_1d</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for qcodes.dataset.dond.do_1d</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">opentelemetry</span> <span class="kn">import</span> <span class="n">trace</span>
+<span class="kn">from</span> <span class="nn">tqdm.auto</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">from</span> <span class="nn">qcodes</span> <span class="kn">import</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.descriptions.detect_shapes</span> <span class="kn">import</span> <span class="n">detect_shape_of_measurement</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.dond.do_nd_utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BreakConditionInterrupt</span><span class="p">,</span>
+    <span class="n">_handle_plotting</span><span class="p">,</span>
+    <span class="n">_register_actions</span><span class="p">,</span>
+    <span class="n">_register_parameters</span><span class="p">,</span>
+    <span class="n">_set_write_period</span><span class="p">,</span>
+    <span class="n">catch_interrupts</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.measurements</span> <span class="kn">import</span> <span class="n">Measurement</span>
+<span class="kn">from</span> <span class="nn">qcodes.dataset.threading</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">SequentialParamsCaller</span><span class="p">,</span>
+    <span class="n">ThreadPoolParamsCaller</span><span class="p">,</span>
+    <span class="n">process_params_meas</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">qcodes.parameters</span> <span class="kn">import</span> <span class="n">ParameterBase</span>
+
+<span class="n">LOG</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">TRACER</span> <span class="o">=</span> <span class="n">trace</span><span class="o">.</span><span class="n">get_tracer</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+    <span class="kn">from</span> <span class="nn">qcodes.dataset.descriptions.versioning.rundescribertypes</span> <span class="kn">import</span> <span class="n">Shapes</span>
+    <span class="kn">from</span> <span class="nn">qcodes.dataset.dond.do_nd_utils</span> <span class="kn">import</span> <span class="p">(</span>
+        <span class="n">ActionsT</span><span class="p">,</span>
+        <span class="n">AxesTupleListWithDataSet</span><span class="p">,</span>
+        <span class="n">BreakConditionT</span><span class="p">,</span>
+        <span class="n">ParamMeasT</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="kn">from</span> <span class="nn">qcodes.dataset.experiment_container</span> <span class="kn">import</span> <span class="n">Experiment</span>
+
+
+<div class="viewcode-block" id="do1d">
+<a class="viewcode-back" href="../../../../api/dataset/index.html#qcodes.dataset.do1d">[docs]</a>
+<span class="nd">@TRACER</span><span class="o">.</span><span class="n">start_as_current_span</span><span class="p">(</span><span class="s2">&quot;qcodes.dataset.do1d&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">do1d</span><span class="p">(</span>
+    <span class="n">param_set</span><span class="p">:</span> <span class="n">ParameterBase</span><span class="p">,</span>
+    <span class="n">start</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">stop</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">num_points</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">delay</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">param_meas</span><span class="p">:</span> <span class="n">ParamMeasT</span><span class="p">,</span>
+    <span class="n">enter_actions</span><span class="p">:</span> <span class="n">ActionsT</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">exit_actions</span><span class="p">:</span> <span class="n">ActionsT</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">write_period</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">measurement_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">exp</span><span class="p">:</span> <span class="n">Experiment</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">do_plot</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_threads</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">additional_setpoints</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParameterBase</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
+    <span class="n">show_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">log_info</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">break_condition</span><span class="p">:</span> <span class="n">BreakConditionT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AxesTupleListWithDataSet</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform a 1D scan of ``param_set`` from ``start`` to ``stop`` in</span>
+<span class="sd">    ``num_points`` measuring param_meas at each step. In case param_meas is</span>
+<span class="sd">    an ArrayParameter this is effectively a 2d scan.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        param_set: The QCoDeS parameter to sweep over</span>
+<span class="sd">        start: Starting point of sweep</span>
+<span class="sd">        stop: End point of sweep</span>
+<span class="sd">        num_points: Number of points in sweep</span>
+<span class="sd">        delay: Delay after setting parameter before measurement is performed</span>
+<span class="sd">        param_meas: Parameter(s) to measure at each step or functions that</span>
+<span class="sd">          will be called at each step. The function should take no arguments.</span>
+<span class="sd">          The parameters and functions are called in the order they are</span>
+<span class="sd">          supplied.</span>
+<span class="sd">        enter_actions: A list of functions taking no arguments that will be</span>
+<span class="sd">            called before the measurements start</span>
+<span class="sd">        exit_actions: A list of functions taking no arguments that will be</span>
+<span class="sd">            called after the measurements ends</span>
+<span class="sd">        write_period: The time after which the data is actually written to the</span>
+<span class="sd">            database.</span>
+<span class="sd">        additional_setpoints: A list of setpoint parameters to be registered in</span>
+<span class="sd">            the measurement but not scanned.</span>
+<span class="sd">        measurement_name: Name of the measurement. This will be passed down to</span>
+<span class="sd">            the dataset produced by the measurement. If not given, a default</span>
+<span class="sd">            value of &#39;results&#39; is used for the dataset.</span>
+<span class="sd">        exp: The experiment to use for this measurement.</span>
+<span class="sd">        do_plot: should png and pdf versions of the images be saved after the</span>
+<span class="sd">            run. If None the setting will be read from ``qcodesrc.json``</span>
+<span class="sd">        use_threads: If True measurements from each instrument will be done on</span>
+<span class="sd">            separate threads. If you are measuring from several instruments</span>
+<span class="sd">            this may give a significant speedup.</span>
+<span class="sd">        show_progress: should a progress bar be displayed during the</span>
+<span class="sd">            measurement. If None the setting will be read from ``qcodesrc.json``</span>
+<span class="sd">        log_info: Message that is logged during the measurement. If None a default</span>
+<span class="sd">            message is used.</span>
+<span class="sd">        break_condition: Callable that takes no arguments. If returned True,</span>
+<span class="sd">            measurement is interrupted.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The QCoDeS dataset.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">do_plot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">do_plot</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">bool</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">dond_plot</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">show_progress</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">show_progress</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">dond_show_progress</span>
+
+    <span class="n">meas</span> <span class="o">=</span> <span class="n">Measurement</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">measurement_name</span><span class="p">,</span> <span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">log_info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">meas</span><span class="o">.</span><span class="n">_extra_log_info</span> <span class="o">=</span> <span class="n">log_info</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">meas</span><span class="o">.</span><span class="n">_extra_log_info</span> <span class="o">=</span> <span class="s2">&quot;Using &#39;qcodes.dataset.do1d&#39;&quot;</span>
+
+    <span class="n">all_setpoint_params</span> <span class="o">=</span> <span class="p">(</span><span class="n">param_set</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">additional_setpoints</span><span class="p">)</span>
+
+    <span class="n">measured_parameters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">param</span> <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">param_meas</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">ParameterBase</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">loop_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_points</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">additional_setpoints</span><span class="p">)</span>
+        <span class="n">shapes</span><span class="p">:</span> <span class="n">Shapes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">detect_shape_of_measurement</span><span class="p">(</span>
+            <span class="n">measured_parameters</span><span class="p">,</span> <span class="n">loop_shape</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">LOG</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Could not detect shape of </span><span class="si">{</span><span class="n">measured_parameters</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;falling back to unknown shape.&quot;</span>
+        <span class="p">)</span>
+        <span class="n">shapes</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="n">_register_parameters</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">all_setpoint_params</span><span class="p">)</span>
+    <span class="n">_register_parameters</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">param_meas</span><span class="p">,</span> <span class="n">setpoints</span><span class="o">=</span><span class="n">all_setpoint_params</span><span class="p">,</span> <span class="n">shapes</span><span class="o">=</span><span class="n">shapes</span><span class="p">)</span>
+    <span class="n">_set_write_period</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">write_period</span><span class="p">)</span>
+    <span class="n">_register_actions</span><span class="p">(</span><span class="n">meas</span><span class="p">,</span> <span class="n">enter_actions</span><span class="p">,</span> <span class="n">exit_actions</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_threads</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">use_threads</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">use_threads</span>
+
+    <span class="n">param_meas_caller</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">ThreadPoolParamsCaller</span><span class="p">(</span><span class="o">*</span><span class="n">param_meas</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_threads</span>
+        <span class="k">else</span> <span class="n">SequentialParamsCaller</span><span class="p">(</span><span class="o">*</span><span class="n">param_meas</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># do1D enforces a simple relationship between measured parameters</span>
+    <span class="c1"># and set parameters. For anything more complicated this should be</span>
+    <span class="c1"># reimplemented from scratch</span>
+    <span class="k">with</span> <span class="n">catch_interrupts</span><span class="p">()</span> <span class="k">as</span> <span class="n">interrupted</span><span class="p">,</span> <span class="n">meas</span><span class="o">.</span><span class="n">run</span><span class="p">()</span> <span class="k">as</span> <span class="n">datasaver</span><span class="p">,</span> <span class="n">param_meas_caller</span> <span class="k">as</span> <span class="n">call_param_meas</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">datasaver</span><span class="o">.</span><span class="n">dataset</span>
+        <span class="n">additional_setpoints_data</span> <span class="o">=</span> <span class="n">process_params_meas</span><span class="p">(</span><span class="n">additional_setpoints</span><span class="p">)</span>
+        <span class="n">setpoints</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">num_points</span><span class="p">)</span>
+
+        <span class="c1"># flush to prevent unflushed print&#39;s to visually interrupt tqdm bar</span>
+        <span class="c1"># updates</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">set_point</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">setpoints</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">show_progress</span><span class="p">):</span>
+            <span class="n">param_set</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">set_point</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+            <span class="n">datasaver</span><span class="o">.</span><span class="n">add_result</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">param_set</span><span class="p">,</span> <span class="n">set_point</span><span class="p">),</span> <span class="o">*</span><span class="n">call_param_meas</span><span class="p">(),</span> <span class="o">*</span><span class="n">additional_setpoints_data</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">break_condition</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">break_condition</span><span class="p">():</span>
+                    <span class="k">raise</span> <span class="n">BreakConditionInterrupt</span><span class="p">(</span><span class="s2">&quot;Break condition was met.&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_handle_plotting</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">do_plot</span><span class="p">,</span> <span class="n">interrupted</span><span class="p">())</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
