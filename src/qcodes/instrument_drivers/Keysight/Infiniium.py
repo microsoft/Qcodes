@@ -1,6 +1,8 @@
 import re
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
+from pathlib import Path
+
 import numpy as np
 from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
@@ -1256,7 +1258,7 @@ class KeysightInfiniium(VisaInstrument):
                 self.visa_handle.timeout = old_timeout
 
     def screenshot(self,
-                   path: str = f"./screenshot",
+                   path: Union[str, Path] = "./screenshot",
                    with_time: bool = False,
                    time_fmt: str = "%Y-%m-%d_%H-%M-%S",
                    divider: str = "_") -> Optional[np.ndarray]:
@@ -1268,8 +1270,13 @@ class KeysightInfiniium(VisaInstrument):
         from io import BytesIO
         from datetime import date, datetime
         from os.path import splitext
+
+        if isinstance(path, Path):
+            path = str(path)
+
+        time_str = datetime.now().strftime(time_fmt) if with_time else ""
         img_name, img_type = splitext(path)
-        img_path = f"{img_name}{with_time and divider + datetime.now().strftime(time_fmt) or ''}{img_type.lower()}"
+        img_path = f"{img_name}{divider if with_time else ''}{time_str}{img_type.lower()}"
         try:
             with open(img_path, "wb") as f :
                 screen_bytes = self.visa_handle.query_binary_values(
@@ -1282,7 +1289,7 @@ class KeysightInfiniium(VisaInstrument):
             print(f"Screen image written to {img_path}")
             return np.asarray(pil_open(BytesIO(screen_bytes)))
         except Exception as e:
-            print(f"Failed to save screenshot, Error occurred: {e}")
+            self.log.error(f"Failed to save screenshot, Error occurred: \n{e}")
             return None
 
 Infiniium = KeysightInfiniium
