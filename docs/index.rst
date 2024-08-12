@@ -25,7 +25,7 @@ The goal is a common framework for physics experiments, so:
   a new experiment is streamlined
 - physics experiments can take advantage of modern software and best practices
 
-Read `15 minutes to QcoDeS <examples/15_minutes_to_QCoDeS.ipynb>`_ to have quick overview on QCoDeS.
+Read `15 minutes to QcoDeS <examples/basic_examples/15_minutes_to_QCoDeS.ipynb>`_ to have quick overview on QCoDeS.
 Many more elaborate examples can be found in the `example notebooks <examples/index.rst>`__.
 
 
@@ -37,7 +37,7 @@ Documentation
    :maxdepth: 2
 
    start/index
-   examples/15_minutes_to_QCoDeS
+   examples/basic_examples/15_minutes_to_QCoDeS
    examples/index
    community/index
    dataset/index
