@@ -1,3 +1,0 @@
-- Fix the Harvard DecaDAC range not including the highest bit
-- Fix Keysight 34465A DMM firmware version parsing
-- Fix Oxford Instruments Triton section parsing

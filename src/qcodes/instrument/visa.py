@@ -365,7 +365,9 @@ class VisaInstrument(Instrument):
         Args:
             cmd: The command to send to the instrument.
         """
-        with DelayedKeyboardInterrupt():
+        with DelayedKeyboardInterrupt(
+            context={"instrument": self.name, "reason": "Visa Instrument write"}
+        ):
             self.visa_log.debug(f"Writing: {cmd}")
             self.visa_handle.write(cmd)
 
@@ -379,7 +381,9 @@ class VisaInstrument(Instrument):
         Returns:
             str: The instrument's response.
         """
-        with DelayedKeyboardInterrupt():
+        with DelayedKeyboardInterrupt(
+            context={"instrument": self.name, "reason": "Visa Instrument ask"}
+        ):
             self.visa_log.debug(f"Querying: {cmd}")
             response = self.visa_handle.query(cmd)
             self.visa_log.debug(f"Response: {response}")

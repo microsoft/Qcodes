@@ -6,14 +6,14 @@ alabaster==0.7.16
     # via sphinx
 asttokens==2.4.1
     # via stack-data
-attrs==23.2.0
+attrs==24.2.0
     # via
     #   hypothesis
     #   jsonschema
     #   referencing
-autodocsumm==0.2.12
+autodocsumm==0.2.13
     # via qcodes (pyproject.toml)
-babel==2.15.0
+babel==2.16.0
     # via sphinx
 beautifulsoup4==4.12.3
     # via nbconvert
@@ -50,17 +50,17 @@ comm==0.2.2
     #   ipywidgets
 contourpy==1.2.1
     # via matplotlib
-coverage==7.6.0
+coverage==7.6.1
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.7.1
+dask==2024.8.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-debugpy==1.8.2
+debugpy==1.8.5
     # via ipykernel
 decorator==5.1.1
     # via ipython
@@ -99,7 +99,7 @@ h5py==3.11.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.108.5
+hypothesis==6.110.1
     # via qcodes (pyproject.toml)
 idna==3.7
     # via requests
@@ -178,7 +178,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.1
+matplotlib==3.9.1.post1
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -207,7 +207,7 @@ nbsphinx==0.9.4
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-numpy==1.26.4
+numpy==2.0.1
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -254,7 +254,7 @@ pandas==2.2.2
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==2.2.2.240603
+pandas-stubs==2.2.2.240807
     # via qcodes (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
@@ -324,17 +324,17 @@ pyvisa-sim==0.6.0
     # via qcodes (pyproject.toml)
 pywin32==306; sys_platform == 'win32'
     # via jupyter-core
-pyyaml==6.0.1
+pyyaml==6.0.2
     # via
     #   dask
     #   libcst
     #   pyvisa-sim
     #   sphinx-jsonschema
-pyzmq==26.0.3
+pyzmq==26.1.0
     # via
     #   ipykernel
     #   jupyter-client
-qcodes-loop==0.1.2
+qcodes-loop==0.1.3
     # via qcodes (pyproject.toml)
 referencing==0.35.1
     # via
@@ -345,7 +345,7 @@ requests==2.32.3
     # via
     #   sphinx
     #   sphinx-jsonschema
-rpds-py==0.19.1
+rpds-py==0.20.0
     # via
     #   jsonschema
     #   referencing
@@ -428,7 +428,7 @@ towncrier==23.11.0
     # via
     #   qcodes (pyproject.toml)
     #   sphinxcontrib-towncrier
-tqdm==4.66.4
+tqdm==4.66.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -449,11 +449,11 @@ types-jsonschema==4.23.0.20240712
     # via qcodes (pyproject.toml)
 types-pytz==2024.1.0.20240417
     # via pandas-stubs
-types-pywin32==306.0.0.20240408
+types-pywin32==306.0.0.20240806
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20240712
     # via qcodes (pyproject.toml)
-types-setuptools==71.1.0.20240726
+types-setuptools==71.1.0.20240806
     # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20240106
     # via qcodes (pyproject.toml)
@@ -509,7 +509,7 @@ xarray==2024.7.0
     #   cf-xarray
     #   qcodes
     #   qcodes-loop
-zhinst-core==24.4.60606
+zhinst-core==24.7.61797
     # via
     #   zhinst-toolkit
     #   zhinst-utils

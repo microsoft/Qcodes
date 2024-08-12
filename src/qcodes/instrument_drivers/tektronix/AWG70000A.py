@@ -331,6 +331,17 @@ class Tektronix70000AWGChannel(InstrumentChannel):
             vals=vals.Numbers(0.250, _chan_amps[self.model]))
         """Parameter awg_amplitude"""
 
+        self.offset: Parameter = self.add_parameter(
+            "offset",
+            label=f"Channel {channel} Offset for DC Output paths",
+            set_cmd=f"SOURce{channel}:VOLTage:LEVel:IMMediate:OFFSet {{}}",
+            get_cmd=f"SOURce{channel}:VOLTage:LEVel:IMMediate:OFFSet?",
+            unit="V",
+            get_parser=float,
+            vals=vals.Numbers(-2.0, 2.0),
+        )
+        """Parameter offset"""
+
         self.assigned_asset: Parameter = self.add_parameter(
             "assigned_asset",
             label=(f"Waveform/sequence assigned to channel {self.channel}"),

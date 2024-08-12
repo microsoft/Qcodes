@@ -719,7 +719,9 @@ class Runner:
         exception_value: BaseException | None,
         traceback: TracebackType | None,
     ) -> None:
-        with DelayedKeyboardInterrupt():
+        with DelayedKeyboardInterrupt(
+            context={"reason": "qcodes measurement exit", "qcodes_guid": self.ds.guid}
+        ):
             self.datasaver.flush_data_to_database(block=True)
 
             # perform the "teardown" events
