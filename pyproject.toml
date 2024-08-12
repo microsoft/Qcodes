@@ -46,13 +46,13 @@ dependencies = [
     "xarray>=2022.06.0",
     "cf_xarray>=0.8.4",
     "opentelemetry-api>=1.15.0",
+    "pillow>=9.0.0",
     "dask>=2022.1.0", # we are making use of xarray features that requires dask implicitly
     # transitive dependencies. We list these explicitly to",
     # ensure that we always use versions that do not have",
     # known security vulnerabilities",
     "tornado>=6.3.3",
     "ipython>=8.10.0",
-    "pillow>=9.0.0",
 ]
 
 dynamic = ["version"]
