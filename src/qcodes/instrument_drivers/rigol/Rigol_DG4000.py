@@ -35,6 +35,9 @@ def clean_string(s: str) -> str:
 
     return s
 
+def parse_string_strip(s: str) -> str:
+    """Parse an output of the VISA instrument, remove redundant terminators like \n"""
+    return s.strip()
 
 def parse_string_output(s: str) -> float | str:
     """Parse an output of the VISA instrument into either text of a number"""
@@ -238,14 +241,16 @@ class RigolDG4000(VisaInstrument):
                 ch + "output_polarity",
                 get_cmd=output + "POL?",
                 set_cmd=output + "POL {}",
-                val_mapping={"normal": "NORMAL\n", "inverted": "INVERTED\n"},
+                get_parser=parse_string_strip,
+                val_mapping={"normal": "NORMAL", "inverted": "INVERTED"},
             )
 
             self.add_parameter(
                 ch + "output_enabled",
                 get_cmd=output + "STAT?",
                 set_cmd=output + "STAT {}",
-                val_mapping={True: "ON\n", False: "OFF\n"} ,
+                get_parser=parse_string_strip,
+                val_mapping={True: "ON", False: "OFF"} ,
             )
 
             self.add_parameter(
