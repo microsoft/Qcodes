@@ -250,7 +250,7 @@ class RigolDG4000(VisaInstrument):
                 get_cmd=output + "STAT?",
                 set_cmd=output + "STAT {}",
                 get_parser=parse_string_strip,
-                val_mapping={True: "ON", False: "OFF"} ,
+                val_mapping=on_off_map,
             )
 
             self.add_parameter(
