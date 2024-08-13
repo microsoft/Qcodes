@@ -99,7 +99,7 @@ h5py==3.11.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.110.1
+hypothesis==6.111.0
     # via qcodes (pyproject.toml)
 idna==3.7
     # via requests
@@ -170,7 +170,7 @@ libcst==1.4.0
     # via qcodes (pyproject.toml)
 locket==1.0.0
     # via partd
-lxml==5.2.2
+lxml==5.3.0
     # via qcodes (pyproject.toml)
 lxml-stubs==0.5.1
     # via qcodes (pyproject.toml)
@@ -178,7 +178,7 @@ markupsafe==2.1.5
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.9.1.post1
+matplotlib==3.9.2
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -445,7 +445,7 @@ traitlets==5.14.3
     #   nbconvert
     #   nbformat
     #   nbsphinx
-types-jsonschema==4.23.0.20240712
+types-jsonschema==4.23.0.20240813
     # via qcodes (pyproject.toml)
 types-pytz==2024.1.0.20240417
     # via pandas-stubs
@@ -453,7 +453,7 @@ types-pywin32==306.0.0.20240806
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20240712
     # via qcodes (pyproject.toml)
-types-setuptools==71.1.0.20240806
+types-setuptools==71.1.0.20240813
     # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20240106
     # via qcodes (pyproject.toml)
@@ -521,5 +521,5 @@ zhinst-toolkit==0.6.4
     # via zhinst-qcodes
 zhinst-utils==0.4.1
     # via zhinst-toolkit
-zipp==3.19.2
+zipp==3.20.0
     # via importlib-metadata
