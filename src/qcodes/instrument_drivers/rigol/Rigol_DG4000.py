@@ -238,14 +238,14 @@ class RigolDG4000(VisaInstrument):
                 ch + "output_polarity",
                 get_cmd=output + "POL?",
                 set_cmd=output + "POL {}",
-                val_mapping={"normal": "NORM", "inverted": "INV"},
+                val_mapping={"normal": "NORMAL\n", "inverted": "INVERTED\n"},
             )
 
             self.add_parameter(
                 ch + "output_enabled",
                 get_cmd=output + "STAT?",
                 set_cmd=output + "STAT {}",
-                val_mapping=on_off_map,
+                val_mapping={True: "ON\n", False: "OFF\n"} ,
             )
 
             self.add_parameter(
@@ -460,7 +460,7 @@ class RigolDG4000(VisaInstrument):
             self.add_parameter(
                 ch + "harmonic_order",
                 get_cmd=source + "HARM:ORDE?",
-                get_parser=int,
+                get_parser=float,
                 set_cmd=source + "HARM:ORDE {}",
                 vals=Ints(2, 16),
             )
@@ -618,7 +618,7 @@ class RigolDG4000(VisaInstrument):
             self.add_parameter(
                 ch + "sweep_step",
                 get_cmd=source + "SWE:STEP?",
-                get_parser=int,
+                get_parser=float,
                 set_cmd=source + "SWE:STEP {}",
                 vals=Ints(2, 2048),
             )
