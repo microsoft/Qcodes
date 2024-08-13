@@ -1292,7 +1292,7 @@ class KeysightInfiniium(VisaInstrument):
                 )
                 f.write(screen_bytes) # type: ignore
             print(f"Screen image written to {img_path}")
-            return np.asarray(pil_open(BytesIO(screen_bytes))) # type: ignore
+            return np.asarray(pil_open(BytesIO(screen_bytes))) # type: ignore[arg-type]
         except Exception as e:
             self.log.error(f"Failed to save screenshot, Error occurred: \n{e}")
             return None
