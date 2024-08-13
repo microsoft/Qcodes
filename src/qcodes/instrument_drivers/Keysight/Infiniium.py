@@ -1290,7 +1290,7 @@ class KeysightInfiniium(VisaInstrument):
                     datatype='B',  # Capitcal B for unsigned byte
                     container=bytes,
                 )
-                f.write(screen_bytes) # type: ignore
+                f.write(screen_bytes) # type: ignore[arg-type]
             print(f"Screen image written to {img_path}")
             return np.asarray(pil_open(BytesIO(screen_bytes))) # type: ignore[arg-type]
         except Exception as e:
