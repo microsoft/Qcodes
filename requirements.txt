@@ -72,7 +72,7 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via opentelemetry-api
-docutils==0.20.1
+docutils==0.21.2
     # via
     #   nbsphinx
     #   sphinx
