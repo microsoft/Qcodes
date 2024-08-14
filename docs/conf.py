@@ -106,7 +106,7 @@ release = parse(qcodes.__version__).public
 
 # Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
 nbsphinx_prolog = r"""
-{% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
+{% set docname = 'docs/' ~ env.doc2path(env.docname, base=None) %}
 
 .. raw:: html
 
@@ -417,12 +417,12 @@ texinfo_show_urls = 'footnote'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable", None),
     "matplotlib": ("https://matplotlib.org/stable", None),
-    "python": ("https://docs.python.org/3.10/", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "pyvisa": ("https://pyvisa.readthedocs.io/en/stable/", None),
-    "IPython": ("https://ipython.readthedocs.io/en/stable/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "pyvisa": ("https://pyvisa.readthedocs.io/en/stable", None),
+    "IPython": ("https://ipython.readthedocs.io/en/stable", None),
 }
 
 autoclass_content = "both"
