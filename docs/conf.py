@@ -106,7 +106,7 @@ release = parse(qcodes.__version__).public
 
 # Add link to Binder in Prolog (WRITE MORE DETAILS ONCE FIXED)
 nbsphinx_prolog = r"""
-{% set docname = 'docs/' + env.doc2path(env.docname, base=None) %}
+{% set docname = 'docs/' ~ env.doc2path(env.docname, base=None) %}
 
 .. raw:: html
 
