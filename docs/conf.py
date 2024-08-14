@@ -474,4 +474,4 @@ towncrier_draft_autoversion_mode = "draft"
 towncrier_draft_include_empty = True
 towncrier_draft_working_directory = ".."
 
-issues_github_path = "QCoDeS/Qcodes"
+issues_github_path = "microsoft/Qcodes"
