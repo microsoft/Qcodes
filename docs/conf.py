@@ -24,7 +24,6 @@ from importlib import reload
 # before qcodes imports pyplot and automatically
 # sets the backend
 import matplotlib
-import sphinx_rtd_theme  # noqa F401
 from packaging.version import parse
 
 # setting the metaclass will cause sphinx
@@ -207,7 +206,7 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
