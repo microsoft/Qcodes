@@ -64,8 +64,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         # if time out to be set is lower than the default value
         # then keep default
-        if time_out < default_timeout:
-            time_out = default_timeout
+        time_out = max(time_out, default_timeout)
 
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
 
