@@ -2,7 +2,6 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
 
-
 import numpy as np
 from pyvisa import VisaIOError
 from pyvisa.constants import StatusCode
@@ -1259,14 +1258,14 @@ class KeysightInfiniium(VisaInstrument):
 
     def screenshot(
         self,
-        path: Union[str, Path] = "./screenshot",
+        path: str | Path = "./screenshot",
         with_time: bool = False,
         time_fmt: str = "%Y-%m-%d_%H-%M-%S",
-        divider: str = "_"
-    ) -> Optional[np.ndarray]:
-        """ save screen to {path} with {image_type}: bmp, jpg, gif, tif, png
+        divider: str = "_",
+    ) -> np.ndarray | None:
+        """save screen to {path} with {image_type}: bmp, jpg, gif, tif, png
 
-            return np.array if sucessfully saved, else return None
+        return np.array if sucessfully saved, else return None
         """
         from datetime import datetime
         from io import BytesIO
@@ -1287,12 +1286,12 @@ class KeysightInfiniium(VisaInstrument):
                 screen_bytes = self.visa_handle.query_binary_values(
                     f":DISPlay:DATA? {img_type.upper()[1:]}",  # without .
                     # https://docs.python.org/3/library/struct.html#format-characters
-                    datatype='B',  # Capitcal B for unsigned byte
+                    datatype="B",  # Capitcal B for unsigned byte
                     container=bytes,
                 )
-                f.write(screen_bytes) # type: ignore[arg-type]
+                f.write(screen_bytes)  # type: ignore[arg-type]
             print(f"Screen image written to {img_path}")
-            return np.asarray(pil_open(BytesIO(screen_bytes))) # type: ignore[arg-type]
+            return np.asarray(pil_open(BytesIO(screen_bytes)))  # type: ignore[arg-type]
         except Exception as e:
             self.log.error(f"Failed to save screenshot, Error occurred: \n{e}")
             return None
