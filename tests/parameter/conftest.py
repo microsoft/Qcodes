@@ -59,7 +59,8 @@ def _make_dummy_instrument() -> Generator[DummyChannelInstrument, None, None]:
 
 
 class GettableParam(Parameter):
-    """ Parameter that keeps track of number of get operations"""
+    """Parameter that keeps track of number of get operations"""
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._get_count = 0
@@ -70,8 +71,9 @@ class GettableParam(Parameter):
 
 
 class BetterGettableParam(Parameter):
-    """ Parameter that keeps track of number of get operations,
-        But can actually store values"""
+    """Parameter that keeps track of number of get operations,
+    But can actually store values"""
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._get_count = 0
@@ -82,7 +84,8 @@ class BetterGettableParam(Parameter):
 
 
 class SettableParam(Parameter):
-    """ Parameter that keeps track of number of set operations"""
+    """Parameter that keeps track of number of set operations"""
+
     def __init__(self, *args: Any, **kwargs: Any):
         self._set_count = 0
         super().__init__(*args, **kwargs)
@@ -92,7 +95,8 @@ class SettableParam(Parameter):
 
 
 class OverwriteGetParam(Parameter):
-    """ Parameter that overwrites get."""
+    """Parameter that overwrites get."""
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._value = 42
@@ -105,7 +109,8 @@ class OverwriteGetParam(Parameter):
 
 
 class OverwriteSetParam(Parameter):
-    """ Parameter that overwrites set."""
+    """Parameter that overwrites set."""
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._value = 42
@@ -118,7 +123,8 @@ class OverwriteSetParam(Parameter):
 
 
 class GetSetRawParameter(Parameter):
-    """ Parameter that implements get and set raw"""
+    """Parameter that implements get and set raw"""
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
@@ -144,12 +150,14 @@ class BookkeepingValidator(vals.Validator[T]):
 
     is_numeric = True
 
+
 class MemoryParameter(Parameter):
     def __init__(self, get_cmd: None | Callable[[], Any] = None, **kwargs: Any):
         self.set_values: list[Any] = []
         self.get_values: list[Any] = []
-        super().__init__(set_cmd=self.add_set_value,
-                         get_cmd=self.create_get_func(get_cmd), **kwargs)
+        super().__init__(
+            set_cmd=self.add_set_value, get_cmd=self.create_get_func(get_cmd), **kwargs
+        )
 
     def add_set_value(self, value: ParamDataType) -> None:
         self.set_values.append(value)
@@ -164,6 +172,7 @@ class MemoryParameter(Parameter):
                 val = self.cache.raw_value
             self.get_values.append(val)
             return val
+
         return get_func
 
 
@@ -182,14 +191,13 @@ class VirtualParameter(Parameter):
 
 blank_instruments = (
     None,  # no instrument at all
-    namedtuple('noname', '')(),  # no .name
-    namedtuple('blank', 'name')('')  # blank .name
+    namedtuple("noname", "")(),  # no .name
+    namedtuple("blank", "name")(""),  # blank .name
 )
-named_instrument = namedtuple('yesname', 'name')('astro')
+named_instrument = namedtuple("yesname", "name")("astro")
 
 
 class ParameterMemory:
-
     def __init__(self) -> None:
         self._value: Any | None = None
 
@@ -200,11 +208,11 @@ class ParameterMemory:
         self._value = value
 
     def set_p_prefixed(self, val: int) -> None:
-        self._value = f'PVAL: {val:d}'
+        self._value = f"PVAL: {val:d}"
 
     @staticmethod
     def parse_set_p(val: int) -> str:
-        return f'{val:d}'
+        return f"{val:d}"
 
     @staticmethod
     def strip_prefix(val: str) -> int:

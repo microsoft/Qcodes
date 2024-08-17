@@ -1,4 +1,5 @@
 """Base class for Instrument and InstrumentModule"""
+
 from __future__ import annotations
 
 import collections.abc
@@ -47,6 +48,7 @@ class InstrumentBaseKWArgs(TypedDict):
     Nicely formatted name of the instrument; if None,
     the ``name`` is used.
     """
+
 
 class InstrumentBase(MetadatableWithName, DelegateAttributes):
     """
@@ -305,7 +307,6 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     def _get_component_by_name(
         self, potential_top_level_name: str, remaining_name_parts: list[str]
     ) -> MetadatableWithName:
-
         log.debug(
             "trying to find component %s on %s, remaining %s",
             potential_top_level_name,

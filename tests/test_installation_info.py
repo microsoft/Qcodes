@@ -41,7 +41,6 @@ def test_convert_legacy_version_to_supported_version() -> None:
     expected_converted_ver_str = "65.1.4"
     assert_version_str(legacy_verstr, expected_converted_ver_str)
 
-
     legacy_verstr = "10.4.7"
     expected_converted_ver_str = "10.4.7"
     assert_version_str(legacy_verstr, expected_converted_ver_str)

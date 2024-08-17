@@ -5,26 +5,25 @@ from qcodes.parameters.sweep_values import SweepValues
 from qcodes.validators import Numbers
 
 
-@pytest.fixture(name='c0')
+@pytest.fixture(name="c0")
 def _make_c0():
-    c0 = Parameter('c0', vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
+    c0 = Parameter("c0", vals=Numbers(-10, 10), get_cmd=None, set_cmd=None)
     yield c0
 
 
-@pytest.fixture(name='c1')
+@pytest.fixture(name="c1")
 def _make_c1():
-    c1 = Parameter('c1', get_cmd=None, set_cmd=None)
+    c1 = Parameter("c1", get_cmd=None, set_cmd=None)
     yield c1
 
 
-@pytest.fixture(name='c2')
+@pytest.fixture(name="c2")
 def _make_c2():
-    c2 = Parameter('c2', get_cmd=lambda: 42)
+    c2 = Parameter("c2", get_cmd=lambda: 42)
     yield c2
 
 
 def test_errors(c0, c1, c2) -> None:
-
     # only complete 3-part slices are valid
     with pytest.raises(TypeError):
         c0[1:2]  # For Int params this could be defined as step=1
@@ -65,7 +64,6 @@ def test_errors(c0, c1, c2) -> None:
 
 
 def test_valid(c0) -> None:
-
     c0_sv = c0[1]
     # setter gets mapped
     assert c0_sv.set == c0.set
@@ -114,7 +112,7 @@ def test_valid(c0) -> None:
 
 
 def test_base() -> None:
-    p = Parameter('p', get_cmd=None, set_cmd=None)
+    p = Parameter("p", get_cmd=None, set_cmd=None)
     with pytest.raises(NotImplementedError):
         iter(SweepValues(p))
 
@@ -127,34 +125,22 @@ def test_snapshot(c0) -> None:
     ]
 
     sv = c0.sweep(start=2, stop=4, num=5)
-    assert sv.snapshot()['values'] == [{
-        'first': 2,
-        'last': 4,
-        'num': 5,
-        'type': 'linear'
-    }]
+    assert sv.snapshot()["values"] == [
+        {"first": 2, "last": 4, "num": 5, "type": "linear"}
+    ]
 
     # mixture of bare items, nested lists, and slices
     sv = c0[1, 7, 3.2, [1, 2, 3], 6:9:1, -4.5, 5.3]
-    assert sv.snapshot()['values'] == [{
-        'first': 1,
-        'last': 5.3,
-        'min': -4.5,
-        'max': 8,
-        'num': 11,
-        'type': 'sequence'
-        }]
+    assert sv.snapshot()["values"] == [
+        {"first": 1, "last": 5.3, "min": -4.5, "max": 8, "num": 11, "type": "sequence"}
+    ]
 
-    assert (c0[0] + c0[1]).snapshot()['values'] == [
-        {'item': 0},
-        {'item': 1}
-        ]
+    assert (c0[0] + c0[1]).snapshot()["values"] == [{"item": 0}, {"item": 1}]
 
-    assert (c0[0:3:1] + c0[4, 6, 9]).snapshot()['values'] == [
-        {'first': 0, 'last': 2, 'num': 3, 'type': 'linear'},
-        {'first': 4, 'last': 9, 'min': 4, 'max': 9, 'num': 3,
-         'type': 'sequence'}
-        ]
+    assert (c0[0:3:1] + c0[4, 6, 9]).snapshot()["values"] == [
+        {"first": 0, "last": 2, "num": 3, "type": "linear"},
+        {"first": 4, "last": 9, "min": 4, "max": 9, "num": 3, "type": "sequence"},
+    ]
 
 
 def test_repr(c0) -> None:

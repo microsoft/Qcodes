@@ -1,4 +1,3 @@
-
 import pytest
 
 from qcodes.dataset.dond.do_nd_utils import BreakConditionInterrupt, catch_interrupts

@@ -55,15 +55,14 @@ def _make_mock_empty_dataset(experiment) -> DataSet:
 @pytest.fixture(name="mock_dataset")
 def _make_mock_dataset(experiment) -> DataSet:
     dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}]
+    results = [{"x": 0, "y": 1, "z": 2}]
     dataset.add_results(results)
     dataset.mark_completed()
     return dataset
@@ -72,15 +71,14 @@ def _make_mock_dataset(experiment) -> DataSet:
 @pytest.fixture(name="mock_dataset_nonunique")
 def _make_mock_dataset_nonunique_index(experiment) -> DataSet:
     dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
-    results = [{'x': 0, 'y': 1, 'z': 2}, {'x': 0, 'y': 1, 'z': 2}]
+    results = [{"x": 0, "y": 1, "z": 2}, {"x": 0, "y": 1, "z": 2}]
     dataset.add_results(results)
     dataset.mark_completed()
     return dataset
@@ -410,24 +408,24 @@ def _make_mock_dataset_inverted_coords(experiment) -> DataSet:
     return dataset
 
 
-@pytest.mark.usefixtures('experiment')
+@pytest.mark.usefixtures("experiment")
 def test_write_data_to_text_file_save(tmp_path_factory) -> None:
     dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
     idps = InterDependencies_(dependencies={yparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
-    results = [{'x': 0, 'y': 1}]
+    results = [{"x": 0, "y": 1}]
     dataset.add_results(results)
     dataset.mark_completed()
 
     path = str(tmp_path_factory.mktemp("write_data_to_text_file_save"))
     dataset.write_data_to_text_file(path=path)
-    assert os.listdir(path) == ['y.dat']
+    assert os.listdir(path) == ["y.dat"]
     with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\n']
+        assert f.readlines() == ["0.0\t1.0\n"]
 
 
 def test_write_data_to_text_file_save_multi_keys(
@@ -436,11 +434,11 @@ def test_write_data_to_text_file_save_multi_keys(
     tmp_path = tmp_path_factory.mktemp("data_to_text_file_save_multi_keys")
     path = str(tmp_path)
     mock_dataset.write_data_to_text_file(path=path)
-    assert sorted(os.listdir(path)) == ['y.dat', 'z.dat']
+    assert sorted(os.listdir(path)) == ["y.dat", "z.dat"]
     with open(os.path.join(path, "y.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\n']
+        assert f.readlines() == ["0.0\t1.0\n"]
     with open(os.path.join(path, "z.dat")) as f:
-        assert f.readlines() == ['0.0\t2.0\n']
+        assert f.readlines() == ["0.0\t2.0\n"]
 
 
 def test_write_data_to_text_file_save_single_file(
@@ -448,43 +446,45 @@ def test_write_data_to_text_file_save_single_file(
 ) -> None:
     tmp_path = tmp_path_factory.mktemp("to_text_file_save_single_file")
     path = str(tmp_path)
-    mock_dataset.write_data_to_text_file(path=path, single_file=True,
-                                         single_file_name='yz')
-    assert os.listdir(path) == ['yz.dat']
+    mock_dataset.write_data_to_text_file(
+        path=path, single_file=True, single_file_name="yz"
+    )
+    assert os.listdir(path) == ["yz.dat"]
     with open(os.path.join(path, "yz.dat")) as f:
-        assert f.readlines() == ['0.0\t1.0\t2.0\n']
+        assert f.readlines() == ["0.0\t1.0\t2.0\n"]
 
 
-@pytest.mark.usefixtures('experiment')
+@pytest.mark.usefixtures("experiment")
 def test_write_data_to_text_file_length_exception(tmp_path) -> None:
     dataset = new_data_set("dataset")
-    xparam = ParamSpecBase("x", 'numeric')
-    yparam = ParamSpecBase("y", 'numeric')
-    zparam = ParamSpecBase("z", 'numeric')
-    idps = InterDependencies_(
-        dependencies={yparam: (xparam,), zparam: (xparam,)})
+    xparam = ParamSpecBase("x", "numeric")
+    yparam = ParamSpecBase("y", "numeric")
+    zparam = ParamSpecBase("z", "numeric")
+    idps = InterDependencies_(dependencies={yparam: (xparam,), zparam: (xparam,)})
     dataset.set_interdependencies(idps)
 
     dataset.mark_started()
-    results1 = [{'x': 0, 'y': 1}]
-    results2 = [{'x': 0, 'z': 2}]
-    results3 = [{'x': 1, 'z': 3}]
+    results1 = [{"x": 0, "y": 1}]
+    results2 = [{"x": 0, "z": 2}]
+    results3 = [{"x": 1, "z": 3}]
     dataset.add_results(results1)
     dataset.add_results(results2)
     dataset.add_results(results3)
     dataset.mark_completed()
 
     temp_dir = str(tmp_path)
-    with pytest.raises(Exception, match='different length'):
-        dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                        single_file_name='yz')
+    with pytest.raises(Exception, match="different length"):
+        dataset.write_data_to_text_file(
+            path=temp_dir, single_file=True, single_file_name="yz"
+        )
 
 
 def test_write_data_to_text_file_name_exception(tmp_path, mock_dataset) -> None:
     temp_dir = str(tmp_path)
-    with pytest.raises(Exception, match='desired file name'):
-        mock_dataset.write_data_to_text_file(path=temp_dir, single_file=True,
-                                             single_file_name=None)
+    with pytest.raises(Exception, match="desired file name"):
+        mock_dataset.write_data_to_text_file(
+            path=temp_dir, single_file=True, single_file_name=None
+        )
 
 
 def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -> None:
@@ -504,7 +504,7 @@ def test_export_csv(tmp_path_factory, mock_dataset, caplog: LogCaptureFixture) -
     assert mock_dataset.export_info.export_paths["csv"] == expected_full_path
     assert os.listdir(path) == [expected_path]
     with open(expected_full_path) as f:
-        assert f.readlines() == ['0.0\t1.0\t2.0\n']
+        assert f.readlines() == ["0.0\t1.0\t2.0\n"]
 
 
 def test_export_netcdf(
@@ -556,7 +556,6 @@ def test_export_netcdf_default_dir(
 
 
 def test_export_netcdf_csv(tmp_path_factory, mock_dataset) -> None:
-
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     csv_path = os.path.join(
@@ -597,7 +596,6 @@ def test_export_netcdf_csv(tmp_path_factory, mock_dataset) -> None:
 
 
 def test_export_netcdf_complex_data(tmp_path_factory, mock_dataset_complex) -> None:
-
     tmp_path = tmp_path_factory.mktemp("export_netcdf")
     path = str(tmp_path)
     mock_dataset_complex.export(export_type="netcdf", path=path, prefix="qcodes_")
@@ -663,7 +661,6 @@ def test_export_from_config_set_name_elements(
 
 
 def test_same_setpoint_warning_for_df_and_xarray(different_setpoint_dataset) -> None:
-
     warning_message = (
         "Independent parameter setpoints are not equal. "
         "Check concatenated output carefully."
@@ -743,12 +740,9 @@ def test_export_to_xarray_ds_dict_extra_metadata(mock_dataset) -> None:
 
 
 def test_export_to_xarray_extra_metadata_can_be_stored(mock_dataset, tmp_path) -> None:
-
     nt_metadata = {
         "foo": {
-            "bar": {
-                "baz": "test"
-            },
+            "bar": {"baz": "test"},
             "spam": [1, 2, 3],
         }
     }
@@ -1224,11 +1218,14 @@ def _get_expected_param_spec_attrs(dataset, dim):
 
 
 def _assert_xarray_metadata_is_as_expected(xarray_ds, qc_dataset):
-
     assert xarray_ds.ds_name == qc_dataset.name
     assert xarray_ds.sample_name == qc_dataset.sample_name
     assert xarray_ds.exp_name == qc_dataset.exp_name
-    assert xarray_ds.snapshot == qc_dataset.snapshot_raw if qc_dataset.snapshot_raw is not None else "null"
+    assert (
+        xarray_ds.snapshot == qc_dataset.snapshot_raw
+        if qc_dataset.snapshot_raw is not None
+        else "null"
+    )
     assert xarray_ds.guid == qc_dataset.guid
     assert xarray_ds.run_timestamp == qc_dataset.run_timestamp()
     assert xarray_ds.completed_timestamp == qc_dataset.completed_timestamp()

@@ -34,7 +34,7 @@ def upgrade_3_to_4(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
     """
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
-    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), "max(run_id)")
     no_of_runs = no_of_runs or 0
 
     # If one run fails, we want the whole upgrade to roll back, hence the
@@ -54,9 +54,7 @@ def upgrade_3_to_4(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
         pbar.set_description("Upgrading database; v3 -> v4")
 
         for run_id in pbar:
-
             if run_id in layout_ids_all:
-
                 result_table_name = result_tables[run_id]
                 layout_ids = list(layout_ids_all[run_id])
                 if run_id in indeps_all:
@@ -79,12 +77,11 @@ def upgrade_3_to_4(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
                 )
 
                 interdeps = InterDependencies(*paramspecs.values())
-                desc_dict = {'interdependencies': interdeps._to_dict()}
+                desc_dict = {"interdependencies": interdeps._to_dict()}
                 json_str = json.dumps(desc_dict)
 
             else:
-                desc_dict = {'interdependencies':
-                                 InterDependencies()._to_dict()}
+                desc_dict = {"interdependencies": InterDependencies()._to_dict()}
                 json_str = json.dumps(desc_dict)
 
             sql = """

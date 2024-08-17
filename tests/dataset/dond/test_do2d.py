@@ -1,6 +1,7 @@
 """
 These are the basic black box tests for the doNd functions.
 """
+
 import hypothesis.strategies as hst
 import matplotlib
 import matplotlib.axes
@@ -26,7 +27,6 @@ from qcodes.parameters import Parameter
     "sweep, columns", [(False, False), (False, True), (True, False), (True, True)]
 )
 def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns) -> None:
-
     start_p1 = 0
     stop_p1 = 1
     num_points_p1 = 1
@@ -59,7 +59,6 @@ def test_do2d(_param, _param_complex, _param_set, _param_set_2, sweep, columns) 
 @pytest.mark.parametrize("plot", [None, True, False])
 @pytest.mark.parametrize("plot_config", [None, True, False])
 def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config) -> None:
-
     if plot_config is not None:
         config.dataset.dond_plot = plot_config
 
@@ -97,7 +96,6 @@ def test_do2d_plot(_param_set, _param_set_2, _param, plot, plot_config) -> None:
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2) -> None:
-
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 1
@@ -127,7 +125,6 @@ def test_do2d_output_type(_param, _param_complex, _param_set, _param_set_2) -> N
 
 @pytest.mark.usefixtures("plot_close", "experiment")
 def test_do2d_output_data(_param, _param_complex, _param_set, _param_set_2) -> None:
-
     start_p1 = 0
     stop_p1 = 0.5
     num_points_p1 = 5

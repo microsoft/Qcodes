@@ -20,12 +20,12 @@ class QCoDeSDeprecationWarning(RuntimeWarning):
 def deprecation_message(
     what: str, reason: str | None = None, alternative: str | None = None
 ) -> str:
-    msg = f'The {what} is deprecated'
+    msg = f"The {what} is deprecated"
     if reason is not None:
-        msg += f', because {reason}'
-    msg += '.'
+        msg += f", because {reason}"
+    msg += "."
     if alternative is not None:
-        msg += f' Use \"{alternative}\" as an alternative.'
+        msg += f' Use "{alternative}" as an alternative.'
     return msg
 
 
@@ -41,7 +41,8 @@ def issue_deprecation_warning(
     warnings.warn(
         deprecation_message(what, reason, alternative),
         QCoDeSDeprecationWarning,
-        stacklevel=stacklevel)
+        stacklevel=stacklevel,
+    )
 
 
 def deprecate(

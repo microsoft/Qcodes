@@ -12,13 +12,11 @@ def ones_generator(data):
     data[:] = np.ones(data.shape)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def simulated_alazar():
     driver = ATS9360(
-        'Alazar',
-        api=SimulatedATS9360API(
-            dll_path='simulated',
-            buffer_generator=ones_generator)
+        "Alazar",
+        api=SimulatedATS9360API(dll_path="simulated", buffer_generator=ones_generator),
     )
     with driver.syncing():
         driver.sample_rate(1_000_000_000)
@@ -29,10 +27,9 @@ def simulated_alazar():
             driver.close()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def alazar_ctrl():
     class TestAcquisitionController(AcquisitionInterface):
-
         def __init__(self):
             self.buffers = []
 

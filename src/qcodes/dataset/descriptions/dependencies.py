@@ -3,6 +3,7 @@ This module holds the objects that describe the intra-run relationships
 between the parameters of that run. Most importantly, the information about
 which parameters depend on each other is handled here.
 """
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -29,8 +30,10 @@ class DependencyError(Exception):
         self._missing_params = missing_params
 
     def __str__(self) -> str:
-        return (f'{self._param_name} has the following dependencies that are '
-                f'missing: {self._missing_params}')
+        return (
+            f"{self._param_name} has the following dependencies that are "
+            f"missing: {self._missing_params}"
+        )
 
 
 class InferenceError(Exception):
@@ -40,8 +43,10 @@ class InferenceError(Exception):
         self._missing_params = missing_params
 
     def __str__(self) -> str:
-        return (f'{self._param_name} has the following inferences that are '
-                f'missing: {self._missing_params}')
+        return (
+            f"{self._param_name} has the following inferences that are "
+            f"missing: {self._missing_params}"
+        )
 
 
 class InterDependencies_:
@@ -56,7 +61,6 @@ class InterDependencies_:
         inferences: ParamSpecTree | None = None,
         standalones: tuple[ParamSpecBase, ...] = (),
     ):
-
         dependencies = dependencies or {}
         inferences = inferences or {}
 
@@ -100,24 +104,19 @@ class InterDependencies_:
         for tree in (self.dependencies, self.inferences):
             for ps, ps_tup in tree.items():
                 self._id_to_paramspec.update({ps.name: ps})
-                self._id_to_paramspec.update({pst.name: pst
-                                              for pst in ps_tup})
+                self._id_to_paramspec.update({pst.name: pst for pst in ps_tup})
         for ps in self.standalones:
             self._id_to_paramspec.update({ps.name: ps})
         self._paramspec_to_id = {v: k for k, v in self._id_to_paramspec.items()}
 
-        self._dependencies_inv: ParamSpecTree = self._invert_tree(
-            self.dependencies)
-        self._inferences_inv: ParamSpecTree = self._invert_tree(
-            self.inferences)
+        self._dependencies_inv: ParamSpecTree = self._invert_tree(self.dependencies)
+        self._inferences_inv: ParamSpecTree = self._invert_tree(self.inferences)
 
         # Set operations are ~2x (or more) faster on strings than on hashable
         # ParamSpecBase objects, hence the need for use of the following
         # representation
-        self._deps_names: ParamNameTree = self._tree_of_names(
-            self.dependencies)
-        self._infs_names: ParamNameTree = self._tree_of_names(
-            self.inferences)
+        self._deps_names: ParamNameTree = self._tree_of_names(self.dependencies)
+        self._infs_names: ParamNameTree = self._tree_of_names(self.inferences)
 
     @staticmethod
     def _tree_of_names(tree: ParamSpecTree) -> ParamNameTree:
@@ -175,18 +174,22 @@ class InterDependencies_:
         # Validate the type
 
         if not isinstance(paramspectree, dict):
-            return (TypeError, 'ParamSpecTree must be a dict')
+            return (TypeError, "ParamSpecTree must be a dict")
 
         for key, values in paramspectree.items():
             if not isinstance(key, ParamSpecBase):
-                return (TypeError, 'ParamSpecTree must have ParamSpecs as keys')
+                return (TypeError, "ParamSpecTree must have ParamSpecs as keys")
             if not isinstance(values, tuple):
-                return (TypeError, 'ParamSpecTree must have tuple values')
+                return (TypeError, "ParamSpecTree must have tuple values")
             for value in values:
                 if not isinstance(value, ParamSpecBase):
-                    return (TypeError,
-                            ('ParamSpecTree can only have tuples of '
-                             'ParamSpecs as values'))
+                    return (
+                        TypeError,
+                        (
+                            "ParamSpecTree can only have tuples of "
+                            "ParamSpecs as values"
+                        ),
+                    )
 
         # check for cycles
 
@@ -194,7 +197,7 @@ class InterDependencies_:
         leafs = {ps for tup in paramspectree.values() for ps in tup}
 
         if roots.intersection(leafs) != set():
-            return (ValueError, 'ParamSpecTree can not have cycles')
+            return (ValueError, "ParamSpecTree can not have cycles")
 
         return None
 
@@ -210,8 +213,10 @@ class InterDependencies_:
         for ps, tup in tree1.items():
             for val in tup:
                 if ps in tree2.get(val, ()):
-                    mssg = (f"Invalid dependencies/inferences. {ps} and "
-                            f"{val} have an ill-defined relationship.")
+                    mssg = (
+                        f"Invalid dependencies/inferences. {ps} and "
+                        f"{val} have an ill-defined relationship."
+                    )
                     return (ValueError, mssg)
 
         return None
@@ -228,7 +233,7 @@ class InterDependencies_:
             ValueError if the parameter is not part of this object
         """
         if ps not in self:
-            raise ValueError(f'Unknown parameter: {ps}')
+            raise ValueError(f"Unknown parameter: {ps}")
         return self._dependencies_inv.get(ps, ())
 
     def what_is_inferred_from(self, ps: ParamSpecBase) -> tuple[ParamSpecBase, ...]:
@@ -244,23 +249,25 @@ class InterDependencies_:
             ValueError if the parameter is not part of this object
         """
         if ps not in self:
-            raise ValueError(f'Unknown parameter: {ps}')
+            raise ValueError(f"Unknown parameter: {ps}")
         return self._inferences_inv.get(ps, ())
 
     def _to_dict(self) -> InterDependencies_Dict:
         """
         Write out this object as a dictionary
         """
-        parameters = {key: value._to_dict() for key, value in
-                      self._id_to_paramspec.items()}
-        dependencies = self._construct_subdict('dependencies')
-        inferences = self._construct_subdict('inferences')
-        standalones = [self._paramspec_to_id[ps] for ps in
-                       self.standalones]
-        output: InterDependencies_Dict = {"parameters": parameters,
-                                          "dependencies": dependencies,
-                                          "inferences": inferences,
-                                          "standalones": standalones}
+        parameters = {
+            key: value._to_dict() for key, value in self._id_to_paramspec.items()
+        }
+        dependencies = self._construct_subdict("dependencies")
+        inferences = self._construct_subdict("inferences")
+        standalones = [self._paramspec_to_id[ps] for ps in self.standalones]
+        output: InterDependencies_Dict = {
+            "parameters": parameters,
+            "dependencies": dependencies,
+            "inferences": inferences,
+            "standalones": standalones,
+        }
         return output
 
     def _empty_data_dict(self) -> dict[str, dict[str, np.ndarray]]:
@@ -305,10 +312,10 @@ class InterDependencies_:
         i.e. return the top level parameters. Returned tuple is sorted by
         parameter names.
         """
-        non_dependencies = tuple(self.standalones) \
-                         + tuple(self.dependencies.keys())
+        non_dependencies = tuple(self.standalones) + tuple(self.dependencies.keys())
         non_dependencies_sorted_by_name = tuple(
-            sorted(non_dependencies, key=lambda ps: ps.name))
+            sorted(non_dependencies, key=lambda ps: ps.name)
+        )
         return non_dependencies_sorted_by_name
 
     @property
@@ -339,8 +346,7 @@ class InterDependencies_:
             new_deps = {}
 
         if len(ps.inferred_from_) > 0:
-            inffs_list = [self._id_to_paramspec[name]
-                          for name in ps.inferred_from_]
+            inffs_list = [self._id_to_paramspec[name] for name in ps.inferred_from_]
             new_inffs = {base_ps: tuple(inffs_list)}
             old_standalones = old_standalones.difference(set(inffs_list))
         else:
@@ -356,9 +362,9 @@ class InterDependencies_:
         new_inffs.update(self.inferences.copy())
         new_standalones = tuple(list(new_standalones) + list(old_standalones))
 
-        new_idps = InterDependencies_(dependencies=new_deps,
-                                      inferences=new_inffs,
-                                      standalones=new_standalones)
+        new_idps = InterDependencies_(
+            dependencies=new_deps, inferences=new_inffs, standalones=new_standalones
+        )
 
         return new_idps
 
@@ -383,32 +389,32 @@ class InterDependencies_:
         inferred_from = (ps for tup in inferences.values() for ps in tup)
 
         standalones_mut = set(deepcopy(self.standalones))
-        standalones_mut = (standalones_mut.difference(set(dependencies))
-                                          .difference(set(inferences))
-                                          .difference(set(depended_on))
-                                          .difference(set(inferred_from)))
+        standalones_mut = (
+            standalones_mut.difference(set(dependencies))
+            .difference(set(inferences))
+            .difference(set(depended_on))
+            .difference(set(inferred_from))
+        )
 
         # then update deps and inffs
         new_deps = deepcopy(self.dependencies)
         for ps in set(dependencies).intersection(set(new_deps)):
-            new_deps[ps] = tuple(set(list(new_deps[ps]) +
-                                     list(dependencies[ps])))
+            new_deps[ps] = tuple(set(list(new_deps[ps]) + list(dependencies[ps])))
         for ps in set(dependencies).difference(set(new_deps)):
             new_deps.update({deepcopy(ps): dependencies[ps]})
 
         new_inffs = deepcopy(self.inferences.copy())
         for ps in set(inferences).intersection(set(new_inffs)):
-            new_inffs[ps] = tuple(set(list(new_inffs[ps]) +
-                                      list(inferences[ps])))
+            new_inffs[ps] = tuple(set(list(new_inffs[ps]) + list(inferences[ps])))
         for ps in set(inferences).difference(set(new_inffs)):
             new_inffs.update({deepcopy(ps): inferences[ps]})
 
         # add new standalones
         new_standalones = tuple(standalones_mut.union(set(standalones)))
 
-        new_idps = InterDependencies_(dependencies=new_deps,
-                                      inferences=new_inffs,
-                                      standalones=new_standalones)
+        new_idps = InterDependencies_(
+            dependencies=new_deps, inferences=new_inffs, standalones=new_standalones
+        )
 
         return new_idps
 
@@ -418,18 +424,20 @@ class InterDependencies_:
         to this instance, but has the given parameter removed.
         """
         if parameter not in self:
-            raise ValueError(f'Unknown parameter: {parameter}.')
+            raise ValueError(f"Unknown parameter: {parameter}.")
 
         if parameter in self._dependencies_inv:
-            raise ValueError(f'Cannot remove {parameter.name}, other '
-                             'parameters depend on it.')
+            raise ValueError(
+                f"Cannot remove {parameter.name}, other parameters depend on it."
+            )
         if parameter in self._inferences_inv:
-            raise ValueError(f'Cannot remove {parameter.name}, other '
-                             'parameters are inferred from it.')
+            raise ValueError(
+                f"Cannot remove {parameter.name}, other "
+                "parameters are inferred from it."
+            )
 
         if parameter in self.standalones:
-            new_standalones = tuple(deepcopy(self.standalones).
-                                    difference({parameter}))
+            new_standalones = tuple(deepcopy(self.standalones).difference({parameter}))
             new_deps = deepcopy(self.dependencies)
             new_inffs = deepcopy(self.inferences)
         elif parameter in self.dependencies or parameter in self.inferences:
@@ -440,25 +448,25 @@ class InterDependencies_:
             new_standalones_l = []
             old_standalones = deepcopy(self.standalones)
             for indep in self.dependencies.get(parameter, []):
-                if not(indep in self._inferences_inv or
-                       indep in self.inferences):
+                if not (indep in self._inferences_inv or indep in self.inferences):
                     new_standalones_l.append(indep)
             for basis in self.inferences.get(parameter, []):
-                if not(basis in self._dependencies_inv or
-                       basis in self.dependencies):
+                if not (basis in self._dependencies_inv or basis in self.dependencies):
                     new_standalones_l.append(basis)
             new_deps.pop(parameter, None)
             new_inffs.pop(parameter, None)
-            new_standalones = tuple(set(new_standalones_l)
-                                    .union(old_standalones))
+            new_standalones = tuple(set(new_standalones_l).union(old_standalones))
         else:
-            raise ValueError(f'Inconsistent InterDependencies_ object '
-                             f'parameter: {parameter} is in list of'
-                             f'parameters but is neither a "standalone", '
-                             f'"dependency" or "inference"')
+            raise ValueError(
+                f"Inconsistent InterDependencies_ object "
+                f"parameter: {parameter} is in list of"
+                f'parameters but is neither a "standalone", '
+                f'"dependency" or "inference"'
+            )
 
-        idps = InterDependencies_(dependencies=new_deps, inferences=new_inffs,
-                                  standalones=new_standalones)
+        idps = InterDependencies_(
+            dependencies=new_deps, inferences=new_inffs, standalones=new_standalones
+        )
         return idps
 
     def validate_subset(self, parameters: Sequence[ParamSpecBase]) -> None:
@@ -480,7 +488,7 @@ class InterDependencies_:
         for param in params:
             ps = self._id_to_paramspec.get(param, None)
             if ps is None:
-                raise ValueError(f'Unknown parameter: {param}')
+                raise ValueError(f"Unknown parameter: {param}")
 
             deps = set(self._deps_names.get(param, ()))
             missing_deps = deps.difference(params)
@@ -498,55 +506,53 @@ class InterDependencies_:
         Construct an InterDependencies_ object from a dictionary
         representation of such an object
         """
-        params = ser['parameters']
+        params = ser["parameters"]
         deps = cls._extract_deps_from_dict(ser)
 
         inffs = cls._extract_inffs_from_dict(ser)
 
-        stdls = tuple(ParamSpecBase._from_dict(params[ps_id]) for
-                      ps_id in ser['standalones'])
+        stdls = tuple(
+            ParamSpecBase._from_dict(params[ps_id]) for ps_id in ser["standalones"]
+        )
 
         return cls(dependencies=deps, inferences=inffs, standalones=stdls)
 
     @classmethod
-    def _extract_inffs_from_dict(cls,
-                                 ser: InterDependencies_Dict) -> ParamSpecTree:
-        params = ser['parameters']
+    def _extract_inffs_from_dict(cls, ser: InterDependencies_Dict) -> ParamSpecTree:
+        params = ser["parameters"]
         inffs = {}
-        for key, value in ser['inferences'].items():
+        for key, value in ser["inferences"].items():
             inffs_key = ParamSpecBase._from_dict(params[key])
-            inffs_vals = tuple(ParamSpecBase._from_dict(params[val]) for
-                               val in value)
+            inffs_vals = tuple(ParamSpecBase._from_dict(params[val]) for val in value)
             inffs.update({inffs_key: inffs_vals})
         return inffs
 
     @classmethod
-    def _extract_deps_from_dict(cls,
-                                ser: InterDependencies_Dict) -> ParamSpecTree:
-        params = ser['parameters']
+    def _extract_deps_from_dict(cls, ser: InterDependencies_Dict) -> ParamSpecTree:
+        params = ser["parameters"]
         deps = {}
-        for key, value in ser['dependencies'].items():
+        for key, value in ser["dependencies"].items():
             deps_key = ParamSpecBase._from_dict(params[key])
-            deps_vals = tuple(ParamSpecBase._from_dict(params[val]) for
-                              val in value)
+            deps_vals = tuple(ParamSpecBase._from_dict(params[val]) for val in value)
             deps.update({deps_key: deps_vals})
         return deps
 
     def __repr__(self) -> str:
-        rep = (f"InterDependencies_(dependencies={self.dependencies}, "
-               f"inferences={self.inferences}, "
-               f"standalones={self.standalones})")
+        rep = (
+            f"InterDependencies_(dependencies={self.dependencies}, "
+            f"inferences={self.inferences}, "
+            f"standalones={self.standalones})"
+        )
         return rep
 
     def __eq__(self, other: Any) -> bool:
-
         def sorter(inp: Iterable[ParamSpecBase]) -> list[ParamSpecBase]:
             return sorted(inp, key=lambda ps: ps.name)
 
         if not isinstance(other, InterDependencies_):
             return False
 
-        for dic in ['dependencies', 'inferences']:
+        for dic in ["dependencies", "inferences"]:
             our_keys = sorter(getattr(self, dic).keys())
             their_keys = sorter(getattr(other, dic).keys())
             if our_keys != their_keys:

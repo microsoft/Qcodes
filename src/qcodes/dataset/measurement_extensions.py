@@ -95,9 +95,11 @@ def datasaver_builder(
     measurement_instances = setup_measurement_instances(
         dataset_definitions, override_experiment
     )
-    with TRACER.start_as_current_span(
-        "qcodes.dataset.datasaver_builder"
-    ), catch_interrupts() as _, ExitStack() as stack:
+    with (
+        TRACER.start_as_current_span("qcodes.dataset.datasaver_builder"),
+        catch_interrupts() as _,
+        ExitStack() as stack,
+    ):
         datasaver_builder_span = trace.get_current_span()
         datasavers = [
             stack.enter_context(measurement.run(parent_span=datasaver_builder_span))

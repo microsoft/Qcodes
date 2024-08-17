@@ -37,8 +37,9 @@ class Model_336(LakeshoreBase):
 
     CHANNEL_CLASS = Model_336_Channel
 
-    input_channel_parameter_values_to_channel_name_on_instrument = \
+    input_channel_parameter_values_to_channel_name_on_instrument = (
         _channel_name_to_command_map
+    )
 
     def __init__(
         self, name: str, address: str, **kwargs: "Unpack[VisaInstrumentKWArgs]"

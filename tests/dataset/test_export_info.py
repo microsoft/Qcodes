@@ -39,7 +39,6 @@ def test_invalid_key_raises() -> None:
 
 
 def test_export_info_json_roundtrip(basic_export_info) -> None:
-
     exported_str = basic_export_info.to_str()
     loaded_export_info = ExportInfo.from_str(exported_str)
     assert loaded_export_info == basic_export_info

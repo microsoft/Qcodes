@@ -10,7 +10,6 @@ from .conftest import AClass, a_func
 
 
 class BrokenValidator(Validator[Any]):
-
     def __init__(self) -> None:
         pass
 
@@ -51,7 +50,7 @@ def test_real_anything() -> None:
     for v in anything:
         a.validate(v)
 
-    assert repr(a) == '<Anything>'
+    assert repr(a) == "<Anything>"
 
 
 def test_failed_anything() -> None:

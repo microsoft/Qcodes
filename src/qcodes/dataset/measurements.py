@@ -3,6 +3,7 @@ The measurement module provides a context manager for registering parameters
 to measure and storing results. The user is expected to mainly interact with it
 using the :class:`.Measurement` class.
 """
+
 from __future__ import annotations
 
 import collections
@@ -466,7 +467,7 @@ class DataSaver:
 
     @staticmethod
     def _validate_result_types(
-        results_dict: Mapping[ParamSpecBase, np.ndarray]
+        results_dict: Mapping[ParamSpecBase, np.ndarray],
     ) -> None:
         """
         Validate the type of the results

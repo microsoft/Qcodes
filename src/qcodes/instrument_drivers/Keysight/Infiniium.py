@@ -1296,6 +1296,7 @@ class KeysightInfiniium(VisaInstrument):
             self.log.error(f"Failed to save screenshot, Error occurred: \n{e}")
             return None
 
+
 Infiniium = KeysightInfiniium
 """
 Alias for backwards compatibility

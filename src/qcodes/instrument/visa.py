@@ -1,4 +1,5 @@
 """Visa instrument driver based on pyvisa."""
+
 from __future__ import annotations
 
 import logging
@@ -24,7 +25,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import NotRequired, Unpack
 
-VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
+VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 
 log = logging.getLogger(__name__)
 
@@ -83,7 +84,6 @@ class VisaInstrumentKWArgs(TypedDict):
 
 
 class VisaInstrument(Instrument):
-
     """
     Base class for all instruments using visa connections.
 
@@ -223,7 +223,6 @@ class VisaInstrument(Instrument):
     def _open_resource(
         self, address: str, visalib: str | None
     ) -> tuple[pyvisa.resources.MessageBasedResource, str, pyvisa.ResourceManager]:
-
         # in case we're changing the address - close the old handle first
         if getattr(self, "visa_handle", None):
             self.visa_handle.close()
@@ -274,12 +273,12 @@ class VisaInstrument(Instrument):
         # SCPI commands.
 
         # Simulated instruments do not support a handle clear
-        if self.visabackend == 'sim':
+        if self.visabackend == "sim":
             return
 
         flush_operation = (
-                vi_const.BufferOperation.discard_read_buffer_no_io |
-                vi_const.BufferOperation.discard_write_buffer
+            vi_const.BufferOperation.discard_read_buffer_no_io
+            | vi_const.BufferOperation.discard_write_buffer
         )
 
         if isinstance(self.visa_handle, pyvisa.resources.SerialInstrument):
@@ -305,13 +304,12 @@ class VisaInstrument(Instrument):
         # both float('+inf') and None are accepted as meaning infinite timeout
         # however None does not pass the typechecking in 1.11.1
         if timeout is None:
-            self.visa_handle.timeout = float('+inf')
+            self.visa_handle.timeout = float("+inf")
         else:
             # pyvisa uses milliseconds but we use seconds
             self.visa_handle.timeout = timeout * 1000.0
 
     def _get_visa_timeout(self) -> float | None:
-
         timeout_ms = self.visa_handle.timeout
         if timeout_ms is None:
             return None
@@ -321,7 +319,7 @@ class VisaInstrument(Instrument):
 
     def close(self) -> None:
         """Disconnect and irreversibly tear down the instrument."""
-        if getattr(self, 'visa_handle', None):
+        if getattr(self, "visa_handle", None):
             self.visa_handle.close()
 
         if getattr(self, "visabackend", None) == "sim" and getattr(
@@ -414,8 +412,9 @@ class VisaInstrument(Instrument):
         Returns:
             dict: base snapshot
         """
-        snap = super().snapshot_base(update=update,
-                                     params_to_skip_update=params_to_skip_update)
+        snap = super().snapshot_base(
+            update=update, params_to_skip_update=params_to_skip_update
+        )
 
         snap["address"] = self._address
         snap["terminator"] = self.visa_handle.read_termination

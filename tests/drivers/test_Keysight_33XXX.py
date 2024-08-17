@@ -16,32 +16,31 @@ def driver():
 
 
 def test_init(driver) -> None:
-
     idn_dict = driver.IDN()
 
-    assert idn_dict['vendor'] == 'QCoDeS'
+    assert idn_dict["vendor"] == "QCoDeS"
 
-    assert driver.model == '33522B'
+    assert driver.model == "33522B"
     assert driver.num_channels == 2
 
 
 def test_sync(driver) -> None:
-
-    assert driver.sync.output() == 'OFF'
-    driver.sync.output('ON')
-    assert driver.sync.output() == 'ON'
+    assert driver.sync.output() == "OFF"
+    driver.sync.output("ON")
+    assert driver.sync.output() == "ON"
 
     assert driver.sync.source() == 1
     driver.sync.source(2)
     assert driver.sync.source() == 2
     driver.sync.source(1)
-    driver.sync.output('OFF')
+    driver.sync.output("OFF")
+
 
 def test_channel(driver) -> None:
-    assert driver.ch1.function_type() == 'SIN'
-    driver.ch1.function_type('SQU')
-    assert driver.ch1.function_type() == 'SQU'
-    driver.ch1.function_type('SIN')
+    assert driver.ch1.function_type() == "SIN"
+    driver.ch1.function_type("SQU")
+    assert driver.ch1.function_type() == "SQU"
+    driver.ch1.function_type("SIN")
 
 
 def test_burst(driver) -> None:

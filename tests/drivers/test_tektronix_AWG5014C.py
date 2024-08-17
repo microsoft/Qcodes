@@ -4,7 +4,7 @@ import pytest
 from qcodes.instrument_drivers.tektronix.AWG5014 import Tektronix_AWG5014
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def awg():
     awg_sim = Tektronix_AWG5014(
         "awg_sim",
@@ -19,14 +19,12 @@ def awg():
 
 
 def test_init_awg(awg) -> None:
-
     idn_dict = awg.IDN()
 
-    assert idn_dict['vendor'] == 'QCoDeS'
+    assert idn_dict["vendor"] == "QCoDeS"
 
 
 def test_pack_waveform(awg) -> None:
-
     N = 25
 
     waveform = np.random.rand(N)
@@ -39,7 +37,6 @@ def test_pack_waveform(awg) -> None:
 
 
 def test_make_awg_file(awg) -> None:
-
     N = 25
 
     waveforms = [[np.random.rand(N)]]
@@ -50,13 +47,15 @@ def test_make_awg_file(awg) -> None:
     goto_states = [0]
     jump_tos = [0]
 
-    awgfile = awg.make_awg_file(waveforms,
-                                m1s,
-                                m2s,
-                                nreps,
-                                trig_waits,
-                                goto_states,
-                                jump_tos,
-                                preservechannelsettings=False)
+    awgfile = awg.make_awg_file(
+        waveforms,
+        m1s,
+        m2s,
+        nreps,
+        trig_waits,
+        goto_states,
+        jump_tos,
+        preservechannelsettings=False,
+    )
 
     assert len(awgfile) > 0

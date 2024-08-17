@@ -15,7 +15,7 @@ def test_complex(complex_val: complex) -> None:
     # so we are likely to generate overflow warnings when converting
     # these to np complex 64. In this case that is harmless.
     n = ComplexNumbers()
-    assert str(n) == '<Complex Number>'
+    assert str(n) == "<Complex Number>"
     n.validate(complex_val)
     n.validate(complex(complex_val))
 
@@ -25,7 +25,6 @@ def test_complex(complex_val: complex) -> None:
 
 @given(val=hst.one_of(hst.floats(), hst.integers(), hst.characters()))
 def test_complex_raises(val: float | int | str) -> None:
-
     n = ComplexNumbers()
 
     with pytest.raises(TypeError, match=r"is not complex;"):

@@ -20,6 +20,7 @@ def tektronix_dpo():
     yield driver
     driver.close()
 
+
 @pytest.mark.xfail(
     condition=sys.platform == "win32", reason="Time resolution is too low on windows"
 )
@@ -33,7 +34,7 @@ def test_adjust_timer(tektronix_dpo) -> None:
 
     timer = timeit.Timer(
         'tektronix_dpo.measurement[0].source1("CH1"),'
-        'tektronix_dpo.measurement[0].amplitude()',
+        "tektronix_dpo.measurement[0].amplitude()",
         globals=locals(),
     )
     min_time = tektronix_dpo.measurement[0]._minimum_adjustment_time

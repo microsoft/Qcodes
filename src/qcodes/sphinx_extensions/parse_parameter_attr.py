@@ -22,7 +22,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class ParameterProxy:
-
     """
     An object that acts as a proxy for documenting containing
     a repr that can be set from a string.
@@ -46,8 +45,7 @@ def find_class(
     nodes = []
     for child in node.children:
         if (
-            isinstance(child, parso.python.tree.Class)
-            and child.name.value == classname  # pyright: ignore
+            isinstance(child, parso.python.tree.Class) and child.name.value == classname  # pyright: ignore
         ):
             nodes.append(child)
         elif isinstance(child, parso.tree.Node):
@@ -78,7 +76,6 @@ def parse_init_function_from_str(
     module = parso.parse(code)
     classes = find_class(module, classname)
     if len(classes) > 1:
-
         LOGGER.warning(
             f"Found more than one class definition for {classname}: Found {classes}"
         )

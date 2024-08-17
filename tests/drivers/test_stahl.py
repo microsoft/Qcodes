@@ -10,7 +10,6 @@ LOG_NAME = "qcodes.instrument.instrument_base"
 
 @pytest.fixture(scope="function")
 def stahl_instrument():
-
     inst = Stahl("Stahl", "ASRL3", pyvisa_sim_file="stahl.yaml")
 
     try:
@@ -28,13 +27,10 @@ def test_parse_idn_string() -> None:
         "serial_number": "123",
         "voltage_range": 5.0,
         "n_channels": 16,
-        "output_type": "bipolar"
+        "output_type": "bipolar",
     }
 
-    with pytest.raises(
-            RuntimeError,
-            match="Unexpected instrument response"
-    ):
+    with pytest.raises(RuntimeError, match="Unexpected instrument response"):
         Stahl.parse_idn_string("HS123 005 16 bla b")
 
 
@@ -46,7 +42,7 @@ def test_get_idn(stahl_instrument) -> None:
         "vendor": "Stahl",
         "model": "BS",
         "serial": "123",
-        "firmware": None
+        "firmware": None,
     }
 
     assert stahl_instrument.n_channels == 16
@@ -88,7 +84,7 @@ def test_get_current(stahl_instrument) -> None:
     """
     Test that we can read currents and that the unit is in Ampere
     """
-    assert stahl_instrument.channel[0].current() == 1E-6
+    assert stahl_instrument.channel[0].current() == 1e-6
     assert stahl_instrument.channel[0].current.unit == "A"
 
 

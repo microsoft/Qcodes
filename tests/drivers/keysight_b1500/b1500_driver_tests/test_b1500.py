@@ -27,37 +27,37 @@ from qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1530A import (
 
 
 def test_make_module_from_model_name(mainframe) -> None:
-
     with pytest.raises(NotImplementedError):
-        KeysightB1500.from_model_name(model='unsupported_module', slot_nr=0,
-                                      parent=mainframe, name='dummy')
+        KeysightB1500.from_model_name(
+            model="unsupported_module", slot_nr=0, parent=mainframe, name="dummy"
+        )
 
-    smu = KeysightB1500.from_model_name(model='B1517A', slot_nr=1,
-                                        parent=mainframe, name='dummy1')
+    smu = KeysightB1500.from_model_name(
+        model="B1517A", slot_nr=1, parent=mainframe, name="dummy1"
+    )
 
     assert isinstance(smu, KeysightB1517A)
 
-    cmu = KeysightB1500.from_model_name(model='B1520A', slot_nr=2,
-                                        parent=mainframe)
+    cmu = KeysightB1500.from_model_name(model="B1520A", slot_nr=2, parent=mainframe)
 
     assert isinstance(cmu, KeysightB1520A)
 
-    wgfmu = KeysightB1500.from_model_name(model='B1530A', slot_nr=3,
-                                          parent=mainframe)
+    wgfmu = KeysightB1500.from_model_name(model="B1530A", slot_nr=3, parent=mainframe)
 
     assert isinstance(wgfmu, KeysightB1530A)
 
-    smu = KeysightB1500.from_model_name(model='B1511B', slot_nr=4,
-                                        parent=mainframe, name='dummy2')
+    smu = KeysightB1500.from_model_name(
+        model="B1511B", slot_nr=4, parent=mainframe, name="dummy2"
+    )
 
     assert isinstance(smu, KeysightB1511B)
 
 
 def test_init(b1500) -> None:
-    assert hasattr(b1500, 'smu1')
-    assert hasattr(b1500, 'smu2')
-    assert hasattr(b1500, 'cmu1')
-    assert hasattr(b1500, 'wgfmu1')
+    assert hasattr(b1500, "smu1")
+    assert hasattr(b1500, "smu2")
+    assert hasattr(b1500, "cmu1")
+    assert hasattr(b1500, "wgfmu1")
 
 
 def test_snapshot_does_not_raise_warnings(b1500) -> None:
@@ -67,10 +67,10 @@ def test_snapshot_does_not_raise_warnings(b1500) -> None:
 
 
 def test_submodule_access_by_class(b1500) -> None:
-    assert b1500.smu1 in b1500.by_kind['SMU']
-    assert b1500.smu2 in b1500.by_kind['SMU']
-    assert b1500.cmu1 in b1500.by_kind['CMU']
-    assert b1500.wgfmu1 in b1500.by_kind['WGFMU']
+    assert b1500.smu1 in b1500.by_kind["SMU"]
+    assert b1500.smu2 in b1500.by_kind["SMU"]
+    assert b1500.cmu1 in b1500.by_kind["CMU"]
+    assert b1500.wgfmu1 in b1500.by_kind["WGFMU"]
 
 
 def test_submodule_access_by_slot(b1500) -> None:
@@ -172,12 +172,12 @@ def test_self_calibration_successful(b1500) -> None:
     mock_ask = MagicMock()
     b1500.ask = mock_ask
 
-    mock_ask.return_value = '0'
+    mock_ask.return_value = "0"
 
     response = b1500.self_calibration()
 
     assert response == CALResponse(0)
-    mock_ask.assert_called_once_with('*CAL?')
+    mock_ask.assert_called_once_with("*CAL?")
 
 
 def test_self_calibration_failed(b1500) -> None:
@@ -185,12 +185,12 @@ def test_self_calibration_failed(b1500) -> None:
     b1500.ask = mock_ask
 
     expected_response = CALResponse(1) + CALResponse(64)
-    mock_ask.return_value = '65'
+    mock_ask.return_value = "65"
 
     response = b1500.self_calibration()
 
     assert response == expected_response
-    mock_ask.assert_called_once_with('*CAL?')
+    mock_ask.assert_called_once_with("*CAL?")
 
 
 def test_error_message(b1500) -> None:
@@ -203,12 +203,12 @@ def test_clear_timer_count(b1500) -> None:
     b1500.write = mock_write
 
     b1500.clear_timer_count()
-    mock_write.assert_called_once_with('TSR')
+    mock_write.assert_called_once_with("TSR")
 
     mock_write.reset_mock()
 
     b1500.clear_timer_count(1)
-    mock_write.assert_called_once_with('TSR 1')
+    mock_write.assert_called_once_with("TSR 1")
 
 
 def test_set_measuremet_mode(b1500) -> None:
@@ -216,27 +216,27 @@ def test_set_measuremet_mode(b1500) -> None:
     b1500.write = mock_write
 
     b1500.set_measurement_mode(mode=constants.MM.Mode.SPOT, channels=[1, 2])
-    mock_write.assert_called_once_with('MM 1,1,2')
+    mock_write.assert_called_once_with("MM 1,1,2")
 
 
 def test_get_measurement_mode(b1500) -> None:
     mock_ask = MagicMock()
     b1500.ask = mock_ask
 
-    mock_ask.return_value = 'MM 1,1,2'
+    mock_ask.return_value = "MM 1,1,2"
     measurement_mode = b1500.get_measurement_mode()
-    assert measurement_mode['mode'] == constants.MM.Mode(1)
-    assert measurement_mode['channels'] == [1, 2]
+    assert measurement_mode["mode"] == constants.MM.Mode(1)
+    assert measurement_mode["channels"] == [1, 2]
 
 
 def test_get_response_format_and_mode(b1500) -> None:
     mock_ask = MagicMock()
     b1500.ask = mock_ask
 
-    mock_ask.return_value = 'FMT 1,1'
+    mock_ask.return_value = "FMT 1,1"
     measurement_mode = b1500.get_response_format_and_mode()
-    assert measurement_mode['format'] == constants.FMT.Format(1)
-    assert measurement_mode['mode'] == constants.FMT.Mode(1)
+    assert measurement_mode["format"] == constants.FMT.Format(1)
+    assert measurement_mode["mode"] == constants.FMT.Mode(1)
 
 
 def test_enable_smu_filters(b1500) -> None:
@@ -244,21 +244,31 @@ def test_enable_smu_filters(b1500) -> None:
     b1500.write = mock_write
 
     b1500.enable_smu_filters(True)
-    mock_write.assert_called_once_with('FL 1')
+    mock_write.assert_called_once_with("FL 1")
 
     mock_write.reset_mock()
 
-    b1500.enable_smu_filters(True, [constants.ChNr.SLOT_01_CH1,
-                                    constants.ChNr.SLOT_02_CH1,
-                                    constants.ChNr.SLOT_03_CH1])
-    mock_write.assert_called_once_with('FL 1,1,2,3')
+    b1500.enable_smu_filters(
+        True,
+        [
+            constants.ChNr.SLOT_01_CH1,
+            constants.ChNr.SLOT_02_CH1,
+            constants.ChNr.SLOT_03_CH1,
+        ],
+    )
+    mock_write.assert_called_once_with("FL 1,1,2,3")
 
     mock_write.reset_mock()
 
-    b1500.enable_smu_filters(True, [constants.ChNr.SLOT_01_CH2,
-                                    constants.ChNr.SLOT_02_CH2,
-                                    constants.ChNr.SLOT_03_CH2])
-    mock_write.assert_called_once_with('FL 1,102,202,302')
+    b1500.enable_smu_filters(
+        True,
+        [
+            constants.ChNr.SLOT_01_CH2,
+            constants.ChNr.SLOT_02_CH2,
+            constants.ChNr.SLOT_03_CH2,
+        ],
+    )
+    mock_write.assert_called_once_with("FL 1,102,202,302")
 
 
 def test_error_message_is_called_after_setting_a_parameter(b1500) -> None:
@@ -267,7 +277,7 @@ def test_error_message_is_called_after_setting_a_parameter(b1500) -> None:
     mock_ask.return_value = '+0,"No Error."'
 
     b1500.enable_smu_filters(True)
-    mock_ask.assert_called_once_with('ERRX?')
+    mock_ask.assert_called_once_with("ERRX?")
 
     mock_ask.reset_mock()
 

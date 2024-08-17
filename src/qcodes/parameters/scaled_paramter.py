@@ -59,7 +59,6 @@ class ScaledParameter(Parameter):
         label: str | None = None,
         unit: str | None = None,
     ) -> None:
-
         # Set label
         if label:
             self.label = label

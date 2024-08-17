@@ -216,7 +216,6 @@ class Parameter(ParameterBase):
             existing_parameter = instrument.parameters.get(name, None)
 
             if existing_parameter:
-
                 # this check is redundant since its also in the baseclass
                 # but if we do not put it here it would be an api break
                 # as parameter duplication check won't be done first,

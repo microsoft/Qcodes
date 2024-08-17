@@ -396,7 +396,6 @@ class CryomagneticsModel4G(VisaInstrument):
             self.write(f"RATE {range_index} {max_rate}")
 
     def write_raw(self, cmd: str) -> None:
-
         try:
             super().write_raw(cmd)
         except VisaIOError as err:
@@ -414,7 +413,6 @@ class CryomagneticsModel4G(VisaInstrument):
                 raise err
 
     def ask_raw(self, cmd: str) -> str:
-
         try:
             result = super().ask_raw(cmd)
         except VisaIOError as err:

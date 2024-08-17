@@ -253,7 +253,6 @@ class TogetherSweep:
     """
 
     def __init__(self, *sweeps: AbstractSweep):
-
         if len(sweeps) == 0:
             raise ValueError("A TogetherSweep must contain at least one sweep.")
 

@@ -26,7 +26,7 @@ class KeysightB1511B(KeysightB1517A):
         parent: "qcodes.instrument_drivers.Keysight.keysightb1500.KeysightB1500",
         name: str | None,
         slot_nr: int,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(parent, name, slot_nr, **kwargs)
         self._valid_i_measure_ranges: list[IMeasRange] = [
@@ -51,15 +51,30 @@ class KeysightB1511B(KeysightB1517A):
             IMeasRange.FIX_100mA,
         ]
         self._asu_valid_i_measure_ranges: list[IMeasRange] = [
-            IMeasRange.MIN_1pA, IMeasRange.MIN_10pA, IMeasRange.MIN_100pA,
-            IMeasRange.FIX_1pA, IMeasRange.FIX_10pA, IMeasRange.FIX_100pA]
+            IMeasRange.MIN_1pA,
+            IMeasRange.MIN_10pA,
+            IMeasRange.MIN_100pA,
+            IMeasRange.FIX_1pA,
+            IMeasRange.FIX_10pA,
+            IMeasRange.FIX_100pA,
+        ]
         self._valid_i_output_ranges: list[IOutputRange] = [
-            IOutputRange.AUTO, IOutputRange.MIN_1nA, IOutputRange.MIN_10nA,
-            IOutputRange.MIN_100nA, IOutputRange.MIN_1uA,
-            IOutputRange.MIN_10uA, IOutputRange.MIN_100uA,
-            IOutputRange.MIN_1mA, IOutputRange.MIN_10mA, IOutputRange.MIN_100mA]
+            IOutputRange.AUTO,
+            IOutputRange.MIN_1nA,
+            IOutputRange.MIN_10nA,
+            IOutputRange.MIN_100nA,
+            IOutputRange.MIN_1uA,
+            IOutputRange.MIN_10uA,
+            IOutputRange.MIN_100uA,
+            IOutputRange.MIN_1mA,
+            IOutputRange.MIN_10mA,
+            IOutputRange.MIN_100mA,
+        ]
         self._asu_valid_i_output_ranges: list[IOutputRange] = [
-            IOutputRange.MIN_1pA, IOutputRange.MIN_10pA, IOutputRange.MIN_100pA]
+            IOutputRange.MIN_1pA,
+            IOutputRange.MIN_10pA,
+            IOutputRange.MIN_100pA,
+        ]
 
         self.asu_present = False
 
@@ -75,18 +90,19 @@ class KeysightB1511B(KeysightB1517A):
         self._asu_present = val
 
         if self.asu_present:
-            self._valid_i_measure_ranges = self._valid_i_measure_ranges + \
-                                           self._asu_valid_i_measure_ranges
-            self._valid_i_output_ranges = self._valid_i_output_ranges + \
-                                          self._asu_valid_i_output_ranges
+            self._valid_i_measure_ranges = (
+                self._valid_i_measure_ranges + self._asu_valid_i_measure_ranges
+            )
+            self._valid_i_output_ranges = (
+                self._valid_i_output_ranges + self._asu_valid_i_output_ranges
+            )
         else:
             self._valid_i_measure_ranges = list(
-                set(self._valid_i_measure_ranges) -
-                set(self._asu_valid_i_measure_ranges)
+                set(self._valid_i_measure_ranges)
+                - set(self._asu_valid_i_measure_ranges)
             )
             self._valid_i_output_ranges = list(
-                set(self._valid_i_output_ranges) -
-                set(self._asu_valid_i_output_ranges)
+                set(self._valid_i_output_ranges) - set(self._asu_valid_i_output_ranges)
             )
 
 

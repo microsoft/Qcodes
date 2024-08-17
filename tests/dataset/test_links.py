@@ -21,23 +21,24 @@ def generate_some_links(N: int) -> list[Link]:
     """
     Generate N links with the same head
     """
+
     def _timestamp() -> int:
         """
         return a random timestamp that is approximately
         one day in the past.
         """
-        timestamp = datetime.now() - timedelta(days=1,
-                                               seconds=random.randint(1, 1000))
-        return int(round(timestamp.timestamp()*1000))
-
+        timestamp = datetime.now() - timedelta(days=1, seconds=random.randint(1, 1000))
+        return int(round(timestamp.timestamp() * 1000))
 
     known_types = ("fit", "analysis", "step")
-    known_descs = ("A second-order fit",
-                   "Manual analysis (see notebook)",
-                   "Step 3 in the characterisation")
+    known_descs = (
+        "A second-order fit",
+        "Manual analysis (see notebook)",
+        "Step 3 in the characterisation",
+    )
 
     head_guid = generate_guid(_timestamp())
-    head_guids = [head_guid]*N
+    head_guids = [head_guid] * N
     tail_guids = [generate_guid(_timestamp()) for _ in range(N)]
     edge_types = [known_types[i % len(known_types)] for i in range(N)]
     descriptions = [known_descs[i % len(known_descs)] for i in range(N)]
@@ -75,14 +76,14 @@ def test_link_construction_raises(not_guid) -> None:
     edge_type = "fit"
 
     match = re.escape(
-        f'The guid given for head is not a valid guid. Received '
-        f'{not_guid}.')
+        f"The guid given for head is not a valid guid. Received {not_guid}."
+    )
     with pytest.raises(ValueError, match=match):
         Link(not_guid, tail_guid, edge_type)
 
     match = re.escape(
-        f'The guid given for tail is not a valid guid. Received '
-        f'{not_guid}')
+        f"The guid given for tail is not a valid guid. Received {not_guid}"
+    )
     with pytest.raises(ValueError, match=match):
         Link(head_guid, not_guid, edge_type)
 
@@ -95,10 +96,14 @@ def test_link_to_str() -> None:
 
     link = Link(head_guid, tail_guid, edge_type, description)
 
-    expected_str = json.dumps({"head": head_guid,
-                               "tail": tail_guid,
-                               "edge_type": edge_type,
-                               "description": description})
+    expected_str = json.dumps(
+        {
+            "head": head_guid,
+            "tail": tail_guid,
+            "edge_type": edge_type,
+            "description": description,
+        }
+    )
 
     assert link_to_str(link) == expected_str
 
@@ -109,11 +114,14 @@ def test_str_to_link() -> None:
     edge_type = "test"
     description = "used in test_str_to_link"
 
-
-    lstr = json.dumps({"head": head_guid,
-                       "tail": tail_guid,
-                       "edge_type": edge_type,
-                       "description": description})
+    lstr = json.dumps(
+        {
+            "head": head_guid,
+            "tail": tail_guid,
+            "edge_type": edge_type,
+            "description": description,
+        }
+    )
 
     expected_link = Link(head_guid, tail_guid, edge_type, description)
 

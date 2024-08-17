@@ -36,19 +36,19 @@ with warnings.catch_warnings():
     )
 
 
-_time_resolution = time.get_clock_info('time').resolution
+_time_resolution = time.get_clock_info("time").resolution
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
 field_limit = [
     lambda x, y, z: x == 0 and y == 0 and z < 3,
-    lambda x, y, z: np.linalg.norm([x, y, z]) < 2
+    lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
 ]
 
 LOG_NAME = "qcodes.instrument.instrument_base"
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def magnet_axes_instances():
     """
     Start three mock instruments representing current drivers for the x, y,
@@ -117,9 +117,9 @@ def _make_ami430():
 # reproduce / write tests for. Instead, we use normal logging from our
 # instrument.visa module
 iostream = io.StringIO()
-logger = logging.getLogger('qcodes.instrument.visa')
+logger = logging.getLogger("qcodes.instrument.visa")
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(created)s - %(message)s')
+formatter = logging.Formatter("%(created)s - %(message)s")
 lh = logging.StreamHandler(iostream)
 logger.addHandler(lh)
 lh.setLevel(logging.DEBUG)
@@ -130,18 +130,18 @@ random_coordinates = {
     "cartesian": tuples(
         floats(min_value=0, max_value=1),  # x
         floats(min_value=0, max_value=1),  # y
-        floats(min_value=0, max_value=1)  # z
+        floats(min_value=0, max_value=1),  # z
     ),
     "spherical": tuples(
         floats(min_value=0, max_value=1),  # r
         floats(min_value=0, max_value=180),  # theta
-        floats(min_value=0, max_value=180)  # phi
+        floats(min_value=0, max_value=180),  # phi
     ),
     "cylindrical": tuples(
         floats(min_value=0, max_value=1),  # rho
         floats(min_value=0, max_value=180),  # phi
-        floats(min_value=0, max_value=1)  # z
-    )
+        floats(min_value=0, max_value=1),  # z
+    ),
 }
 
 
@@ -320,7 +320,7 @@ def test_cartesian_setpoints(current_driver, set_target) -> None:
     y = current_driver.y()
     z = current_driver.z()
 
-    get_target = dict(zip(('x', 'y', 'z'), (x, y, z)))
+    get_target = dict(zip(("x", "y", "z"), (x, y, z)))
 
     set_vector = FieldVector(*set_target)
     get_vector = FieldVector(**get_target)
@@ -345,8 +345,8 @@ def test_spherical_setpoints(current_driver, set_target) -> None:
     theta = current_driver.theta()
     phi = current_driver.phi()
 
-    get_target = dict(zip(('r', 'theta', 'phi'), (r, theta, phi)))
-    set_target = dict(zip(('r', 'theta', 'phi'), set_target))
+    get_target = dict(zip(("r", "theta", "phi"), (r, theta, phi)))
+    set_target = dict(zip(("r", "theta", "phi"), set_target))
 
     set_vector = FieldVector(**set_target)
     get_vector = FieldVector(**get_target)
@@ -371,8 +371,8 @@ def test_cylindrical_setpoints(current_driver, set_target) -> None:
     z = current_driver.z()
     phi = current_driver.phi()
 
-    get_target = dict(zip(('rho', 'phi', 'z'), (rho, phi, z)))
-    set_target = dict(zip(('rho', 'phi', 'z'), set_target))
+    get_target = dict(zip(("rho", "phi", "z"), (rho, phi, z)))
+    set_target = dict(zip(("rho", "phi", "z"), set_target))
 
     set_vector = FieldVector(**set_target)
     get_vector = FieldVector(**get_target)
@@ -380,8 +380,11 @@ def test_cylindrical_setpoints(current_driver, set_target) -> None:
 
 
 @given(set_target=random_coordinates["cartesian"])
-@settings(max_examples=10, deadline=500,
-          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=10,
+    deadline=500,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 def test_measured(current_driver, set_target) -> None:
     """
     Simply call the measurement methods and verify that no exceptions
@@ -396,32 +399,27 @@ def test_measured(current_driver, set_target) -> None:
     cartesian_z = current_driver.z_measured()
 
     assert np.allclose(cartesian, [cartesian_x, cartesian_y, cartesian_z])
-    assert FieldVector(*set_target).is_equal(FieldVector(x=cartesian_x,
-                                                         y=cartesian_y,
-                                                         z=cartesian_z))
+    assert FieldVector(*set_target).is_equal(
+        FieldVector(x=cartesian_x, y=cartesian_y, z=cartesian_z)
+    )
 
     spherical = current_driver.spherical_measured()
     spherical_field = current_driver.field_measured()
     spherical_theta = current_driver.theta_measured()
     spherical_phi = current_driver.phi_measured()
 
-    assert FieldVector(*set_target).is_equal(FieldVector(
-        r=spherical_field,
-        theta=spherical_theta,
-        phi=spherical_phi)
+    assert FieldVector(*set_target).is_equal(
+        FieldVector(r=spherical_field, theta=spherical_theta, phi=spherical_phi)
     )
-    assert np.allclose(spherical,
-                       [spherical_field, spherical_theta, spherical_phi])
+    assert np.allclose(spherical, [spherical_field, spherical_theta, spherical_phi])
 
     cylindrical = current_driver.cylindrical_measured()
     cylindrical_rho = current_driver.rho_measured()
 
-    assert FieldVector(*set_target).is_equal(FieldVector(rho=cylindrical_rho,
-                                                         phi=spherical_phi,
-                                                         z=cartesian_z))
-    assert np.allclose(cylindrical, [cylindrical_rho,
-                                     spherical_phi,
-                                     cartesian_z])
+    assert FieldVector(*set_target).is_equal(
+        FieldVector(rho=cylindrical_rho, phi=spherical_phi, z=cartesian_z)
+    )
+    assert np.allclose(cylindrical, [cylindrical_rho, spherical_phi, cartesian_z])
 
 
 def get_ramp_down_order(messages: list[str]) -> list[str]:
@@ -434,7 +432,8 @@ def get_ramp_down_order(messages: list[str]) -> list[str]:
         g = re.search(r"\[(.*).*\] Writing: CONF:FIELD:TARG", msg)
         if g is None:
             raise RuntimeError(
-                f"No match found in {msg!r} when getting ramp down order")
+                f"No match found in {msg!r} when getting ramp down order"
+            )
         name = g.groups()[0]
         order.append(name)
 
@@ -493,8 +492,7 @@ def test_field_limit_exception(current_driver) -> None:
     set_points = zip(*(i.flatten() for i in np.meshgrid(x, y, z)))
 
     for set_point in set_points:
-        should_not_raise = any([is_safe(*set_point)
-                                for is_safe in field_limit])
+        should_not_raise = any([is_safe(*set_point) for is_safe in field_limit])
 
         if should_not_raise:
             current_driver.cartesian(set_point)
@@ -504,7 +502,7 @@ def test_field_limit_exception(current_driver) -> None:
 
             assert "field would exceed limit" in excinfo.value.args[0]
             vals_and_setpoints = zip(current_driver.cartesian(), set_point)
-            belief = not(all([val == sp for val, sp in vals_and_setpoints]))
+            belief = not (all([val == sp for val, sp in vals_and_setpoints]))
             assert belief
 
 
@@ -591,7 +589,6 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     ami3d.vector_ramp_rate(0.05)
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
-
         # Initiate the simultaneous ramp
         ami3d.cartesian((0.5, 0.5, 0.5))
 
@@ -677,7 +674,6 @@ def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ra
     restore_parameters_stack.enter_context(ami3d.block_during_ramp.set_to(True))
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
-
         # Set individual ramp rates to known values
         ami3d._instrument_x.ramp_rate(0.09)
         ami3d._instrument_y.ramp_rate(0.10)
@@ -752,18 +748,15 @@ def test_reducing_current_ramp_limit_reduces_a_higher_ramp_rate(ami430) -> None:
     factor = 0.8
 
     # The following fact is expected for the test
-    assert ami430.ramp_rate() \
-        <= ami430.current_ramp_limit() * ami430.coil_constant()
+    assert ami430.ramp_rate() <= ami430.current_ramp_limit() * ami430.coil_constant()
 
     # Set ramp_rate_limit to value that is smaller than the ramp_rate of now
-    new_current_ramp_limit = ami430.ramp_rate() \
-        * factor / ami430.coil_constant()
+    new_current_ramp_limit = ami430.ramp_rate() * factor / ami430.coil_constant()
     ami430.current_ramp_limit(new_current_ramp_limit)
 
     # Assert that the ramp_rate changed to fit within the new field_ramp_limit
     assert ami430.ramp_rate() <= ami430.field_ramp_limit()
-    assert ami430.ramp_rate() \
-        <= ami430.current_ramp_limit() * ami430.coil_constant()
+    assert ami430.ramp_rate() <= ami430.current_ramp_limit() * ami430.coil_constant()
 
     # Well, actually, the new ramp_rate is equal to the new field_ramp_limit
     assert ami430.ramp_rate() == ami430.field_ramp_limit()
@@ -801,27 +794,23 @@ def test_reducing_current_ramp_limit_keeps_a_lower_ramp_rate_as_is(ami430) -> No
     factor = 1.2
 
     # The following fact is expected for the test
-    assert ami430.ramp_rate() \
-        <= ami430.current_ramp_limit() * ami430.coil_constant()
+    assert ami430.ramp_rate() <= ami430.current_ramp_limit() * ami430.coil_constant()
 
     old_ramp_rate = ami430.ramp_rate()
 
     # Set ramp_rate_limit to value that is larger than the ramp_rate of now
-    new_current_ramp_limit = ami430.ramp_rate() \
-        * factor / ami430.coil_constant()
+    new_current_ramp_limit = ami430.ramp_rate() * factor / ami430.coil_constant()
     ami430.current_ramp_limit(new_current_ramp_limit)
 
     # Assert that the ramp_rate remained within the new field_ramp_limit
     assert ami430.ramp_rate() <= ami430.field_ramp_limit()
-    assert ami430.ramp_rate() \
-        <= ami430.current_ramp_limit() * ami430.coil_constant()
+    assert ami430.ramp_rate() <= ami430.current_ramp_limit() * ami430.coil_constant()
 
     # Assert that ramp_rate hasn't actually changed
     assert ami430.ramp_rate() == old_ramp_rate
 
 
 def test_blocking_ramp_parameter(current_driver, caplog: LogCaptureFixture) -> None:
-
     assert current_driver.block_during_ramp() is True
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
@@ -830,16 +819,15 @@ def test_blocking_ramp_parameter(current_driver, caplog: LogCaptureFixture) -> N
         current_driver.cartesian((0, 0, 1))
 
         messages = [record.message for record in caplog.records]
-        assert messages[-1] == '[z(AMI430_VISA)] Finished blocking ramp'
-        assert messages[-6] == \
-            '[z(AMI430_VISA)] Starting blocking ramp of z to 1.0'
+        assert messages[-1] == "[z(AMI430_VISA)] Finished blocking ramp"
+        assert messages[-6] == "[z(AMI430_VISA)] Starting blocking ramp of z to 1.0"
 
         caplog.clear()
         current_driver.block_during_ramp(False)
         current_driver.cartesian((0, 0, 0))
         messages = [record.message for record in caplog.records]
 
-        assert len([mssg for mssg in messages if 'blocking' in mssg]) == 0
+        assert len([mssg for mssg in messages if "blocking" in mssg]) == 0
 
 
 def test_current_and_field_params_interlink_at_init(ami430) -> None:
@@ -854,11 +842,9 @@ def test_current_and_field_params_interlink_at_init(ami430) -> None:
     current_limit = ami430.current_limit()
     field_limit = ami430.field_limit()
 
-    np.testing.assert_almost_equal(
-        field_ramp_limit, current_ramp_limit*coil_constant)
+    np.testing.assert_almost_equal(field_ramp_limit, current_ramp_limit * coil_constant)
 
-    np.testing.assert_almost_equal(
-        field_limit, current_limit*coil_constant)
+    np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
 def test_current_and_field_params_interlink__change_current_ramp_limit(
@@ -890,24 +876,17 @@ def test_current_and_field_params_interlink__change_current_ramp_limit(
     field_limit = ami430.field_limit()
 
     # The following parameters are expected to change
-    np.testing.assert_almost_equal(
-        current_ramp_limit, current_ramp_limit_new)
-    np.testing.assert_almost_equal(
-        field_ramp_limit, field_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(current_ramp_limit, current_ramp_limit_new)
+    np.testing.assert_almost_equal(field_ramp_limit, field_ramp_limit_new_expected)
 
     # The following parameters are not expected to change
-    np.testing.assert_almost_equal(
-        coil_constant, coil_constant_old)
-    np.testing.assert_almost_equal(
-        current_limit, current_limit_old)
-    np.testing.assert_almost_equal(
-        field_limit, field_limit_old)
+    np.testing.assert_almost_equal(coil_constant, coil_constant_old)
+    np.testing.assert_almost_equal(current_limit, current_limit_old)
+    np.testing.assert_almost_equal(field_limit, field_limit_old)
 
     # Proportions are expected to hold between field and current parameters
-    np.testing.assert_almost_equal(
-        field_ramp_limit, current_ramp_limit*coil_constant)
-    np.testing.assert_almost_equal(
-        field_limit, current_limit*coil_constant)
+    np.testing.assert_almost_equal(field_ramp_limit, current_ramp_limit * coil_constant)
+    np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
 def test_current_and_field_params_interlink__change_field_ramp_limit(
@@ -939,24 +918,17 @@ def test_current_and_field_params_interlink__change_field_ramp_limit(
     field_limit = ami430.field_limit()
 
     # The following parameters are expected to change
-    np.testing.assert_almost_equal(
-        field_ramp_limit, field_ramp_limit_new)
-    np.testing.assert_almost_equal(
-        current_ramp_limit, current_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(field_ramp_limit, field_ramp_limit_new)
+    np.testing.assert_almost_equal(current_ramp_limit, current_ramp_limit_new_expected)
 
     # The following parameters are not expected to change
-    np.testing.assert_almost_equal(
-        coil_constant, coil_constant_old)
-    np.testing.assert_almost_equal(
-        current_limit, current_limit_old)
-    np.testing.assert_almost_equal(
-        field_limit, field_limit_old)
+    np.testing.assert_almost_equal(coil_constant, coil_constant_old)
+    np.testing.assert_almost_equal(current_limit, current_limit_old)
+    np.testing.assert_almost_equal(field_limit, field_limit_old)
 
     # Proportions are expected to hold between field and current parameters
-    np.testing.assert_almost_equal(
-        field_ramp_limit, current_ramp_limit*coil_constant)
-    np.testing.assert_almost_equal(
-        field_limit, current_limit*coil_constant)
+    np.testing.assert_almost_equal(field_ramp_limit, current_ramp_limit * coil_constant)
+    np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
 def test_current_and_field_params_interlink__change_coil_constant(
@@ -991,22 +963,15 @@ def test_current_and_field_params_interlink__change_coil_constant(
     field_limit = ami430.field_limit()
 
     # The following parameters are expected to change
-    np.testing.assert_almost_equal(
-        coil_constant, coil_constant_new)
-    np.testing.assert_almost_equal(
-        current_ramp_limit, current_ramp_limit_new_expected)
-    np.testing.assert_almost_equal(
-        field_ramp_limit, field_ramp_limit_new_expected)
-    np.testing.assert_almost_equal(
-        current_limit, current_limit_new_expected)
-    np.testing.assert_almost_equal(
-        field_limit, field_limit_new_expected)
+    np.testing.assert_almost_equal(coil_constant, coil_constant_new)
+    np.testing.assert_almost_equal(current_ramp_limit, current_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(field_ramp_limit, field_ramp_limit_new_expected)
+    np.testing.assert_almost_equal(current_limit, current_limit_new_expected)
+    np.testing.assert_almost_equal(field_limit, field_limit_new_expected)
 
     # Proportions are expected to hold between field and current parameters
-    np.testing.assert_almost_equal(
-        field_ramp_limit, current_ramp_limit*coil_constant)
-    np.testing.assert_almost_equal(
-        field_limit, current_limit*coil_constant)
+    np.testing.assert_almost_equal(field_ramp_limit, current_ramp_limit * coil_constant)
+    np.testing.assert_almost_equal(field_limit, current_limit * coil_constant)
 
 
 def test_current_and_field_params_interlink__permutations_of_tests(ami430) -> None:
@@ -1027,46 +992,64 @@ def test_current_and_field_params_interlink__permutations_of_tests(ami430) -> No
         test_current_and_field_params_interlink_at_init(ami430)
 
         test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.2)
+            ami430, factor=1.2
+        )
         test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=1.0023)
+            ami430, factor=1.0023
+        )
         test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=0.98)
+            ami430, factor=0.98
+        )
 
         test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.53)
+            ami430, factor=1.53
+        )
         test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=2.0)
+            ami430, factor=2.0
+        )
         test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=0.633)
+            ami430, factor=0.633
+        )
 
         test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=1.753)
+            ami430, factor=1.753
+        )
         test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=0.876)
+            ami430, factor=0.876
+        )
         test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=4.6)
+            ami430, factor=4.6
+        )
 
         test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.87)
+            ami430, factor=1.87
+        )
         test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=2.11)
+            ami430, factor=2.11
+        )
         test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=1.0020)
+            ami430, factor=1.0020
+        )
 
         test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=0.42)
+            ami430, factor=0.42
+        )
         test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=3.1415)
+            ami430, factor=3.1415
+        )
         test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=1.544)
+            ami430, factor=1.544
+        )
 
         test_current_and_field_params_interlink__change_coil_constant(
-            ami430, factor=0.12)
+            ami430, factor=0.12
+        )
         test_current_and_field_params_interlink__change_field_ramp_limit(
-            ami430, factor=0.4422)
+            ami430, factor=0.4422
+        )
         test_current_and_field_params_interlink__change_current_ramp_limit(
-            ami430, factor=0.00111)
+            ami430, factor=0.00111
+        )
 
 
 class PDict(TypedDict):
@@ -1091,8 +1074,8 @@ def _parametrization_kwargs() -> PDict:
             + [str(t) for t in numpy_floats]
         ),
     ):
-        kwargs['argvalues'].append(type_constructor(2.2))
-        kwargs['ids'].append(type_name)
+        kwargs["argvalues"].append(type_constructor(2.2))
+        kwargs["ids"].append(type_name)
 
     return kwargs
 
@@ -1112,8 +1095,9 @@ def test_numeric_field_limit(
     ami.cartesian(target_within_limit)
 
     target_outside_limit = (field_limit * 1.05, 0, 0)
-    with pytest.raises(ValueError,
-                       match='_set_fields aborted; field would exceed limit'):
+    with pytest.raises(
+        ValueError, match="_set_fields aborted; field would exceed limit"
+    ):
         ami.cartesian(target_outside_limit)
 
 
@@ -1126,8 +1110,8 @@ def test_ramp_rate_units_and_field_units_at_init(ami430) -> None:
     initial_ramp_rate_units = ami430.ramp_rate_units()
     initial_field_units = ami430.field_units()
 
-    assert initial_ramp_rate_units == 'seconds'
-    assert initial_field_units == 'tesla'
+    assert initial_ramp_rate_units == "seconds"
+    assert initial_field_units == "tesla"
 
     assert ami430.coil_constant.unit == "T/A"
     assert ami430.field_limit.unit == "T"
@@ -1177,15 +1161,16 @@ def test_change_ramp_rate_units_parameter(
     assert ami430.current_ramp_limit.scale == scale
 
     # Assert `coil_constant` value has been updated
-    assert ami430.coil_constant.get_latest.get_timestamp() \
-           > coil_constant_timestamp
+    assert ami430.coil_constant.get_latest.get_timestamp() > coil_constant_timestamp
 
     ami430.ramp_rate_units("seconds")
 
 
-@pytest.mark.parametrize(('new_value', 'unit_string'),
-                         (('tesla', 'T'), ('kilogauss', 'kG')),
-                         ids=('tesla', 'kilogauss'))
+@pytest.mark.parametrize(
+    ("new_value", "unit_string"),
+    (("tesla", "T"), ("kilogauss", "kG")),
+    ids=("tesla", "kilogauss"),
+)
 def test_change_field_units_parameter(ami430, new_value, unit_string) -> None:
     """
     Test that changing value of field_units parameter is reflected in
@@ -1216,8 +1201,7 @@ def test_change_field_units_parameter(ami430, new_value, unit_string) -> None:
     assert ami430.field_ramp_limit.unit.startswith(unit_string + "/")
 
     # Assert `coil_constant` value has been updated
-    assert ami430.coil_constant.get_latest.get_timestamp() \
-           > coil_constant_timestamp
+    assert ami430.coil_constant.get_latest.get_timestamp() > coil_constant_timestamp
 
     ami430.field_units("tesla")
 

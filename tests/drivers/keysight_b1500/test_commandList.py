@@ -9,33 +9,33 @@ def uut():
 
 
 def test_append(uut: CommandList) -> None:
-    uut.append('a')
-    uut.append('b')
+    uut.append("a")
+    uut.append("b")
 
-    assert ['a', 'b'] == uut
+    assert ["a", "b"] == uut
 
 
 def test_set_final(uut) -> None:
-    uut.append('a')
+    uut.append("a")
 
     uut.set_final()
 
     with pytest.raises(ValueError):
-        uut.append('b')
+        uut.append("b")
 
 
 def test_clear(uut) -> None:
-    uut.append('a')
+    uut.append("a")
     uut.set_final()
 
     uut.clear()
-    uut.append('b')
+    uut.append("b")
 
-    assert ['b'] == uut
+    assert ["b"] == uut
 
 
 def test_string_representation(uut) -> None:
-    uut.append('a')
-    uut.append('b')
+    uut.append("a")
+    uut.append("b")
 
-    assert 'a;b' == str(uut)
+    assert "a;b" == str(uut)

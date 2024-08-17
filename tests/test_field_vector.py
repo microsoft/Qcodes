@@ -2,6 +2,7 @@
 Test properties of the coordinate transforms in the field vector module to
 test if everything has been correctly implemented.
 """
+
 import json
 from functools import partial
 
@@ -96,19 +97,18 @@ def test_cylindrical_properties(cylindrical0) -> None:
     assert np.allclose(cartisian0, cartisian1 * np.array([-1, -1, 1]))
 
 
-@given(
-    random_coordinates["cylindrical"],
-    random_coordinates["spherical"]
-)
+@given(random_coordinates["cylindrical"], random_coordinates["spherical"])
 @settings(max_examples=10)
 def test_triangle_inequality(cylindrical0, spherical0) -> None:
     cylindrical0 = FieldVector(**dict(zip(["rho", "phi", "z"], cylindrical0)))
     spherical0 = FieldVector(**dict(zip(["r", "phi", "theta"], spherical0)))
 
-    assert (cylindrical0 + spherical0).norm() \
-           <= (cylindrical0.norm() + spherical0.norm())
-    assert cylindrical0.distance(spherical0) \
-           <= (cylindrical0.norm() + spherical0.norm())
+    assert (cylindrical0 + spherical0).norm() <= (
+        cylindrical0.norm() + spherical0.norm()
+    )
+    assert cylindrical0.distance(spherical0) <= (
+        cylindrical0.norm() + spherical0.norm()
+    )
 
 
 @given(random_coordinates["cartesian"])
@@ -119,7 +119,7 @@ def test_homogeneous_roundtrip(cartesian0) -> None:
 
     assert np.allclose(
         vec.get_components(*"xyz"),
-        FieldVector.from_homogeneous(h_vec).get_components(*"xyz")
+        FieldVector.from_homogeneous(h_vec).get_components(*"xyz"),
     )
 
 
@@ -130,8 +130,8 @@ def test_json_dump(spherical0) -> None:
     dump = json.dumps(vec, cls=NumpyJSONEncoder)
 
     assert json.loads(dump) == {
-        '__class__': FieldVector.__name__,
-        '__args__': [vec.x, vec.y, vec.z]
+        "__class__": FieldVector.__name__,
+        "__args__": [vec.x, vec.y, vec.z],
     }
 
 

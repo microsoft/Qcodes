@@ -2,6 +2,7 @@
 This module defines the Link dataclass as well as two functions to read and
 write an Link object to/from string, respectively
 """
+
 from __future__ import annotations
 
 import json
@@ -22,6 +23,7 @@ class Link:
         edge_type: a name to represent the type of the edge
         description: free-form optional field add a description of the graph
     """
+
     head: str
     tail: str
     edge_type: str
@@ -40,8 +42,9 @@ class Link:
             validate_guid_format(node_guid)
         except ValueError:
             raise ValueError(
-                f'The guid given for {node} is not a valid guid. Received '
-                f'{node_guid}.')
+                f"The guid given for {node} is not a valid guid. Received "
+                f"{node_guid}."
+            )
 
     def __post_init__(self) -> None:
         self.validate_node(self.head, "head")
@@ -77,7 +80,7 @@ def str_to_links(links_string: str) -> list[Link]:
     """
     Convert a string into a list of Links
     """
-    if links_string == '[]':
+    if links_string == "[]":
         return []
     link_dicts = [json.loads(l_str) for l_str in json.loads(links_string)]
     links = [Link(**ld) for ld in link_dicts]

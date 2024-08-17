@@ -27,6 +27,7 @@ class KeysightB1530A(KeysightB1500Module):
             class.
         slot_nr: Slot number of this module (not channel number)
     """
+
     MODULE_KIND = ModuleKind.WGFMU
 
     def __init__(

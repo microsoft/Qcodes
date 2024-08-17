@@ -31,9 +31,9 @@ def test_snapshot_skip_params_update(
     calls :meth:`snapshot`
     """
 
-    inst = SnapShotTestInstrument('snapshot_inst_1',
-                                  params=params,
-                                  params_to_skip=params_to_skip)
+    inst = SnapShotTestInstrument(
+        "snapshot_inst_1", params=params, params_to_skip=params_to_skip
+    )
     request.addfinalizer(inst.close)
 
     assert list(inst._get_calls.values()) == [0, 0, 0, 0]
@@ -75,9 +75,7 @@ def test_snapshot_exclude_params(
     calls :meth:`snapshot`
     """
 
-    inst = SnapShotTestInstrument('snapshot_inst_2',
-                                  params=params,
-                                  params_to_skip=[])
+    inst = SnapShotTestInstrument("snapshot_inst_2", params=params, params_to_skip=[])
     request.addfinalizer(inst.close)
 
     params.insert(0, "IDN")  # Is added by default to a instrument

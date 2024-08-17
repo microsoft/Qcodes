@@ -741,7 +741,6 @@ class SignalHoundUSBSA124B(Instrument):
         data = np.zeros(sweep_len)
         Navg = self.avg()
         for i in range(Navg):
-
             datamin = np.zeros((sweep_len), dtype=np.float32)
             datamax = np.zeros((sweep_len), dtype=np.float32)
 

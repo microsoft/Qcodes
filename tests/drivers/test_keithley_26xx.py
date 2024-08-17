@@ -21,22 +21,23 @@ def _make_driver():
 
 @pytest.fixture(scope="function", name="smus")
 def _make_smus(driver):
-    smu_names = {'smua', 'smub'}
+    smu_names = {"smua", "smub"}
     assert smu_names == set(list(driver.submodules.keys()))
 
-    yield tuple(getattr(driver, smu_name)
-                for smu_name in smu_names)
+    yield tuple(getattr(driver, smu_name) for smu_name in smu_names)
 
 
 def test_idn(driver) -> None:
-    assert {'firmware': '3.0.0',
-            'model': '2601B',
-            'serial': '1398687',
-            'vendor': 'Keithley Instruments Inc.'} == driver.IDN()
+    assert {
+        "firmware": "3.0.0",
+        "model": "2601B",
+        "serial": "1398687",
+        "vendor": "Keithley Instruments Inc.",
+    } == driver.IDN()
 
 
 def test_smu_channels_and_their_parameters(driver) -> None:
-    assert {'smua', 'smub'} == set(list(driver.submodules.keys()))
+    assert {"smua", "smub"} == set(list(driver.submodules.keys()))
 
     for smu_name in ("smua", "smub"):
         smu = getattr(driver, smu_name)
@@ -55,9 +56,9 @@ def test_smu_channels_and_their_parameters(driver) -> None:
 
         assert 0.0 == smu.res()
 
-        assert 'current' == smu.mode()
-        smu.mode('voltage')
-        assert smu.mode() == 'voltage'
+        assert "current" == smu.mode()
+        smu.mode("voltage")
+        assert smu.mode() == "voltage"
 
         assert smu.output() is False
         smu.output(True)
@@ -111,9 +112,9 @@ def test_smu_channels_and_their_parameters(driver) -> None:
         smu.limiti(2.3)
         assert smu.limiti() == 2.3
 
-        assert 'current' == smu.timetrace_mode()
-        smu.timetrace_mode('voltage')
-        assert smu.timetrace_mode() == 'voltage'
+        assert "current" == smu.timetrace_mode()
+        smu.timetrace_mode("voltage")
+        assert smu.timetrace_mode() == "voltage"
 
         assert 500 == smu.timetrace_npts()
         smu.timetrace_npts(600)
@@ -125,19 +126,19 @@ def test_smu_channels_and_their_parameters(driver) -> None:
 
         dt = smu.timetrace_dt()
         npts = smu.timetrace_npts()
-        expected_time_axis = np.linspace(0, dt*npts, npts, endpoint=False)
+        expected_time_axis = np.linspace(0, dt * npts, npts, endpoint=False)
         assert len(expected_time_axis) == len(smu.time_axis())
         assert Counter(expected_time_axis) == Counter(smu.time_axis())
         assert set(expected_time_axis) == set(smu.time_axis())
 
-        smu.timetrace_mode('current')
-        assert 'A' == smu.timetrace.unit
-        assert 'Current' == smu.timetrace.label
+        smu.timetrace_mode("current")
+        assert "A" == smu.timetrace.unit
+        assert "Current" == smu.timetrace.label
         assert smu.time_axis == smu.timetrace.setpoints[0]
 
-        smu.timetrace_mode('voltage')
-        assert 'V' == smu.timetrace.unit
-        assert 'Voltage' == smu.timetrace.label
+        smu.timetrace_mode("voltage")
+        assert "V" == smu.timetrace.unit
+        assert "Voltage" == smu.timetrace.label
         assert smu.time_axis == smu.timetrace.setpoints[0]
 
 

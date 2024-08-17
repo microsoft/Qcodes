@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 
     from typing_extensions import Unpack
 
-KEYSIGHT_MODELS = {'34934A': Keysight34934A}
+KEYSIGHT_MODELS = {"34934A": Keysight34934A}
 
 S = TypeVar("S", bound="Keysight34980A")
 P = ParamSpec("P")
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def post_execution_status_poll(
@@ -36,6 +36,7 @@ def post_execution_status_poll(
     Args:
         func: function to wrap
     """
+
     @wraps(func)
     def wrapper(self: S, *args: P.args, **kwargs: P.kwargs) -> T:
         self.clear_status()
@@ -43,10 +44,12 @@ def post_execution_status_poll(
 
         stb = self.get_status()
         if stb:
-            warnings.warn(f"Instrument status byte indicates an error occurred "
-                          f"(value of STB was: {stb})! Use `get_error` method "
-                          f"to poll error message.",
-                          stacklevel=2)
+            warnings.warn(
+                f"Instrument status byte indicates an error occurred "
+                f"(value of STB was: {stb})! Use `get_error` method "
+                f"to poll error message.",
+                stacklevel=2,
+            )
         return retval
 
     return wrapper
@@ -85,8 +88,8 @@ class Keysight34980A(VisaInstrument):
         Returns:
             0 if there is no error
         """
-        msg = super().ask('*ESR?')
-        nums = list(map(int, re.findall(r'\d+', msg)))
+        msg = super().ask("*ESR?")
+        nums = list(map(int, re.findall(r"\d+", msg)))
         return nums[0]
 
     def get_error(self) -> str:
@@ -96,21 +99,21 @@ class Keysight34980A(VisaInstrument):
         Returns:
             error message, or '+0,"No error"' if there is no error
         """
-        msg = super().ask(':SYST:ERR?')
+        msg = super().ask(":SYST:ERR?")
         return msg
 
     def clear_status(self) -> None:
         """
         Clears status register and error queue of the instrument.
         """
-        super().write('*CLS')
+        super().write("*CLS")
 
     def reset(self) -> None:
         """
         Performs an instrument reset.
         Does not reset error queue!
         """
-        super().write('*RST')
+        super().write("*RST")
 
     @post_execution_status_poll
     def ask(self, cmd: str) -> str:
@@ -126,13 +129,11 @@ class Keysight34980A(VisaInstrument):
         module installed
         """
         for slot in self.system_slots_info.keys():
-            model_string = self.system_slots_info[slot]['model']
+            model_string = self.system_slots_info[slot]["model"]
             for model in KEYSIGHT_MODELS:
                 if model in model_string:
-                    sub_module_name = f'slot_{slot}_{model}'
-                    sub_module = KEYSIGHT_MODELS[model](self,
-                                                        sub_module_name,
-                                                        slot)
+                    sub_module_name = f"slot_{slot}_{model}"
+                    sub_module = KEYSIGHT_MODELS[model](self, sub_module_name, slot)
                     self.module[slot] = sub_module
                     self.add_submodule(sub_module_name, sub_module)
                     break
@@ -143,8 +144,9 @@ class Keysight34980A(VisaInstrument):
                 )
                 self.module[slot] = sub_module_no_driver
                 self.add_submodule(sub_module_name, sub_module_no_driver)
-                logging.warning(f'can not find driver for {model_string}'
-                                f'in slot {slot}')
+                logging.warning(
+                    f"can not find driver for {model_string} in slot {slot}"
+                )
 
     @property
     def system_slots_info(self) -> dict[int, dict[str, str]]:
@@ -164,10 +166,10 @@ class Keysight34980A(VisaInstrument):
             serial/firmware dictionaries as the values
         """
         slots_dict = {}
-        keys = ['vendor', 'model', 'serial', 'firmware']
-        for i in range(1, self._total_slot+1):
-            identity = self.ask(f'SYST:CTYP? {i}').strip('"').split(',')
-            if identity[1] != '0':
+        keys = ["vendor", "model", "serial", "firmware"]
+        for i in range(1, self._total_slot + 1):
+            identity = self.ask(f"SYST:CTYP? {i}").strip('"').split(",")
+            if identity[1] != "0":
                 slots_dict[i] = dict(zip(keys, identity))
         return slots_dict
 
@@ -179,9 +181,9 @@ class Keysight34980A(VisaInstrument):
             slot: slot number, between 1 and 8 (self._total_slot),
                     default value is None, which means all slots
         """
-        cmd = 'ROUT:OPEN:ALL'
+        cmd = "ROUT:OPEN:ALL"
         if slot is None:
             self.write(cmd)
         else:
             vals.Ints(min_value=1, max_value=self._total_slot).validate(slot)
-            self.write(f'ROUT:OPEN:ALL {slot}')
+            self.write(f"ROUT:OPEN:ALL {slot}")

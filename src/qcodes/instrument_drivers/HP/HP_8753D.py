@@ -9,7 +9,6 @@ from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import ArrayParameter, ParamRawDataType
 
 if TYPE_CHECKING:
-
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter

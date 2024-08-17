@@ -49,7 +49,6 @@ def detect_shape_of_measurement(
     array_shapes: dict[str, tuple[int, ...]] = {}
 
     for param in parameters:
-
         if isinstance(param, MultiParameter):
             array_shapes.update(_get_shapes_of_multi_parameter(param=param))
         elif _param_is_array_like(param):
@@ -81,9 +80,11 @@ def _get_shape_of_step(step: int | np.integer[Any] | Sized | np.ndarray) -> int:
     elif isinstance(step, Sized):
         return len(step)
     else:
-        raise TypeError(f"get_shape_of_step takes "
-                        f"either an integer or a sized sequence "
-                        f"not: {type(step)}")
+        raise TypeError(
+            f"get_shape_of_step takes "
+            f"either an integer or a sized sequence "
+            f"not: {type(step)}"
+        )
 
 
 def _param_is_array_like(meas_param: ParameterBase) -> bool:
@@ -95,28 +96,35 @@ def _param_is_array_like(meas_param: ParameterBase) -> bool:
 
 
 def _get_shape_of_arrayparam(param: ParameterBase) -> tuple[int, ...]:
-
     if isinstance(param, ArrayParameter):
         return tuple(param.shape)
     elif isinstance(param, ParameterWithSetpoints):
         if not isinstance(param.vals, Arrays):
-            raise TypeError("ParameterWithSetpoints must have an "
-                            "array type validator in order "
-                            "to detect it's shape.")
+            raise TypeError(
+                "ParameterWithSetpoints must have an "
+                "array type validator in order "
+                "to detect it's shape."
+            )
         shape = param.vals.shape
         if shape is None:
-            raise TypeError("Cannot infer shape of a ParameterWithSetpoints "
-                            "with an unknown shape in its validator.")
+            raise TypeError(
+                "Cannot infer shape of a ParameterWithSetpoints "
+                "with an unknown shape in its validator."
+            )
         return shape
     elif isinstance(param.vals, Arrays):
         shape = param.vals.shape
         if shape is None:
-            raise TypeError("Cannot infer shape of a Parameter "
-                            "with Array validator without a known shape.")
+            raise TypeError(
+                "Cannot infer shape of a Parameter "
+                "with Array validator without a known shape."
+            )
         return shape
     else:
-        raise TypeError(f"Invalid parameter type: Expected an array like "
-                        f"parameter got: {type(param)}")
+        raise TypeError(
+            f"Invalid parameter type: Expected an array like "
+            f"parameter got: {type(param)}"
+        )
 
 
 def _get_shapes_of_multi_parameter(param: MultiParameter) -> dict[str, tuple[int, ...]]:

@@ -98,7 +98,7 @@ class KeysightE4980AMeasurements:
         "CSD", ("capacitance", "dissipation_factor"), ("F", "")
     )
     CSQ = KeysightE4980AMeasurementPair(
-        'CSQ', ("capacitance", "quality_factor"), ("F", "")
+        "CSQ", ("capacitance", "quality_factor"), ("F", "")
     )
     CSRS = KeysightE4980AMeasurementPair(
         "CSRS", ("capacitance", "resistance"), ("F", "Ohm")
@@ -225,25 +225,23 @@ class KeysightE4980A(VisaInstrument):
             convert_legacy_version_to_supported_version(idn["firmware"])
         ) >= version.parse(convert_legacy_version_to_supported_version("A.02.10"))
 
-        self.has_option_001 = '001' in self._options()
+        self.has_option_001 = "001" in self._options()
         self._dc_bias_v_level_range: Numbers | Enum
         if self.has_option_001:
             self._v_level_range = Numbers(0, 20)
             self._i_level_range = Numbers(0, 0.1)
-            self._imp_range = Enum(0.1, 1, 10, 100, 300, 1000, 3000, 10000,
-                                   30000, 100000)
+            self._imp_range = Enum(
+                0.1, 1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000
+            )
             self._dc_bias_v_level_range = Numbers(-40, 40)
         else:
             self._v_level_range = Numbers(0, 2)
             self._i_level_range = Numbers(0, 0.02)
-            self._imp_range = Enum(1, 10, 100, 300, 1000, 3000, 10000, 30000,
-                                   100000)
+            self._imp_range = Enum(1, 10, 100, 300, 1000, 3000, 10000, 30000, 100000)
             self._dc_bias_v_level_range = Enum(0, 1.5, 2)
 
         self._measurement_pair = KeysightE4980AMeasurementPair(
-            "CPD",
-            ("capacitance", "dissipation_factor"),
-            ("F", "")
+            "CPD", ("capacitance", "dissipation_factor"), ("F", "")
         )
 
         self.frequency: Parameter = self.add_parameter(
@@ -345,10 +343,9 @@ class KeysightE4980A(VisaInstrument):
         """Averaging rate for the measurement."""
 
         self._aperture_group = Group(
-            [self.meas_time_mode,
-             self.averaging_rate],
+            [self.meas_time_mode, self.averaging_rate],
             set_cmd=":APERture {meas_time_mode},{averaging_rate}",
-            get_cmd=":APERture?"
+            get_cmd=":APERture?",
         )
 
         if self.has_firmware_a_02_10_or_above:
@@ -379,7 +376,7 @@ class KeysightE4980A(VisaInstrument):
 
     @property
     def correction(self) -> KeysightE4980ACorrection:
-        submodule = self.submodules['_correction']
+        submodule = self.submodules["_correction"]
         return cast(KeysightE4980ACorrection, submodule)
 
     @property
@@ -402,9 +399,7 @@ class KeysightE4980A(VisaInstrument):
         measurement = self.ask(":FETCH:IMPedance:CORRected?")
         r, x = (float(n) for n in measurement.split(","))
         measurement_pair = KeysightE4980AMeasurementPair(
-            name="RX",
-            names=("resistance", "reactance"),
-            units=("Ohm", "Ohm")
+            name="RX", names=("resistance", "reactance"), units=("Ohm", "Ohm")
         )
         measurement_pair.set((r, x))
         return measurement_pair
@@ -418,7 +413,7 @@ class KeysightE4980A(VisaInstrument):
         measurement_pair = KeysightE4980AMeasurementPair(
             name=self._measurement_pair.name,
             names=self._measurement_pair.names,
-            units=self._measurement_pair.units
+            units=self._measurement_pair.units,
         )
         measurement_pair.set((val1, val2))
         return measurement_pair
@@ -436,8 +431,10 @@ class KeysightE4980A(VisaInstrument):
         otherwise raises an error.
         """
         if self.signal_mode() == "Current":
-            raise RuntimeError("Cannot get voltage level as signal is set "
-                               "with current level parameter.")
+            raise RuntimeError(
+                "Cannot get voltage level as signal is set "
+                "with current level parameter."
+            )
 
         v_level = self.ask(":VOLTage:LEVel?")
 
@@ -469,8 +466,10 @@ class KeysightE4980A(VisaInstrument):
         otherwise raises an error.
         """
         if self.signal_mode() == "Voltage":
-            raise RuntimeError("Cannot get current level as signal is set "
-                               "with voltage level parameter.")
+            raise RuntimeError(
+                "Cannot get current level as signal is set "
+                "with voltage level parameter."
+            )
 
         i_level = self.ask(":CURRent:LEVel?")
 
@@ -507,8 +506,8 @@ class KeysightE4980A(VisaInstrument):
         options are possible. Two of the possible options are Power/DC Bias
         Enhance (option 001) and Bias Current Interface (option 002).
         """
-        options_raw = self.ask('*OPT?')
-        return tuple(options_raw.split(','))
+        options_raw = self.ask("*OPT?")
+        return tuple(options_raw.split(","))
 
     def system_errors(self) -> str:
         """
@@ -526,10 +525,10 @@ class KeysightE4980A(VisaInstrument):
             Operation Status Event Register
             Questionable Status Event Register (No Query)
         """
-        self.write('*CLS')
+        self.write("*CLS")
 
     def reset(self) -> None:
         """
         Resets the instrument settings.
         """
-        self.write('*RST')
+        self.write("*RST")

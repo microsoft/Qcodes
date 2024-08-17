@@ -63,7 +63,7 @@ def test_unlimited() -> None:
 
     # special case - nan now raises a ValueError rather than a TypeError
     with pytest.raises(ValueError):
-        n.validate(float('nan'))
+        n.validate(float("nan"))
 
     n.validate(n.valid_values[0])
 
@@ -90,7 +90,7 @@ def test_min_raises() -> None:
             n.validate(v)
 
     with pytest.raises(ValueError):
-        n.validate(float('nan'))
+        n.validate(float("nan"))
 
 
 def test_max() -> None:
@@ -114,7 +114,7 @@ def test_max_raises() -> None:
             n.validate(v)
 
     with pytest.raises(ValueError):
-        n.validate(float('nan'))
+        n.validate(float("nan"))
 
 
 def test_range() -> None:
@@ -132,9 +132,9 @@ def test_range() -> None:
             n.validate(v)
 
     with pytest.raises(ValueError):
-        n.validate(float('nan'))
+        n.validate(float("nan"))
 
-    assert repr(n) == '<Numbers 0.1<=v<=3.5>'
+    assert repr(n) == "<Numbers 0.1<=v<=3.5>"
 
 
 def test_failed_numbers() -> None:

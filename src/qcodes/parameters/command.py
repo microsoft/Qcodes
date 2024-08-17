@@ -65,7 +65,6 @@ class Command(Generic[Output, ParsedOutput]):
         output_parser: Callable[[Output], ParsedOutput] | None = None,
         no_cmd_function: Callable | None = None,
     ):
-
         self.arg_count = arg_count
 
         if no_cmd_function is not None and not is_function(no_cmd_function, arg_count):

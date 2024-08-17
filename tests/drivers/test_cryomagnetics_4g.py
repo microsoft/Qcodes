@@ -82,7 +82,6 @@ def test_magnet_operating_state(
             assert state == expected_state
 
 
-
 def test_set_field_successful(cryo_instrument, caplog):
     with (
         patch.object(cryo_instrument, "write") as mock_write,

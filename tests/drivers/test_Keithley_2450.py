@@ -7,7 +7,7 @@ from pytest import LogCaptureFixture
 from qcodes.instrument_drivers.Keithley import Keithley2450
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def k2450():
     """
     Create a Keithley 2450 instrument
@@ -49,7 +49,9 @@ def test_change_source_function(k2450) -> None:
     assert hasattr(k2450.source, "voltage")
 
     # to cover all bases :-)
-    assert k2450.submodules["_source_current"] is not k2450.submodules["_source_voltage"]
+    assert (
+        k2450.submodules["_source_current"] is not k2450.submodules["_source_voltage"]
+    )
 
 
 def test_source_change_error(k2450) -> None:
@@ -61,7 +63,7 @@ def test_source_change_error(k2450) -> None:
     k2450.sense.function("resistance")
     with pytest.raises(
         RuntimeError,
-        match="Cannot change the source function while sense function is in 'resistance' mode"
+        match="Cannot change the source function while sense function is in 'resistance' mode",
     ):
         k2450.source.function("current")
 
@@ -79,7 +81,6 @@ def test_sense_current_mode(k2450) -> None:
     """
     sense_functions = {"current", "voltage", "resistance"}
     for sense_function in sense_functions:
-
         k2450.sense.function(sense_function)
         assert k2450.sense is k2450.submodules[f"_sense_{sense_function}"]
         assert hasattr(k2450.sense, sense_function)
@@ -111,7 +112,7 @@ def test_reset_sweep_on_source_change(k2450) -> None:
     If we change the source function, we need to run the sweep setup again
     """
     # first set sense to a mode where we are allowed to change source
-    k2450.sense.function('current')
+    k2450.sense.function("current")
     k2450.source.function("voltage")
     k2450.source.sweep_setup(0, 1, 10)
     assert np.all(k2450.source.get_sweep_axis() == np.linspace(0, 1, 10))

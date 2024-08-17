@@ -48,20 +48,23 @@ def verify_data_dict(
     # included in the list of parameters
     assert all(param in parameter_names for param in list(data.keys()))
     if dataframe is not None:
-        assert all(param in parameter_names for
-                   param in list(dataframe.keys()))
+        assert all(param in parameter_names for param in list(dataframe.keys()))
     for param in parameter_names:
         innerdata = data[param]
-        verify_data_dict_for_single_param(innerdata,
-                                          expected_names[param],
-                                          expected_shapes[param],
-                                          expected_values[param])
+        verify_data_dict_for_single_param(
+            innerdata,
+            expected_names[param],
+            expected_shapes[param],
+            expected_values[param],
+        )
         if dataframe is not None:
             innerdataframe = dataframe[param]
-            verify_dataframe_for_single_param(innerdataframe,
-                                              expected_names[param],
-                                              expected_shapes[param],
-                                              expected_values[param])
+            verify_dataframe_for_single_param(
+                innerdataframe,
+                expected_names[param],
+                expected_shapes[param],
+                expected_values[param],
+            )
 
 
 def verify_data_dict_for_single_param(
@@ -75,7 +78,7 @@ def verify_data_dict_for_single_param(
     assert set(key_names) == set(names)
 
     for name, shape, value in zip(names, shapes, values):
-        if datadict[name].dtype == np.dtype('O'):
+        if datadict[name].dtype == np.dtype("O"):
             mydata = np.concatenate(datadict[name])
         else:
             mydata = datadict[name]
@@ -120,9 +123,10 @@ def verify_dataframe_for_single_param(
             if not isinstance(dataframe.index, pd.MultiIndex):
                 row_index_values = (row_index_values,)
 
-            expected_values = \
-                tuple(expected_index_values[indexnum].ravel()[row]
-                      for indexnum in range(nindexes))
+            expected_values = tuple(
+                expected_index_values[indexnum].ravel()[row]
+                for indexnum in range(nindexes)
+            )
             assert row_index_values == expected_values
 
     simpledf = dataframe.reset_index()

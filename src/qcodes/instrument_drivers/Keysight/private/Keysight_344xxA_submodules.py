@@ -200,10 +200,10 @@ class Keysight344xxATrigger(InstrumentChannel):
                 specified by `trigger.slope` is received. If the
                 instrument receives an external trigger before it is ready,
                 it buffers one trigger.""")
-        _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS')
+        _trigger_source_vals = vals.Enum("IMM", "EXT", "BUS")
 
-        if self.parent.has_DIG or (self.parent.model == '34411A'):
-            _trigger_source_vals = vals.Enum('IMM', 'EXT', 'BUS', 'INT')
+        if self.parent.has_DIG or (self.parent.model == "34411A"):
+            _trigger_source_vals = vals.Enum("IMM", "EXT", "BUS", "INT")
             # extra empty lines are needed for readability of the docstring
             _trigger_source_docstring += textwrap.dedent("""\
 
@@ -225,7 +225,7 @@ class Keysight344xxATrigger(InstrumentChannel):
 
     def force(self) -> None:
         """Triggers the instrument if `trigger.source` is "BUS"."""
-        self.write('*TRG')
+        self.write("*TRG")
 
 
 class Keysight344xxASample(InstrumentChannel):
@@ -280,8 +280,8 @@ For the model 34410A the maximum is 50,000 readings, and for the
 model 34411A the maximum is 1,000,000 readings. The latter does
 not depend on the pretrigger count."""
 
-        if self.parent.has_DIG or (self.parent.model == '34411A'):
-            if self.parent.model == '34411A':
+        if self.parent.has_DIG or (self.parent.model == "34411A"):
+            if self.parent.model == "34411A":
                 _max_pretrig_count = int(1e6) - 1
             elif self.parent.has_MEM:
                 _max_pretrig_count = int(2e6) - 1
@@ -491,7 +491,7 @@ achieved by calling `display.clear`."""
         enabled/disabled, this either returns to display's normal state or
         leaves it black, respectively.
         """
-        self.write('DISPLay:TEXT:CLEar')
+        self.write("DISPLay:TEXT:CLEar")
         self.text.get()  # also update the parameter value
 
 
@@ -521,25 +521,28 @@ class TimeTrace(ParameterWithSetpoints):
 
         minimum_time = self.instrument.sample.timer_minimum()
         dt = self.instrument.timetrace_dt()
-        if  dt < minimum_time:
-            raise RuntimeError(f"Can not realize a time trace dt of {dt} s "
-                               f"With the present settings. The minimal "
-                               f"allowed dt is {minimum_time} s. To allow "
-                               "for a shorter dt, try changing the NPLC or "
-                               "aperture time.")
-
+        if dt < minimum_time:
+            raise RuntimeError(
+                f"Can not realize a time trace dt of {dt} s "
+                f"With the present settings. The minimal "
+                f"allowed dt is {minimum_time} s. To allow "
+                "for a shorter dt, try changing the NPLC or "
+                "aperture time."
+            )
 
     def _set_units_and_labels(self) -> None:
         """
         A helper function to set correct units and labels for the parameter
         """
 
-        units_and_labels = {'AC Voltage': ('V', 'Voltage'),
-                            'DC Voltage': ('V', 'Voltage'),
-                            'AC Current': ('A', 'Current'),
-                            'DC Current': ('A', 'Current'),
-                            '2 Wire Resistance': ('Ohm', 'Resistance'),
-                            '4 Wire Resistance': ('Ohm', 'Resistance')}
+        units_and_labels = {
+            "AC Voltage": ("V", "Voltage"),
+            "DC Voltage": ("V", "Voltage"),
+            "AC Current": ("A", "Current"),
+            "DC Current": ("A", "Current"),
+            "2 Wire Resistance": ("Ohm", "Resistance"),
+            "4 Wire Resistance": ("Ohm", "Resistance"),
+        }
 
         conf = self.instrument.sense_function()
         self.unit, self.label = units_and_labels[conf]
@@ -550,22 +553,24 @@ class TimeTrace(ParameterWithSetpoints):
         """
         dt = self.instrument.timetrace_dt()
         npts = self.instrument.timetrace_npts()
-        meas_time = npts*dt
+        meas_time = npts * dt
         disp_text = f"Acquiring {npts} samples"  # display limit: 40 characters
-        new_timeout = max(self._acquire_timeout_fudge_factor * meas_time,
-                          self.instrument.timeout())
+        new_timeout = max(
+            self._acquire_timeout_fudge_factor * meas_time, self.instrument.timeout()
+        )
 
-        param_settings = [(self.instrument.trigger.count, 1),
-                          (self.instrument.trigger.source, "BUS"),
-                          (self.instrument.sample.source, "TIM"),
-                          (self.instrument.sample.timer, dt),
-                          (self.instrument.sample.count, npts),
-                          (self.instrument.timeout, new_timeout),
-                          (self.instrument.display.text, disp_text)]
+        param_settings = [
+            (self.instrument.trigger.count, 1),
+            (self.instrument.trigger.source, "BUS"),
+            (self.instrument.sample.source, "TIM"),
+            (self.instrument.sample.timer, dt),
+            (self.instrument.sample.count, npts),
+            (self.instrument.timeout, new_timeout),
+            (self.instrument.display.text, disp_text),
+        ]
 
         if self.instrument.has_DIG:
-            param_settings.append((self.instrument.sample.pretrigger_count,
-                                   0))
+            param_settings.append((self.instrument.sample.pretrigger_count, 0))
 
         with ExitStack() as stack:
             for ps in param_settings:
@@ -578,7 +583,6 @@ class TimeTrace(ParameterWithSetpoints):
         return data  # pyright: ignore[reportPossiblyUnboundVariable]
 
     def get_raw(self) -> np.ndarray:
-
         self._validate_dt()
         self._set_units_and_labels()
         data = self._acquire_time_trace()
@@ -598,12 +602,11 @@ class TimeAxis(Parameter):
         from the instrument.
         """
         if self.instrument is None:
-           raise RuntimeError("No instrument attached to Parameter.")
+            raise RuntimeError("No instrument attached to Parameter.")
 
         npts = self.instrument.timetrace_npts()
         dt = self.instrument.timetrace_dt()
-        return np.linspace(0, dt*npts, npts, endpoint=False)
-
+        return np.linspace(0, dt * npts, npts, endpoint=False)
 
 
 class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
@@ -643,11 +646,11 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
         super().__init__(name, address, **kwargs)
 
         idn = self.IDN.get()
-        self.model = idn['model']
+        self.model = idn["model"]
         """The model number of the instrument"""
 
-        self.is_34465A_34470A = self.model in ['34465A', '34470A']
-        self.is_34410A_34411A = self.model in ['34410A', '34411A']
+        self.is_34465A_34470A = self.model in ["34465A", "34470A"]
+        self.is_34410A_34411A = self.model in ["34410A", "34411A"]
 
         ####################################
         # Instrument specifications
@@ -663,34 +666,43 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
         # Note that the firmware version check is still needed because
         # ``_options`` (the ``*OPT?`` command) returns 'DIG' option for
         # firmware 3.0 only if it has been purchased before
-        self.has_MEM = self.is_34465A_34470A and 'MEM' in options
+        self.has_MEM = self.is_34465A_34470A and "MEM" in options
 
-        PLCs = {'34410A': [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
-                '34411A': [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
-                '34460A': [0.02, 0.2, 1, 10, 100],
-                '34461A': [0.02, 0.2, 1, 10, 100],
-                '34465A': [0.02, 0.06, 0.2, 1, 10, 100],
-                '34470A': [0.02, 0.06, 0.2, 1, 10, 100]
-                }
+        PLCs = {
+            "34410A": [0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
+            "34411A": [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 2, 10, 100],
+            "34460A": [0.02, 0.2, 1, 10, 100],
+            "34461A": [0.02, 0.2, 1, 10, 100],
+            "34465A": [0.02, 0.06, 0.2, 1, 10, 100],
+            "34470A": [0.02, 0.06, 0.2, 1, 10, 100],
+        }
         if self.has_DIG:
-            PLCs['34465A'] = [0.001, 0.002, 0.006] + PLCs['34465A']
-            PLCs['34470A'] = [0.001, 0.002, 0.006] + PLCs['34470A']
+            PLCs["34465A"] = [0.001, 0.002, 0.006] + PLCs["34465A"]
+            PLCs["34470A"] = [0.001, 0.002, 0.006] + PLCs["34470A"]
 
         # The resolution factor order matches the order of PLCs
-        res_factors = {'34410A': [6e-6, 3e-6, 1.5e-6, 0.7e-6,
-                                  0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
-                       '34411A': [30e-6, 15e-5, 6e-6, 3e-6, 1.5e-6, 0.7e-6,
-                                  0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
-                       '34460A': [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
-                       '34461A': [100e-6, 10e-6, 3e-6, 1e-6, 0.3e-6],
-                       '34465A': [3e-6, 1.5e-6, 0.7e-6, 0.3e-6, 0.1e-6,
-                                  0.03e-6],
-                       '34470A': [1e-6, 0.5e-6, 0.3e-6, 0.1e-6, 0.03e-6,
-                                  0.01e-6]
-                       }
+        res_factors = {
+            "34410A": [6e-6, 3e-6, 1.5e-6, 0.7e-6, 0.3e-6, 0.2e-6, 0.1e-6, 0.03e-6],
+            "34411A": [
+                30e-6,
+                15e-5,
+                6e-6,
+                3e-6,
+                1.5e-6,
+                0.7e-6,
+                0.3e-6,
+                0.2e-6,
+                0.1e-6,
+                0.03e-6,
+            ],
+            "34460A": [300e-6, 100e-6, 30e-6, 10e-6, 3e-6],
+            "34461A": [100e-6, 10e-6, 3e-6, 1e-6, 0.3e-6],
+            "34465A": [3e-6, 1.5e-6, 0.7e-6, 0.3e-6, 0.1e-6, 0.03e-6],
+            "34470A": [1e-6, 0.5e-6, 0.3e-6, 0.1e-6, 0.03e-6, 0.01e-6],
+        }
         if self.has_DIG:
-            res_factors['34465A'] = [30e-6, 15e-6, 6e-6] + res_factors['34465A']
-            res_factors['34470A'] = [30e-6, 10e-6, 3e-6] + res_factors['34470A']
+            res_factors["34465A"] = [30e-6, 15e-6, 6e-6] + res_factors["34465A"]
+            res_factors["34470A"] = [30e-6, 10e-6, 3e-6] + res_factors["34470A"]
 
         self._resolution_factors = res_factors[self.model]
         self.ranges = [10**n for n in range(-1, 4)]  # 100 m to 1 k
@@ -896,20 +908,24 @@ the resolution values."""
             # the respective limit with 50/60.
             utility_freq = self.line_frequency()
             if utility_freq == 50:
-                apt_times = {'34410A': [100e-6, 1],
-                            '34411A': [20e-6, 1],
-                            '34465A': [0.3e-3, 2],
-                            '34470A': [0.3e-3, 2]}
+                apt_times = {
+                    "34410A": [100e-6, 1],
+                    "34411A": [20e-6, 1],
+                    "34465A": [0.3e-3, 2],
+                    "34470A": [0.3e-3, 2],
+                }
             elif utility_freq == 60:
-                apt_times = {'34410A': [100e-6, 0.83],
-                            '34411A': [20e-6, 0.83],
-                            '34465A': [0.3e-3, 1.67],
-                            '34470A': [0.3e-3, 1.67]}
+                apt_times = {
+                    "34410A": [100e-6, 0.83],
+                    "34411A": [20e-6, 0.83],
+                    "34465A": [0.3e-3, 1.67],
+                    "34470A": [0.3e-3, 1.67],
+                }
             else:
                 raise RuntimeError("line_frequency must be either 50 or 60 Hz")
             if self.has_DIG:
-                apt_times['34465A'][0] = 20e-6
-                apt_times['34470A'][0] = 20e-6
+                apt_times["34465A"][0] = 20e-6
+                apt_times["34470A"][0] = 20e-6
 
             self.aperture_mode: Parameter = self.add_parameter(
                 "aperture_mode",
@@ -1091,16 +1107,16 @@ mode."""
         `read` method ("READ?" command) (provided you do not `fetch`,
         "FETCh?" command, until done).
         """
-        self.write('INIT')
+        self.write("INIT")
 
     def reset(self) -> None:
         """
         Reset the instrument to factory defaults. Also updates the snapshot to
         reflect the new (default) values of parameters.
         """
-        self.write('*RST')
+        self.write("*RST")
         # before we can update the snapshot, the reset must complete
-        self.ask('*OPC?')
+        self.ask("*OPC?")
         self.snapshot(update=True)
 
     def abort_measurement(self) -> None:
@@ -1108,7 +1124,7 @@ mode."""
         Abort a measurement in progress, returning the instrument to the
         trigger idle state.
         """
-        self.write('ABORt')
+        self.write("ABORt")
 
     def _licenses(self) -> "Sequence[str]":
         """
@@ -1117,8 +1133,8 @@ mode."""
         tuple.
         """
         if not self.is_34410A_34411A:
-            licenses_raw = self.ask('SYST:LIC:CAT?')
-            licenses_list = [x.strip('"') for x in licenses_raw.split(',')]
+            licenses_raw = self.ask("SYST:LIC:CAT?")
+            licenses_list = [x.strip('"') for x in licenses_raw.split(",")]
             return licenses_list
         return tuple()
 
@@ -1133,8 +1149,8 @@ mode."""
         the option itself is enabled by default in the firmware version 3.0.
         """
         if not self.is_34410A_34411A:
-            options_raw = self.ask('*OPT?')
-            options_list = [opt for opt in options_raw.split(',') if opt != '0']
+            options_raw = self.ask("*OPT?")
+            options_list = [opt for opt in options_raw.split(",") if opt != "0"]
             return tuple(options_list)
         return tuple()
 
@@ -1152,7 +1168,7 @@ mode."""
         """
         with self.sense_function.set_to(sense_function):
             with self.sample.count.set_to(1):
-                response = self.ask('READ?')
+                response = self.ask("READ?")
 
         if float(response) >= 9.9e37:
             return np.inf
@@ -1174,7 +1190,7 @@ mode."""
             a 1D numpy array of all measured values that are currently in the
             reading memory
         """
-        raw_vals: str = self.ask('FETCH?')
+        raw_vals: str = self.ask("FETCH?")
         return _raw_vals_to_array(raw_vals)
 
     def read(self) -> np.ndarray:
@@ -1188,17 +1204,17 @@ mode."""
         Returns:
             a 1D numpy array of all measured values
         """
-        raw_vals: str = self.ask('READ?')
+        raw_vals: str = self.ask("READ?")
         return _raw_vals_to_array(raw_vals)
 
     def _set_apt_time(self, value: float) -> None:
-        self.write(f'SENSe:VOLTage:DC:APERture {value:f}')
+        self.write(f"SENSe:VOLTage:DC:APERture {value:f}")
 
         # setting aperture time switches aperture mode ON
         self.aperture_mode.get()
 
     def _set_NPLC(self, value: float) -> None:
-        self.write(f'SENSe:VOLTage:DC:NPLC {value:f}')
+        self.write(f"SENSe:VOLTage:DC:NPLC {value:f}")
 
         # resolution settings change with NPLC
         self.resolution.get()
@@ -1208,7 +1224,7 @@ mode."""
             self.aperture_mode.get()
 
     def _set_range(self, value: float) -> None:
-        self.write(f'SENSe:VOLTage:DC:RANGe {value:f}')
+        self.write(f"SENSe:VOLTage:DC:RANGe {value:f}")
 
         # resolution settings change with range
         self.resolution.get()
@@ -1219,14 +1235,15 @@ mode."""
         # convert both value*range and the resolution factors
         # to strings with few digits, so we avoid floating point
         # rounding errors.
-        res_fac_strs = [f'{(v * rang):.1e}' for v in self._resolution_factors]
-        if f'{value:.1e}' not in res_fac_strs:
+        res_fac_strs = [f"{(v * rang):.1e}" for v in self._resolution_factors]
+        if f"{value:.1e}" not in res_fac_strs:
             raise ValueError(
-                f'Resolution setting {value:.1e}'
-                f'({value} at range {rang}) does not exist. '
-                f'Possible values are {res_fac_strs}')
+                f"Resolution setting {value:.1e}"
+                f"({value} at range {rang}) does not exist. "
+                f"Possible values are {res_fac_strs}"
+            )
 
-        self.write(f'VOLT:DC:RES {value:.1e}')
+        self.write(f"VOLT:DC:RES {value:.1e}")
 
         # NPLC settings change with resolution
         self.NPLC.get()
@@ -1237,7 +1254,7 @@ mode."""
 
         The value of the `range` parameter is also updated.
         """
-        self.write('SENSe:VOLTage:DC:RANGe:AUTO ONCE')
+        self.write("SENSe:VOLTage:DC:RANGe:AUTO ONCE")
         self.range.get()
 
     def increase_range(
@@ -1296,6 +1313,7 @@ mode."""
         else:
             self.range(self.ranges[0])
 
+
 @deprecated(
     "Base class for Keysight 344xxA renamed Keysight344xxA",
     category=QCoDeSDeprecationWarning,
@@ -1326,6 +1344,7 @@ class Sample(Keysight344xxASample):
 )
 class Display(Keysight344xxADisplay):
     pass
+
 
 def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
     """

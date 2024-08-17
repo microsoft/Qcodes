@@ -19,6 +19,7 @@ _LOG = logging.getLogger(__name__)
 
 _EXTEND_TYPE = Literal["neither", "both", "min", "max"]
 
+
 def _set_colorbar_extend(
     colorbar: matplotlib.colorbar.Colorbar,
     extend: _EXTEND_TYPE,
@@ -161,6 +162,7 @@ def apply_auto_color_scale(
         RuntimeError: If not mesh data.
     """
     import matplotlib.collections
+
     if data_array is None:
         if not isinstance(colorbar.mappable, matplotlib.collections.QuadMesh):
             raise RuntimeError("Can only scale mesh data.")

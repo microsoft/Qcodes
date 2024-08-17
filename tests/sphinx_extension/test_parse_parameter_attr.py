@@ -10,7 +10,6 @@ from qcodes.utils import deprecate
 
 
 class DummyTestClass(InstrumentBase):
-
     myattr: str = "ClassAttribute"
     """
     A class attribute
@@ -26,7 +25,6 @@ class DummyTestClass(InstrumentBase):
 
 
 class DummyNoInitClass(InstrumentBase):
-
     myattr: str = "ClassAttribute"
     """
     A class attribute
@@ -37,7 +35,6 @@ class DummyNoInitClass(InstrumentBase):
 
 
 class DummyDecoratedInitTestClass(InstrumentBase):
-
     myattr: str = "ClassAttribute"
     """
     A class attribute
@@ -55,7 +52,6 @@ class DummyDecoratedInitTestClass(InstrumentBase):
 
 @deprecate("Deprecate to test that decorated class is handled correctly")
 class DummyDecoratedClassTestClass(InstrumentBase):
-
     myattr: str = "ClassAttribute"
     """
     A class attribute

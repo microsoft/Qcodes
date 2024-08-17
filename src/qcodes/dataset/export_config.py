@@ -19,6 +19,7 @@ EXPORT_NAME_ELEMENTS = "export_name_elements"
 
 class DataExportType(enum.Enum):
     """File extensions for supported data types to export data"""
+
     NETCDF = "nc"
     CSV = "csv"
 

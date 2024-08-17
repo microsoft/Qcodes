@@ -71,10 +71,9 @@ class Experiment(Sized):
 
         if exp_id is not None:
             if exp_id not in experiments_list:
-                raise ValueError('No such experiment in the database')
+                raise ValueError("No such experiment in the database")
             self._exp_id = exp_id
         else:
-
             # it is better to catch an invalid format string earlier than later
             try:
                 # the corresponding function from sqlite module will try to
@@ -82,8 +81,10 @@ class Experiment(Sized):
                 # for that here
                 format_string.format("name", 1, 1)
             except Exception as e:
-                raise ValueError("Invalid format string. Can not format "
-                                 "(name, exp_id, run_counter)") from e
+                raise ValueError(
+                    "Invalid format string. Can not format "
+                    "(name, exp_id, run_counter)"
+                ) from e
 
             log.info(f"creating new experiment in {self.path_to_db}")
             max_id = max(experiments_list, default=0)
@@ -152,8 +153,7 @@ class Experiment(Sized):
             values: the values to associate with the parameters
             metadata: the metadata to associate with the dataset
         """
-        return new_data_set(name, self.exp_id, specs, values, metadata,
-                            conn=self.conn)
+        return new_data_set(name, self.exp_id, specs, values, metadata, conn=self.conn)
 
     def data_set(self, counter: int) -> DataSet:
         """
@@ -165,8 +165,7 @@ class Experiment(Sized):
         Returns:
             the dataset
         """
-        run_id = get_runid_from_expid_and_counter(self.conn, self.exp_id,
-                                                  counter)
+        run_id = get_runid_from_expid_and_counter(self.conn, self.exp_id, counter)
         return DataSet(run_id=run_id, conn=self.conn)
 
     def data_sets(self) -> list[DataSetProtocol]:
@@ -180,7 +179,7 @@ class Experiment(Sized):
         """Get the last dataset of this experiment"""
         run_id = get_last_run(self.conn, self.exp_id)
         if run_id is None:
-            raise ValueError('There are no runs in this experiment')
+            raise ValueError("There are no runs in this experiment")
         return load_by_id(run_id)
 
     def finish(self) -> None:
@@ -194,9 +193,7 @@ class Experiment(Sized):
         return len(self.data_sets())
 
     def __repr__(self) -> str:
-        out = [
-            f"{self.name}#{self.sample_name}#{self.exp_id}@{self.path_to_db}"
-        ]
+        out = [f"{self.name}#{self.sample_name}#{self.exp_id}@{self.path_to_db}"]
         out.append("-" * len(out[0]))
         out += [
             f"{d.run_id}-{d.name}-{d.counter}-{d._parameters}-{len(d)}"
@@ -206,6 +203,7 @@ class Experiment(Sized):
 
 
 # public api
+
 
 def experiments(conn: ConnectionPlus | None = None) -> list[Experiment]:
     """
@@ -273,7 +271,7 @@ def load_experiment(exp_id: int, conn: ConnectionPlus | None = None) -> Experime
     """
     conn = conn_from_dbpath_or_conn(conn=conn, path_to_db=None)
     if not isinstance(exp_id, int):
-        raise ValueError('Experiment ID must be an integer')
+        raise ValueError("Experiment ID must be an integer")
     experiment = Experiment(exp_id=exp_id, conn=conn)
     _set_default_experiment_id(path_to_dbfile(conn), experiment.exp_id)
     return experiment
@@ -291,7 +289,7 @@ def load_last_experiment() -> Experiment:
     conn = connect(get_DB_location())
     last_exp_id = get_last_experiment(conn)
     if last_exp_id is None:
-        raise ValueError('There are no experiments in the database file')
+        raise ValueError("There are no experiments in the database file")
     experiment = Experiment(exp_id=last_exp_id)
     _set_default_experiment_id(get_DB_location(), experiment.exp_id)
     return experiment
@@ -392,8 +390,7 @@ def load_or_create_experiment(
         )
     except ValueError as exception:
         if "Experiment not found" in str(exception):
-            experiment = new_experiment(experiment_name, sample_name,
-                                        conn=conn)
+            experiment = new_experiment(experiment_name, sample_name, conn=conn)
         else:
             raise exception
     return experiment

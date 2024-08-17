@@ -5,7 +5,7 @@ from qcodes.validators import Ints, Sequence
 
 def test_type() -> None:
     sequence_validator = Sequence()
-    v1 = ['a', 'b', 5]
+    v1 = ["a", "b", 5]
     sequence_validator.validate(v1)
 
     sequence_validator.validate((1, 2, 3))

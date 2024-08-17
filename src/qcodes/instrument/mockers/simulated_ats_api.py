@@ -6,7 +6,6 @@ This mock does currently represent a ATS9360 and does not provide
 any functionality whatsoever.
 """
 
-
 import ctypes
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -25,10 +24,9 @@ if TYPE_CHECKING:
 
 
 class SimulatedATS9360API(AlazarATSAPI):
-
     registers: ClassVar[dict[int, int]] = {
         8: 70254688,
-        58: int(np.uint32(1 << 26))  # Trigger hold off
+        58: int(np.uint32(1 << 26)),  # Trigger hold off
     }
 
     def __init__(
@@ -42,8 +40,7 @@ class SimulatedATS9360API(AlazarATSAPI):
 
         # don't call `super().__init__` here to avoid dependence on the
         # alazar driver, when loading the dll
-        self._buffer_generator = (
-            buffer_generator or _default_buffer_generator)
+        self._buffer_generator = buffer_generator or _default_buffer_generator
         self.buffers: dict[int, np.ndarray] = {}
 
     def _sync_dll_call(self, c_name: str, *args: Any) -> None:
@@ -59,7 +56,7 @@ class SimulatedATS9360API(AlazarATSAPI):
     # OTHER API-RELATED METHODS
 
     def get_board_model(self, handle: int) -> str:
-        return 'ATS9360'
+        return "ATS9360"
 
     def get_channel_info_(self, handle: int) -> tuple[int, int]:
         return 4294967294, 12
@@ -68,10 +65,10 @@ class SimulatedATS9360API(AlazarATSAPI):
         return "25.16"
 
     def get_driver_version_(self) -> str:
-        return '6.5.1'
+        return "6.5.1"
 
     def get_sdk_version_(self) -> str:
-        return '6.5.1'
+        return "6.5.1"
 
     def query_capability_(self, handle: int, capability: int) -> int:
         capabilities = {
@@ -80,7 +77,8 @@ class SimulatedATS9360API(AlazarATSAPI):
             Capability.MEMORY_SIZE: 4294967294,
             Capability.GET_PCIE_LINK_WIDTH: 8,
             Capability.GET_PCIE_LINK_SPEED: 2,
-            Capability.GET_LATEST_CAL_DATE: 250117}
+            Capability.GET_LATEST_CAL_DATE: 250117,
+        }
         return capabilities[Capability(capability)]
 
     def read_register_(self, handle: int, offset: int) -> int:
@@ -90,34 +88,31 @@ class SimulatedATS9360API(AlazarATSAPI):
         self.registers[offset] = value
 
     def post_async_buffer(
-            self,
-            handle: int,
-            buffer: ctypes.c_void_p,
-            buffer_length: int
+        self, handle: int, buffer: ctypes.c_void_p, buffer_length: int
     ) -> ReturnCode:
         if buffer.value is None:
             raise RuntimeError(
-                '`post_async_buffer` received buffer with invalid address.')
-        ctypes_array = (ctypes.c_uint16 *
-                        (buffer_length // 2)).from_address(buffer.value)
+                "`post_async_buffer` received buffer with invalid address."
+            )
+        ctypes_array = (ctypes.c_uint16 * (buffer_length // 2)).from_address(
+            buffer.value
+        )
         self.buffers[buffer.value] = np.ctypeslib.as_array(ctypes_array)
-        self._sync_dll_call(
-            'AlazarPostAsyncBuffer', handle, buffer, buffer_length)
+        self._sync_dll_call("AlazarPostAsyncBuffer", handle, buffer, buffer_length)
         return API_SUCCESS
 
     def wait_async_buffer_complete(
-            self,
-            handle: int,
-            buffer: ctypes.c_void_p,
-            timeout_in_ms: int
+        self, handle: int, buffer: ctypes.c_void_p, timeout_in_ms: int
     ) -> ReturnCode:
         if buffer.value is None:
             raise RuntimeError(
-                '`wait_async_buffer` received buffer with invalid address.')
+                "`wait_async_buffer` received buffer with invalid address."
+            )
         b = self.buffers.get(buffer.value)
         if b is None:
             raise RuntimeError("received an empty buffer")
         self._buffer_generator(b)
         self._sync_dll_call(
-            'AlazarWaitAsyncBufferComplete', handle, buffer, timeout_in_ms)
+            "AlazarWaitAsyncBufferComplete", handle, buffer, timeout_in_ms
+        )
         return API_SUCCESS

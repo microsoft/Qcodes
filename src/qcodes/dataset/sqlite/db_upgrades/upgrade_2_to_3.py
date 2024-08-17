@@ -138,7 +138,6 @@ def _2to3_get_paramspecs(
     indeps: Sequence[int],
     result_table_name: str,
 ) -> dict[int, ParamSpec]:
-
     paramspecs: dict[int, ParamSpec] = {}
 
     the_rest = set(layout_ids).difference(set(deps).union(set(indeps)))
@@ -158,8 +157,10 @@ def _2to3_get_paramspecs(
                 paramtype = row[description["type"]]
                 break
         if paramtype is None:
-            raise TypeError(f"Could not determine type of {name} during the"
-                            f"db upgrade of {result_table_name}")
+            raise TypeError(
+                f"Could not determine type of {name} during the"
+                f"db upgrade of {result_table_name}"
+            )
 
         inferred_from: list[str] = []
         depends_on: list[str] = []
@@ -169,14 +170,17 @@ def _2to3_get_paramspecs(
             setpoints = dependencies[layout_id]
             depends_on = [paramspecs[idp].name for idp in setpoints]
 
-        if inferred_from_str != '':
-            inferred_from = inferred_from_str.split(', ')
+        if inferred_from_str != "":
+            inferred_from = inferred_from_str.split(", ")
 
-        paramspec = ParamSpec(name=name,
-                              paramtype=paramtype,
-                              label=label, unit=unit,
-                              depends_on=depends_on,
-                              inferred_from=inferred_from)
+        paramspec = ParamSpec(
+            name=name,
+            paramtype=paramtype,
+            label=label,
+            unit=unit,
+            depends_on=depends_on,
+            inferred_from=inferred_from,
+        )
         paramspecs[layout_id] = paramspec
 
     return paramspecs
@@ -193,7 +197,7 @@ def upgrade_2_to_3(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
     """
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
-    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), "max(run_id)")
     no_of_runs = no_of_runs or 0
 
     # If one run fails, we want the whole upgrade to roll back, hence the
@@ -216,9 +220,7 @@ def upgrade_2_to_3(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
         pbar.set_description("Upgrading database; v2 -> v3")
 
         for run_id in pbar:
-
             if run_id in layout_ids_all:
-
                 result_table_name = result_tables[run_id]
                 layout_ids = list(layout_ids_all[run_id])
                 if run_id in indeps_all:
@@ -241,12 +243,11 @@ def upgrade_2_to_3(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
                 )
 
                 interdeps = InterDependencies(*paramspecs.values())
-                desc_dict = {'interdependencies': interdeps._to_dict()}
+                desc_dict = {"interdependencies": interdeps._to_dict()}
                 json_str = json.dumps(desc_dict)
 
             else:
-                desc_dict = {'interdependencies':
-                                 InterDependencies()._to_dict()}
+                desc_dict = {"interdependencies": InterDependencies()._to_dict()}
                 json_str = json.dumps(desc_dict)
 
             sql = """
