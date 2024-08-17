@@ -20,10 +20,6 @@ repos:
     - id: debug-statements
     - id: mixed-line-ending
       args: ['--fix=no']
-  - repo: https://github.com/akaihola/darker
-    rev: v2.1.1
-    hooks:
-      - id: darker
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.4
     hooks:
