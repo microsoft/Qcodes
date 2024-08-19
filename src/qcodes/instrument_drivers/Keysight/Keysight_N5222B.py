@@ -21,7 +21,7 @@ class KeysightN5222B(N52xx.KeysightPNABase):
             min_power=-30,
             max_power=13,
             nports=4,
-            **kwargs
+            **kwargs,
         )
 
         attenuators_options = {"217", "219", "220", "417", "419", "420"}

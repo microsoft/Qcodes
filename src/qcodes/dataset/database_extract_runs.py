@@ -52,17 +52,21 @@ def extract_runs_into_db(
     # Check for versions
     (s_v, new_v) = get_db_version_and_newest_available_version(source_db_path)
     if s_v < new_v and not upgrade_source_db:
-        warn(f'Source DB version is {s_v}, but this function needs it to be'
-             f' in version {new_v}. Run this function again with '
-             'upgrade_source_db=True to auto-upgrade the source DB file.')
+        warn(
+            f"Source DB version is {s_v}, but this function needs it to be"
+            f" in version {new_v}. Run this function again with "
+            "upgrade_source_db=True to auto-upgrade the source DB file."
+        )
         return
 
     if os.path.exists(target_db_path):
         (t_v, new_v) = get_db_version_and_newest_available_version(target_db_path)
         if t_v < new_v and not upgrade_target_db:
-            warn(f'Target DB version is {t_v}, but this function needs it to '
-                 f'be in version {new_v}. Run this function again with '
-                 'upgrade_target_db=True to auto-upgrade the target DB file.')
+            warn(
+                f"Target DB version is {t_v}, but this function needs it to "
+                f"be in version {new_v}. Run this function again with "
+                "upgrade_target_db=True to auto-upgrade the target DB file."
+            )
             return
 
     source_conn = connect(source_db_path)
@@ -72,9 +76,11 @@ def extract_runs_into_db(
     if False in do_runs_exist.values():
         source_conn.close()
         non_existing_ids = [rid for rid in run_ids if not do_runs_exist[rid]]
-        err_mssg = ("Error: not all run_ids exist in the source database. "
-                    "The following run(s) is/are not present: "
-                    f"{non_existing_ids}")
+        err_mssg = (
+            "Error: not all run_ids exist in the source database. "
+            "The following run(s) is/are not present: "
+            f"{non_existing_ids}"
+        )
         raise ValueError(err_mssg)
 
     # Validate that all runs are from the same experiment
@@ -82,8 +88,10 @@ def extract_runs_into_db(
     source_exp_ids = np.unique(get_exp_ids_from_run_ids(source_conn, run_ids))
     if len(source_exp_ids) != 1:
         source_conn.close()
-        raise ValueError('Did not receive runs from a single experiment. '
-                         f'Got runs from experiments {source_exp_ids}')
+        raise ValueError(
+            "Did not receive runs from a single experiment. "
+            f"Got runs from experiments {source_exp_ids}"
+        )
 
     # Fetch the attributes of the runs' experiment
     # hopefully, this is enough to uniquely identify the experiment
@@ -99,28 +107,28 @@ def extract_runs_into_db(
 
     try:
         with atomic(target_conn) as target_conn:
-
-            target_exp_id = _create_exp_if_needed(target_conn,
-                                                  exp_attrs['name'],
-                                                  exp_attrs['sample_name'],
-                                                  exp_attrs['format_string'],
-                                                  exp_attrs['start_time'],
-                                                  exp_attrs['end_time'])
+            target_exp_id = _create_exp_if_needed(
+                target_conn,
+                exp_attrs["name"],
+                exp_attrs["sample_name"],
+                exp_attrs["format_string"],
+                exp_attrs["start_time"],
+                exp_attrs["end_time"],
+            )
 
             # Finally insert the runs
             for run_id in run_ids:
-                _extract_single_dataset_into_db(DataSet(run_id=run_id,
-                                                        conn=source_conn),
-                                                target_conn,
-                                                target_exp_id)
+                _extract_single_dataset_into_db(
+                    DataSet(run_id=run_id, conn=source_conn), target_conn, target_exp_id
+                )
     finally:
         source_conn.close()
         target_conn.close()
 
 
-def _extract_single_dataset_into_db(dataset: DataSet,
-                                    target_conn: ConnectionPlus,
-                                    target_exp_id: int) -> None:
+def _extract_single_dataset_into_db(
+    dataset: DataSet, target_conn: ConnectionPlus, target_exp_id: int
+) -> None:
     """
     NB: This function should only be called from within
     meth:`extract_runs_into_db`
@@ -138,9 +146,11 @@ def _extract_single_dataset_into_db(dataset: DataSet,
     """
 
     if not dataset.completed:
-        raise ValueError('Dataset not completed. An incomplete dataset '
-                         'can not be copied. The incomplete dataset has '
-                         f'GUID: {dataset.guid} and run_id: {dataset.run_id}')
+        raise ValueError(
+            "Dataset not completed. An incomplete dataset "
+            "can not be copied. The incomplete dataset has "
+            f"GUID: {dataset.guid} and run_id: {dataset.run_id}"
+        )
 
     source_conn = dataset.conn
 

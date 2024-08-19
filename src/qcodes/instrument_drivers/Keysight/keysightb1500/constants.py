@@ -9,6 +9,7 @@ else:
     class StrEnum(str, Enum):
         pass
 
+
 class ChannelName(StrEnum):
     A = "CH1"
     B = "CH2"
@@ -32,6 +33,7 @@ class MeasurementError(IntEnum):
     Non compliance in the individual case one may refer to
     :class:`.MeasurementStatus`
     """
+
     C = 0
     N = 1
     T = 0
@@ -90,9 +92,10 @@ class ModuleKind(StrEnum):
     difference B1500 modules, as well as provide a default naming scheme for
     them (hence the `StrEnum`).
     """
-    SMU = 'SMU'  # Source/Monitor Unit
-    CMU = 'CMU'  # Capacitance Measurement Unit
-    WGFMU = 'WGFMU'  # Waveform Generator/Fast Measurement Unit
+
+    SMU = "SMU"  # Source/Monitor Unit
+    CMU = "CMU"  # Capacitance Measurement Unit
+    WGFMU = "WGFMU"  # Waveform Generator/Fast Measurement Unit
 
 
 class SlotNr(IntEnum):
@@ -338,6 +341,7 @@ class AutoPeriod(IntEnum):
 
 #: Command specific Enums
 
+
 class AAD:
     class Type(IntEnum):
         HIGH_SPEED = 0
@@ -362,6 +366,7 @@ class ADJQuery:
     class Mode(IntEnum):
         USE_LAST = 0
         MEASURE = 1
+
     class Response(IntEnum):
         PASSED = 0
         FAILED = 1
@@ -633,40 +638,40 @@ class IMP:
         Ls_Q = 402
 
     class Name(StrEnum):
-        R = 'Resistance'
-        G = 'Conductance'
-        Z = 'Impedance'
-        Y = 'Admittance'
-        Cp = 'Parallel Capacitance'
-        Cs = 'Series Capacitance'
-        Lp = 'Parallel Inductance'
-        Ls = 'Series Inductance'
-        X = 'Reactance'
-        B = 'Susceptance'
-        THETA_RAD = 'Phase'
-        THETA_DEG = 'Phase'
-        D = 'Dissipation Factor'
-        Q = 'Quality Factor'
-        Rp = 'Parallel Resistance'
-        Rs = 'Series Resistance'
+        R = "Resistance"
+        G = "Conductance"
+        Z = "Impedance"
+        Y = "Admittance"
+        Cp = "Parallel Capacitance"
+        Cs = "Series Capacitance"
+        Lp = "Parallel Inductance"
+        Ls = "Series Inductance"
+        X = "Reactance"
+        B = "Susceptance"
+        THETA_RAD = "Phase"
+        THETA_DEG = "Phase"
+        D = "Dissipation Factor"
+        Q = "Quality Factor"
+        Rp = "Parallel Resistance"
+        Rs = "Series Resistance"
 
     class Unit(StrEnum):
-        R = 'ohms'
-        G = 'S'
-        Z = 'ohms'
-        Y = 'S'
-        Cp = 'F'
-        Cs = 'F'
-        Lp = 'H'
-        Ls = 'H'
-        X = 'ohms'
-        B = 'S'
-        THETA_RAD = 'radian'
-        THETA_DEG = 'degree'
-        D = ''
-        Q = ''
-        Rp = 'ohms'
-        Rs = 'ohms'
+        R = "ohms"
+        G = "S"
+        Z = "ohms"
+        Y = "S"
+        Cp = "F"
+        Cs = "F"
+        Lp = "H"
+        Ls = "H"
+        X = "ohms"
+        B = "S"
+        THETA_RAD = "radian"
+        THETA_DEG = "degree"
+        D = ""
+        Q = ""
+        Rp = "ohms"
+        Rs = "ohms"
 
 
 class LIM:
@@ -953,6 +958,7 @@ class TGP:
         The meaning of the Trigger Type value depends on the value of
         TerminalType
         """
+
         ZERO = 0
         ONE = 1
         TWO = 2
@@ -987,11 +993,11 @@ class TM:
 
 class TMACV:
     class Range(StrEnum):
-        MAX_0V016 = '0.016'
-        MAX_0V032 = '0.032'
-        MAX_0V064 = '0.064'
-        MAX_0V125 = '0.125'
-        MAX_0V250 = '0.250'
+        MAX_0V016 = "0.016"
+        MAX_0V032 = "0.032"
+        MAX_0V064 = "0.064"
+        MAX_0V125 = "0.125"
+        MAX_0V250 = "0.250"
 
 
 class TMDCV:

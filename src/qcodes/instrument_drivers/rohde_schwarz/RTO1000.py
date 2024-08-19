@@ -80,10 +80,12 @@ class ScopeTrace(ArrayParameter):
         # If samples are multi-valued, we need a `MultiParameter`
         # instead of an `ArrayParameter`.
         if values_per_sample > 1:
-            raise NotImplementedError('There are several values per sample '
-                                      'in this trace (are you using envelope'
-                                      ' or peak detect?). We currently do '
-                                      'not support saving such a trace.')
+            raise NotImplementedError(
+                "There are several values per sample "
+                "in this trace (are you using envelope"
+                " or peak detect?). We currently do "
+                "not support saving such a trace."
+            )
 
         self.shape = (no_samples,)
         self.setpoints = (tuple(np.linspace(t_start, t_stop, no_samples)),)
@@ -101,33 +103,31 @@ class ScopeTrace(ArrayParameter):
         assert instr is not None
 
         if not self._trace_ready:
-            raise ValueError('Trace not ready! Please call '
-                             'prepare_trace().')
+            raise ValueError("Trace not ready! Please call prepare_trace().")
 
-        if instr.run_mode() == 'RUN Nx SINGLE':
+        if instr.run_mode() == "RUN Nx SINGLE":
             total_acquisitions = instr.num_acquisitions()
             completed_acquisitions = instr.completed_acquisitions()
-            log.info(f'Acquiring {total_acquisitions} traces.')
+            log.info(f"Acquiring {total_acquisitions} traces.")
             while completed_acquisitions < total_acquisitions:
-                log.info(f'Acquired {completed_acquisitions}:'
-                         f'{total_acquisitions}')
+                log.info(f"Acquired {completed_acquisitions}:{total_acquisitions}")
                 time.sleep(0.25)
                 completed_acquisitions = instr.completed_acquisitions()
 
-        log.info('Acquisition completed. Polling trace from instrument.')
+        log.info("Acquisition completed. Polling trace from instrument.")
         vh = instr.visa_handle
-        vh.write(f'CHANnel{self.channum}:DATA?')
+        vh.write(f"CHANnel{self.channum}:DATA?")
         raw_vals = vh.read_raw()
 
         num_length = int(raw_vals[1:2])
-        no_points = int(raw_vals[2:2+num_length])
+        no_points = int(raw_vals[2 : 2 + num_length])
 
         # cut of the header and the trailing '\n'
-        raw_vals = raw_vals[2+num_length:-1]
+        raw_vals = raw_vals[2 + num_length : -1]
 
         dataformat = instr.dataformat.get_latest()
 
-        if dataformat == 'INT,8':
+        if dataformat == "INT,8":
             int_vals = np.frombuffer(raw_vals, dtype=np.int8, count=no_points)
         else:
             int_vals = np.frombuffer(raw_vals, dtype=np.int16, count=no_points // 2)
@@ -139,9 +139,9 @@ class ScopeTrace(ArrayParameter):
         no_divs = 10  # TODO: Is this ever NOT 10?
 
         # we always export as 16 bit integers
-        quant_levels = 253*256
-        conv_factor = scale*no_divs/quant_levels
-        output = conv_factor*int_vals + self.channel.offset()
+        quant_levels = 253 * 256
+        conv_factor = scale * no_divs / quant_levels
+        output = conv_factor * int_vals + self.channel.offset()
 
         return output
 
@@ -168,75 +168,189 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
         """
 
         if meas_nr not in range(1, 9):
-            raise ValueError('Invalid measurement number; Min: 1, max 8')
+            raise ValueError("Invalid measurement number; Min: 1, max 8")
 
         self.meas_nr = meas_nr
         super().__init__(parent, name, **kwargs)
 
-        self.sources = vals.Enum('C1W1', 'C1W2', 'C1W3',
-                                 'C2W1', 'C2W2', 'C2W3',
-                                 'C3W1', 'C3W2', 'C3W3',
-                                 'C4W1', 'C4W2', 'C4W3',
-                                 'M1', 'M2', 'M3', 'M4',
-                                 'R1', 'R2', 'R3',  'R4',
-                                 'SBUS1', 'SBUS2', 'SBUS3', 'SBUS4',
-                                 'D0', 'D1', 'D2', 'D3',
-                                 'D4', 'D5', 'D6', 'D7',
-                                 'D8', 'D9', 'D10', 'D11',
-                                 'D12', 'D13', 'D14', 'D15',
-                                 'TRK1', 'TRK2', 'TRK3', 'TRK4',
-                                 'TRK5', 'TRK6', 'TRK7', 'TRK8',
-                                 'SG1TL1', 'SG1TL2',
-                                 'SG2TL1', 'SG2TL2',
-                                 'SG3TL1', 'SG3TL2',
-                                 'SG4TL1', 'SG4TL2',
-                                 'Z1V1', 'Z1V2', 'Z1V3', 'Z1V4',
-                                 'Z1I1', 'Z1I2', 'Z1I3', 'Z1I4',
-                                 'Z2V1', 'Z2V2', 'Z2V3',  'Z2V4',
-                                 'Z2I1', 'Z2I2', 'Z2I3', 'Z2I4')
+        self.sources = vals.Enum(
+            "C1W1",
+            "C1W2",
+            "C1W3",
+            "C2W1",
+            "C2W2",
+            "C2W3",
+            "C3W1",
+            "C3W2",
+            "C3W3",
+            "C4W1",
+            "C4W2",
+            "C4W3",
+            "M1",
+            "M2",
+            "M3",
+            "M4",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "SBUS1",
+            "SBUS2",
+            "SBUS3",
+            "SBUS4",
+            "D0",
+            "D1",
+            "D2",
+            "D3",
+            "D4",
+            "D5",
+            "D6",
+            "D7",
+            "D8",
+            "D9",
+            "D10",
+            "D11",
+            "D12",
+            "D13",
+            "D14",
+            "D15",
+            "TRK1",
+            "TRK2",
+            "TRK3",
+            "TRK4",
+            "TRK5",
+            "TRK6",
+            "TRK7",
+            "TRK8",
+            "SG1TL1",
+            "SG1TL2",
+            "SG2TL1",
+            "SG2TL2",
+            "SG3TL1",
+            "SG3TL2",
+            "SG4TL1",
+            "SG4TL2",
+            "Z1V1",
+            "Z1V2",
+            "Z1V3",
+            "Z1V4",
+            "Z1I1",
+            "Z1I2",
+            "Z1I3",
+            "Z1I4",
+            "Z2V1",
+            "Z2V2",
+            "Z2V3",
+            "Z2V4",
+            "Z2I1",
+            "Z2I2",
+            "Z2I3",
+            "Z2I4",
+        )
 
-        self.categories = vals.Enum('AMPTime', 'JITTer', 'EYEJitter',
-                                    'SPECtrum', 'HISTogram', 'PROTocol')
+        self.categories = vals.Enum(
+            "AMPTime", "JITTer", "EYEJitter", "SPECtrum", "HISTogram", "PROTocol"
+        )
 
         self.meas_type = vals.Enum(
-                        # Amplitude/time measurements
-                        'HIGH', 'LOW', 'AMPLitude',
-                        'MAXimum', 'MINimum', 'PDELta',
-                        'MEAN', 'RMS', 'STDDev',
-                        'POVershoot', 'NOVershoot', 'AREA',
-                        'RTIMe', 'FTIMe', 'PPULse',
-                        'NPULse', 'PERiod', 'FREQuency',
-                        'PDCYcle', 'NDCYcle', 'CYCarea',
-                        'CYCMean', 'CYCRms', 'CYCStddev',
-                        'PULCnt', 'DELay', 'PHASe',
-                        'BWIDth', 'PSWitching', 'NSWitching',
-                        'PULSetrain', 'EDGecount', 'SHT',
-                        'SHR', 'DTOTrigger', 'PROBemeter',
-                        'SLERising', 'SLEFalling',
-                        # Jitter measurements
-                        'CCJitter', 'NCJitter', 'CCWidth',
-                        'CCDutycycle', 'TIE', 'UINTerval',
-                        'DRATe', 'SKWDelay', 'SKWPhase',
-                        # Eye diagram measurements
-                        'ERPercent', 'ERDB', 'EHEight',
-                        'EWIDth', 'ETOP', 'EBASe',
-                        'QFACtor', 'RMSNoise', 'SNRatio',
-                        'DCDistortion', 'ERTime', 'EFTime',
-                        'EBRate', 'EAMPlitude', 'PPJitter',
-                        'STDJitter', 'RMSJitter',
-                        # Spectrum measurements
-                        'CPOWer', 'OBWidth', 'SBWidth',
-                        'THD', 'THDPCT', 'THDA',
-                        'THDU', 'THDR', 'HAR',
-                        'PLISt',
-                        # Histogram measurements
-                        'WCOunt', 'WSAMples', 'HSAMples',
-                        'HPEak', 'PEAK', 'UPEakvalue',
-                        'LPEakvalue', 'HMAXimum', 'HMINimum',
-                        'MEDian', 'MAXMin', 'HMEan',
-                        'HSTDdev', 'M1STddev', 'M2STddev',
-                        'M3STddev', 'MKPositive', 'MKNegative'
-                        )
+            # Amplitude/time measurements
+            "HIGH",
+            "LOW",
+            "AMPLitude",
+            "MAXimum",
+            "MINimum",
+            "PDELta",
+            "MEAN",
+            "RMS",
+            "STDDev",
+            "POVershoot",
+            "NOVershoot",
+            "AREA",
+            "RTIMe",
+            "FTIMe",
+            "PPULse",
+            "NPULse",
+            "PERiod",
+            "FREQuency",
+            "PDCYcle",
+            "NDCYcle",
+            "CYCarea",
+            "CYCMean",
+            "CYCRms",
+            "CYCStddev",
+            "PULCnt",
+            "DELay",
+            "PHASe",
+            "BWIDth",
+            "PSWitching",
+            "NSWitching",
+            "PULSetrain",
+            "EDGecount",
+            "SHT",
+            "SHR",
+            "DTOTrigger",
+            "PROBemeter",
+            "SLERising",
+            "SLEFalling",
+            # Jitter measurements
+            "CCJitter",
+            "NCJitter",
+            "CCWidth",
+            "CCDutycycle",
+            "TIE",
+            "UINTerval",
+            "DRATe",
+            "SKWDelay",
+            "SKWPhase",
+            # Eye diagram measurements
+            "ERPercent",
+            "ERDB",
+            "EHEight",
+            "EWIDth",
+            "ETOP",
+            "EBASe",
+            "QFACtor",
+            "RMSNoise",
+            "SNRatio",
+            "DCDistortion",
+            "ERTime",
+            "EFTime",
+            "EBRate",
+            "EAMPlitude",
+            "PPJitter",
+            "STDJitter",
+            "RMSJitter",
+            # Spectrum measurements
+            "CPOWer",
+            "OBWidth",
+            "SBWidth",
+            "THD",
+            "THDPCT",
+            "THDA",
+            "THDU",
+            "THDR",
+            "HAR",
+            "PLISt",
+            # Histogram measurements
+            "WCOunt",
+            "WSAMples",
+            "HSAMples",
+            "HPEak",
+            "PEAK",
+            "UPEakvalue",
+            "LPEakvalue",
+            "HMAXimum",
+            "HMINimum",
+            "MEDian",
+            "MAXMin",
+            "HMEan",
+            "HSTDdev",
+            "M1STddev",
+            "M2STddev",
+            "M3STddev",
+            "MKPositive",
+            "MKNegative",
+        )
 
         self.enable: Parameter = self.add_parameter(
             "enable",
@@ -361,7 +475,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
         """
 
         if channum not in [1, 2, 3, 4]:
-            raise ValueError('Invalid channel number! Must be 1, 2, 3, or 4.')
+            raise ValueError("Invalid channel number! Must be 1, 2, 3, or 4.")
 
         self.channum = channum
 
@@ -512,14 +626,14 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
 
     # Specialised/interlinked set/getters
     def _set_range(self, value: float) -> None:
-        self.scale.cache.set(value/10)
+        self.scale.cache.set(value / 10)
 
-        self._parent.write(f'CHANnel{self.channum}:RANGe {value}')
+        self._parent.write(f"CHANnel{self.channum}:RANGe {value}")
 
     def _set_scale(self, value: float) -> None:
-        self.range.cache.set(value*10)
+        self.range.cache.set(value * 10)
 
-        self._parent.write(f'CHANnel{self.channum}:SCALe {value}')
+        self._parent.write(f"CHANnel{self.channum}:SCALe {value}")
 
 
 ScopeChannel = RohdeSchwarzRTO1000ScopeChannel
@@ -573,12 +687,14 @@ class RohdeSchwarzRTO1000(VisaInstrument):
 
         if firmware_version >= version.parse("3.65"):
             # strip just in case there is a newline character at the end
-            self.model = self.ask('DIAGnostic:SERVice:WFAModel?').strip()
+            self.model = self.ask("DIAGnostic:SERVice:WFAModel?").strip()
             if model is not None and model != self.model:
-                warnings.warn("The model number provided by the user "
-                              "does not match the instrument's response."
-                              " I am going to assume that this oscilloscope "
-                              f"is a model {self.model}")
+                warnings.warn(
+                    "The model number provided by the user "
+                    "does not match the instrument's response."
+                    " I am going to assume that this oscilloscope "
+                    f"is a model {self.model}"
+                )
         elif model is None:
             raise ValueError(
                 "No model number provided. Please provide "
@@ -593,7 +709,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
         self.num_chans = int(self.model[-1])
         self.num_meas = 8
 
-        self._horisontal_divs = int(self.ask('TIMebase:DIVisions?'))
+        self._horisontal_divs = int(self.ask("TIMebase:DIVisions?"))
 
         self.display: Parameter = self.add_parameter(
             "display",
@@ -740,7 +856,7 @@ Options: AUTO, NORMAL, FREERUN."""
         )
         """Parameter run_mode"""
 
-        self.run_mode('RUN CONT')
+        self.run_mode("RUN CONT")
 
         self.num_acquisitions: Parameter = self.add_parameter(
             "num_acquisitions",
@@ -866,9 +982,9 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
             "status_operation", get_cmd="STATus:OPERation:CONDition?", get_parser=int
         )
         """Parameter status_operation"""
-        self.add_function('run_continues', call_cmd='RUNContinous')
+        self.add_function("run_continues", call_cmd="RUNContinous")
         # starts the shutdown of the system
-        self.add_function('system_shutdown', call_cmd='SYSTem:EXIT')
+        self.add_function("system_shutdown", call_cmd="SYSTem:EXIT")
 
         self.connect_message()
 
@@ -876,15 +992,15 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
         """
         Set the instrument in 'RUN CONT' mode
         """
-        self.write('RUN')
-        self.run_mode.set('RUN CONT')
+        self.write("RUN")
+        self.run_mode.set("RUN CONT")
 
     def run_single(self) -> None:
         """
         Set the instrument in 'RUN Nx SINGLE' mode
         """
-        self.write('SINGLE')
-        self.run_mode.set('RUN Nx SINGLE')
+        self.write("SINGLE")
+        self.run_mode.set("RUN Nx SINGLE")
 
     def is_triggered(self) -> bool:
         wait_trigger_mask = 0b01000
@@ -904,32 +1020,32 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
         Set/unset the high def mode
         """
         self._make_traces_not_ready()
-        self.write(f'HDEFinition:STAte {value}')
+        self.write(f"HDEFinition:STAte {value}")
 
     def _set_timebase_range(self, value: float) -> None:
         """
         Set the full range of the timebase
         """
         self._make_traces_not_ready()
-        self.timebase_scale.cache.set(value/self._horisontal_divs)
+        self.timebase_scale.cache.set(value / self._horisontal_divs)
 
-        self.write(f'TIMebase:RANGe {value}')
+        self.write(f"TIMebase:RANGe {value}")
 
     def _set_timebase_scale(self, value: float) -> None:
         """
         Set the length of one horizontal division.
         """
         self._make_traces_not_ready()
-        self.timebase_range.cache.set(value*self._horisontal_divs)
+        self.timebase_range.cache.set(value * self._horisontal_divs)
 
-        self.write(f'TIMebase:SCALe {value}')
+        self.write(f"TIMebase:SCALe {value}")
 
     def _set_timebase_position(self, value: float) -> None:
         """
         Set the horizontal position.
         """
         self._make_traces_not_ready()
-        self.write(f'TIMEbase:HORizontal:POSition {value}')
+        self.write(f"TIMEbase:HORizontal:POSition {value}")
 
     def _make_traces_not_ready(self) -> None:
         """
@@ -945,31 +1061,31 @@ Warning/Bug: By opening the HD acquisition menu on the scope, this value will be
         Set the trigger level on the currently used trigger source
         channel.
         """
-        trans = {'CH1': 1, 'CH2': 2, 'CH3': 3, 'CH4': 4, 'EXT': 5}
+        trans = {"CH1": 1, "CH2": 2, "CH3": 3, "CH4": 4, "EXT": 5}
         # We use get and not get_latest because we don't trust users to
         # not touch the front panel of an oscilloscope.
         source = trans[self.trigger_source.get()]
         if source != 5:
-            submodule = self.submodules[f'ch{source}']
+            submodule = self.submodules[f"ch{source}"]
             assert isinstance(submodule, InstrumentChannel)
             v_range = submodule.range()
             offset = submodule.offset()
 
-            if (value < -v_range/2 + offset) or (value > v_range/2 + offset):
-                raise ValueError('Trigger level outside channel range.')
+            if (value < -v_range / 2 + offset) or (value > v_range / 2 + offset):
+                raise ValueError("Trigger level outside channel range.")
 
-        self.write(f'TRIGger1:LEVel{source} {value}')
+        self.write(f"TRIGger1:LEVel{source} {value}")
 
     def _get_trigger_level(self) -> float:
         """
         Get the trigger level from the currently used trigger source
         """
-        trans = {'CH1': 1, 'CH2': 2, 'CH3': 3, 'CH4': 4, 'EXT': 5}
+        trans = {"CH1": 1, "CH2": 2, "CH3": 3, "CH4": 4, "EXT": 5}
         # we use get and not get_latest because we don't trust users to
         # not touch the front panel of an oscilloscope
         source = trans[self.trigger_source.get()]
 
-        val = self.ask(f'TRIGger1:LEVel{source}?')
+        val = self.ask(f"TRIGger1:LEVel{source}?")
 
         return float(val.strip())
 

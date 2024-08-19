@@ -15,10 +15,9 @@ from qcodes.instrument_drivers.mock_instruments import (
 )
 
 
-@pytest.fixture(scope='function', name='dci')
+@pytest.fixture(scope="function", name="dci")
 def _make_dci() -> Generator[DummyChannelInstrument, None, None]:
-
-    dci = DummyChannelInstrument(name='dci')
+    dci = DummyChannelInstrument(name="dci")
     try:
         yield dci
     finally:
@@ -46,7 +45,6 @@ def _make_dci_with_list() -> Generator[Instrument, None, None]:
 
 @pytest.fixture(scope="function", name="empty_instrument")
 def _make_empty_instrument() -> Generator[Instrument, None, None]:
-
     instr = Instrument(name="dci")
 
     try:
@@ -82,12 +80,11 @@ def test_channels_call_function(dci, caplog: LogCaptureFixture) -> None:
         caplog.clear()
         dci.channels.log_my_name()
         mssgs = [rec.message for rec in caplog.records]
-        names = [ch.name.replace('dci_', '') for ch in dci.channels]
+        names = [ch.name.replace("dci_", "") for ch in dci.channels]
         assert mssgs == names
 
 
 def test_channels_get(dci) -> None:
-
     temperatures = dci.channels.temperature.get()
     assert len(temperatures) == 6
 
@@ -95,7 +92,7 @@ def test_channels_get(dci) -> None:
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(value=hst.floats(0, 300), channel=hst.integers(0, 3))
 def test_channel_access_is_identical(dci, value, channel) -> None:
-    channel_to_label = {0: 'A', 1: 'B', 2: 'C', 3: "D"}
+    channel_to_label = {0: "A", 1: "B", 2: "C", 3: "D"}
     label = channel_to_label[channel]
     channel_via_label = getattr(dci, label)
     channel_via_name = dci.channels.get_channel_by_name(f"Chan{label}")
@@ -122,18 +119,18 @@ def test_channel_access_is_identical(dci, value, channel) -> None:
 
 
 def test_invalid_channel_type_raises(empty_instrument: Instrument) -> None:
-
     with pytest.raises(
         ValueError,
         match="ChannelTuple can only hold instances of type InstrumentChannel",
     ):
         ChannelList(
-            parent=empty_instrument, name="empty", chan_type=int  # type: ignore[type-var]
+            parent=empty_instrument,
+            name="empty",
+            chan_type=int,  # type: ignore[type-var]
         )
 
 
 def test_invalid_multichan_type_raises(empty_instrument: Instrument) -> None:
-
     with pytest.raises(ValueError, match="multichan_paramclass must be a"):
         ChannelList(
             parent=empty_instrument,
@@ -260,13 +257,11 @@ def test_insert_channel_wrong_type_raises(dci_with_list) -> None:
 
 
 def test_add_none_channel_tuple_to_channel_tuple_raises(dci) -> None:
-
     with pytest.raises(TypeError, match="Can't add objects of type"):
         _ = dci.channels + [1]
 
 
 def test_add_channel_tuples_of_different_types_raises(dci) -> None:
-
     extra_channels = [EmptyChannel(dci, f"chan{i}") for i in range(10)]
     extra_channel_list = ChannelList(
         parent=dci,
@@ -281,25 +276,21 @@ def test_add_channel_tuples_of_different_types_raises(dci) -> None:
 
 
 def test_add_channel_tuples_from_different_parents(dci, dci_with_list) -> None:
-
     with pytest.raises(ValueError, match="Can only add channels from the same"):
         _ = dci.channels + dci_with_list.channels
 
 
 def test_chan_tuple_repr(dci) -> None:
-
     dci_repr = repr(dci.channels)
     assert dci_repr.startswith("ChannelTuple")
 
 
 def test_chan_list_repr(dci_with_list) -> None:
-
     dci_repr = repr(dci_with_list.channels)
     assert dci_repr.startswith("ChannelList")
 
 
 def test_channel_tuple_get_validator(dci) -> None:
-
     validator = dci.channels.get_validator()
     for chan in dci.channels:
         validator.validate(chan)
@@ -318,7 +309,6 @@ def test_channel_list_get_validator_not_locked_raised(dci_with_list) -> None:
 
 
 def test_channel_tuple_index(dci) -> None:
-
     for i, chan in enumerate(dci.channels):
         assert dci.channels.index(chan) == i
 
@@ -330,7 +320,6 @@ def test_channel_tuple_snapshot(dci) -> None:
 
 
 def test_channel_tuple_snapshot_enabled(empty_instrument) -> None:
-
     channels = ChannelList(
         empty_instrument, "ListElem", DummyChannel, snapshotable=True
     )
@@ -346,7 +335,6 @@ def test_channel_tuple_snapshot_enabled(empty_instrument) -> None:
 
 
 def test_channel_tuple_dir(dci) -> None:
-
     dir_list = dir(dci.channels)
 
     for chan in dci.channels:
@@ -378,8 +366,8 @@ def test_remove_channel(dci_with_list) -> None:
     channels.remove(chan_a)
     with pytest.raises(AttributeError):
         getattr(channels, chan_a.short_name)
-    assert len(channels) == original_length-1
-    assert len(channels.temperature()) == original_length-1
+    assert len(channels) == original_length - 1
+    assert len(channels.temperature()) == original_length - 1
 
 
 def test_remove_locked_channel(dci_with_list) -> None:
@@ -436,32 +424,27 @@ def test_combine_channels(dci, setpoints) -> None:
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
-@given(start=hst.integers(-8, 7), stop=hst.integers(-8, 7),
-       step=hst.integers(1, 7))
+@given(start=hst.integers(-8, 7), stop=hst.integers(-8, 7), step=hst.integers(1, 7))
 def test_access_channels_by_slice(dci, start, stop, step) -> None:
-    names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
-    channels = tuple(DummyChannel(dci,
-                                  'Chan'+name, name) for name in names)
-    chlist = ChannelList(dci, 'channels',
-                         DummyChannel, channels)
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
+    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
     if stop < start:
         step = -step
     myslice = slice(start, stop, step)
     mychans = chlist[myslice]
     expected_channels = names[myslice]
     for chan, exp_chan in zip(mychans, expected_channels):
-        assert chan.name == f'dci_Chan{exp_chan}'
+        assert chan.name == f"dci_Chan{exp_chan}"
 
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=1000)
 @given(myindexs=hst.lists(elements=hst.integers(-8, 7), min_size=1))
 def test_access_channels_by_tuple(dci, myindexs) -> None:
-    names = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+    names = ("A", "B", "C", "D", "E", "F", "G", "H")
     mytuple = tuple(myindexs)
-    channels = tuple(DummyChannel(dci,
-                                  'Chan'+name, name) for name in names)
-    chlist = ChannelList(dci, 'channels',
-                         DummyChannel, channels)
+    channels = tuple(DummyChannel(dci, "Chan" + name, name) for name in names)
+    chlist = ChannelList(dci, "channels", DummyChannel, channels)
 
     mychans = chlist[mytuple]
     for chan, chanindex in zip(mychans, mytuple):
@@ -502,7 +485,6 @@ def test_delete_from_channel_list(dci_with_list) -> None:
 
 
 def test_set_element_by_int(dci_with_list) -> None:
-
     dci_with_list.channels[0] = dci_with_list.channels[1]
     assert dci_with_list.channels[0] is dci_with_list.channels[1]
 
@@ -523,7 +505,6 @@ def test_set_element_by_slice(dci_with_list) -> None:
 
 
 def test_set_element_locked_raises(dci_with_list) -> None:
-
     dci_with_list.channels.lock()
 
     with pytest.raises(
@@ -543,7 +524,7 @@ def test_access_channels_by_name(dci, myindexs) -> None:
     channel_names = (f"Chan{names[i]}" for i in myindexs)
     mychans = chlist.get_channel_by_name(*channel_names)
     for chan, chanindex in zip(mychans, myindexs):
-        assert chan.name == f'dci_Chan{names[chanindex]}'
+        assert chan.name == f"dci_Chan{names[chanindex]}"
 
 
 def test_channels_contain(dci) -> None:
@@ -582,20 +563,19 @@ def test_channels_is_sequence(dci) -> None:
 
 
 def test_names(dci) -> None:
-    ex_inst_name = 'dci'
+    ex_inst_name = "dci"
     for channel in dci.channels:
-        sub_channel = DummyChannel(channel, 'subchannel', 'subchannel')
-        channel.add_submodule('somesubchannel', sub_channel)
+        sub_channel = DummyChannel(channel, "subchannel", "subchannel")
+        channel.add_submodule("somesubchannel", sub_channel)
     assert dci.name == ex_inst_name
     assert dci.full_name == ex_inst_name
     assert dci.short_name == ex_inst_name
     assert dci.name_parts == [ex_inst_name]
 
     # Parameters directly on instrument
-    assert dci.IDN.name == 'IDN'
+    assert dci.IDN.name == "IDN"
     assert dci.IDN.full_name == f"{ex_inst_name}_IDN"
-    for chan, name in zip(dci.channels,
-                          ['A', 'B', 'C', 'D', 'E', 'F']):
+    for chan, name in zip(dci.channels, ["A", "B", "C", "D", "E", "F"]):
         ex_chan_name = f"Chan{name}"
         ex_chan_full_name = f"{ex_inst_name}_{ex_chan_name}"
 
@@ -604,13 +584,15 @@ def test_names(dci) -> None:
         assert chan.full_name == ex_chan_full_name
         assert chan.name_parts == [ex_inst_name, ex_chan_name]
 
-        ex_param_name = 'temperature'
+        ex_param_name = "temperature"
         assert chan.temperature.name == ex_param_name
-        assert chan.temperature.full_name ==\
-               f'{ex_chan_full_name}_{ex_param_name}'
+        assert chan.temperature.full_name == f"{ex_chan_full_name}_{ex_param_name}"
         assert chan.temperature.short_name == ex_param_name
-        assert chan.temperature.name_parts == [ex_inst_name, ex_chan_name,
-                                               ex_param_name]
+        assert chan.temperature.name_parts == [
+            ex_inst_name,
+            ex_chan_name,
+            ex_param_name,
+        ]
 
         ex_subchan_name = "subchannel"
         ex_subchan_full_name = f"{ex_chan_full_name}_{ex_subchan_name}"
@@ -618,16 +600,24 @@ def test_names(dci) -> None:
         assert chan.somesubchannel.short_name == ex_subchan_name
         assert chan.somesubchannel.name == ex_subchan_full_name
         assert chan.somesubchannel.full_name == ex_subchan_full_name
-        assert chan.somesubchannel.name_parts == [ex_inst_name,
-                                                  ex_chan_name,
-                                                  ex_subchan_name]
+        assert chan.somesubchannel.name_parts == [
+            ex_inst_name,
+            ex_chan_name,
+            ex_subchan_name,
+        ]
 
         assert chan.somesubchannel.temperature.name == ex_param_name
-        assert chan.somesubchannel.temperature.full_name ==\
-               f'{ex_subchan_full_name}_{ex_param_name}'
+        assert (
+            chan.somesubchannel.temperature.full_name
+            == f"{ex_subchan_full_name}_{ex_param_name}"
+        )
         assert chan.somesubchannel.temperature.short_name == ex_param_name
-        assert chan.somesubchannel.temperature.name_parts == \
-               [ex_inst_name, ex_chan_name, ex_subchan_name, ex_param_name]
+        assert chan.somesubchannel.temperature.name_parts == [
+            ex_inst_name,
+            ex_chan_name,
+            ex_subchan_name,
+            ex_param_name,
+        ]
 
 
 def test_root_instrument(dci) -> None:
@@ -654,7 +644,6 @@ def test_channel_tuple_call_method_basic_test(dci) -> None:
 
 
 def test_channel_tuple_call_method_called_as_expected(dci, mocker) -> None:
-
     for channel in dci.channels:
         channel.turn_on = mocker.MagicMock(return_value=1)
 
@@ -671,40 +660,36 @@ def test_channel_tuple_names(dci: DummyChannelInstrument) -> None:
 
 
 def _verify_multiparam_data(data):
-    assert 'multi_setpoint_param_this_setpoint_set' in data.arrays.keys()
+    assert "multi_setpoint_param_this_setpoint_set" in data.arrays.keys()
     assert_array_equal(
-        data.arrays['multi_setpoint_param_this_setpoint_set'].ndarray,
-        np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0)
+        data.arrays["multi_setpoint_param_this_setpoint_set"].ndarray,
+        np.repeat(np.arange(5.0, 10).reshape(1, 5), 11, axis=0),
     )
-    assert 'dci_ChanA_multi_setpoint_param_this' in data.arrays.keys()
+    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays.keys()
     assert_array_equal(
-        data.arrays['dci_ChanA_multi_setpoint_param_this'].ndarray,
-        np.zeros((11, 5))
+        data.arrays["dci_ChanA_multi_setpoint_param_this"].ndarray, np.zeros((11, 5))
     )
-    assert 'dci_ChanA_multi_setpoint_param_this' in data.arrays.keys()
+    assert "dci_ChanA_multi_setpoint_param_this" in data.arrays.keys()
     assert_array_equal(
-        data.arrays['dci_ChanA_multi_setpoint_param_that'].ndarray,
-        np.ones((11, 5))
+        data.arrays["dci_ChanA_multi_setpoint_param_that"].ndarray, np.ones((11, 5))
     )
-    assert 'dci_ChanA_temperature_set' in data.arrays.keys()
+    assert "dci_ChanA_temperature_set" in data.arrays.keys()
     assert_array_equal(
-        data.arrays['dci_ChanA_temperature_set'].ndarray,
-        np.arange(0, 10.1, 1)
+        data.arrays["dci_ChanA_temperature_set"].ndarray, np.arange(0, 10.1, 1)
     )
 
 
-def _verify_array_data(data, channels=('A',)):
-    assert 'array_setpoint_param_this_setpoint_set' in data.arrays.keys()
+def _verify_array_data(data, channels=("A",)):
+    assert "array_setpoint_param_this_setpoint_set" in data.arrays.keys()
     assert_array_equal(
-        data.arrays['array_setpoint_param_this_setpoint_set'].ndarray,
-        np.repeat(np.arange(5., 10).reshape(1, 5), 11, axis=0)
+        data.arrays["array_setpoint_param_this_setpoint_set"].ndarray,
+        np.repeat(np.arange(5.0, 10).reshape(1, 5), 11, axis=0),
     )
     for channel in channels:
-        aname = f'dci_Chan{channel}_dummy_array_parameter'
+        aname = f"dci_Chan{channel}_dummy_array_parameter"
         assert aname in data.arrays.keys()
-        assert_array_equal(data.arrays[aname].ndarray, np.ones((11, 5))+1)
-    assert 'dci_ChanA_temperature_set' in data.arrays.keys()
+        assert_array_equal(data.arrays[aname].ndarray, np.ones((11, 5)) + 1)
+    assert "dci_ChanA_temperature_set" in data.arrays.keys()
     assert_array_equal(
-        data.arrays['dci_ChanA_temperature_set'].ndarray,
-        np.arange(0, 10.1, 1)
+        data.arrays["dci_ChanA_temperature_set"].ndarray, np.arange(0, 10.1, 1)
     )

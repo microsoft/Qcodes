@@ -6,6 +6,7 @@ repos:
     - id: ruff
       types_or: [python, pyi, jupyter, toml]
       args: [ --fix, --exit-non-zero-on-fix ]
+    - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -20,10 +21,6 @@ repos:
     - id: debug-statements
     - id: mixed-line-ending
       args: ['--fix=no']
-  - repo: https://github.com/akaihola/darker
-    rev: v2.1.1
-    hooks:
-      - id: darker
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.4
     hooks:

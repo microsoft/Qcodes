@@ -20,5 +20,5 @@ class KeysightN5232B(N52xx.KeysightPNABase):
             min_power=-90,
             max_power=13,
             nports=4,
-            **kwargs
+            **kwargs,
         )

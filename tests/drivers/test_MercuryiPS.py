@@ -10,7 +10,7 @@ from qcodes.instrument_drivers.oxford.MercuryiPS_VISA import MercuryiPS
 from qcodes.math_utils.field_vector import FieldVector
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def driver():
     mips = MercuryiPS(
         "mips", address="GPIB::1::INSTR", pyvisa_sim_file="MercuryiPS.yaml"
@@ -19,9 +19,8 @@ def driver():
     mips.close()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def driver_spher_lim():
-
     def spherical_limits(x, y, z):
         """
         Checks that the field is inside a sphere of radius 2
@@ -39,7 +38,7 @@ def driver_spher_lim():
     mips_sl.close()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def driver_cyl_lim():
     def cylindrical_limits(x, y, z):
         """
@@ -62,7 +61,7 @@ def driver_cyl_lim():
 
 
 def test_idn(driver) -> None:
-    assert driver.IDN()['model'] == 'SIMULATED MERCURY iPS'
+    assert driver.IDN()["model"] == "SIMULATED MERCURY iPS"
 
 
 def test_simple_setting(driver) -> None:
@@ -78,16 +77,12 @@ def test_simple_setting(driver) -> None:
 def test_vector_setting(driver) -> None:
     assert driver.field_target().distance(FieldVector(0, 0, 0)) <= 1e-8
     driver.field_target(FieldVector(r=0.1, theta=0, phi=0))
-    assert driver.field_target().distance(
-        FieldVector(r=0.1, theta=0, phi=0)
-    ) <= 1e-8
+    assert driver.field_target().distance(FieldVector(r=0.1, theta=0, phi=0)) <= 1e-8
 
 
 def test_vector_ramp_rate(driver) -> None:
     driver.field_ramp_rate(FieldVector(0.1, 0.1, 0.1))
-    assert driver.field_ramp_rate().distance(
-        FieldVector(0.1, 0.1, 0.1)
-    ) <= 1e-8
+    assert driver.field_ramp_rate().distance(FieldVector(0.1, 0.1, 0.1)) <= 1e-8
 
 
 def test_wrong_field_limit_raises() -> None:
@@ -141,10 +136,11 @@ def get_ramp_order(caplog_records):
     order = []
     for record in caplog_records:
         mssg = record.message
-        if 'RTOS' in mssg:
-            axis = mssg[mssg.find('GRP')+3:mssg.find('GRP')+4]
+        if "RTOS" in mssg:
+            axis = mssg[mssg.find("GRP") + 3 : mssg.find("GRP") + 4]
             order.append(axis.lower())
     return order
+
 
 @settings(suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
@@ -157,18 +153,17 @@ def test_ramp_safely(driver, x, y, z, caplog: LogCaptureFixture) -> None:
     Test that we get the first-down-then-up order right
     """
     # reset the instrument to default
-    driver.GRPX.ramp_status('HOLD')
-    driver.GRPY.ramp_status('HOLD')
-    driver.GRPZ.ramp_status('HOLD')
+    driver.GRPX.ramp_status("HOLD")
+    driver.GRPY.ramp_status("HOLD")
+    driver.GRPZ.ramp_status("HOLD")
 
     # the current field values are always zero for the sim. instr.
     # Use the FieldVector interface here to increase coverage.
     driver.field_target(FieldVector(x=x, y=y, z=z))
 
-    exp_order = \
-        np.array(['x', 'y', 'z'])[np.argsort(np.abs(np.array([x, y, z])))]
+    exp_order = np.array(["x", "y", "z"])[np.argsort(np.abs(np.array([x, y, z])))]
 
-    with caplog.at_level(logging.DEBUG, logger='qcodes.instrument.visa'):
+    with caplog.at_level(logging.DEBUG, logger="qcodes.instrument.visa"):
         caplog.clear()
         driver._ramp_safely()
         ramp_order = get_ramp_order(caplog.records)

@@ -1,4 +1,3 @@
-
 from typing import TYPE_CHECKING
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs

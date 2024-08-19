@@ -17,12 +17,9 @@ def test_device(station, chip_config, dac, lockin) -> None:
         lockin.frequency,
         lockin.amplitude,
         lockin.phase,
-        lockin.time_constant
+        lockin.time_constant,
     )
-    assert chip.device1.drain.source_parameters == (
-        lockin.X,
-        lockin.Y
-    )
+    assert chip.device1.drain.source_parameters == (lockin.X, lockin.Y)
 
 
 @pytest.mark.usefixtures("experiment")
@@ -39,8 +36,7 @@ def test_device_meas(station, chip) -> None:
             get_a = device.drain_X.get()
             datasaver.add_result((device.gate, set_v), (device.drain, get_a))
             datasaver.flush_data_to_database()
-        assert len(
-            datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10
+        assert len(datasaver.dataset.to_pandas_dataframe_dict()["device1_drain"]) == 10
 
 
 def test_device_with_channels(chip, station) -> None:
@@ -71,7 +67,7 @@ def test_device_with_custom_channels(chip, station) -> None:
     assert device.gate_1.parent == station.dac
     assert isinstance(device.gate_1, MockCustomChannel)
 
-    assert device.fast_gate._channel == 'dac.ch02'
+    assert device.fast_gate._channel == "dac.ch02"
     assert isinstance(device.fast_gate, DummyChannel)
 
 

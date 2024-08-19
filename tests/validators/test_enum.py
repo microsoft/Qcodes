@@ -9,7 +9,7 @@ import qcodes.validators as vals
 enums: list[list[Any]] = [
     [True, False],
     [1, 2, 3],
-    [True, None, 1, 2.3, 'Hi!', b'free', (1, 2), float("inf")]
+    [True, None, 1, 2.3, "Hi!", b"free", (1, 2), float("inf")],
 ]
 
 # enum items must be immutable - tuple OK, list bad.
@@ -23,7 +23,7 @@ def test_good() -> None:
         for v in enum:
             e.validate(v)
 
-        for v in [22, 'bad data', [44, 55]]:
+        for v in [22, "bad data", [44, 55]]:
             with pytest.raises((ValueError, TypeError)):
                 e.validate(v)
 

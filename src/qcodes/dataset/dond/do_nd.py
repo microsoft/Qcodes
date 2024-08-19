@@ -710,7 +710,11 @@ def dond(
         [], KeyboardInterrupt | BreakConditionInterrupt | None
     ] = lambda: None
     try:
-        with catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
+        with (
+            catch_interrupts() as interrupted,
+            ExitStack() as stack,
+            params_meas_caller as call_params_meas,
+        ):
             datasavers = [
                 stack.enter_context(
                     group.measurement_cxt.run(in_memory_cache=in_memory_cache)

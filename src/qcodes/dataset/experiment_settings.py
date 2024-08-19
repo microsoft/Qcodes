@@ -1,4 +1,5 @@
 """Settings that are indirectly related to experiments."""
+
 from __future__ import annotations
 
 from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile

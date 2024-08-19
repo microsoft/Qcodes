@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 CartesianFieldLimitFunction = Callable[[float, float, float], bool]
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @deprecated(
@@ -62,6 +62,7 @@ class AMI430SwitchHeater(InstrumentChannel):
                 if not self.check_enabled():
                     raise AMI430Exception("Switch not enabled")
                 return f(self, *args, **kwargs)
+
             return check_enabled_decorator
 
     def __init__(self, parent: AMI430) -> None:
@@ -126,16 +127,16 @@ class AMI430SwitchHeater(InstrumentChannel):
 
     def disable(self) -> None:
         """Turn measurement off"""
-        self.write('CONF:PS 0')
+        self.write("CONF:PS 0")
         self._enabled = False
 
     def enable(self) -> None:
         """Turn measurement on"""
-        self.write('CONF:PS 1')
+        self.write("CONF:PS 1")
         self._enabled = True
 
     def check_enabled(self) -> bool:
-        return bool(int(self.ask('PS:INST?').strip()))
+        return bool(int(self.ask("PS:INST?").strip()))
 
     @_Decorators.check_enabled
     def on(self) -> None:
@@ -195,15 +196,22 @@ class AMI430(IPInstrument):
             warnings.warn(
                 "'has_current_rating' kwarg to AMI430 "
                 "is deprecated and has no effect",
-                category=QCoDeSDeprecationWarning)
+                category=QCoDeSDeprecationWarning,
+            )
             kwargs.pop("has_current_rating")
 
-        super().__init__(name, address, port, terminator=terminator,
-                         write_confirmation=False, **kwargs)
+        super().__init__(
+            name,
+            address,
+            port,
+            terminator=terminator,
+            write_confirmation=False,
+            **kwargs,
+        )
         self._parent_instrument = None
 
         # Add reset function
-        self.add_function('reset', call_cmd='*RST')
+        self.add_function("reset", call_cmd="*RST")
         if reset:
             self.reset()
 
@@ -240,8 +248,9 @@ class AMI430(IPInstrument):
         )
         """Parameter field_ramp_limit"""
         if current_ramp_limit is None:
-            self._update_ramp_rate_limit(AMI430._DEFAULT_CURRENT_RAMP_LIMIT,
-                                         update=False)
+            self._update_ramp_rate_limit(
+                AMI430._DEFAULT_CURRENT_RAMP_LIMIT, update=False
+            )
         else:
             self._update_ramp_rate_limit(current_ramp_limit, update=False)
 
@@ -290,8 +299,8 @@ class AMI430(IPInstrument):
             "is_quenched", get_cmd="QU?", val_mapping={True: 1, False: 0}
         )
         """Parameter is_quenched"""
-        self.add_function('reset_quench', call_cmd='QU 0')
-        self.add_function('set_quenched', call_cmd='QU 1')
+        self.add_function("reset_quench", call_cmd="QU 0")
+        self.add_function("set_quenched", call_cmd="QU 1")
         self.ramping_state: Parameter = self.add_parameter(
             "ramping_state",
             get_cmd="STATE?",
@@ -324,10 +333,10 @@ class AMI430(IPInstrument):
         self.add_submodule("switch_heater", switch_heater)
 
         # Add interaction functions
-        self.add_function('get_error', call_cmd='SYST:ERR?')
-        self.add_function('ramp', call_cmd='RAMP')
-        self.add_function('pause', call_cmd='PAUSE')
-        self.add_function('zero', call_cmd='ZERO')
+        self.add_function("get_error", call_cmd="SYST:ERR?")
+        self.add_function("ramp", call_cmd="RAMP")
+        self.add_function("pause", call_cmd="PAUSE")
+        self.add_function("zero", call_cmd="ZERO")
 
         # Correctly assign all units
         self._update_units()
@@ -340,7 +349,7 @@ class AMI430(IPInstrument):
         the PyVISA 'sim' backend, omit this
         """
 
-        simmode = getattr(self, 'visabackend', False) == 'sim'
+        simmode = getattr(self, "visabackend", False) == "sim"
 
         if simmode:
             return
@@ -360,23 +369,21 @@ class AMI430(IPInstrument):
             return False
 
         state = self.ramping_state()
-        if state == 'ramping':
+        if state == "ramping":
             # If we don't have a persistent switch, or it's warm
             if not self.switch_heater.enabled():
                 return True
             elif self.switch_heater.state():
                 return True
-        elif state in ['holding', 'paused', 'at zero current']:
+        elif state in ["holding", "paused", "at zero current"]:
             return True
 
         logging.error(f"{__name__}: Could not ramp, state: {state}")
         return False
 
-    def set_field(self,
-                  value: float,
-                  *,
-                  block: bool = True,
-                  perform_safety_check: bool = True) -> None:
+    def set_field(
+        self, value: float, *, block: bool = True, perform_safety_check: bool = True
+    ) -> None:
         """
         Ramp to a certain field
 
@@ -388,9 +395,9 @@ class AMI430(IPInstrument):
                 checks.
         """
         # Check we aren't violating field limits
-        field_lim = float(self.ask("COIL?"))*self.current_limit()
+        field_lim = float(self.ask("COIL?")) * self.current_limit()
         if np.abs(value) > field_lim:
-            msg = 'Aborted _set_field; {} is higher than limit of {}'
+            msg = "Aborted _set_field; {} is higher than limit of {}"
             raise ValueError(msg.format(value, field_lim))
 
         # If part of a parent driver, set the value using that driver
@@ -400,13 +407,14 @@ class AMI430(IPInstrument):
 
         # Check we can ramp
         if not self._can_start_ramping():
-            raise AMI430Exception(f"Cannot ramp in current state: "
-                                  f"state is {self.ramping_state()}")
+            raise AMI430Exception(
+                f"Cannot ramp in current state: state is {self.ramping_state()}"
+            )
 
         # Then, do the actual ramp
         self.pause()
         # Set the ramp target
-        self.write(f'CONF:FIELD:TARG {value}')
+        self.write(f"CONF:FIELD:TARG {value}")
 
         # If we have a persistent switch, make sure it is resistive
         if self.switch_heater.enabled():
@@ -419,35 +427,36 @@ class AMI430(IPInstrument):
             return
 
         # Otherwise, wait until no longer ramping
-        self.log.debug(f'Starting blocking ramp of {self.name} to {value}')
+        self.log.debug(f"Starting blocking ramp of {self.name} to {value}")
         exit_state = self.wait_while_ramping()
         self.log.debug("Finished blocking ramp")
         # If we are now holding, it was successful
-        if exit_state != 'holding':
-            msg = '_set_field({}) failed with state: {}'
+        if exit_state != "holding":
+            msg = "_set_field({}) failed with state: {}"
             raise AMI430Exception(msg.format(value, exit_state))
 
     def wait_while_ramping(self) -> str:
-
-        while self.ramping_state() == 'ramping':
+        while self.ramping_state() == "ramping":
             self._sleep(self.ramping_state_check_interval())
 
         return self.ramping_state()
 
     def _get_ramp_rate(self) -> float:
-        """ Return the ramp rate of the first segment in Tesla per second """
-        results = self.ask('RAMP:RATE:FIELD:1?').split(',')
+        """Return the ramp rate of the first segment in Tesla per second"""
+        results = self.ask("RAMP:RATE:FIELD:1?").split(",")
         return float(results[0])
 
     def _set_ramp_rate(self, rate: float) -> None:
-        """ Set the ramp rate of the first segment in Tesla per second """
+        """Set the ramp rate of the first segment in Tesla per second"""
         if rate > self.field_ramp_limit():
-            raise ValueError(f"{rate} {self.ramp_rate.unit} "
-                             f"is above the ramp rate limit of "
-                             f"{self.field_ramp_limit()} "
-                             f"{self.field_ramp_limit()}")
-        self.write('CONF:RAMP:RATE:SEG 1')
-        self.write(f'CONF:RAMP:RATE:FIELD 1,{rate},0')
+            raise ValueError(
+                f"{rate} {self.ramp_rate.unit} "
+                f"is above the ramp rate limit of "
+                f"{self.field_ramp_limit()} "
+                f"{self.field_ramp_limit()}"
+            )
+        self.write("CONF:RAMP:RATE:SEG 1")
+        self.write(f"CONF:RAMP:RATE:FIELD 1,{rate},0")
 
     def _connect(self) -> None:
         """
@@ -458,9 +467,9 @@ class AMI430(IPInstrument):
         super()._connect()
         self.flush_connection()
 
-    def _update_ramp_rate_limit(self,
-                                new_current_rate_limit: float,
-                                update: bool = True) -> None:
+    def _update_ramp_rate_limit(
+        self, new_current_rate_limit: float, update: bool = True
+    ) -> None:
         """
         Update the maximum current ramp rate
         The value passed here is scaled by the units set in
@@ -487,8 +496,8 @@ class AMI430(IPInstrument):
             self.write(f"CONF:COIL {new_coil_constant}")
 
         # Update scaling factors
-        self.field_ramp_limit.scale = 1/new_coil_constant
-        self.field_limit.scale = 1/new_coil_constant
+        self.field_ramp_limit.scale = 1 / new_coil_constant
+        self.field_limit.scale = 1 / new_coil_constant
 
         # Return new coil constant
         return new_coil_constant
@@ -530,7 +539,7 @@ class AMI430(IPInstrument):
         #       to ramp_rate_limit; we don't update ramp_rate units as
         #       the instrument stores changed units
         if ramp_rate_units_short == "min":
-            self.current_ramp_limit.scale = 1/60
+            self.current_ramp_limit.scale = 1 / 60
         else:
             self.current_ramp_limit.scale = 1
 
@@ -583,8 +592,8 @@ class AMI430_3D(Instrument):
             raise ValueError("Name should be a string")
 
         for instrument, arg_name in zip(
-                (instrument_x, instrument_y, instrument_z),
-                ("instrument_x", "instrument_y", "instrument_z"),
+            (instrument_x, instrument_y, instrument_z),
+            ("instrument_x", "instrument_y", "instrument_z"),
         ):
             if not isinstance(instrument, (AMI430, str)):
                 raise ValueError(
@@ -601,15 +610,18 @@ class AMI430_3D(Instrument):
             return found_ami430
 
         self._instrument_x = (
-            instrument_x if isinstance(instrument_x, AMI430)
+            instrument_x
+            if isinstance(instrument_x, AMI430)
             else find_ami430_with_name(instrument_x)
         )
         self._instrument_y = (
-            instrument_y if isinstance(instrument_y, AMI430)
+            instrument_y
+            if isinstance(instrument_y, AMI430)
             else find_ami430_with_name(instrument_y)
         )
         self._instrument_z = (
-            instrument_z if isinstance(instrument_z, AMI430)
+            instrument_z
+            if isinstance(instrument_z, AMI430)
             else find_ami430_with_name(instrument_z)
         )
 
@@ -620,13 +632,15 @@ class AMI430_3D(Instrument):
             # Conversion to float makes related driver logic simpler
             self._field_limit = float(field_limit)
         else:
-            raise ValueError("field limit should either be a number or "
-                             "an iterable of callable field limit functions.")
+            raise ValueError(
+                "field limit should either be a number or "
+                "an iterable of callable field limit functions."
+            )
 
         self._set_point = FieldVector(
             x=self._instrument_x.field(),
             y=self._instrument_y.field(),
-            z=self._instrument_z.field()
+            z=self._instrument_z.field(),
         )
 
         # Get-only parameters that return a measured value
@@ -810,7 +824,7 @@ class AMI430_3D(Instrument):
             get_cmd=None,
             set_parser=self._set_vector_ramp_rate_units,
             docstring="Ramp rate along a line (vector) in 3D space. Only active"
-                      " if `ramp_mode='simultaneous'`."
+            " if `ramp_mode='simultaneous'`.",
         )
         """Ramp rate along a line (vector) in 3D field space"""
 
@@ -960,8 +974,9 @@ class AMI430_3D(Instrument):
         if isinstance(self._field_limit, (int, float)):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
-        answer = any([limit_function(*setpoint_values) for
-                      limit_function in self._field_limit])
+        answer = any(
+            [limit_function(*setpoint_values) for limit_function in self._field_limit]
+        )
 
         return answer
 
@@ -982,10 +997,9 @@ class AMI430_3D(Instrument):
 
         # Check if the individual instruments are ready
         for name, value in zip(["x", "y", "z"], values):
-
             instrument = getattr(self, f"_instrument_{name}")
             if instrument.ramping_state() == "ramping":
-                msg = '_set_fields aborted; magnet {} is already ramping'
+                msg = "_set_fields aborted; magnet {} is already ramping"
                 raise AMI430Exception(msg.format(instrument))
 
         # Now that we know we can proceed, call the individual instruments
@@ -1001,9 +1015,11 @@ class AMI430_3D(Instrument):
         self, values: tuple[float, float, float]
     ) -> None:
         if self.vector_ramp_rate() is None or self.vector_ramp_rate() == 0:
-            raise ValueError('The value of the `vector_ramp_rate` Parameter is '
-                             'currently None or 0. Set it to an appropriate '
-                             'value to use the simultaneous ramping feature.')
+            raise ValueError(
+                "The value of the `vector_ramp_rate` Parameter is "
+                "currently None or 0. Set it to an appropriate "
+                "value to use the simultaneous ramping feature."
+            )
 
         new_axes_ramp_rates = self.calculate_axes_ramp_rates_from_vector_ramp_rate(
             start=self._get_measured_field_vector(),
@@ -1060,7 +1076,6 @@ class AMI430_3D(Instrument):
             # This will ensure that we are always in a safe region as
             # far as the quenching of the magnets is concerned
             for name, value in zip(["x", "y", "z"], values):
-
                 instrument = getattr(self, f"_instrument_{name}")
                 current_actual = instrument.field()
 
@@ -1073,8 +1088,11 @@ class AMI430_3D(Instrument):
                 if not operator(abs(value), abs(current_actual)):
                     continue
 
-                instrument.set_field(value, perform_safety_check=False,
-                                     block=self.block_during_ramp.get())
+                instrument.set_field(
+                    value,
+                    perform_safety_check=False,
+                    block=self.block_during_ramp.get(),
+                )
 
     def _prepare_to_restore_individual_axes_ramp_rates(self) -> None:
         for instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
@@ -1111,8 +1129,12 @@ class AMI430_3D(Instrument):
         )
 
     def pause(self) -> None:
-        """ Pause all magnet axes. """
-        for axis_instrument in (self._instrument_x, self._instrument_y, self._instrument_z):
+        """Pause all magnet axes."""
+        for axis_instrument in (
+            self._instrument_x,
+            self._instrument_y,
+            self._instrument_z,
+        ):
             axis_instrument.pause()
 
     def _request_field_change(self, instrument: AMI430, value: float) -> None:
@@ -1128,7 +1150,7 @@ class AMI430_3D(Instrument):
         elif instrument is self._instrument_z:
             self._set_z(value)
         else:
-            msg = 'This magnet doesnt belong to its specified parent {}'
+            msg = "This magnet doesnt belong to its specified parent {}"
             raise NameError(msg.format(self))
 
     def _get_measured_field_vector(self) -> FieldVector:
@@ -1175,12 +1197,7 @@ class AMI430_3D(Instrument):
 
         return return_value
 
-    def _set_setpoints(
-            self,
-            names: Sequence[str],
-            values: Sequence[float]
-    ) -> None:
-
+    def _set_setpoints(self, names: Sequence[str], values: Sequence[float]) -> None:
         kwargs = dict(zip(names, np.atleast_1d(values)))
 
         set_point = FieldVector()

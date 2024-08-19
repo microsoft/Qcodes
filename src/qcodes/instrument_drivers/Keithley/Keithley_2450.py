@@ -211,6 +211,7 @@ class _FunctionMode(TypedDict):
     unit: str
     range_vals: Numbers
 
+
 class Keithley2450Sense(InstrumentChannel):
     """
     The sense module of the Keithley 2450 SMU.
@@ -337,7 +338,6 @@ class Keithley2450Sense(InstrumentChannel):
         return float(self.ask(f":MEASure? '{buffer_name}'"))
 
     def _measure_sweep(self) -> np.ndarray:
-
         source = cast(Keithley2450Source, self.parent.source)
         source.sweep_start()
         buffer_name = self.parent.buffer_name()
@@ -539,7 +539,6 @@ class Keithley2450Source(InstrumentChannel):
         dual: str = "OFF",
         buffer_name: str = "defbuffer1",
     ) -> None:
-
         self._sweep_arguments = _SweepDict(
             start=start,
             stop=stop,

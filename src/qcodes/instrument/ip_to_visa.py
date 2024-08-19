@@ -57,11 +57,9 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         timeout: float = 3,
         **kwargs: Any,
     ):
-
         # remove IPInstrument-specific kwargs
-        ipkwargs = ['write_confirmation']
-        newkwargs = {kw: val for (kw, val) in kwargs.items()
-                     if kw not in ipkwargs}
+        ipkwargs = ["write_confirmation"]
+        newkwargs = {kw: val for (kw, val) in kwargs.items() if kw not in ipkwargs}
 
         Instrument.__init__(self, name, **newkwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)
@@ -69,12 +67,13 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         ##################################################
         # __init__ of VisaInstrument
 
-        self.add_parameter('timeout',
-                           get_cmd=self._get_visa_timeout,
-                           set_cmd=self._set_visa_timeout,
-                           unit='s',
-                           vals=vals.MultiType(vals.Numbers(min_value=0),
-                                               vals.Enum(None)))
+        self.add_parameter(
+            "timeout",
+            get_cmd=self._get_visa_timeout,
+            set_cmd=self._set_visa_timeout,
+            unit="s",
+            vals=vals.MultiType(vals.Numbers(min_value=0), vals.Enum(None)),
+        )
 
         traversable_handle = files("qcodes.instrument.sims") / pyvisa_sim_file
         with as_file(traversable_handle) as sim_visalib_path:
@@ -91,7 +90,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
         """Disconnect and irreversibly tear down the instrument."""
 
         # VisaInstrument close
-        if getattr(self, 'visa_handle', None):
+        if getattr(self, "visa_handle", None):
             self.visa_handle.close()
 
         if getattr(self, "visabackend", None) == "sim" and getattr(
@@ -112,7 +111,7 @@ class IPToVisa(VisaInstrument, IPInstrument):  # type: ignore[misc]
                 self.resource_manager.visalib._init()
 
         # Instrument close
-        if hasattr(self, 'connection') and hasattr(self.connection, 'close'):
+        if hasattr(self, "connection") and hasattr(self.connection, "close"):
             self.connection.close()
 
         strip_attrs(self, whitelist=["_short_name"])

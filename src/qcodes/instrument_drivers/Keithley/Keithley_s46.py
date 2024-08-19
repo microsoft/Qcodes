@@ -1,6 +1,7 @@
 """
 Driver for the Keithley S46 RF switch
 """
+
 import re
 from itertools import product
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -105,7 +106,6 @@ class S46Parameter(Parameter):
         return self._get(get_cached=False)
 
     def set_raw(self, value: ParamRawDataType) -> None:
-
         if value == "close":
             self._lock.acquire(self._channel_number)
         elif value == "open":
@@ -130,7 +130,6 @@ class S46Parameter(Parameter):
 
 
 class KeithleyS46(VisaInstrument):
-
     relay_names: list[str] = ["A", "B", "C", "D"] + [f"R{j}" for j in range(1, 9)]
 
     # Make a dictionary where keys are channel aliases (e.g. 'A1', 'B3', etc)
@@ -165,7 +164,6 @@ class KeithleyS46(VisaInstrument):
             for relay_name, channel_count in zip(
                 KeithleyS46.relay_names, self.relay_layout
             ):
-
                 relay_lock = KeithleyS46RelayLock(relay_name)
 
                 for channel_index in range(1, channel_count + 1):

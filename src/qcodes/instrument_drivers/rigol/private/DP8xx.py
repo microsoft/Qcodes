@@ -175,7 +175,7 @@ class RigolDP8xxBase(VisaInstrument):
 
         # Check if precision extension has been installed
         opt = self.installed_options()
-        if 'DP8-ACCURACY' in opt:
+        if "DP8-ACCURACY" in opt:
             ovp_ranges_selected = ovp_ranges[1]
             ocp_ranges_selected = ocp_ranges[1]
         else:
@@ -183,7 +183,9 @@ class RigolDP8xxBase(VisaInstrument):
             ocp_ranges_selected = ocp_ranges[0]
 
         # channel-specific parameters
-        channels = ChannelList(self, "SupplyChannel", RigolDP8xxChannel, snapshotable=False)
+        channels = ChannelList(
+            self, "SupplyChannel", RigolDP8xxChannel, snapshotable=False
+        )
         for ch_num, channel_range in enumerate(channels_ranges):
             ch_name = f"ch{ch_num + 1}"
             channel = RigolDP8xxChannel(
@@ -192,7 +194,7 @@ class RigolDP8xxBase(VisaInstrument):
                 ch_num + 1,
                 channel_range,
                 ovp_ranges_selected[ch_num],
-                ocp_ranges_selected[ch_num]
+                ocp_ranges_selected[ch_num],
             )
             channels.append(channel)
             self.add_submodule(ch_name, channel)
@@ -204,6 +206,6 @@ class RigolDP8xxBase(VisaInstrument):
         """Return the installed options"""
 
         opt = self.ask("*OPT?")
-        optl = opt.strip().split(',')
-        optl_clean = [x for x in optl if x != '0']
+        optl = opt.strip().split(",")
+        optl_clean = [x for x in optl if x != "0"]
         return optl_clean

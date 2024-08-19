@@ -23,9 +23,7 @@ def test_setting_non_gettable_parameter_with_finite_step(
     # the initial_value the starting point is unknown
     # so this should cause a warning but the parameter should still be set
     with caplog.at_level(logging.WARNING):
-        x = Parameter('x', initial_value=initial_value,
-                      step=step_size,
-                      set_cmd=None)
+        x = Parameter("x", initial_value=initial_value, step=step_size, set_cmd=None)
         assert len(caplog.records) == 1
         assert f"cannot sweep x from None to {initial_value}" in str(caplog.records[0])
     assert x.cache.get() == 0

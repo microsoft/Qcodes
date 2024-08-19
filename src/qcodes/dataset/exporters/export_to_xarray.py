@@ -170,8 +170,7 @@ def _add_metadata_to_xarray(
     if dataset.run_timestamp_raw is not None:
         xrdataset.attrs["run_timestamp_raw"] = dataset.run_timestamp_raw
     if dataset.completed_timestamp_raw is not None:
-        xrdataset.attrs[
-            "completed_timestamp_raw"] = dataset.completed_timestamp_raw
+        xrdataset.attrs["completed_timestamp_raw"] = dataset.completed_timestamp_raw
     if len(dataset.metadata) > 0:
         for metadata_tag, metadata in dataset.metadata.items():
             xrdataset.attrs[metadata_tag] = metadata
@@ -284,6 +283,7 @@ def xarray_to_h5netcdf_with_complex_numbers(
             # import and only used here so defer the import
             # to when required.
             from tqdm.dask import TqdmCallback
+
             with TqdmCallback(desc="Combining files"):
                 _LOG.info(
                     "Writing netcdf file using Dask delayed writer.",

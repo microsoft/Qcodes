@@ -5,7 +5,6 @@ to hide realted pieces of logic into a form of "submodule" (analogious to
 class in some way.
 """
 
-
 from typing import TYPE_CHECKING
 
 from .constants import Capability
@@ -87,9 +86,9 @@ class CapabilityHelper:
         asopc_type = self.query_asopc_type()
         # AlazarTech has confirmed in a support mail that this
         # is the way to get the firmware version
-        firmware_major = (asopc_type >> 16) & 0xff
-        firmware_minor = (asopc_type >> 24) & 0xf
+        firmware_major = (asopc_type >> 16) & 0xFF
+        firmware_minor = (asopc_type >> 24) & 0xF
         # firmware_minor above does not contain any prefixed zeros
         # but the minor version is always 2 digits.
-        firmware_version = f'{firmware_major}.{firmware_minor:02d}'
+        firmware_version = f"{firmware_major}.{firmware_minor:02d}"
         return firmware_version

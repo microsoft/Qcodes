@@ -1,4 +1,5 @@
 """Ethernet instrument driver class based on sockets."""
+
 from __future__ import annotations
 
 import logging
@@ -77,14 +78,16 @@ class IPInstrument(Instrument):
         """
         if address is not None:
             self._address = address
-        elif not hasattr(self, '_address'):
-            raise TypeError('This instrument doesn\'t have an address yet, '
-                            'you must provide one.')
+        elif not hasattr(self, "_address"):
+            raise TypeError(
+                "This instrument doesn't have an address yet, you must provide one."
+            )
         if port is not None:
             self._port = port
-        elif not hasattr(self, '_port'):
-            raise TypeError('This instrument doesn\'t have a port yet, '
-                            'you must provide one.')
+        elif not hasattr(self, "_port"):
+            raise TypeError(
+                "This instrument doesn't have a port yet, you must provide one."
+            )
 
         self._disconnect()
         self.set_persistent(self._persistent)
@@ -156,19 +159,18 @@ class IPInstrument(Instrument):
 
     def _send(self, cmd: str) -> None:
         if self._socket is None:
-            raise RuntimeError(f'IPInstrument {self.name} is not connected')
+            raise RuntimeError(f"IPInstrument {self.name} is not connected")
         data = cmd + self._terminator
         log.debug(f"Writing {data} to instrument {self.name}")
         self._socket.sendall(data.encode())
 
     def _recv(self) -> str:
         if self._socket is None:
-            raise RuntimeError(f'IPInstrument {self.name} is not connected')
+            raise RuntimeError(f"IPInstrument {self.name} is not connected")
         result = self._socket.recv(self._buffer_size)
         log.debug(f"Got {result!r} from instrument {self.name}")
-        if result == b'':
-            log.warning("Got empty response from Socket recv() "
-                        "Connection broken.")
+        if result == b"":
+            log.warning("Got empty response from Socket recv() Connection broken.")
         return result.decode()
 
     def close(self) -> None:
@@ -231,21 +233,20 @@ class IPInstrument(Instrument):
             dict: base snapshot
         """
         snap = super().snapshot_base(
-            update=update,
-            params_to_skip_update=params_to_skip_update)
+            update=update, params_to_skip_update=params_to_skip_update
+        )
 
-        snap['port'] = self._port
-        snap['confirmation'] = self._confirmation
-        snap['address'] = self._address
-        snap['terminator'] = self._terminator
-        snap['timeout'] = self._timeout
-        snap['persistent'] = self._persistent
+        snap["port"] = self._port
+        snap["confirmation"] = self._confirmation
+        snap["address"] = self._address
+        snap["terminator"] = self._terminator
+        snap["timeout"] = self._timeout
+        snap["persistent"] = self._persistent
 
         return snap
 
 
 class EnsureConnection:
-
     """
     Context manager to ensure an instrument is connected when needed.
 

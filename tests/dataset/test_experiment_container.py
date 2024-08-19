@@ -22,7 +22,7 @@ from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn, get_DB_loca
 
 
 def assert_experiments_equal(exp, exp_2):
-    for attr in ['name', 'sample_name', 'path_to_db', 'last_counter']:
+    for attr in ["name", "sample_name", "path_to_db", "last_counter"]:
         assert getattr(exp, attr) == getattr(exp_2, attr)
     assert len(exp_2) == len(exp)
     assert repr(exp_2) == repr(exp)
@@ -37,7 +37,7 @@ def test_run_loaded_experiment() -> None:
     exp_loaded = load_experiment_by_name("test", "test1")
 
     meas = Measurement(exp=exp_loaded)
-    meas.register_custom_parameter(name='dummy', paramtype='text')
+    meas.register_custom_parameter(name="dummy", paramtype="text")
     with meas.run():
         pass
 
@@ -60,8 +60,7 @@ def test_last_data_set_from_experiment(dataset) -> None:
 
 
 def test_last_data_set_from_experiment_with_no_datasets(experiment) -> None:
-    with pytest.raises(ValueError, match='There are no runs in this '
-                                         'experiment'):
+    with pytest.raises(ValueError, match="There are no runs in this experiment"):
         _ = experiment.last_data_set()
 
 
@@ -117,9 +116,18 @@ def test_has_attributes_after_init() -> None:
     (exp_id is None / exp_id is not None)
     """
 
-    attrs = ['name', 'exp_id', '_exp_id', 'sample_name', 'last_counter',
-             'path_to_db', 'conn', 'started_at',
-             'finished_at', 'format_string']
+    attrs = [
+        "name",
+        "exp_id",
+        "_exp_id",
+        "sample_name",
+        "last_counter",
+        "path_to_db",
+        "conn",
+        "started_at",
+        "finished_at",
+        "format_string",
+    ]
 
     # This creates an experiment in the db
     exp1 = Experiment(exp_id=None)
@@ -134,9 +142,16 @@ def test_has_attributes_after_init() -> None:
 
 
 def test_experiment_read_only_properties(experiment) -> None:
-    read_only_props = ['name', 'exp_id', 'sample_name', 'last_counter',
-                       'path_to_db', 'started_at', 'finished_at',
-                       'format_string']
+    read_only_props = [
+        "name",
+        "exp_id",
+        "sample_name",
+        "last_counter",
+        "path_to_db",
+        "started_at",
+        "finished_at",
+        "format_string",
+    ]
 
     # It is not expected to be possible to set read only properties
     # the error message changed in python 3.11
@@ -149,7 +164,7 @@ def test_experiment_read_only_properties(experiment) -> None:
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-@pytest.mark.parametrize("non_existing_id", (1, 0, -1, 'number#42'))
+@pytest.mark.parametrize("non_existing_id", (1, 0, -1, "number#42"))
 def test_create_experiment_from_non_existing_id(non_existing_id) -> None:
     with pytest.raises(ValueError, match="No such experiment in the database"):
         _ = Experiment(exp_id=non_existing_id)
@@ -163,7 +178,7 @@ def test_load_experiment_from_non_existing_id(non_existing_id) -> None:
 
 
 @pytest.mark.usefixtures("empty_temp_db")
-@pytest.mark.parametrize("bad_id", (None, 'number#42'))
+@pytest.mark.parametrize("bad_id", (None, "number#42"))
 def test_load_experiment_from_bad_id(bad_id) -> None:
     with pytest.raises(ValueError, match="Experiment ID must be an integer"):
         _ = load_experiment(bad_id)
@@ -181,64 +196,67 @@ def test_format_string(empty_temp_db) -> None:
 
     # invalid format string
     fmt_str = "name_{}__id_{}__{}__{}"
-    with pytest.raises(ValueError, match=r"Invalid format string. Can not "
-                                         r"format \(name, exp_id, "
-                                         r"run_counter\)"):
+    with pytest.raises(
+        ValueError,
+        match=r"Invalid format string. Can not "
+        r"format \(name, exp_id, "
+        r"run_counter\)",
+    ):
         _ = Experiment(exp_id=None, format_string=fmt_str)
 
 
 def test_load_experiment_by_name_defaults(empty_temp_db) -> None:
     exp1 = Experiment(exp_id=None)
 
-    exp2 = load_experiment_by_name('experiment_1')
+    exp2 = load_experiment_by_name("experiment_1")
     assert_experiments_equal(exp1, exp2)
 
-    exp3 = load_experiment_by_name('experiment_1', 'some_sample')
+    exp3 = load_experiment_by_name("experiment_1", "some_sample")
     assert_experiments_equal(exp1, exp3)
 
 
 def test_load_experiment_by_name(empty_temp_db) -> None:
-    exp1 = Experiment(exp_id=None, name='myname')
+    exp1 = Experiment(exp_id=None, name="myname")
 
-    exp2 = load_experiment_by_name('myname')
+    exp2 = load_experiment_by_name("myname")
     assert_experiments_equal(exp1, exp2)
 
-    exp3 = load_experiment_by_name('myname', 'some_sample')
+    exp3 = load_experiment_by_name("myname", "some_sample")
     assert_experiments_equal(exp1, exp3)
 
-    exp4 = Experiment(exp_id=None, name='with_sample', sample_name='mysample')
+    exp4 = Experiment(exp_id=None, name="with_sample", sample_name="mysample")
 
-    exp5 = load_experiment_by_name('with_sample')
+    exp5 = load_experiment_by_name("with_sample")
     assert_experiments_equal(exp4, exp5)
 
-    exp6 = load_experiment_by_name('with_sample', 'mysample')
+    exp6 = load_experiment_by_name("with_sample", "mysample")
     assert_experiments_equal(exp4, exp6)
 
 
 def test_load_experiment_by_name_bad_name(empty_temp_db) -> None:
-    Experiment(exp_id=None, name='myname')
+    Experiment(exp_id=None, name="myname")
 
-    with pytest.raises(ValueError, match='Experiment not found'):
-        _ = load_experiment_by_name('myname__')
+    with pytest.raises(ValueError, match="Experiment not found"):
+        _ = load_experiment_by_name("myname__")
 
-    with pytest.raises(ValueError, match='Experiment not found'):
-        _ = load_experiment_by_name('myname__', 'some_sample')
+    with pytest.raises(ValueError, match="Experiment not found"):
+        _ = load_experiment_by_name("myname__", "some_sample")
 
-    with pytest.raises(ValueError, match='Experiment not found'):
-        _ = load_experiment_by_name('myname__', 'some_sample__')
+    with pytest.raises(ValueError, match="Experiment not found"):
+        _ = load_experiment_by_name("myname__", "some_sample__")
 
 
 def test_load_experiment_by_name_bad_sample_name(empty_temp_db) -> None:
-    Experiment(exp_id=None, sample_name='mysample')
+    Experiment(exp_id=None, sample_name="mysample")
 
-    with pytest.raises(ValueError, match='Experiment not found'):
-        _ = load_experiment_by_name('experiment_1', 'mysample__')
+    with pytest.raises(ValueError, match="Experiment not found"):
+        _ = load_experiment_by_name("experiment_1", "mysample__")
 
-    with pytest.raises(ValueError, match='Experiment not found'):
-        _ = load_experiment_by_name('experiment_1__', 'mysample')
+    with pytest.raises(ValueError, match="Experiment not found"):
+        _ = load_experiment_by_name("experiment_1__", "mysample")
 
-    with pytest.raises(ValueError, match='Experiment not found'):
-        _ = load_experiment_by_name('experiment_1__', 'mysample__')
+    with pytest.raises(ValueError, match="Experiment not found"):
+        _ = load_experiment_by_name("experiment_1__", "mysample__")
 
 
 def test_load_experiment_by_name_duplicate_name(empty_temp_db) -> None:
@@ -274,30 +292,30 @@ def test_load_experiment_by_name_duplicate_name(empty_temp_db) -> None:
     assert last_exp.sample_name == "my_sample"
     assert last_exp.exp_id == 3
 
-    exp3_loaded = load_experiment_by_name('exp', 'my_sample')
+    exp3_loaded = load_experiment_by_name("exp", "my_sample")
     assert_experiments_equal(exp3, exp3_loaded)
 
 
 def test_load_experiment_by_name_duplicate_sample_name(empty_temp_db) -> None:
-    exp1 = Experiment(exp_id=None, name='exp1', sample_name='sss')
-    exp2 = Experiment(exp_id=None, name='exp2', sample_name='sss')
+    exp1 = Experiment(exp_id=None, name="exp1", sample_name="sss")
+    exp2 = Experiment(exp_id=None, name="exp2", sample_name="sss")
 
-    exp1_loaded = load_experiment_by_name('exp1')
+    exp1_loaded = load_experiment_by_name("exp1")
     assert_experiments_equal(exp1, exp1_loaded)
 
-    exp2_loaded = load_experiment_by_name('exp2')
+    exp2_loaded = load_experiment_by_name("exp2")
     assert_experiments_equal(exp2, exp2_loaded)
 
-    exp1_loaded_with_sample = load_experiment_by_name('exp1', 'sss')
+    exp1_loaded_with_sample = load_experiment_by_name("exp1", "sss")
     assert_experiments_equal(exp1, exp1_loaded_with_sample)
 
-    exp2_loaded_with_sample = load_experiment_by_name('exp2', 'sss')
+    exp2_loaded_with_sample = load_experiment_by_name("exp2", "sss")
     assert_experiments_equal(exp2, exp2_loaded_with_sample)
 
 
 def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db) -> None:
-    exp1 = Experiment(exp_id=None, name='exp', sample_name='sss')
-    exp2 = Experiment(exp_id=None, name='exp', sample_name='sss')
+    exp1 = Experiment(exp_id=None, name="exp", sample_name="sss")
+    exp2 = Experiment(exp_id=None, name="exp", sample_name="sss")
 
     repr_str = (
         f"Many experiments matching your request found:\n"
@@ -309,7 +327,7 @@ def test_load_experiment_by_name_duplicate_name_and_sample_name(empty_temp_db) -
     repr_str_regex = re.escape(repr_str)
 
     with pytest.raises(ValueError, match=repr_str_regex):
-        load_experiment_by_name('exp')
+        load_experiment_by_name("exp")
 
     with pytest.raises(ValueError, match=repr_str_regex):
         load_experiment_by_name("exp", "sss")
@@ -356,8 +374,9 @@ def test_new_experiment_duplicate_name_and_sample_name(
 
 def test_load_last_experiment(empty_temp_db) -> None:
     # test in case of no experiments
-    with pytest.raises(ValueError, match='There are no experiments in the '
-                                         'database file'):
+    with pytest.raises(
+        ValueError, match="There are no experiments in the database file"
+    ):
         _ = load_last_experiment()
 
     # create 2 experiments
@@ -374,7 +393,6 @@ def test_load_last_experiment(empty_temp_db) -> None:
 
 
 def test_active_experiment(empty_temp_db) -> None:
-
     conn = conn_from_dbpath_or_conn(conn=None, path_to_db=empty_temp_db)
     with pytest.raises(ValueError):
         get_default_experiment_id(conn)

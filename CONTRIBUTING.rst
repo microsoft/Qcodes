@@ -323,11 +323,8 @@ on Linux and on Windows.
     - Check that YAML, JSON and Python files are syntactically valid.
     - Check that there are no trailing whitespace or blank lines at the end of python files.
     - Check that all files uses the correct line endings (``\n`` for all files except ``.bat``)
-    - Run `pyupgrade  <https://github.com/asottile/pyupgrade>`_ on all python files.
-    - Run `Darker <https://github.com/akaihola/darker/>`_. This will enforce `Black <https://github.com/psf/black>`_
-      formatting and sorting of imports using `isort <https://pycqa.github.io/isort/>`_ on all new and changed code.
-      We do not format the entire codebase to not lose change history.
-    - Run `ruff <https://github.com/charliermarsh/ruff>`_ to check for comon style issues in python code.
+    - Run `ruff <https://github.com/charliermarsh/ruff>`_  check and ruff format to check for comon style
+      issues in python code and format the code.
 
 
 Furthermore we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
@@ -339,9 +336,6 @@ Optional checks
 In addition to the required checks we perform two optional checks that can be regarded as guidelines rather than
 requirements.
 
-- We use Codacy to perform a number of style checks using `Pylint` and `Pydocstyle` among others. Please
-  adapt your changes to these recommendations as you see fit. It is not a requirement that all Codacy warnings and
-  errors are fixed. Do not insert comments to disable these warnings.
 - We measure code coverage using `Codecov`. This measures if a line of code is executed as part of a test.
   As much as possible we would encourage you to add tests to cover all changes. However, this may not always be
   possible especially when writing instrument drivers.

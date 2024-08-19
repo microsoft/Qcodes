@@ -2,6 +2,7 @@
 Sometimes it happens that databases are put into inconsistent/corrupt states.
 This module contains functions to remedy known issues.
 """
+
 from __future__ import annotations
 
 import json
@@ -52,47 +53,46 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> dict[str, int]:
     user_version = get_user_version(conn)
 
     if not user_version == 4:
-        raise RuntimeError('Database of wrong version. Will not apply fix. '
-                           'Expected version 4, found version {user_version}')
+        raise RuntimeError(
+            "Database of wrong version. Will not apply fix. "
+            "Expected version 4, found version {user_version}"
+        )
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
-    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), "max(run_id)")
     no_of_runs = no_of_runs or 0
 
     with atomic(conn) as atomic_conn:
-
-        pbar = tqdm(range(1, no_of_runs+1))
+        pbar = tqdm(range(1, no_of_runs + 1))
         pbar.set_description("Fixing database")
 
         # collect some metrics
         runs_inspected = 0
         runs_fixed = 0
 
-        old_style_keys = ['paramspecs']
-        new_style_keys = ['parameters', 'dependencies', 'inferences',
-                          'standalones']
+        old_style_keys = ["paramspecs"]
+        new_style_keys = ["parameters", "dependencies", "inferences", "standalones"]
 
         for run_id in pbar:
             desc_str = get_run_description(atomic_conn, run_id)
             desc_ser = json.loads(desc_str)
-            idps_ser = desc_ser['interdependencies']
+            idps_ser = desc_ser["interdependencies"]
 
             if list(idps_ser.keys()) == old_style_keys:
                 pass
             elif list(idps_ser.keys()) == new_style_keys:
-                old_desc_ser = \
-                    _convert_run_describer_v1_like_dict_to_v0_like_dict(
-                        desc_ser)
+                old_desc_ser = _convert_run_describer_v1_like_dict_to_v0_like_dict(
+                    desc_ser
+                )
                 json_str = json.dumps(old_desc_ser)
                 _update_run_description(atomic_conn, run_id, json_str)
                 runs_fixed += 1
             else:
-                raise RuntimeError(f'Invalid runs_description for run_id: '
-                                   f'{run_id}')
+                raise RuntimeError(f"Invalid runs_description for run_id: {run_id}")
 
             runs_inspected += 1
 
-    return {'runs_inspected': runs_inspected, 'runs_fixed': runs_fixed}
+    return {"runs_inspected": runs_inspected, "runs_fixed": runs_fixed}
 
 
 def _convert_run_describer_v1_like_dict_to_v0_like_dict(
@@ -110,7 +110,7 @@ def _convert_run_describer_v1_like_dict_to_v0_like_dict(
     # but those work only with RunDescriber representations that have
     # "version" field. So first, the "version" field with correct value is
     # added.
-    new_desc_dict['version'] = 1
+    new_desc_dict["version"] = 1
     # Out of that dict we create RunDescriber object of the current version
     # (regardless of what the current version is).
     new_desc = serial.from_dict_to_current(new_desc_dict)
@@ -119,12 +119,11 @@ def _convert_run_describer_v1_like_dict_to_v0_like_dict(
     # that has InterDependencies object in it (not the InterDependencies_ one).
     old_desc_dict = cast(dict[str, Any], serial.to_dict_as_version(new_desc, 0))
     # Lastly, the "version" field is removed.
-    old_desc_dict.pop('version')
+    old_desc_dict.pop("version")
     return old_desc_dict
 
 
-def fix_wrong_run_descriptions(conn: ConnectionPlus,
-                               run_ids: Sequence[int]) -> None:
+def fix_wrong_run_descriptions(conn: ConnectionPlus, run_ids: Sequence[int]) -> None:
     """
     NB: This is a FIX function. Do not use it unless your database has been
     diagnosed with the problem that this function fixes.
@@ -141,27 +140,30 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus,
     user_version = get_user_version(conn)
 
     if not user_version == 3:
-        raise RuntimeError('Database of wrong version. Will not apply fix. '
-                           'Expected version 3, found version {user_version}')
+        raise RuntimeError(
+            "Database of wrong version. Will not apply fix. "
+            "Expected version 3, found version {user_version}"
+        )
 
-
-    log.info('[*] Fixing run descriptions...')
+    log.info("[*] Fixing run descriptions...")
     for run_id in run_ids:
         trusted_paramspecs = _get_parameters(conn, run_id)
         interdeps = v0.InterDependencies(*trusted_paramspecs)
         interdeps_ = old_to_new(interdeps)
         trusted_desc = RunDescriber(interdeps_)
 
-        actual_desc_str = select_one_where(conn, "runs",
-                                           "run_description",
-                                           "run_id", run_id)
+        actual_desc_str = select_one_where(
+            conn, "runs", "run_description", "run_id", run_id
+        )
 
         trusted_json = serial.to_json_as_version(trusted_desc, 0)
 
         if actual_desc_str == trusted_json:
-            log.info(f'[+] Run id: {run_id} had an OK description')
+            log.info(f"[+] Run id: {run_id} had an OK description")
         else:
-            log.info(f'[-] Run id: {run_id} had a broken description. '
-                     f'Description found: {actual_desc_str}')
+            log.info(
+                f"[-] Run id: {run_id} had a broken description. "
+                f"Description found: {actual_desc_str}"
+            )
             update_run_description(conn, run_id, trusted_json)
-            log.info(f'    Run id: {run_id} has been updated.')
+            log.info(f"    Run id: {run_id} has been updated.")

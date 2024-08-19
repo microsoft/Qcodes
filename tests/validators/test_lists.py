@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 def test_type() -> None:
     list_validator: Lists[Any] = Lists()
-    v1 = ['a', 'b', 5]
+    v1 = ["a", "b", 5]
     list_validator.validate(v1)
 
     v2 = 234

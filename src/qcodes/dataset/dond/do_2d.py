@@ -43,6 +43,7 @@ if TYPE_CHECKING:
     )
     from qcodes.dataset.experiment_container import Experiment
 
+
 @TRACER.start_as_current_span("qcodes.dataset.do2d")
 def do2d(
     param_set1: ParameterBase,
@@ -171,7 +172,11 @@ def do2d(
         else SequentialParamsCaller(*param_meas)
     )
 
-    with catch_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
+    with (
+        catch_interrupts() as interrupted,
+        meas.run() as datasaver,
+        param_meas_caller as call_param_meas,
+    ):
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints1 = np.linspace(start1, stop1, num_points1)

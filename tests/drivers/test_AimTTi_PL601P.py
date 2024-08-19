@@ -14,7 +14,9 @@ def _make_driver():
 
 
 def test_idn(driver) -> None:
-    assert {'firmware': '3.05-4.06',
-            'model': 'PL601-P',
-            'serial': '514710',
-            'vendor': 'THURLBY THANDAR'} == driver.IDN()
+    assert {
+        "firmware": "3.05-4.06",
+        "model": "PL601-P",
+        "serial": "514710",
+        "vendor": "THURLBY THANDAR",
+    } == driver.IDN()

@@ -150,7 +150,11 @@ def do1d(
     # do1D enforces a simple relationship between measured parameters
     # and set parameters. For anything more complicated this should be
     # reimplemented from scratch
-    with catch_interrupts() as interrupted, meas.run() as datasaver, param_meas_caller as call_param_meas:
+    with (
+        catch_interrupts() as interrupted,
+        meas.run() as datasaver,
+        param_meas_caller as call_param_meas,
+    ):
         dataset = datasaver.dataset
         additional_setpoints_data = process_params_meas(additional_setpoints)
         setpoints = np.linspace(start, stop, num_points)

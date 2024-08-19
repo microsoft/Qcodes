@@ -144,7 +144,7 @@ def test_range() -> None:
         with pytest.raises(TypeError):
             n.validate(vv)  # type: ignore[arg-type]
 
-    assert repr(n) == '<Ints 0<=v<=10>'
+    assert repr(n) == "<Ints 0<=v<=10>"
     assert n.is_numeric
 
 

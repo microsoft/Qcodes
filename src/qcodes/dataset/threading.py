@@ -32,7 +32,6 @@ _LOG = logging.getLogger(__name__)
 
 class _ParamCaller:
     def __init__(self, *parameters: ParameterBase):
-
         self._parameters = parameters
 
     def __call__(self) -> tuple[tuple[ParameterBase, ParamDataType], ...]:
@@ -122,8 +121,7 @@ def process_params_meas(
 
 
 class _ParamsCallerProtocol(Protocol):
-    def __enter__(self) -> Callable[[], OutType]:
-        ...
+    def __enter__(self) -> Callable[[], OutType]: ...
 
     def __exit__(
         self,

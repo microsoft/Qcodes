@@ -44,8 +44,9 @@ class DelayedKeyboardInterrupt:
 
     def __enter__(self) -> None:
         is_main_thread = threading.current_thread() is threading.main_thread()
-        is_default_sig_handler = (signal.getsignal(signal.SIGINT)
-                                  is signal.default_int_handler)
+        is_default_sig_handler = (
+            signal.getsignal(signal.SIGINT) is signal.default_int_handler
+        )
         if is_default_sig_handler and is_main_thread:
             self.old_handler = signal.signal(signal.SIGINT, self.handler)
         elif is_default_sig_handler:
@@ -75,8 +76,10 @@ class DelayedKeyboardInterrupt:
             return forceful_handler
 
         self.signal_received = (sig, frame)
-        print("Received SIGINT, Will interrupt at first suitable time. "
-              "Send second SIGINT to interrupt immediately.")
+        print(
+            "Received SIGINT, Will interrupt at first suitable time. "
+            "Send second SIGINT to interrupt immediately."
+        )
         # now that we have gotten one SIGINT make the signal
         # trigger a keyboard interrupt normally
         forceful_handler = create_forceful_handler(self._context)
@@ -90,8 +93,7 @@ class DelayedKeyboardInterrupt:
     )
     @staticmethod
     def forceful_handler(sig: int, frame: FrameType | None) -> None:
-        print("Second SIGINT received. Triggering "
-              "KeyboardInterrupt immediately.")
+        print("Second SIGINT received. Triggering KeyboardInterrupt immediately.")
         log.info(
             "Second SIGINT received. Triggering KeyboardInterrupt immediately.",
         )
@@ -111,6 +113,5 @@ class DelayedKeyboardInterrupt:
         if self.old_handler is not None:
             signal.signal(signal.SIGINT, self.old_handler)
         if self.signal_received is not None:
-            if (self.old_handler is not None and
-                    not isinstance(self.old_handler, int)):
+            if self.old_handler is not None and not isinstance(self.old_handler, int):
                 self.old_handler(*self.signal_received)

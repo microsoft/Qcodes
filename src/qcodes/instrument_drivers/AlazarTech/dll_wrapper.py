@@ -5,6 +5,7 @@ This module provides infrastructure for wrapping DLL libraries, loaded using
 from the DLL library with mostly python types in mind, and conveniently
 specify their signatures in terms of :mod:`ctypes` types.
 """
+
 from __future__ import annotations
 
 import concurrent
@@ -27,18 +28,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Define aliases for ctypes that match Alazar's notation.
-RETURN_CODE = NewType('RETURN_CODE', ctypes.c_uint)
+RETURN_CODE = NewType("RETURN_CODE", ctypes.c_uint)
 
 
 # FUNCTIONS #
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def _api_call_task(
-        lock: Lock,
-        c_func: Callable[..., int],
-        callback: Callable[[], None],
-        *args: Any) -> int:
+    lock: Lock, c_func: Callable[..., int], callback: Callable[[], None], *args: Any
+) -> int:
     with lock:
         retval = c_func(*args)
     callback()
@@ -67,10 +66,12 @@ def _check_error_code(
     if return_code not in {API_SUCCESS, API_DMA_IN_PROGRESS}:
         argrepr = repr(arguments)
         if len(argrepr) > 100:
-            argrepr = argrepr[:96] + '...]'
+            argrepr = argrepr[:96] + "...]"
 
-        logger.error(f'Alazar API returned code {return_code} from function '
-                     f'{func.__name__} with args {argrepr}')
+        logger.error(
+            f"Alazar API returned code {return_code} from function "
+            f"{func.__name__} with args {argrepr}"
+        )
 
         if return_code not in ERROR_CODES:
             raise RuntimeError(
@@ -108,12 +109,10 @@ class DllWrapperMeta(type):
     ) -> Any:
         api = cls._instances.get(dll_path, None)
         if api is not None:
-            logger.debug(
-                f"Using existing instance for DLL path {dll_path}.")
+            logger.debug(f"Using existing instance for DLL path {dll_path}.")
             return api
         else:
-            logger.debug(
-                f"Creating new instance for DLL path {dll_path}.")
+            logger.debug(f"Creating new instance for DLL path {dll_path}.")
             # strong reference:
             new_api = super().__call__(dll_path, *args, **kwargs)
             cls._instances[dll_path] = new_api
@@ -187,8 +186,12 @@ class WrappedDll(metaclass=DllWrapperMeta):
                     ret_type.__supertype__  # pyright: ignore[reportAttributeAccessIssue]
                 )
                 c_func.errcheck = _check_error_code
-            elif ret_type in (ctypes.c_char_p, ctypes.c_char,
-                              ctypes.c_wchar, ctypes.c_wchar_p):
+            elif ret_type in (
+                ctypes.c_char_p,
+                ctypes.c_char,
+                ctypes.c_wchar,
+                ctypes.c_wchar_p,
+            ):
                 c_func.errcheck = _convert_bytes_to_str
             c_func.restype = ret_type
 
@@ -200,6 +203,6 @@ class WrappedDll(metaclass=DllWrapperMeta):
             self._lock,
             c_func,
             partial(_mark_params_as_updated, *args),
-            *_normalize_params(*args)
+            *_normalize_params(*args),
         )
         return future.result()

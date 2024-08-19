@@ -11,6 +11,7 @@ list of parameters to monitor:
 
 ``monitor = qcodes.Monitor(param1, param2, param3, ...)``
 """
+
 from .monitor import Monitor
 
 __all__ = ["Monitor"]

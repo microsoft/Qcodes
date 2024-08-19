@@ -128,9 +128,9 @@ class FormattedSweep(ParameterWithSetpoints):
             prev_mode = self.instrument.run_sweep()
         # Ask for data, setting the format to the requested form
         self.instrument.format(self.sweep_format)
-        data = root_instr.visa_handle.query_binary_values('CALC:DATA? FDATA',
-                                                          datatype='f',
-                                                          is_big_endian=True)
+        data = root_instr.visa_handle.query_binary_values(
+            "CALC:DATA? FDATA", datatype="f", is_big_endian=True
+        )
         data = np.array(data)
         # Restore previous state if it was changed
         if auto_sweep:
@@ -176,8 +176,7 @@ class KeysightPNAPort(InstrumentChannel):
         """
         Set port power limits
         """
-        self.source_power.vals = Numbers(min_value=min_power,
-                                         max_value=max_power)
+        self.source_power.vals = Numbers(min_value=min_power, max_value=max_power)
 
 
 PNAPort = KeysightPNAPort
@@ -323,13 +322,13 @@ class KeysightPNATrace(InstrumentChannel):
             avg = root_instr.averages()
             root_instr.reset_averages()
             root_instr.group_trigger_count(avg)
-            root_instr.sweep_mode('GRO')
+            root_instr.sweep_mode("GRO")
         else:
-            root_instr.sweep_mode('SING')
+            root_instr.sweep_mode("SING")
 
         # Once the sweep mode is in hold, we know we're done
         try:
-            while root_instr.sweep_mode() != 'HOLD':
+            while root_instr.sweep_mode() != "HOLD":
                 time.sleep(0.1)
         except KeyboardInterrupt:
             # If the user aborts because (s)he is stuck in the infinite loop
@@ -372,9 +371,9 @@ class KeysightPNATrace(InstrumentChannel):
         Extrace S_parameter from returned PNA format
         """
         paramspec = self.root_instrument.get_trace_catalog()
-        specs = paramspec.split(',')
-        for spec_ind in range(len(specs)//2):
-            name, param = specs[spec_ind*2:(spec_ind+1)*2]
+        specs = paramspec.split(",")
+        for spec_ind in range(len(specs) // 2):
+            name, param = specs[spec_ind * 2 : (spec_ind + 1) * 2]
             if name == self.trace_name:
                 return param
         raise RuntimeError("Can't find selected trace on the PNA")
@@ -386,7 +385,7 @@ class KeysightPNATrace(InstrumentChannel):
         """
         if not re.match("S[1-4][1-4]", val):
             raise ValueError("Invalid S parameter spec")
-        self.write(f"CALC:PAR:MOD:EXT \"{val}\"")
+        self.write(f'CALC:PAR:MOD:EXT "{val}"')
 
 
 PNATrace = KeysightPNATrace
@@ -424,10 +423,16 @@ class KeysightPNABase(VisaInstrument):
         self.min_freq = min_freq
         self.max_freq = max_freq
 
-        self.log.info("Initializing %s with power range %r-%r, freq range %r-%r.",
-                      name, min_power, max_power, min_freq, max_freq)
+        self.log.info(
+            "Initializing %s with power range %r-%r, freq range %r-%r.",
+            name,
+            min_power,
+            max_power,
+            min_freq,
+            max_freq,
+        )
 
-        #Ports
+        # Ports
         ports = ChannelList(self, "PNAPorts", KeysightPNAPort)
         for port_num in range(1, nports + 1):
             port = KeysightPNAPort(
@@ -667,8 +672,9 @@ class KeysightPNABase(VisaInstrument):
         trace1 = self.traces[0]
         params = trace1.parameters
         if not isinstance(params, dict):
-            raise RuntimeError(f"Expected trace.parameters to be a dict got "
-                               f"{type(params)}")
+            raise RuntimeError(
+                f"Expected trace.parameters to be a dict got {type(params)}"
+            )
         for param in params.values():
             self.parameters[param.name] = param
         # And also add a link to run sweep
@@ -692,8 +698,8 @@ class KeysightPNABase(VisaInstrument):
         """Parameter auto_sweep"""
 
         # A default output format on initialisation
-        self.write('FORM REAL,32')
-        self.write('FORM:BORD NORM')
+        self.write("FORM REAL,32")
+        self.write("FORM:BORD NORM")
 
         self.connect_message()
 
@@ -731,7 +737,7 @@ class KeysightPNABase(VisaInstrument):
 
     def get_options(self) -> "Sequence[str]":
         # Query the instrument for what options are installed
-        return self.ask('*OPT?').strip('"').split(',')
+        return self.ask("*OPT?").strip('"').split(",")
 
     def add_trace(self) -> KeysightPNATrace:
         """
@@ -799,8 +805,7 @@ class KeysightPNABase(VisaInstrument):
         """
         Set port power limits
         """
-        self.power.vals = Numbers(min_value=min_power,
-                                  max_value=max_power)
+        self.power.vals = Numbers(min_value=min_power, max_value=max_power)
         for port in self.ports:
             port._set_power_limits(min_power, max_power)
 

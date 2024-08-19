@@ -49,7 +49,10 @@ class VoltageSourceBadUnit(ExampleBaseVoltageSource):
         super().__init__(name)
 
         self.add_parameter(
-            "voltage", unit="mV", get_cmd=None, set_cmd=None  # This should be 'V'
+            "voltage",
+            unit="mV",
+            get_cmd=None,
+            set_cmd=None,  # This should be 'V'
         )
 
 

@@ -42,11 +42,12 @@ def _data_to_dataframe(
     data: Mapping[str, np.ndarray], index: pd.Index | pd.MultiIndex | None
 ) -> pd.DataFrame:
     import pandas as pd
+
     if len(data) == 0:
         return pd.DataFrame()
     dependent_col_name = list(data.keys())[0]
     dependent_data = data[dependent_col_name]
-    if dependent_data.dtype == np.dtype('O'):
+    if dependent_data.dtype == np.dtype("O"):
         # ravel will not fully unpack a numpy array of arrays
         # which are of "object" dtype. This can happen if a variable
         # length array is stored in the db. We use concatenate to
@@ -54,17 +55,17 @@ def _data_to_dataframe(
         mydata = np.concatenate(dependent_data)
     else:
         mydata = dependent_data.ravel()
-    df = pd.DataFrame(mydata, index=index,
-                      columns=[dependent_col_name])
+    df = pd.DataFrame(mydata, index=index, columns=[dependent_col_name])
     return df
 
 
 def _generate_pandas_index(
-    data: Mapping[str, np.ndarray]
+    data: Mapping[str, np.ndarray],
 ) -> pd.Index | pd.MultiIndex | None:
     # the first element in the dict given by parameter_tree is always the dependent
     # parameter and the index is therefore formed from the rest
     import pandas as pd
+
     keys = list(data.keys())
     if len(data) <= 1:
         index = None
@@ -88,16 +89,13 @@ def _generate_pandas_index(
             else:
                 index_data.append(data[key].ravel())
 
-        index = pd.MultiIndex.from_arrays(
-            index_data,
-            names=keys[1:])
+        index = pd.MultiIndex.from_arrays(index_data, names=keys[1:])
     return index
 
 
 def _parameter_data_identical(
     param_dict_a: Mapping[str, np.ndarray], param_dict_b: Mapping[str, np.ndarray]
 ) -> bool:
-
     try:
         np.testing.assert_equal(param_dict_a, param_dict_b)
     except AssertionError:
@@ -107,13 +105,9 @@ def _parameter_data_identical(
 
 
 def _same_setpoints(datadict: ParameterData) -> bool:
-
     def _get_setpoints(dd: ParameterData) -> Iterator[dict[str, np.ndarray]]:
-
         for dep_name, param_dict in dd.items():
-            out = {
-                name: vals for name, vals in param_dict.items() if name != dep_name
-            }
+            out = {name: vals for name, vals in param_dict.items() if name != dep_name}
             yield out
 
     sp_iterator = _get_setpoints(datadict)

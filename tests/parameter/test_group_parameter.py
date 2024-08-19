@@ -39,7 +39,7 @@ class Dummy(Instrument):
             label="label",
             unit="SI",
             initial_value=initial_a,
-            scale=scale_a
+            scale=scale_a,
         )
 
         self.add_parameter(
@@ -49,14 +49,10 @@ class Dummy(Instrument):
             docstring="Some succinct description",
             label="label",
             unit="SI",
-            initial_value=initial_b
+            initial_value=initial_b,
         )
 
-        self.group = Group(
-            [self.a, self.b],
-            set_cmd="CMD {a}, {b}",
-            get_cmd=get_cmd
-        )
+        self.group = Group([self.a, self.b], set_cmd="CMD {a}, {b}", get_cmd=get_cmd)
 
     def write(self, cmd: str) -> None:
         result = re.search("CMD (.*), (.*)", cmd)
@@ -90,7 +86,6 @@ def test_sanity() -> None:
 
 
 def test_raise_on_get_set_cmd() -> None:
-
     for arg in ["set_cmd", "get_cmd"]:
         kwarg = {arg: ""}
 
@@ -103,32 +98,42 @@ def test_raise_on_get_set_cmd() -> None:
 
 
 def test_raises_on_get_set_without_group() -> None:
-    param = GroupParameter(name='b')
+    param = GroupParameter(name="b")
 
     with pytest.raises(RuntimeError) as e:
         param.get()
-    assert str(e.value) == "('Trying to get Group value but no group defined', 'getting b')"
+    assert (
+        str(e.value)
+        == "('Trying to get Group value but no group defined', 'getting b')"
+    )
 
     with pytest.raises(RuntimeError) as e:
         param.set(1)
-    assert str(e.value) == "('Trying to set Group value but no group defined', 'setting b to 1')"
+    assert (
+        str(e.value)
+        == "('Trying to set Group value but no group defined', 'setting b to 1')"
+    )
 
 
 def test_raises_runtime_error_on_update_if_get_cmd_is_none() -> None:
     dummy = Dummy("dummy", get_cmd=None)
-    msg = ("Cannot update values in the group with "
-           "parameters - dummy_a, dummy_b since it "
-           "has no `get_cmd` defined.")
+    msg = (
+        "Cannot update values in the group with "
+        "parameters - dummy_a, dummy_b since it "
+        "has no `get_cmd` defined."
+    )
     with pytest.raises(RuntimeError, match=msg):
         dummy.group.update()
+
 
 def test_raises_runtime_error_if_set_parameters_called_with_empty_dict() -> None:
     dummy = Dummy("dummy")
     parameters_dict: dict[str, Any] = {}
-    msg = ("Provide at least one group parameter and its value to be set.")
+    msg = "Provide at least one group parameter and its value to be set."
 
     with pytest.raises(RuntimeError, match=msg):
         dummy.group.set_parameters(parameters_dict)
+
 
 def test_set_parameters_called_for_one_parameter() -> None:
     dummy = Dummy("dummy")
@@ -168,9 +173,11 @@ def test_initial_values() -> None:
 
 
 def test_raise_on_not_all_initial_values() -> None:
-    expected_err_msg = (r'Either none or all of the parameters in a group '
-                        r'should have an initial value. Found initial values '
-                        r'for \[.*\] but not for \[.*\].')
+    expected_err_msg = (
+        r"Either none or all of the parameters in a group "
+        r"should have an initial value. Found initial values "
+        r"for \[.*\] but not for \[.*\]."
+    )
     with pytest.raises(ValueError, match=expected_err_msg):
         Dummy("dummy", initial_a=42)
 

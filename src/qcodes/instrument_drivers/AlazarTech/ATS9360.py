@@ -18,12 +18,16 @@ class AlazarTechATS9360(AlazarTechATS):
     it inherits from the ATS base class
 
     """
-    samples_divisor = 128
-    _trigger_holdoff_min_fw_version = '21.07'
 
-    def __init__(self, name: str,
-                 dll_path: str = 'C:\\WINDOWS\\System32\\ATSApi.dll',
-                 **kwargs: Any):
+    samples_divisor = 128
+    _trigger_holdoff_min_fw_version = "21.07"
+
+    def __init__(
+        self,
+        name: str,
+        dll_path: str = "C:\\WINDOWS\\System32\\ATSApi.dll",
+        **kwargs: Any,
+    ):
         super().__init__(name, dll_path=dll_path, **kwargs)
 
         # add parameters
@@ -107,33 +111,40 @@ class AlazarTechATS9360(AlazarTechATS):
         )
         """Parameter decimation"""
 
-        for i in range(1, self.channels+1):
-            self.add_parameter(name=f'coupling{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Coupling channel {i}',
-                               unit=None,
-                               initial_value='DC',
-                               val_mapping={'AC': 1, 'DC': 2})
-            self.add_parameter(name=f'channel_range{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Range channel {i}',
-                               unit='V',
-                               initial_value=0.4,
-                               val_mapping={0.4: 7})
-            self.add_parameter(name=f'impedance{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Impedance channel {i}',
-                               unit='Ohm',
-                               initial_value=50,
-                               val_mapping={50: 2})
+        for i in range(1, self.channels + 1):
+            self.add_parameter(
+                name=f"coupling{i}",
+                parameter_class=TraceParameter,
+                label=f"Coupling channel {i}",
+                unit=None,
+                initial_value="DC",
+                val_mapping={"AC": 1, "DC": 2},
+            )
+            self.add_parameter(
+                name=f"channel_range{i}",
+                parameter_class=TraceParameter,
+                label=f"Range channel {i}",
+                unit="V",
+                initial_value=0.4,
+                val_mapping={0.4: 7},
+            )
+            self.add_parameter(
+                name=f"impedance{i}",
+                parameter_class=TraceParameter,
+                label=f"Impedance channel {i}",
+                unit="Ohm",
+                initial_value=50,
+                val_mapping={50: 2},
+            )
 
-            self.add_parameter(name=f'bwlimit{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Bandwidth limit channel {i}',
-                               unit=None,
-                               initial_value='DISABLED',
-                               val_mapping={'DISABLED': 0,
-                                            'ENABLED': 1})
+            self.add_parameter(
+                name=f"bwlimit{i}",
+                parameter_class=TraceParameter,
+                label=f"Bandwidth limit channel {i}",
+                unit=None,
+                initial_value="DISABLED",
+                val_mapping={"DISABLED": 0, "ENABLED": 1},
+            )
 
         self.trigger_operation: TraceParameter = self.add_parameter(
             name="trigger_operation",
@@ -154,36 +165,44 @@ class AlazarTechATS9360(AlazarTechATS):
         """Parameter trigger_operation"""
 
         n_trigger_engines = 2
-        for i in range(1, n_trigger_engines+1):
-            self.add_parameter(name=f'trigger_engine{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Trigger Engine {i}',
-                               unit=None,
-                               initial_value='TRIG_ENGINE_' + ('J' if i == 1 else 'K'),
-                               val_mapping={'TRIG_ENGINE_J': 0,
-                                            'TRIG_ENGINE_K': 1})
-            self.add_parameter(name=f'trigger_source{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Trigger Source {i}',
-                               unit=None,
-                               initial_value='EXTERNAL',
-                               val_mapping={'CHANNEL_A': 0,
-                                            'CHANNEL_B': 1,
-                                            'EXTERNAL': 2,
-                                            'DISABLE': 3})
-            self.add_parameter(name=f'trigger_slope{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Trigger Slope {i}',
-                               unit=None,
-                               initial_value='TRIG_SLOPE_POSITIVE',
-                               val_mapping={'TRIG_SLOPE_POSITIVE': 1,
-                                            'TRIG_SLOPE_NEGATIVE': 2})
-            self.add_parameter(name=f'trigger_level{i}',
-                               parameter_class=TraceParameter,
-                               label=f'Trigger Level {i}',
-                               unit=None,
-                               initial_value=140,
-                               vals=validators.Ints(0, 255))
+        for i in range(1, n_trigger_engines + 1):
+            self.add_parameter(
+                name=f"trigger_engine{i}",
+                parameter_class=TraceParameter,
+                label=f"Trigger Engine {i}",
+                unit=None,
+                initial_value="TRIG_ENGINE_" + ("J" if i == 1 else "K"),
+                val_mapping={"TRIG_ENGINE_J": 0, "TRIG_ENGINE_K": 1},
+            )
+            self.add_parameter(
+                name=f"trigger_source{i}",
+                parameter_class=TraceParameter,
+                label=f"Trigger Source {i}",
+                unit=None,
+                initial_value="EXTERNAL",
+                val_mapping={
+                    "CHANNEL_A": 0,
+                    "CHANNEL_B": 1,
+                    "EXTERNAL": 2,
+                    "DISABLE": 3,
+                },
+            )
+            self.add_parameter(
+                name=f"trigger_slope{i}",
+                parameter_class=TraceParameter,
+                label=f"Trigger Slope {i}",
+                unit=None,
+                initial_value="TRIG_SLOPE_POSITIVE",
+                val_mapping={"TRIG_SLOPE_POSITIVE": 1, "TRIG_SLOPE_NEGATIVE": 2},
+            )
+            self.add_parameter(
+                name=f"trigger_level{i}",
+                parameter_class=TraceParameter,
+                label=f"Trigger Level {i}",
+                unit=None,
+                initial_value=140,
+                vals=validators.Ints(0, 255),
+            )
 
         self.external_trigger_coupling: TraceParameter = self.add_parameter(
             name="external_trigger_coupling",
@@ -413,7 +432,7 @@ class AlazarTechATS9360(AlazarTechATS):
             )
 
     def _get_trigger_holdoff(self) -> bool:
-        fwversion = self.get_idn()['firmware']
+        fwversion = self.get_idn()["firmware"]
 
         if not isinstance(fwversion, str) or version.parse(fwversion) < version.parse(
             self._trigger_holdoff_min_fw_version

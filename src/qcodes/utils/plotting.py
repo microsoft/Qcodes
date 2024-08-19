@@ -2,6 +2,7 @@
 Module left for backwards compatibility. Please do not depend on this
 in new code.
 """
+
 from qcodes.plotting import (
     apply_auto_color_scale,
     apply_color_scale_limits,

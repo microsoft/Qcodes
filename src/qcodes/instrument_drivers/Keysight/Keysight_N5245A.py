@@ -20,7 +20,7 @@ class KeysightN5245A(N52xx.KeysightPNAxBase):
             min_power=-30,
             max_power=13,
             nports=4,
-            **kwargs
+            **kwargs,
         )
 
         attenuators_options = {"219", "419"}

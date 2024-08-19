@@ -7,9 +7,8 @@ from qcodes.instrument_drivers.Keysight.keysight_b220x import KeysightB220X
 @pytest.fixture
 def uut():
     try:
-        resource_name = 'insert_Keysight_B2200_VISA_resource_name_here'
-        instance = KeysightB220X('switch_matrix',
-                                 address=resource_name)
+        resource_name = "insert_Keysight_B2200_VISA_resource_name_here"
+        instance = KeysightB220X("switch_matrix", address=resource_name)
     except (ValueError, VisaIOError):
         # Either there is no VISA lib installed or there was no real
         # instrument found at the specified address => use simulated instrument
@@ -29,7 +28,7 @@ def uut():
 
 
 def test_idn_command(uut) -> None:
-    assert "AGILENT" in uut.IDN()['vendor']
+    assert "AGILENT" in uut.IDN()["vendor"]
     assert 0 == uut.get_status()
 
 
@@ -87,7 +86,7 @@ def test_connections(uut) -> None:
 
 
 def test_to_channel_list(uut) -> None:
-    assert '(@00345,01109)' == uut.to_channel_list([(3, 45), (11, 9)])
+    assert "(@00345,01109)" == uut.to_channel_list([(3, 45), (11, 9)])
 
 
 def test_connect_paths(uut) -> None:
@@ -119,26 +118,25 @@ def test_disconnect(uut) -> None:
 
 @pytest.mark.filterwarnings("ignore:When going")
 def test_connection_rule(uut) -> None:
-    uut.connection_rule('single')
+    uut.connection_rule("single")
     assert 0 == uut.get_status()
-    assert 'single' == uut.connection_rule()
+    assert "single" == uut.connection_rule()
     assert 0 == uut.get_status()
 
 
 def test_connection_rule_emits_warning_when_going_from_free_to_single(uut) -> None:
-    uut.connection_rule(
-        'free')  # uut should already be in free mode after reset
+    uut.connection_rule("free")  # uut should already be in free mode after reset
 
     with pytest.warns(UserWarning):
-        uut.connection_rule('single')
+        uut.connection_rule("single")
 
 
 def test_connection_sequence(uut) -> None:
-    assert 'bbm' == uut.connection_sequence()
+    assert "bbm" == uut.connection_sequence()
     assert 0 == uut.get_status()
-    uut.connection_sequence('mbb')
+    uut.connection_sequence("mbb")
     assert 0 == uut.get_status()
-    assert 'mbb' == uut.connection_sequence()
+    assert "mbb" == uut.connection_sequence()
 
 
 def test_bias_disable_all_outputs(uut) -> None:
@@ -259,35 +257,32 @@ def test_get_error(uut) -> None:
 class TestParseChannelList:
     @staticmethod
     def test_parse_channel_list() -> None:
-        channel_list = '(@10101,10202)'
-        assert {(1, 1), (2, 2)} == KeysightB220X.parse_channel_list(
-            channel_list)
+        channel_list = "(@10101,10202)"
+        assert {(1, 1), (2, 2)} == KeysightB220X.parse_channel_list(channel_list)
 
     @staticmethod
     def test_all_combinations_zero_padded() -> None:
         import itertools
+
         cards = range(5)
         inputs = range(1, 15)
         outputs = range(1, 49)
 
-        for card, in_port, out_port in itertools.product(cards, inputs,
-                                                         outputs):
-            padded = f'{card:01d}{in_port:02d}{out_port:02d}'
+        for card, in_port, out_port in itertools.product(cards, inputs, outputs):
+            padded = f"{card:01d}{in_port:02d}{out_port:02d}"
 
-            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(
-                padded)
+            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(padded)
 
     @staticmethod
     def test_all_combinations_unpadded() -> None:
         import itertools
+
         cards = range(5)
         inputs = range(1, 15)
         outputs = range(1, 49)
 
-        for card, in_port, out_port in itertools.product(cards, inputs,
-                                                         outputs):
-            padded = f'{card:01d}{in_port:02d}{out_port:02d}'
+        for card, in_port, out_port in itertools.product(cards, inputs, outputs):
+            padded = f"{card:01d}{in_port:02d}{out_port:02d}"
             unpadded = str(int(padded))
 
-            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(
-                unpadded)
+            assert {(in_port, out_port)} == KeysightB220X.parse_channel_list(unpadded)

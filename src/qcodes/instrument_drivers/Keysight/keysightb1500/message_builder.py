@@ -14,8 +14,9 @@ def as_csv(comps: "Iterable[Any]", sep: str = ",") -> str:
     return sep.join(format(x) for x in comps)
 
 
-MessageBuilderMethodT = TypeVar('MessageBuilderMethodT',
-                                bound=Callable[..., 'MessageBuilder'])
+MessageBuilderMethodT = TypeVar(
+    "MessageBuilderMethodT", bound=Callable[..., "MessageBuilder"]
+)
 
 
 def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
@@ -36,9 +37,11 @@ class CommandList(list[Any]):
 
     def append(self, obj: Any) -> None:
         if self.is_final:
-            raise ValueError(f'Cannot add commands after `{self[-1]}`. '
-                             f'`{self[-1]}` must be the last command in the '
-                             f'message.')
+            raise ValueError(
+                f"Cannot add commands after `{self[-1]}`. "
+                f"`{self[-1]}` must be the last command in the "
+                f"message."
+            )
         else:
             super().append(obj)
 
@@ -50,7 +53,7 @@ class CommandList(list[Any]):
         super().clear()
 
     def __str__(self) -> str:
-        return as_csv(self, ';')
+        return as_csv(self, ";")
 
 
 class MessageBuilder:
@@ -74,7 +77,8 @@ class MessageBuilder:
                 f"Command is too long ({len(joined)}>256-termchars) "
                 f"and will overflow input buffer of instrument. "
                 f"(Consider using the ST/END/DO/RU commands for very long "
-                f"programs.)")
+                f"programs.)"
+            )
         return joined
 
     def clear_message_queue(self) -> None:
@@ -111,13 +115,13 @@ class MessageBuilder:
                     - 2: High-speed ADC for pulsed-measurement
 
         """
-        cmd = f'AAD {chnum},{adc_type}'
+        cmd = f"AAD {chnum},{adc_type}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def ab(self) -> 'MessageBuilder':
+    def ab(self) -> "MessageBuilder":
         """
         The AB command aborts the present operation and subsequent command
         execution.
@@ -148,7 +152,7 @@ class MessageBuilder:
         abort the operation, and it will be performed after the settling
         detection.
         """
-        cmd = 'AB'
+        cmd = "AB"
 
         self._msg.append(cmd)
         return self
@@ -187,11 +191,11 @@ class MessageBuilder:
         """
         if program is None:
             if actual is None:
-                cmd = 'ACH'
+                cmd = "ACH"
             else:
-                cmd = f'ACH {actual}'
+                cmd = f"ACH {actual}"
         else:
-            cmd = f'ACH {actual},{program}'
+            cmd = f"ACH {actual},{program}"
 
         self._msg.append(cmd)
         return self
@@ -224,10 +228,10 @@ class MessageBuilder:
                 setting/default setting is 2. For mode=2: 1 to 100. Initial
                 setting/default setting is 1.
         """
-        cmd = f'ACT {mode}'
+        cmd = f"ACT {mode}"
 
         if coeff is not None:
-            cmd += f',{coeff}'
+            cmd += f",{coeff}"
 
         self._msg.append(cmd)
         return self
@@ -247,7 +251,7 @@ class MessageBuilder:
             voltage: Oscillator level of the output AC voltage (in V).
                 Numeric expression.
         """
-        cmd = f'ACV {chnum},{voltage}'
+        cmd = f"ACV {chnum},{voltage}"
 
         self._msg.append(cmd)
         return self
@@ -277,7 +281,7 @@ class MessageBuilder:
                 there are wide load fluctuations by changing the bias and so
                 on.
         """
-        cmd = f'ADJ {chnum},{mode}'
+        cmd = f"ADJ {chnum},{mode}"
 
         self._msg.append(cmd)
         return self
@@ -314,10 +318,10 @@ class MessageBuilder:
                 data measurement. If the mode parameter is not set, mode=1
                 is set.
         """
-        cmd = f'ADJ? {chnum}'
+        cmd = f"ADJ? {chnum}"
 
         if mode is not None:
-            cmd += f',{mode}'
+            cmd += f",{mode}"
 
         self._msg.append(cmd)
         return self
@@ -354,10 +358,10 @@ class MessageBuilder:
                 and 2. Or the actual measurement time, numeric expression,
                 for mode=3. See Table 4-10.
         """
-        cmd = f'AIT {adc_type},{mode}'
+        cmd = f"AIT {adc_type},{mode}"
 
         if coeff is not None:
-            cmd += f',{coeff}'
+            cmd += f",{coeff}"
 
         self._msg.append(cmd)
         return self
@@ -379,13 +383,13 @@ class MessageBuilder:
                         to the PLC mode of Keysight 4156.
 
         """
-        cmd = f'AITM {operation_type}'
+        cmd = f"AITM {operation_type}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def aitm_query(self) -> 'MessageBuilder':
+    def aitm_query(self) -> "MessageBuilder":
         """
         This command returns the operation type of the high-resolution ADC
         that is set by the AITM command.
@@ -420,7 +424,7 @@ class MessageBuilder:
             chnum: SPGU channel number. Integer expression. 1 to 10 or 101
                 to 1002. See Table 4-1.
         """
-        cmd = f'ALS? {chnum}'
+        cmd = f"ALS? {chnum}"
 
         self._msg.append(cmd)
         return self
@@ -449,7 +453,7 @@ class MessageBuilder:
             chnum: SPGU channel number. Integer expression. 1 to 10 or 101
                 to 1002. See Table 4-1.
         """
-        cmd = f'ALW? {chnum}'
+        cmd = f"ALW? {chnum}"
 
         self._msg.append(cmd)
         return self
@@ -490,15 +494,15 @@ class MessageBuilder:
                         specifications.
 
         """
-        cmd = f'AV {number}'
+        cmd = f"AV {number}"
 
         if mode is not None:
-            cmd += f',{mode}'
+            cmd += f",{mode}"
 
         self._msg.append(cmd)
         return self
 
-    def az(self, do_autozero: bool) -> 'MessageBuilder':
+    def az(self, do_autozero: bool) -> "MessageBuilder":
         """
         This command is used to enable or disable the ADC zero function that
         is the function to cancel offset of the high-resolution A/D
@@ -516,13 +520,13 @@ class MessageBuilder:
                 False (0): OFF. Disables the function. Initial setting.
                 True (1): ON. Enables the function.
         """
-        cmd = f'AZ {int(do_autozero)}'
+        cmd = f"AZ {int(do_autozero)}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def bc(self) -> 'MessageBuilder':
+    def bc(self) -> "MessageBuilder":
         """
         The BC command clears the output data buffer that stores measurement
         data and query command response data. This command does not change
@@ -530,7 +534,7 @@ class MessageBuilder:
 
         Note: Multi command statement is not allowed for this command.
         """
-        cmd = 'BC'
+        cmd = "BC"
 
         self._msg.append(cmd)
         return self
@@ -568,15 +572,15 @@ class MessageBuilder:
                     - 0: Voltage measurement mode. Default setting.
                     - 1: Current measurement mode.
         """
-        cmd = f'BDM {interval}'
+        cmd = f"BDM {interval}"
 
         if mode is not None:
-            cmd += f',{mode}'
+            cmd += f",{mode}"
 
         self._msg.append(cmd)
         return self
 
-    def bdt(self, hold: float, delay: float) -> 'MessageBuilder':
+    def bdt(self, hold: float, delay: float) -> "MessageBuilder":
         """
         The BDT command specifies the hold time and delay time for the
         quasi-pulsed measurements.
@@ -588,7 +592,7 @@ class MessageBuilder:
             delay: Delay time (in sec). Numeric expression. 0 to 6.5535 s,
                 0.0001 s resolution. Initial setting is 0.
         """
-        cmd = f'BDT {hold},{delay}'
+        cmd = f"BDT {hold},{delay}"
 
         self._msg.append(cmd)
         return self
@@ -631,10 +635,10 @@ class MessageBuilder:
                 regardless of the specified Icomp value. If stop=0,
                 the polarity is positive.
         """
-        cmd = f'BDV {chnum},{v_range},{start},{stop}'
+        cmd = f"BDV {chnum},{v_range},{start},{stop}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
@@ -706,7 +710,7 @@ class MessageBuilder:
                     - 0 to +-2 A (DHCSMU).
                     - 0 to +-0.008 A (HVSMU).
         """
-        cmd = f'BGI {chnum},{searchmode},{stop_condition},{i_range},{target}'
+        cmd = f"BGI {chnum},{searchmode},{stop_condition},{i_range},{target}"
 
         self._msg.append(cmd)
         return self
@@ -777,7 +781,7 @@ class MessageBuilder:
                     - 0 to +-40 V (HCSMU/DHCSMU)
                     - 0 to +-3000 V (HVSMU)
         """
-        cmd = f'BGV {chnum},{searchmode},{stop_condition},{v_range},{target}'
+        cmd = f"BGV {chnum},{searchmode},{stop_condition},{v_range},{target}"
 
         self._msg.append(cmd)
         return self
@@ -824,10 +828,10 @@ class MessageBuilder:
                 4-11 on page 27 for each measurement resource type. If you
                 do not specify Vcomp, the previous value is set.
         """
-        cmd = f'BSI {chnum},{i_range},{start},{stop}'
+        cmd = f"BSI {chnum},{i_range},{start},{stop}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
         self._msg.append(cmd)
         return self
@@ -912,10 +916,10 @@ class MessageBuilder:
                 If this parameter is not set, the search source forces the
                 start value.
         """
-        cmd = f'BSM {mode},{abort}'
+        cmd = f"BSM {mode},{abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -959,10 +963,10 @@ class MessageBuilder:
             v_comp: Voltage compliance value (in V). Numeric expression. If
                 you do not specify Vcomp, the previous value is set.
         """
-        cmd = f'BSSI {chnum},{polarity},{offset}'
+        cmd = f"BSSI {chnum},{polarity},{offset}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
         self._msg.append(cmd)
         return self
@@ -1009,15 +1013,15 @@ class MessageBuilder:
                 If you do not specify Icomp, the previous value is set.
                 Zero amps (0 A) is not a valid value for the Icomp parameter.
         """
-        cmd = f'BSSV {chnum},{polarity},{offset}'
+        cmd = f"BSSV {chnum},{polarity},{offset}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
 
-    def bst(self, hold: float, delay: float) -> 'MessageBuilder':
+    def bst(self, hold: float, delay: float) -> "MessageBuilder":
         """
         The BST command sets the hold time and delay time for the binary
         search measurement (MM15). If you do not enter this command,
@@ -1034,7 +1038,7 @@ class MessageBuilder:
                 step measurement. Numeric expression. 0 to 65.535 sec.
                 0.0001 sec resolution.
         """
-        cmd = f'BST {hold},{delay}'
+        cmd = f"BST {hold},{delay}"
 
         self._msg.append(cmd)
         return self
@@ -1082,10 +1086,10 @@ class MessageBuilder:
                 resource type. If you do not specify Icomp, the previous
                 value is set. Zero amps (0 A) is not allowed for Icomp.
         """
-        cmd = f'BSV {chnum},{v_range},{start},{stop}'
+        cmd = f"BSV {chnum},{v_range},{start},{stop}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
@@ -1103,7 +1107,7 @@ class MessageBuilder:
                 the monitor channel set by BGI or BGV. For data output format,
                 refer to “Data Output Format” on page 1-25.
         """
-        cmd = f'BSVM {mode}'
+        cmd = f"BSVM {mode}"
 
         self._msg.append(cmd)
         return self
@@ -1147,10 +1151,10 @@ class MessageBuilder:
                 If slot specifies the slot that installs no module,
                 this command causes an error.
         """
-        cmd = 'CA'
+        cmd = "CA"
 
         if slot is not None:
-            cmd += f' {slot}'
+            cmd += f" {slot}"
 
         self._msg.append(cmd)
         return self
@@ -1178,21 +1182,21 @@ class MessageBuilder:
                 If slot specifies the slot that installs no module,
                 this command causes an error.
         """
-        cmd = '*CAL?'
+        cmd = "*CAL?"
 
         if slot is not None:
-            cmd += f' {slot}'
+            cmd += f" {slot}"
 
         self._msg.append(cmd)
         return self
 
     def cl(self, channels: constants.ChannelList | None = None) -> "MessageBuilder":
         if channels is None:
-            cmd = 'CL'
+            cmd = "CL"
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f'CL { as_csv(channels)}'
+            cmd = f"CL { as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -1218,13 +1222,13 @@ class MessageBuilder:
                 the documentation of the ``CLCORR`` command in the
                 programming manual.
         """
-        cmd = f'CLCORR {chnum},{mode}'
+        cmd = f"CLCORR {chnum},{mode}"
 
         self._msg.append(cmd)
         return self
 
-    def cm(self, do_autocal: bool) -> 'MessageBuilder':
-        cmd = f'CM {int(do_autocal)}'
+    def cm(self, do_autocal: bool) -> "MessageBuilder":
+        cmd = f"CM {int(do_autocal)}"
 
         self._msg.append(cmd)
         return self
@@ -1239,22 +1243,22 @@ class MessageBuilder:
 
     def cn(self, channels: constants.ChannelList | None = None) -> "MessageBuilder":
         if channels is None:
-            cmd = 'CN'
+            cmd = "CN"
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f'CN {as_csv(channels)}'
+            cmd = f"CN {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
 
     def cnx(self, channels: constants.ChannelList | None = None) -> "MessageBuilder":
         if channels is None:
-            cmd = 'CNX'
+            cmd = "CNX"
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f'CNX {as_csv(channels)}'
+            cmd = f"CNX {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -1307,7 +1311,7 @@ class MessageBuilder:
         cmd = f"CORRL? {chnum}"
 
         if index is not None:
-            cmd += f',{index}'
+            cmd += f",{index}"
 
         self._msg.append(cmd)
         return self
@@ -1400,7 +1404,7 @@ class MessageBuilder:
                 The SMU will operate with the 100 V limited auto ranging and
                 20 mA compliance settings.
         """
-        cmd = f'DCV {chnum},{voltage}'
+        cmd = f"DCV {chnum},{voltage}"
 
         self._msg.append(cmd)
         return self
@@ -1417,13 +1421,13 @@ class MessageBuilder:
         cmd = f"DI {chnum},{i_range},{current}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
             if comp_polarity is not None:
-                cmd += f',{comp_polarity}'
+                cmd += f",{comp_polarity}"
 
                 if v_range is not None:
-                    cmd += f',{v_range}'
+                    cmd += f",{v_range}"
 
         self._msg.append(cmd)
         return self
@@ -1439,14 +1443,14 @@ class MessageBuilder:
         if len(program_numbers) > 8:
             raise ValueError("A maximum of 8 programs can be specified.")
         else:
-            cmd = f'DO {as_csv(program_numbers)}'
+            cmd = f"DO {as_csv(program_numbers)}"
 
         self._msg.append(cmd)
         return self
 
     def dsmplarm(self, chnum: constants.ChNr | int, count: int) -> "MessageBuilder":
         event_type = 1  # No other option in user manual, so hard coded here
-        cmd = f'DSMPLARM {chnum},{event_type},{count}'
+        cmd = f"DSMPLARM {chnum},{event_type},{count}"
 
         self._msg.append(cmd)
         return self
@@ -1467,7 +1471,7 @@ class MessageBuilder:
         cmd = f"DSMPLSETUP {chnum},{count},{interval}"
 
         if delay is not None:
-            cmd += f',{delay}'
+            cmd += f",{delay}"
 
         self._msg.append(cmd)
         return self
@@ -1484,44 +1488,44 @@ class MessageBuilder:
         cmd = f"DV {chnum},{v_range},{voltage}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
             if comp_polarity is not None:
-                cmd += f',{comp_polarity}'
+                cmd += f",{comp_polarity}"
 
                 if i_range is not None:
-                    cmd += f',{i_range}'
+                    cmd += f",{i_range}"
 
         self._msg.append(cmd)
         return self
 
     def dz(self, channels: constants.ChannelList | None = None) -> "MessageBuilder":
         if channels is None:
-            cmd = 'DZ'
+            cmd = "DZ"
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f'DZ {as_csv(channels)}'
+            cmd = f"DZ {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def emg_query(self, errorcode: int) -> 'MessageBuilder':
-        cmd = f'EMG? {errorcode}'
+    def emg_query(self, errorcode: int) -> "MessageBuilder":
+        cmd = f"EMG? {errorcode}"
 
         self._msg.append(cmd)
         return self
 
-    def end(self) -> 'MessageBuilder':
-        cmd = 'END'
+    def end(self) -> "MessageBuilder":
+        cmd = "END"
 
         self._msg.append(cmd)
         return self
 
-    def erc(self, value: int) -> 'MessageBuilder':
+    def erc(self, value: int) -> "MessageBuilder":
         mode = 2  # Only 2 is valid for KeysightB1500
-        cmd = f'ERC {mode},{value}'
+        cmd = f"ERC {mode},{value}"
 
         self._msg.append(cmd)
         return self
@@ -1550,14 +1554,14 @@ class MessageBuilder:
         cmd = "ERCMAGRD"
 
         if guard_mode is not None:
-            cmd += f' {guard_mode}'
+            cmd += f" {guard_mode}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def ercmagrd_query(self) -> 'MessageBuilder':
-        cmd = 'ERCMAGRD?'
+    def ercmagrd_query(self) -> "MessageBuilder":
+        cmd = "ERCMAGRD?"
 
         self._msg.append(cmd)
         return self
@@ -1566,29 +1570,29 @@ class MessageBuilder:
         cmd = "ERCMAIO"
 
         if cmhl is not None:
-            cmd += f' {cmhl}'
+            cmd += f" {cmhl}"
 
             if acgs is not None:
-                cmd += f',{acgs}'
+                cmd += f",{acgs}"
 
                 if bias is not None:
-                    cmd += f',{bias}'
+                    cmd += f",{bias}"
 
                     if corr is not None:
-                        cmd += f',{corr}'
+                        cmd += f",{corr}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def ercmaio_query(self) -> 'MessageBuilder':
-        cmd = 'ERCMAIO?'
+    def ercmaio_query(self) -> "MessageBuilder":
+        cmd = "ERCMAIO?"
 
         self._msg.append(cmd)
         return self
 
-    def ercmapfgd(self) -> 'MessageBuilder':
-        cmd = 'ERCMAPFGD'
+    def ercmapfgd(self) -> "MessageBuilder":
+        cmd = "ERCMAPFGD"
 
         self._msg.append(cmd)
         return self
@@ -1605,34 +1609,34 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erhpa_query(self) -> 'MessageBuilder':
-        cmd = 'ERHPA?'
+    def erhpa_query(self) -> "MessageBuilder":
+        cmd = "ERHPA?"
 
         self._msg.append(cmd)
         return self
 
-    def erhpe(self, onoff: bool) -> 'MessageBuilder':
-        cmd = f'ERHPE {int(onoff)}'
-
-        self._msg.append(cmd)
-        return self
-
-    @final_command
-    def erhpe_query(self) -> 'MessageBuilder':
-        cmd = 'ERHPE?'
-
-        self._msg.append(cmd)
-        return self
-
-    def erhpl(self, onoff: bool) -> 'MessageBuilder':
-        cmd = f'ERHPL {int(onoff)}'
+    def erhpe(self, onoff: bool) -> "MessageBuilder":
+        cmd = f"ERHPE {int(onoff)}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erhpl_query(self) -> 'MessageBuilder':
-        cmd = 'ERHPL?'
+    def erhpe_query(self) -> "MessageBuilder":
+        cmd = "ERHPE?"
+
+        self._msg.append(cmd)
+        return self
+
+    def erhpl(self, onoff: bool) -> "MessageBuilder":
+        cmd = f"ERHPL {int(onoff)}"
+
+        self._msg.append(cmd)
+        return self
+
+    @final_command
+    def erhpl_query(self) -> "MessageBuilder":
+        cmd = "ERHPL?"
 
         self._msg.append(cmd)
         return self
@@ -1644,8 +1648,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erhpp_query(self) -> 'MessageBuilder':
-        cmd = 'ERHPP?'
+    def erhpp_query(self) -> "MessageBuilder":
+        cmd = "ERHPP?"
 
         self._msg.append(cmd)
         return self
@@ -1657,37 +1661,34 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erhpqg_query(self) -> 'MessageBuilder':
-        cmd = 'ERHPQG?'
+    def erhpqg_query(self) -> "MessageBuilder":
+        cmd = "ERHPQG?"
 
         self._msg.append(cmd)
         return self
 
-    def erhpr(self,
-              pin: int,
-              state: bool) -> 'MessageBuilder':
-        cmd = f'ERHPR {pin},{int(state)}'
-
-        self._msg.append(cmd)
-        return self
-
-    @final_command
-    def erhpr_query(self,
-                    pin: int) -> 'MessageBuilder':
-        cmd = f'ERHPR? {pin}'
-
-        self._msg.append(cmd)
-        return self
-
-    def erhps(self, onoff: bool) -> 'MessageBuilder':
-        cmd = f'ERHPS {int(onoff)}'
+    def erhpr(self, pin: int, state: bool) -> "MessageBuilder":
+        cmd = f"ERHPR {pin},{int(state)}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erhps_query(self) -> 'MessageBuilder':
-        cmd = 'ERHPS?'
+    def erhpr_query(self, pin: int) -> "MessageBuilder":
+        cmd = f"ERHPR? {pin}"
+
+        self._msg.append(cmd)
+        return self
+
+    def erhps(self, onoff: bool) -> "MessageBuilder":
+        cmd = f"ERHPS {int(onoff)}"
+
+        self._msg.append(cmd)
+        return self
+
+    @final_command
+    def erhps_query(self) -> "MessageBuilder":
+        cmd = "ERHPS?"
 
         self._msg.append(cmd)
         return self
@@ -1704,15 +1705,15 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erhvca_query(self) -> 'MessageBuilder':
-        cmd = 'ERHVCA?'
+    def erhvca_query(self) -> "MessageBuilder":
+        cmd = "ERHVCA?"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erhvctst_query(self) -> 'MessageBuilder':
-        cmd = 'ERHVCTST?'
+    def erhvctst_query(self) -> "MessageBuilder":
+        cmd = "ERHVCTST?"
 
         self._msg.append(cmd)
         return self
@@ -1724,8 +1725,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erhvp_query(self) -> 'MessageBuilder':
-        cmd = 'ERHVP?'
+    def erhvp_query(self) -> "MessageBuilder":
+        cmd = "ERHVP?"
 
         self._msg.append(cmd)
         return self
@@ -1736,8 +1737,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erhvs(self, enable_series_resistor: bool) -> 'MessageBuilder':
-        cmd = f'ERHVS {int(enable_series_resistor)}'
+    def erhvs(self, enable_series_resistor: bool) -> "MessageBuilder":
+        cmd = f"ERHVS {int(enable_series_resistor)}"
 
         self._msg.append(cmd)
         return self
@@ -1749,8 +1750,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def erm(self, iport: int) -> 'MessageBuilder':
-        cmd = f'ERM {iport}'
+    def erm(self, iport: int) -> "MessageBuilder":
+        cmd = f"ERM {iport}"
 
         self._msg.append(cmd)
         return self
@@ -1761,14 +1762,14 @@ class MessageBuilder:
         cmd = f"ERMOD {mode}"
 
         if option is not None:
-            cmd += f',{option}'
+            cmd += f",{option}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def ermod_query(self) -> 'MessageBuilder':
-        cmd = 'ERMOD?'
+    def ermod_query(self) -> "MessageBuilder":
+        cmd = "ERMOD?"
 
         self._msg.append(cmd)
         return self
@@ -1782,8 +1783,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erpfda_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFDA?'
+    def erpfda_query(self) -> "MessageBuilder":
+        cmd = "ERPFDA?"
 
         self._msg.append(cmd)
         return self
@@ -1795,21 +1796,21 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erpfdp_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFDP?'
+    def erpfdp_query(self) -> "MessageBuilder":
+        cmd = "ERPFDP?"
 
         self._msg.append(cmd)
         return self
 
-    def erpfds(self, state: bool) -> 'MessageBuilder':
-        cmd = f'ERPFDS {int(state)}'
+    def erpfds(self, state: bool) -> "MessageBuilder":
+        cmd = f"ERPFDS {int(state)}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erpfds_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFDS?'
+    def erpfds_query(self) -> "MessageBuilder":
+        cmd = "ERPFDS?"
 
         self._msg.append(cmd)
         return self
@@ -1821,8 +1822,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erpfga_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFGA?'
+    def erpfga_query(self) -> "MessageBuilder":
+        cmd = "ERPFGA?"
 
         self._msg.append(cmd)
         return self
@@ -1834,8 +1835,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erpfgp_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFGP?'
+    def erpfgp_query(self) -> "MessageBuilder":
+        cmd = "ERPFGP?"
 
         self._msg.append(cmd)
         return self
@@ -1847,21 +1848,21 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erpfgr_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFDS?'
+    def erpfgr_query(self) -> "MessageBuilder":
+        cmd = "ERPFDS?"
 
         self._msg.append(cmd)
         return self
 
-    def erpfqg(self, state: bool) -> 'MessageBuilder':
-        cmd = f'ERPFQG {int(state)}'
+    def erpfqg(self, state: bool) -> "MessageBuilder":
+        cmd = f"ERPFQG {int(state)}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erpfqg_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFQG?'
+    def erpfqg_query(self) -> "MessageBuilder":
+        cmd = "ERPFQG?"
 
         self._msg.append(cmd)
         return self
@@ -1882,28 +1883,28 @@ class MessageBuilder:
         return self
 
     @final_command
-    def erpfuhca_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFUHCA?'
+    def erpfuhca_query(self) -> "MessageBuilder":
+        cmd = "ERPFUHCA?"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erpfuhccal_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFUHCCAL?'
+    def erpfuhccal_query(self) -> "MessageBuilder":
+        cmd = "ERPFUHCCAL?"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def erpfuhcmax_query(self) -> 'MessageBuilder':
-        cmd = 'ERPFUHCMAX?'
+    def erpfuhcmax_query(self) -> "MessageBuilder":
+        cmd = "ERPFUHCMAX?"
 
         self._msg.append(cmd)
         return self
 
-    def erpfuhctst(self) -> 'MessageBuilder':
-        cmd = 'ERPFUHCTST?'
+    def erpfuhctst(self) -> "MessageBuilder":
+        cmd = "ERPFUHCTST?"
 
         self._msg.append(cmd)
         return self
@@ -1913,9 +1914,9 @@ class MessageBuilder:
         self, mode: constants.ERR.Mode | int | None = None
     ) -> "MessageBuilder":
         if mode is None:
-            cmd = 'ERR?'
+            cmd = "ERR?"
         else:
-            cmd = f'ERR? {mode}'
+            cmd = f"ERR? {mode}"
 
         self._msg.append(cmd)
         return self
@@ -1927,14 +1928,14 @@ class MessageBuilder:
         cmd = "ERRX?"
 
         if mode is not None:
-            cmd += f' {mode}'
+            cmd += f" {mode}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def ers_query(self) -> 'MessageBuilder':
-        cmd = 'ERS?'
+    def ers_query(self) -> "MessageBuilder":
+        cmd = "ERS?"
 
         self._msg.append(cmd)
         return self
@@ -1963,8 +1964,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def eruhva_query(self) -> 'MessageBuilder':
-        cmd = 'ERUHVA?'
+    def eruhva_query(self) -> "MessageBuilder":
+        cmd = "ERUHVA?"
 
         self._msg.append(cmd)
         return self
@@ -1979,11 +1980,11 @@ class MessageBuilder:
         self, enable_filter: bool, channels: constants.ChannelList | None = None
     ) -> "MessageBuilder":
         if channels is None:
-            cmd = f'FL {int(enable_filter)}'
+            cmd = f"FL {int(enable_filter)}"
         elif len(channels) > 10:
             raise ValueError("A maximum of ten channels can be set.")
         else:
-            cmd = f'FL {int(enable_filter)},{as_csv(channels)}'
+            cmd = f"FL {int(enable_filter)},{as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -1996,7 +1997,7 @@ class MessageBuilder:
         cmd = f"FMT {format_id}"
 
         if mode is not None:
-            cmd += f',{mode}'
+            cmd += f",{mode}"
 
         self._msg.append(cmd)
         return self
@@ -2010,15 +2011,15 @@ class MessageBuilder:
         return self
 
     @final_command
-    def hvsmuop_query(self) -> 'MessageBuilder':
-        cmd = 'HVSMUOP?'
+    def hvsmuop_query(self) -> "MessageBuilder":
+        cmd = "HVSMUOP?"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def idn_query(self) -> 'MessageBuilder':
-        cmd = '*IDN?'
+    def idn_query(self) -> "MessageBuilder":
+        cmd = "*IDN?"
 
         self._msg.append(cmd)
         return self
@@ -2035,20 +2036,20 @@ class MessageBuilder:
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f'IN {as_csv(channels)}'
+            cmd = f"IN {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
 
-    def intlkvth(self, voltage: float) -> 'MessageBuilder':
-        cmd = f'INTLKVTH {voltage}'
+    def intlkvth(self, voltage: float) -> "MessageBuilder":
+        cmd = f"INTLKVTH {voltage}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def intlkvth_query(self) -> 'MessageBuilder':
-        cmd = 'INTLKVTH?'
+    def intlkvth_query(self) -> "MessageBuilder":
+        cmd = "INTLKVTH?"
 
         self._msg.append(cmd)
         return self
@@ -2090,15 +2091,15 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def lmn(self, enable_data_monitor: bool) -> 'MessageBuilder':
-        cmd = f'LMN {int(enable_data_monitor)}'
+    def lmn(self, enable_data_monitor: bool) -> "MessageBuilder":
+        cmd = f"LMN {int(enable_data_monitor)}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def lop_query(self) -> 'MessageBuilder':
-        cmd = 'LOP?'
+    def lop_query(self) -> "MessageBuilder":
+        cmd = "LOP?"
 
         self._msg.append(cmd)
         return self
@@ -2122,7 +2123,7 @@ class MessageBuilder:
         cmd = f"LSI {chnum},{i_range},{start},{stop},{step}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2133,7 +2134,7 @@ class MessageBuilder:
         cmd = f"LSM {abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -2148,7 +2149,7 @@ class MessageBuilder:
         cmd = f"LSSI {chnum},{polarity},{offset}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2163,29 +2164,29 @@ class MessageBuilder:
         cmd = f"LSSV {chnum},{polarity},{offset}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def lst_query(self, pnum=None, index=None, size=None) -> 'MessageBuilder':
-        cmd = 'LST?'
+    def lst_query(self, pnum=None, index=None, size=None) -> "MessageBuilder":
+        cmd = "LST?"
 
         if pnum is not None:
-            cmd += f' {pnum}'
+            cmd += f" {pnum}"
 
             if index is not None:
-                cmd += f',{index}'
+                cmd += f",{index}"
 
                 if size is not None:
-                    cmd += f',{size}'
+                    cmd += f",{size}"
 
         self._msg.append(cmd)
         return self
 
-    def lstm(self, hold: float, delay: float) -> 'MessageBuilder':
-        cmd = f'LSTM {hold},{delay}'
+    def lstm(self, hold: float, delay: float) -> "MessageBuilder":
+        cmd = f"LSTM {hold},{delay}"
 
         self._msg.append(cmd)
         return self
@@ -2202,7 +2203,7 @@ class MessageBuilder:
         cmd = f"LSV {chnum},{v_range},{start},{stop},{step}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2219,7 +2220,7 @@ class MessageBuilder:
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f'MCC {as_csv(channels)}'
+            cmd = f"MCC {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -2245,7 +2246,7 @@ class MessageBuilder:
         cmd = f"MCPNX {n},{chnum},{mode},{src_range},{base},{pulse}"
 
         if comp is not None:
-            cmd += f',{comp}'
+            cmd += f",{comp}"
 
         self._msg.append(cmd)
         return self
@@ -2260,13 +2261,13 @@ class MessageBuilder:
         cmd = f"MCPT {hold}"
 
         if period is not None:
-            cmd += f',{period}'
+            cmd += f",{period}"
 
             if measurement_delay is not None:
-                cmd += f',{measurement_delay}'
+                cmd += f",{measurement_delay}"
 
                 if average is not None:
-                    cmd += f',{average}'
+                    cmd += f",{average}"
 
         self._msg.append(cmd)
         return self
@@ -2292,10 +2293,10 @@ class MessageBuilder:
         cmd = f"MCPWNX {n},{chnum},{mode},{src_range},{base},{start},{stop}"
 
         if comp is not None:
-            cmd += f',{comp}'
+            cmd += f",{comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2310,7 +2311,7 @@ class MessageBuilder:
         cmd = f"MDCV {chnum},{base},{bias}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -2326,7 +2327,7 @@ class MessageBuilder:
         cmd = f"MI {chnum},{i_range},{base},{bias}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2344,29 +2345,30 @@ class MessageBuilder:
     ) -> "MessageBuilder":
         if mode in (1, 2, 10, 16, 18, 27, 28):
             if channels is None:
-                raise ValueError('Specify channels for this mode')
+                raise ValueError("Specify channels for this mode")
             elif len(channels) > 10:
-                raise ValueError('A maximum of ten channels can be set. For '
-                                 'mode=18, the first chnum must be MFCMU.')
-            cmd = f'MM {mode},{as_csv(channels)}'
+                raise ValueError(
+                    "A maximum of ten channels can be set. For "
+                    "mode=18, the first chnum must be MFCMU."
+                )
+            cmd = f"MM {mode},{as_csv(channels)}"
         elif mode in (3, 4, 5, 17, 19, 20, 22, 23, 26):
             if channels is None or len(channels) != 1:
-                raise ValueError('Specify 1 (and only 1) channel.')
-            cmd = f'MM {mode},{channels[0]}'
+                raise ValueError("Specify 1 (and only 1) channel.")
+            cmd = f"MM {mode},{channels[0]}"
         elif mode in (9, 13):
             if channels is None:
-                cmd = f'MM {mode}'
+                cmd = f"MM {mode}"
             elif len(channels) > 1:
-                raise ValueError('Specify not more than 1 channel for this '
-                                 'mode')
+                raise ValueError("Specify not more than 1 channel for this mode")
             else:
-                cmd = f'MM {mode},{as_csv(channels)}'
+                cmd = f"MM {mode},{as_csv(channels)}"
         elif mode in (14, 15):
             if channels is not None:
-                raise ValueError('Do not specify channels for this mode')
-            cmd = f'MM {mode}'
+                raise ValueError("Do not specify channels for this mode")
+            cmd = f"MM {mode}"
         else:
-            raise ValueError('Invalid Mode ID.')
+            raise ValueError("Invalid Mode ID.")
 
         self._msg.append(cmd)
         return self
@@ -2377,7 +2379,7 @@ class MessageBuilder:
         cmd = f"MSC {abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -2391,10 +2393,10 @@ class MessageBuilder:
         cmd = f"MSP {chnum}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
             if base is not None:
-                cmd += f',{base}'
+                cmd += f",{base}"
 
         self._msg.append(cmd)
         return self
@@ -2432,10 +2434,10 @@ class MessageBuilder:
                 output. Numeric expression. in seconds. 0 (initial setting)
                 to 655.35 s, resolution 0.01 s.
         """
-        cmd = f'MT {h_bias},{interval},{number}'
+        cmd = f"MT {h_bias},{interval},{number}"
 
         if h_base is not None:
-            cmd += f',{h_base}'
+            cmd += f",{h_base}"
 
         self._msg.append(cmd)
         return self
@@ -2446,7 +2448,7 @@ class MessageBuilder:
         cmd = f"MTDCV {h_bias},{interval},{number}"
 
         if h_base is not None:
-            cmd = f',{h_base}'
+            cmd = f",{h_base}"
 
         self._msg.append(cmd)
         return self
@@ -2462,14 +2464,14 @@ class MessageBuilder:
         cmd = f"MV {chnum},{v_range},{base},{bias}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def nub_query(self) -> 'MessageBuilder':
-        cmd = 'NUB?'
+    def nub_query(self) -> "MessageBuilder":
+        cmd = "NUB?"
 
         self._msg.append(cmd)
         return self
@@ -2485,14 +2487,16 @@ class MessageBuilder:
         cmd = f"ODSW {chnum},{int(enable_pulse_switch)}"
 
         if switch_normal_state is not None:
-            cmd += f',{switch_normal_state}'
+            cmd += f",{switch_normal_state}"
 
             if xor(delay is None, width is None):
-                raise ValueError('When specifying delay, then width must be '
-                                 'specified (and vice versa)')
+                raise ValueError(
+                    "When specifying delay, then width must be "
+                    "specified (and vice versa)"
+                )
 
             if delay is not None and width is not None:
-                cmd += f',{delay},{width}'
+                cmd += f",{delay},{width}"
 
         self._msg.append(cmd)
         return self
@@ -2505,14 +2509,14 @@ class MessageBuilder:
         return self
 
     @final_command
-    def opc_query(self) -> 'MessageBuilder':
-        cmd = '*OPC?'
+    def opc_query(self) -> "MessageBuilder":
+        cmd = "*OPC?"
 
         self._msg.append(cmd)
         return self
 
-    def os(self) -> 'MessageBuilder':
-        cmd = 'OS'
+    def os(self) -> "MessageBuilder":
+        cmd = "OS"
 
         self._msg.append(cmd)
         return self
@@ -2525,7 +2529,7 @@ class MessageBuilder:
         cmd = f"OSX {port}"
 
         if level is not None:
-            cmd += f',{level}'
+            cmd += f",{level}"
 
         self._msg.append(cmd)
         return self
@@ -2534,13 +2538,13 @@ class MessageBuilder:
         cmd = "PA"
 
         if wait_time is not None:
-            cmd += f' {wait_time}'
+            cmd += f" {wait_time}"
 
         self._msg.append(cmd)
         return self
 
-    def pad(self, enable: bool) -> 'MessageBuilder':
-        cmd = f'PAD {int(enable)}'
+    def pad(self, enable: bool) -> "MessageBuilder":
+        cmd = f"PAD {int(enable)}"
 
         self._msg.append(cmd)
         return self
@@ -2551,7 +2555,7 @@ class MessageBuilder:
         cmd = f"PAX {port}"
 
         if wait_time is not None:
-            cmd += f',{wait_time}'
+            cmd += f",{wait_time}"
 
         self._msg.append(cmd)
         return self
@@ -2567,11 +2571,11 @@ class MessageBuilder:
         return self
 
     @final_command
-    def pch_query(self, master=None) -> 'MessageBuilder':
-        cmd = 'PCH'
+    def pch_query(self, master=None) -> "MessageBuilder":
+        cmd = "PCH"
 
         if master is not None:
-            cmd += f' {master}'
+            cmd += f" {master}"
 
         self._msg.append(cmd)
         return self
@@ -2595,7 +2599,7 @@ class MessageBuilder:
         cmd = f"PI {chnum},{i_range},{base},{pulse}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2610,10 +2614,10 @@ class MessageBuilder:
         cmd = f"PT {hold},{width}"
 
         if period is not None:
-            cmd += f',{period}'
+            cmd += f",{period}"
 
             if t_delay is not None:
-                cmd += f',{t_delay}'
+                cmd += f",{t_delay}"
 
         self._msg.append(cmd)
         return self
@@ -2628,10 +2632,10 @@ class MessageBuilder:
         cmd = f"PTDCV {hold},{width}"
 
         if period is not None:
-            cmd += f',{period}'
+            cmd += f",{period}"
 
             if t_delay is not None:
-                cmd += f',{t_delay}'
+                cmd += f",{t_delay}"
 
         self._msg.append(cmd)
         return self
@@ -2647,7 +2651,7 @@ class MessageBuilder:
         cmd = f"PV {chnum},{v_range},{base},{pulse}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2681,10 +2685,10 @@ class MessageBuilder:
         cmd = f"PWI {chnum},{mode},{i_range},{base},{start},{stop},{step}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2704,10 +2708,10 @@ class MessageBuilder:
         cmd = f"PWI {chnum},{mode},{v_range},{base},{start},{stop},{step}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2735,7 +2739,7 @@ class MessageBuilder:
         cmd = f"QSM {abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -2749,10 +2753,10 @@ class MessageBuilder:
         cmd = f"QSO {int(enable_smart_operation)}"
 
         if chnum is not None:
-            cmd += f',{chnum}'
+            cmd += f",{chnum}"
 
             if v_comp is not None:
-                cmd += f',{v_comp}'
+                cmd += f",{v_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2774,7 +2778,7 @@ class MessageBuilder:
         cmd = f"QST {cinteg},{linteg},{hold},{delay1}"
 
         if delay2 is not None:
-            cmd += f',{delay2}'
+            cmd += f",{delay2}"
 
         self._msg.append(cmd)
         return self
@@ -2793,7 +2797,7 @@ class MessageBuilder:
         cmd = f"QSV {chnum},{mode},{v_range},{start},{stop},{cvoltage},{step}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
@@ -2817,11 +2821,12 @@ class MessageBuilder:
     ) -> "MessageBuilder":
         if measurement_range is None:
             if ranging_mode != 0:
-                raise ValueError('measurement_range must be specified for '
-                                 'ranging_mode!=0')
-            cmd = f'RC {chnum},{ranging_mode}'
+                raise ValueError(
+                    "measurement_range must be specified for ranging_mode!=0"
+                )
+            cmd = f"RC {chnum},{ranging_mode}"
         else:
-            cmd = f'RC {chnum},{ranging_mode},{measurement_range}'
+            cmd = f"RC {chnum},{ranging_mode},{measurement_range}"
 
         self._msg.append(cmd)
         return self
@@ -2847,23 +2852,23 @@ class MessageBuilder:
         rate: int | None = None,
     ) -> "MessageBuilder":
         if rate is None:
-            cmd = f'RM {chnum},{mode}'
+            cmd = f"RM {chnum},{mode}"
         else:
             if mode == 1:
-                raise ValueError('Do not specify rate for mode 1')
-            cmd = f'RM {chnum},{mode},{rate}'
+                raise ValueError("Do not specify rate for mode 1")
+            cmd = f"RM {chnum},{mode},{rate}"
 
         self._msg.append(cmd)
         return self
 
-    def rst(self) -> 'MessageBuilder':
-        cmd = '*RST'
+    def rst(self) -> "MessageBuilder":
+        cmd = "*RST"
 
         self._msg.append(cmd)
         return self
 
-    def ru(self, start: int, stop: int) -> 'MessageBuilder':
-        cmd = f'RU {start},{stop}'
+    def ru(self, start: int, stop: int) -> "MessageBuilder":
+        cmd = f"RU {start},{stop}"
 
         self._msg.append(cmd)
         return self
@@ -2878,11 +2883,11 @@ class MessageBuilder:
 
     def rz(self, channels: constants.ChannelList | None = None) -> "MessageBuilder":
         if channels is None:
-            cmd = 'RZ'
+            cmd = "RZ"
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f'RZ {as_csv(channels)}'
+            cmd = f"RZ {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -2908,7 +2913,7 @@ class MessageBuilder:
     ) -> "MessageBuilder":
         # For reasons only known to the designer of the KeysightB1500's API the
         # logic of enabled=1 and disabled=0 is inverted JUST for this command.
-        cmd = f'SAR {chnum},{int(not enable_picoamp_autoranging)}'
+        cmd = f"SAR {chnum},{int(not enable_picoamp_autoranging)}"
 
         self._msg.append(cmd)
         return self
@@ -2939,8 +2944,8 @@ class MessageBuilder:
         return self
 
     @final_command
-    def sim_query(self) -> 'MessageBuilder':
-        cmd = 'SIM?'
+    def sim_query(self) -> "MessageBuilder":
+        cmd = "SIM?"
 
         self._msg.append(cmd)
         return self
@@ -2986,45 +2991,44 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def spp(self) -> 'MessageBuilder':
-        cmd = 'SPP'
+    def spp(self) -> "MessageBuilder":
+        cmd = "SPP"
 
         self._msg.append(cmd)
         return self
 
-    def spper(self,
-              period: float) -> 'MessageBuilder':
-        cmd = f'SPPER {period}'
+    def spper(self, period: float) -> "MessageBuilder":
+        cmd = f"SPPER {period}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def spper_query(self) -> 'MessageBuilder':
-        cmd = 'SPPER?'
+    def spper_query(self) -> "MessageBuilder":
+        cmd = "SPPER?"
 
         self._msg.append(cmd)
         return self
 
     def sprm(self, mode: constants.SPRM.Mode | int, condition=None) -> "MessageBuilder":
         if condition is None:
-            cmd = f'SPRM {mode}'
+            cmd = f"SPRM {mode}"
         else:
-            cmd = f'SPRM {mode},{condition}'
+            cmd = f"SPRM {mode},{condition}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def sprm_query(self) -> 'MessageBuilder':
-        cmd = 'SPRM?'
+    def sprm_query(self) -> "MessageBuilder":
+        cmd = "SPRM?"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def spst_query(self) -> 'MessageBuilder':
-        cmd = 'SPST?'
+    def spst_query(self) -> "MessageBuilder":
+        cmd = "SPST?"
 
         self._msg.append(cmd)
         return self
@@ -3041,7 +3045,7 @@ class MessageBuilder:
         cmd = f"SPT {chnum},{src},{delay},{width},{leading}"
 
         if trailing is not None:
-            cmd += f',{trailing}'
+            cmd += f",{trailing}"
 
         self._msg.append(cmd)
         return self
@@ -3057,11 +3061,11 @@ class MessageBuilder:
 
     def spupd(self, channels: constants.ChannelList | None = None) -> "MessageBuilder":
         if channels is None:
-            cmd = 'SPUPD'
+            cmd = "SPUPD"
         elif len(channels) > 10:
             raise ValueError("A maximum of ten channels can be set.")
         else:
-            cmd = f'SPUPD {as_csv(channels)}'
+            cmd = f"SPUPD {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -3076,7 +3080,7 @@ class MessageBuilder:
         cmd = f"SPV {chnum},{src},{base}"
 
         if peak is not None:
-            cmd += f',{peak}'
+            cmd += f",{peak}"
 
         self._msg.append(cmd)
         return self
@@ -3097,14 +3101,14 @@ class MessageBuilder:
         return self
 
     @final_command
-    def sre_query(self) -> 'MessageBuilder':
-        cmd = '*SRE?'
+    def sre_query(self) -> "MessageBuilder":
+        cmd = "*SRE?"
 
         self._msg.append(cmd)
         return self
 
-    def srp(self) -> 'MessageBuilder':
-        cmd = 'SRP'
+    def srp(self) -> "MessageBuilder":
+        cmd = "SRP"
 
         self._msg.append(cmd)
         return self
@@ -3133,15 +3137,15 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def st(self, pnum: int) -> 'MessageBuilder':
-        cmd = f'ST {pnum}'
+    def st(self, pnum: int) -> "MessageBuilder":
+        cmd = f"ST {pnum}"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def stb_query(self) -> 'MessageBuilder':
-        cmd = '*STB?'
+    def stb_query(self) -> "MessageBuilder":
+        cmd = "*STB?"
 
         self._msg.append(cmd)
         return self
@@ -3178,7 +3182,7 @@ class MessageBuilder:
         cmd = f"TC {chnum},{mode}"
 
         if ranging_type is not None:
-            cmd += f',{ranging_type}'
+            cmd += f",{ranging_type}"
 
         self._msg.append(cmd)
         return self
@@ -3201,13 +3205,13 @@ class MessageBuilder:
         cmd = f"TDI {chnum},{i_range},{current}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
             if comp_polarity is not None:
-                cmd += f',{comp_polarity}'
+                cmd += f",{comp_polarity}"
 
                 if v_range is not None:
-                    cmd += f',{v_range}'
+                    cmd += f",{v_range}"
 
         self._msg.append(cmd)
         return self
@@ -3224,13 +3228,13 @@ class MessageBuilder:
         cmd = f"TDV {chnum},{v_range},{voltage}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
             if comp_polarity is not None:
-                cmd += f',{comp_polarity}'
+                cmd += f",{comp_polarity}"
 
                 if i_range is not None:
-                    cmd += f',{i_range}'
+                    cmd += f",{i_range}"
 
         self._msg.append(cmd)
         return self
@@ -3251,7 +3255,7 @@ class MessageBuilder:
         cmd = f"TGP {port},{terminal},{polarity}"
 
         if trigger_type is not None:
-            cmd += f',{trigger_type}'
+            cmd += f",{trigger_type}"
 
         self._msg.append(cmd)
         return self
@@ -3260,11 +3264,11 @@ class MessageBuilder:
         self, ports: list[constants.TriggerPort] | None = None
     ) -> "MessageBuilder":
         if ports is None:
-            cmd = 'TGPC'
+            cmd = "TGPC"
         elif len(ports) > 18:
             raise ValueError("A maximum of 18 ports can be set.")
         else:
-            cmd = f'TGPC {as_csv(ports)}'
+            cmd = f"TGPC {as_csv(ports)}"
 
         self._msg.append(cmd)
         return self
@@ -3295,7 +3299,7 @@ class MessageBuilder:
         cmd = f"TI {chnum}"
 
         if i_range is not None:
-            cmd += f',{i_range}'
+            cmd += f",{i_range}"
 
         self._msg.append(cmd)
         return self
@@ -3307,12 +3311,14 @@ class MessageBuilder:
         v_range: constants.VMeasRange | int | None = None,
     ) -> "MessageBuilder":
         if i_range is None and v_range is None:
-            cmd = f'TIV {chnum}'
+            cmd = f"TIV {chnum}"
         elif i_range is None or v_range is None:
-            raise ValueError('When i_range is specified, then v_range must be '
-                             'specified (and vice versa).')
+            raise ValueError(
+                "When i_range is specified, then v_range must be "
+                "specified (and vice versa)."
+            )
         else:
-            cmd = f'TIV {chnum},{i_range},{v_range}'
+            cmd = f"TIV {chnum},{i_range},{v_range}"
 
         self._msg.append(cmd)
         return self
@@ -3347,10 +3353,10 @@ class MessageBuilder:
             meas_range: Measurement Range. This parameter must be set if
                 mode=2. Set Table 4-19 on Page 30
         """
-        cmd = f'TMACV {chnum},{mode}'
+        cmd = f"TMACV {chnum},{mode}"
 
         if meas_range is not None:
-            cmd += f',{meas_range}'
+            cmd += f",{meas_range}"
 
         self._msg.append(cmd)
         return self
@@ -3364,18 +3370,18 @@ class MessageBuilder:
         cmd = f"TMDCV {chnum},{mode}"
 
         if meas_range is not None:
-            cmd += f',{meas_range}'
+            cmd += f",{meas_range}"
 
         self._msg.append(cmd)
         return self
 
-    def tsc(self, enable_timestamp: bool) -> 'MessageBuilder':
-        cmd = f'TSC {int(enable_timestamp)}'
+    def tsc(self, enable_timestamp: bool) -> "MessageBuilder":
+        cmd = f"TSC {int(enable_timestamp)}"
 
         self._msg.append(cmd)
         return self
 
-    def tsq(self) -> 'MessageBuilder':
+    def tsq(self) -> "MessageBuilder":
         """
         The TSQ command returns the time data from when the TSR command is
         sent until this command is sent. The time data will be put in the
@@ -3390,7 +3396,7 @@ class MessageBuilder:
             apparently?) does not have to be a final command, hence other
             commands may follow. But this needs to be re-checked.
         """
-        cmd = 'TSQ'
+        cmd = "TSQ"
 
         self._msg.append(cmd)
         return self
@@ -3409,10 +3415,10 @@ class MessageBuilder:
         cmd = "*TST?"
 
         if slot is not None:
-            cmd += f' {slot}'
+            cmd += f" {slot}"
 
             if option is not None:
-                cmd += f',{option}'
+                cmd += f",{option}"
 
         self._msg.append(cmd)
         return self
@@ -3426,7 +3432,7 @@ class MessageBuilder:
         cmd = f"TTC {chnum},{mode}"
 
         if meas_range is not None:
-            cmd += f',{meas_range}'
+            cmd += f",{meas_range}"
 
         self._msg.append(cmd)
         return self
@@ -3439,7 +3445,7 @@ class MessageBuilder:
         cmd = f"TTI {chnum}"
 
         if ranging_type is not None:
-            cmd += f',{ranging_type}'
+            cmd += f",{ranging_type}"
 
         self._msg.append(cmd)
         return self
@@ -3451,12 +3457,14 @@ class MessageBuilder:
         v_range: constants.VMeasRange | int | None = None,
     ) -> "MessageBuilder":
         if i_range is None and v_range is None:
-            cmd = f'TTIV {chnum}'
+            cmd = f"TTIV {chnum}"
         elif i_range is None or v_range is None:
-            raise ValueError('If i_range is specified, then v_range must be '
-                             'specified too (and vice versa).')
+            raise ValueError(
+                "If i_range is specified, then v_range must be "
+                "specified too (and vice versa)."
+            )
         else:
-            cmd = f'TTIV {chnum},{i_range},{v_range}'
+            cmd = f"TTIV {chnum},{i_range},{v_range}"
 
         self._msg.append(cmd)
         return self
@@ -3469,7 +3477,7 @@ class MessageBuilder:
         cmd = f"TTV {chnum}"
 
         if v_range is not None:
-            cmd += f',{v_range}'
+            cmd += f",{v_range}"
 
         self._msg.append(cmd)
         return self
@@ -3482,7 +3490,7 @@ class MessageBuilder:
         cmd = f"TV {chnum}"
 
         if v_range is not None:
-            cmd += f',{v_range}'
+            cmd += f",{v_range}"
 
         self._msg.append(cmd)
         return self
@@ -3532,7 +3540,7 @@ class MessageBuilder:
         cmd = f"WAT {wait_time_type},{coeff}"
 
         if offset is not None:
-            cmd += f',{offset}'
+            cmd += f",{offset}"
 
         self._msg.append(cmd)
         return self
@@ -3592,10 +3600,10 @@ class MessageBuilder:
                 polarity as the output value, regardless of the specified Icomp.
                 If the output value is 0, the compliance polarity is positive.
         """
-        cmd = f'WDCV {chnum},{mode},{start},{stop},{step}'
+        cmd = f"WDCV {chnum},{mode},{start},{stop},{step}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
         self._msg.append(cmd)
         return self
@@ -3627,10 +3635,10 @@ class MessageBuilder:
         cmd = f"WI {chnum},{mode},{i_range},{start},{stop},{step}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -3639,8 +3647,7 @@ class MessageBuilder:
         self, abort: bool | constants.Abort, post: constants.WM.Post | int | None = None
     ) -> "MessageBuilder":
         if isinstance(abort, bool):
-            _abort = constants.Abort.ENABLED if abort \
-                else constants.Abort.DISABLED
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
@@ -3648,10 +3655,10 @@ class MessageBuilder:
                 "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
-        cmd = f'WM {_abort}'
+        cmd = f"WM {_abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -3662,8 +3669,7 @@ class MessageBuilder:
         post: constants.WMACV.Post | int | None = None,
     ) -> "MessageBuilder":
         if isinstance(abort, bool):
-            _abort = constants.Abort.ENABLED if abort \
-                else constants.Abort.DISABLED
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
@@ -3671,10 +3677,10 @@ class MessageBuilder:
                 "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
-        cmd = f'WMACV {_abort}'
+        cmd = f"WMACV {_abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -3712,8 +3718,7 @@ class MessageBuilder:
                 If this parameter is not set, the MFCMU forces the start value.
         """
         if isinstance(abort, bool):
-            _abort = constants.Abort.ENABLED if abort \
-                else constants.Abort.DISABLED
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
@@ -3721,10 +3726,10 @@ class MessageBuilder:
                 "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
-        cmd = f'WMDCV {_abort}'
+        cmd = f"WMDCV {_abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
@@ -3733,8 +3738,7 @@ class MessageBuilder:
         self, abort: bool | constants.Abort, post: constants.WMFC.Post | int | None
     ) -> "MessageBuilder":
         if isinstance(abort, bool):
-            _abort = constants.Abort.ENABLED if abort \
-                else constants.Abort.DISABLED
+            _abort = constants.Abort.ENABLED if abort else constants.Abort.DISABLED
         elif isinstance(abort, constants.Abort):
             _abort = abort
         else:
@@ -3742,23 +3746,23 @@ class MessageBuilder:
                 "`abort` argument has to be of type `bool` or `constants.Abort`."
             )
 
-        cmd = f'WMFC {_abort}'
+        cmd = f"WMFC {_abort}"
 
         if post is not None:
-            cmd += f',{post}'
+            cmd += f",{post}"
 
         self._msg.append(cmd)
         return self
 
-    def wncc(self) -> 'MessageBuilder':
-        cmd = 'WNCC'
+    def wncc(self) -> "MessageBuilder":
+        cmd = "WNCC"
 
         self._msg.append(cmd)
         return self
 
     @final_command
-    def wnu_query(self) -> 'MessageBuilder':
-        cmd = 'WNU?'
+    def wnu_query(self) -> "MessageBuilder":
+        cmd = "WNU?"
 
         self._msg.append(cmd)
         return self
@@ -3777,10 +3781,10 @@ class MessageBuilder:
         cmd = f"WNX {n},{chnum},{mode},{ranging_type},{start},{stop}"
 
         if comp is not None:
-            cmd += f',{comp}'
+            cmd += f",{comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -3803,10 +3807,10 @@ class MessageBuilder:
         cmd = f"WSI {chnum},{i_range},{start},{stop}"
 
         if v_comp is not None:
-            cmd += f',{v_comp}'
+            cmd += f",{v_comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -3823,10 +3827,10 @@ class MessageBuilder:
         cmd = f"WSV {chnum},{v_range},{start},{stop}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -3842,13 +3846,13 @@ class MessageBuilder:
         cmd = f"WT {hold},{delay}"
 
         if step_delay is not None:
-            cmd += f',{step_delay}'
+            cmd += f",{step_delay}"
 
             if trigger_delay is not None:
-                cmd += f',{trigger_delay}'
+                cmd += f",{trigger_delay}"
 
                 if measure_delay is not None:
-                    cmd += f',{measure_delay}'
+                    cmd += f",{measure_delay}"
 
         self._msg.append(cmd)
         return self
@@ -3864,13 +3868,13 @@ class MessageBuilder:
         cmd = f"WTACV {hold},{delay}"
 
         if step_delay is not None:
-            cmd += f',{step_delay}'
+            cmd += f",{step_delay}"
 
             if trigger_delay is not None:
-                cmd += f',{trigger_delay}'
+                cmd += f",{trigger_delay}"
 
                 if measure_delay is not None:
-                    cmd += f',{measure_delay}'
+                    cmd += f",{measure_delay}"
 
         self._msg.append(cmd)
         return self
@@ -3886,13 +3890,13 @@ class MessageBuilder:
         cmd = f"WTDCV {hold},{delay}"
 
         if step_delay is not None:
-            cmd += f',{step_delay}'
+            cmd += f",{step_delay}"
 
             if trigger_delay is not None:
-                cmd += f',{trigger_delay}'
+                cmd += f",{trigger_delay}"
 
                 if measure_delay is not None:
-                    cmd += f',{measure_delay}'
+                    cmd += f",{measure_delay}"
 
         self._msg.append(cmd)
         return self
@@ -3908,13 +3912,13 @@ class MessageBuilder:
         cmd = f"WTFC {hold},{delay}"
 
         if step_delay is not None:
-            cmd += f',{step_delay}'
+            cmd += f",{step_delay}"
 
             if trigger_delay is not None:
-                cmd += f',{trigger_delay}'
+                cmd += f",{trigger_delay}"
 
                 if measure_delay is not None:
-                    cmd += f',{measure_delay}'
+                    cmd += f",{measure_delay}"
 
         self._msg.append(cmd)
         return self
@@ -3933,10 +3937,10 @@ class MessageBuilder:
         cmd = f"WV {chnum},{mode},{v_range},{start},{stop},{step}"
 
         if i_comp is not None:
-            cmd += f',{i_comp}'
+            cmd += f",{i_comp}"
 
             if p_comp is not None:
-                cmd += f',{p_comp}'
+                cmd += f",{p_comp}"
 
         self._msg.append(cmd)
         return self
@@ -3948,8 +3952,8 @@ class MessageBuilder:
         self._msg.append(cmd)
         return self
 
-    def xe(self) -> 'MessageBuilder':
-        cmd = 'XE'
+    def xe(self) -> "MessageBuilder":
+        cmd = "XE"
 
         self._msg.append(cmd)
         return self

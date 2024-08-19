@@ -57,8 +57,6 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class StahlChannel(InstrumentChannel):
-
-
     acknowledge_reply = chr(6)
 
     def __init__(
@@ -157,7 +155,6 @@ class StahlChannel(InstrumentChannel):
 
 
 class Stahl(VisaInstrument):
-
     default_terminator = "\r"
 
     def __init__(

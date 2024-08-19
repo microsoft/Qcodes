@@ -11,41 +11,44 @@ if TYPE_CHECKING:
 
 
 class DummyTrackingInstrument(DummyInstrument):
-
     def __init__(self, name: str):
         super().__init__(name)
-        self.add_parameter("a",
-                           set_cmd=None,
-                           get_cmd=None)
+        self.add_parameter("a", set_cmd=None, get_cmd=None)
 
         # These two parameters mock actual instrument parameters; when first
         # connecting to the instrument, they have the _latest["value"] None.
         # We must call get() on them to get a valid value that we can set
         # them to in the __exit__ method of the context manager
-        self.add_parameter("validated_param",
-                           initial_cache_value=None,
-                           set_cmd=self._vp_setter,
-                           get_cmd=self._vp_getter,
-                           vals=vals.Enum("foo", "bar"))
+        self.add_parameter(
+            "validated_param",
+            initial_cache_value=None,
+            set_cmd=self._vp_setter,
+            get_cmd=self._vp_getter,
+            vals=vals.Enum("foo", "bar"),
+        )
 
-        self.add_parameter("parsed_param",
-                           initial_cache_value=None,
-                           set_cmd=self._pp_setter,
-                           get_cmd=self._pp_getter,
-                           set_parser=int)
+        self.add_parameter(
+            "parsed_param",
+            initial_cache_value=None,
+            set_cmd=self._pp_setter,
+            get_cmd=self._pp_getter,
+            set_parser=int,
+        )
 
         # A parameter that is not initialized and whose cache value does not
         # pass the validator or the set parser
-        self.add_parameter("uninitialized_param",
-                           initial_cache_value=None,
-                           set_cmd=None,
-                           set_parser=int,
-                           vals=vals.Enum(2))
+        self.add_parameter(
+            "uninitialized_param",
+            initial_cache_value=None,
+            set_cmd=None,
+            set_parser=int,
+            vals=vals.Enum(2),
+        )
 
         # A parameter that counts the number of times it has been set
-        self.add_parameter("counting_parameter",
-                           set_cmd=self._cp_setter,
-                           get_cmd=self._cp_getter)
+        self.add_parameter(
+            "counting_parameter", set_cmd=self._cp_setter, get_cmd=self._cp_getter
+        )
 
         # the mocked instrument state values of validated_param and
         # parsed_param
@@ -78,7 +81,7 @@ class DummyTrackingInstrument(DummyInstrument):
 
 @pytest.fixture(name="instrument")
 def _make_instrument() -> "Generator[DummyTrackingInstrument, None, None]":
-    instrument = DummyTrackingInstrument('dummy_holder')
+    instrument = DummyTrackingInstrument("dummy_holder")
     try:
         yield instrument
     finally:
@@ -117,7 +120,7 @@ def test_set_to_none_when_parameter_is_not_captured_yet(
 
 def test_set_to_none_for_not_captured_parameter_but_instrument_has_value() -> None:
     # representing instrument here
-    instr_value = 'something'
+    instr_value = "something"
     set_counter = 0
 
     def set_instr_value(value: Any) -> None:
@@ -126,8 +129,12 @@ def test_set_to_none_for_not_captured_parameter_but_instrument_has_value() -> No
         set_counter += 1
 
     # make a parameter that is linked to an instrument
-    p = Parameter('p', set_cmd=set_instr_value, get_cmd=lambda: instr_value,
-                  val_mapping={'foo': 'something', None: 'nothing'})
+    p = Parameter(
+        "p",
+        set_cmd=set_instr_value,
+        get_cmd=lambda: instr_value,
+        val_mapping={"foo": "something", None: "nothing"},
+    )
 
     # pre-conditions
     assert p.cache._value is None  # type: ignore[attr-defined]

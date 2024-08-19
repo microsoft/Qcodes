@@ -10,7 +10,7 @@ def test_error_caused_by_simple() -> None:
     """
 
     with pytest.raises(Exception) as execinfo:
-        raise KeyError('foo') from ValueError('bar')
+        raise KeyError("foo") from ValueError("bar")
 
     assert error_caused_by(execinfo, "ValueError: bar")
     assert not error_caused_by(execinfo, "KeyError: foo")
@@ -23,9 +23,9 @@ def test_error_caused_by_try_catch() -> None:
     """
     with pytest.raises(KeyError) as execinfo:
         try:
-            raise ValueError('bar')
+            raise ValueError("bar")
         except ValueError as e:
-            raise KeyError('foo') from e
+            raise KeyError("foo") from e
 
     assert error_caused_by(execinfo, "ValueError: bar")
     assert not error_caused_by(execinfo, "KeyError: foo")
@@ -39,12 +39,12 @@ def test_error_caused_by_3_level() -> None:
 
     with pytest.raises(RuntimeError) as execinfo:
         try:
-            raise ValueError('bar')
+            raise ValueError("bar")
         except ValueError as e:
             try:
-                raise KeyError('foo') from e
+                raise KeyError("foo") from e
             except KeyError as ee:
-                raise RuntimeError('goo') from ee
+                raise RuntimeError("goo") from ee
 
     assert not error_caused_by(execinfo, "RuntimeError: goo")
     assert not error_caused_by(execinfo, "KeyError: foo")

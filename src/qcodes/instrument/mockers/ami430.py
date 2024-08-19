@@ -15,7 +15,7 @@ class MockAMI430:
         "Quench detected": "7",
         "At ZERO current": "8",
         "Heating persistent switch": "9",
-        "Cooling persistent switch": "10"
+        "Cooling persistent switch": "10",
     }
 
     field_units: ClassVar[dict[str, str]] = {"tesla": "1", "kilogauss": "0"}
@@ -25,7 +25,6 @@ class MockAMI430:
     quench_state: ClassVar[dict[bool, str]] = {False: "0", True: "1"}
 
     def __init__(self, name):
-
         self.name = name
         self.log_messages = []
 
@@ -34,63 +33,32 @@ class MockAMI430:
         self._state = MockAMI430.states["HOLDING at the target field/current"]
 
         self.handlers = {
-            "RAMP:RATE:UNITS": {
-                "get": MockAMI430.ramp_rate_units["A/s"],
-                "set": None
-            },
-            "FIELD:UNITS": {
-                "get": MockAMI430.field_units["tesla"],
-                "set": None
-            },
-            "*IDN": {
-                "get": "v0.1 Mock",
-                "set": None
-            },
-            "STATE": {
-                "get": self._getter("_state"),
-                "set": self._setter("_state")
-            },
-            "FIELD:MAG": {
-                "get": self._getter("_field_mag"),
-                "set": None
-            },
+            "RAMP:RATE:UNITS": {"get": MockAMI430.ramp_rate_units["A/s"], "set": None},
+            "FIELD:UNITS": {"get": MockAMI430.field_units["tesla"], "set": None},
+            "*IDN": {"get": "v0.1 Mock", "set": None},
+            "STATE": {"get": self._getter("_state"), "set": self._setter("_state")},
+            "FIELD:MAG": {"get": self._getter("_field_mag"), "set": None},
             "QU": {
-                "get": MockAMI430.quench_state[False],  # We are never in a quenching state so always return the
+                "get": MockAMI430.quench_state[
+                    False
+                ],  # We are never in a quenching state so always return the
                 # same value
-                "set": None
+                "set": None,
             },
-            "PERS": {
-                "get": "0",
-                "set": None
-            },
-            "PAUSE": {
-                "get": self._is_paused,
-                "set": self._do_pause
-            },
+            "PERS": {"get": "0", "set": None},
+            "PAUSE": {"get": self._is_paused, "set": self._do_pause},
             "CONF:FIELD:TARG": {
                 "get": None,  # To get the field target, send a message "FIELD:TARG?"
-                "set": self._setter("_field_target")
+                "set": self._setter("_field_target"),
             },
-            "FIELD:TARG": {
-                "get": self._getter("_field_target"),
-                "set": None
-            },
+            "FIELD:TARG": {"get": self._getter("_field_target"), "set": None},
             "PS": {
                 "get": "0",  # The heater is off
-                "set": None
+                "set": None,
             },
-            "RAMP": {
-                "set": self._do_ramp,
-                "get": None
-            },
-            "RAMP:RATE:CURRENT": {
-                "get": "0.1000,50.0000",
-                "set": None
-            },
-            "COIL": {
-                "get": "1",
-                "set": None
-            }
+            "RAMP": {"set": self._do_ramp, "get": None},
+            "RAMP:RATE:CURRENT": {"get": "0.1000,50.0000", "set": None},
+            "COIL": {"get": "1", "set": None},
         }
 
     @staticmethod
@@ -135,7 +103,7 @@ class MockAMI430:
         # "*IDN" with "\*IDN".
         reserved_re_characters = r"\^${}[]().*+?|<>-&"
         for c in reserved_re_characters:
-            key = key.replace(c, fr"\{c}")
+            key = key.replace(c, rf"\{c}")
 
         # Get and set messages use different regular expression
         s = {"get": r"(:[^:]*)?\?$", "set": "([^:]+)"}[gs]
@@ -159,10 +127,10 @@ class MockAMI430:
         return lambda value: setattr(self, attribute, value)
 
     def _log(self, msg):
-
         now = datetime.now()
-        log_line = "[{}] {}: {}".format(now.strftime("%d:%m:%Y-%H:%M:%S.%f"),
-                                        self.name, msg)
+        log_line = "[{}] {}: {}".format(
+            now.strftime("%d:%m:%Y-%H:%M:%S.%f"), self.name, msg
+        )
         self.log_messages.append(log_line)
 
     def _handle_messages(self, msg):

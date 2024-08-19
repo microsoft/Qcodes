@@ -12,9 +12,8 @@ if TYPE_CHECKING:
 
 
 class HasSnapshotBase(Metadatable):
-    def snapshot_base(self, update=False,
-                      params_to_skip_update=None):
-        return {'cheese': 'gruyere'}
+    def snapshot_base(self, update=False, params_to_skip_update=None):
+        return {"cheese": "gruyere"}
 
 
 class HasSnapshot(Metadatable):
@@ -26,54 +25,24 @@ class HasSnapshot(Metadatable):
 
 DATASETLEFT: dict[str, dict[str, dict[str, Any]]] = {
     "station": {
-        "parameters": {
-            "apple": {
-                "value": "orange"
-            }
-        },
+        "parameters": {"apple": {"value": "orange"}},
         "instruments": {
             "correct": {
-                "parameters": {
-                    "horse": {
-                        "value": "battery"
-                    },
-                    "left": {
-                        "value": "only"
-                    }
-                }
+                "parameters": {"horse": {"value": "battery"}, "left": {"value": "only"}}
             },
-            "another": {
-                "parameters": {}
-            }
-        }
+            "another": {"parameters": {}},
+        },
     }
 }
 DATASETRIGHT: dict[str, dict[str, dict[str, Any]]] = {
     "station": {
-        "parameters": {
-            "apple": {
-                "value": "grape"
-            }
-        },
+        "parameters": {"apple": {"value": "grape"}},
         "instruments": {
             "correct": {
-                "parameters": {
-                    "horse": {
-                        "value": "staple"
-                    },
-                    "right": {
-                        "value": "only"
-                    }
-                }
+                "parameters": {"horse": {"value": "staple"}, "right": {"value": "only"}}
             },
-            "another": {
-                "parameters": {
-                    "pi": {
-                        "value": 3.1
-                    }
-                }
-            }
-        }
+            "another": {"parameters": {"pi": {"value": 3.1}}},
+        },
     }
 }
 
@@ -109,7 +78,7 @@ def test_snapshot() -> None:
     assert sb.snapshot() == sb.snapshot_base()
 
     s = HasSnapshot(metadata={"8": 9})
-    assert s.snapshot() == {'fruit': 'kiwi'}
+    assert s.snapshot() == {"fruit": "kiwi"}
     assert s.snapshot_base() == {}
     assert s.metadata == {"8": 9}
 
@@ -117,16 +86,14 @@ def test_snapshot() -> None:
 def test_dataset_diff() -> None:
     diff = diff_param_values(DATASETLEFT, DATASETRIGHT)
     assert diff.changed == {
-            "apple": ("orange", "grape"),
-            ("correct", "horse"): ("battery", "staple"),
-        }
-    assert diff.left_only == {
-            ("correct", "left"): "only"
-        }
+        "apple": ("orange", "grape"),
+        ("correct", "horse"): ("battery", "staple"),
+    }
+    assert diff.left_only == {("correct", "left"): "only"}
     assert diff.right_only == {
-            ("correct", "right"): "only",
-            ("another", "pi"): 3.1,
-        }
+        ("correct", "right"): "only",
+        ("another", "pi"): 3.1,
+    }
 
 
 def test_station_diff() -> None:
@@ -135,16 +102,14 @@ def test_station_diff() -> None:
 
     diff = diff_param_values(left, right)
     assert diff.changed == {
-            "apple": ("orange", "grape"),
-            ("correct", "horse"): ("battery", "staple")
-        }
-    assert diff.left_only == {
-            ("correct", "left"): "only"
-        }
+        "apple": ("orange", "grape"),
+        ("correct", "horse"): ("battery", "staple"),
+    }
+    assert diff.left_only == {("correct", "left"): "only"}
     assert diff.right_only == {
-            ("correct", "right"): "only",
-            ("another", "pi"): 3.1,
-        }
+        ("correct", "right"): "only",
+        ("another", "pi"): 3.1,
+    }
 
 
 def test_instrument_diff() -> None:
@@ -155,6 +120,4 @@ def test_instrument_diff() -> None:
 
     assert diff.changed == {}
     assert diff.left_only == {}
-    assert diff.right_only == {
-             "pi": 3.1
-        }
+    assert diff.right_only == {"pi": 3.1}

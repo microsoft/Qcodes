@@ -40,29 +40,25 @@ class Model_325(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        sensors = ChannelList(
-            self, "sensor", Model_325_Sensor, snapshotable=False)
+        sensors = ChannelList(self, "sensor", Model_325_Sensor, snapshotable=False)
 
         for inp in ["A", "B"]:
             sensor = Model_325_Sensor(self, f"sensor_{inp}", inp)  # type: ignore[arg-type]
             sensors.append(sensor)
-            self.add_submodule(f'sensor_{inp}', sensor)
+            self.add_submodule(f"sensor_{inp}", sensor)
 
         self.add_submodule("sensor", sensors.to_channel_tuple())
 
-        heaters = ChannelList(
-            self, "heater", Model_325_Heater, snapshotable=False)
+        heaters = ChannelList(self, "heater", Model_325_Heater, snapshotable=False)
 
         for loop in [1, 2]:
             heater = Model_325_Heater(self, f"heater_{loop}", loop)  # type: ignore[arg-type]
             heaters.append(heater)
-            self.add_submodule(f'heater_{loop}', heater)
+            self.add_submodule(f"heater_{loop}", heater)
 
         self.add_submodule("heater", heaters.to_channel_tuple())
 
-        curves = ChannelList(
-            self, "curve", Model_325_Curve, snapshotable=False
-        )
+        curves = ChannelList(self, "curve", Model_325_Curve, snapshotable=False)
 
         for curve_index in range(1, 35):
             curve = Model_325_Curve(self, curve_index)  # type: ignore[arg-type]

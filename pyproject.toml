@@ -141,10 +141,6 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
-[tool.darker]
-# done via ruff
-isort = false
-
 [tool.mypy]
 strict_optional = true
 show_column_numbers = true
@@ -251,8 +247,6 @@ extend-exclude = ["typings"]
 # W pydocstyle
 # PLx pylint
 select = ["E", "F", "PT025", "UP", "RUF010", "RUF012", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW", "W", "D417", "D416", "D410", "D411", "D412", "D405", "D214", "TCH"]
-# darker will fix this as code is
-# reformatted when it is changed.
 # G004 We have a lot of use of f strings in log messages
 # so disable that lint for now
 # NPY002 We have a lot of use of the legacy

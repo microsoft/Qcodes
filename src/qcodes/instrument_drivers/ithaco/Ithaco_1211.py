@@ -32,32 +32,35 @@ class CurrentParameter(MultiParameter):
         name: the name of the current output. Default 'curr'.
             Also used as the name of the whole parameter.
     """
-    def __init__(self,
-                 measured_param: Parameter,
-                 c_amp_ins: "Ithaco_1211",
-                 name: str = 'curr'):
+
+    def __init__(
+        self, measured_param: Parameter, c_amp_ins: "Ithaco_1211", name: str = "curr"
+    ):
         p_name = measured_param.name
 
-        super().__init__(name=name,
-                         names=(p_name+'_raw', name),
-                         shapes=((), ()),
-                         setpoints=((), ()),
-                         instrument=c_amp_ins,
-                         snapshot_value=True)
+        super().__init__(
+            name=name,
+            names=(p_name + "_raw", name),
+            shapes=((), ()),
+            setpoints=((), ()),
+            instrument=c_amp_ins,
+            snapshot_value=True,
+        )
 
         self._measured_param = measured_param
 
         p_label = getattr(measured_param, "label", "")
         p_unit = getattr(measured_param, "unit", "")
 
-        self.labels = (p_label, 'Current')
-        self.units = (p_unit, 'A')
+        self.labels = (p_label, "Current")
+        self.units = (p_unit, "A")
 
     def get_raw(self) -> tuple[ParamRawDataType, ...]:
         assert isinstance(self.instrument, Ithaco_1211)
         volt = self._measured_param.get()
-        current = (self.instrument.sens.get() *
-                   self.instrument.sens_factor.get()) * volt
+        current = (
+            self.instrument.sens.get() * self.instrument.sens_factor.get()
+        ) * volt
 
         if self.instrument.invert.get():
             current *= -1
@@ -131,12 +134,16 @@ class Ithaco1211(Instrument):
         """Parameter risetime"""
 
     def get_idn(self) -> dict[str, str | None]:
-        vendor = 'Ithaco (DL Instruments)'
-        model = '1211'
+        vendor = "Ithaco (DL Instruments)"
+        model = "1211"
         serial = None
         firmware = None
-        return {'vendor': vendor, 'model': model,
-                'serial': serial, 'firmware': firmware}
+        return {
+            "vendor": vendor,
+            "model": model,
+            "serial": serial,
+            "firmware": firmware,
+        }
 
 
 class Ithaco_1211(Ithaco1211):

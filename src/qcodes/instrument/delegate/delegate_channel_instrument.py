@@ -65,6 +65,7 @@ class DelegateChannelInstrument(DelegateInstrument):
         set_initial_values_on_load: Flag to set defaults on load. Defaults
             to False.
     """
+
     def __init__(
         self,
         name: str,
@@ -73,16 +74,15 @@ class DelegateChannelInstrument(DelegateInstrument):
         parameters: Mapping[str, Sequence[str]],
         initial_values: Mapping[str, Any] | None = None,
         set_initial_values_on_load: bool = False,
-        **kwargs: Any):
+        **kwargs: Any,
+    ):
         _channels = self.parse_instrument_path(parent=station, path=channels)
         _parameters = {}
         for channel in _channels:
             ins = channel.root_instrument.name
             chan_no = str(channel.channel_number()).zfill(2)
             for alias, paths in parameters.items():
-                _paths = [
-                    f"{ins}.ch{chan_no}.{path}" for path in paths
-                ]
+                _paths = [f"{ins}.ch{chan_no}.{path}" for path in paths]
                 _parameters[f"{alias}{chan_no}"] = _paths
 
         super().__init__(
@@ -91,5 +91,5 @@ class DelegateChannelInstrument(DelegateInstrument):
             parameters=_parameters,
             initial_values=initial_values,
             set_initial_values_on_load=set_initial_values_on_load,
-            **kwargs
+            **kwargs,
         )

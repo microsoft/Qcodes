@@ -10,7 +10,7 @@ else:
 
 from .commandhandler import CommandHandler
 
-assert sys.platform == 'win32'
+assert sys.platform == "win32"
 
 command_handler = CommandHandler()
 
@@ -18,12 +18,11 @@ log = logging.getLogger(__name__)
 
 RECEIVE_BUFFER_SIZE = 4096
 PORT = 5000
-ADDRESS = ''
-LINE_TERM = '\r\n'
+ADDRESS = ""
+LINE_TERM = "\r\n"
 
 
 def run_server() -> None:
-
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((ADDRESS, PORT))
@@ -34,11 +33,11 @@ def run_server() -> None:
     # Add server socket to the dictionary first.
     socket_dict = {server_socket: (ADDRESS, PORT)}
 
-    print(f'Server started on port {PORT}.')
-    print('Press ESC to exit.')
+    print(f"Server started on port {PORT}.")
+    print("Press ESC to exit.")
 
     keep_going = True
-    cmd_buffer: str = ''
+    cmd_buffer: str = ""
 
     while keep_going:
         # Get the list sockets which are ready to be read through select
@@ -48,7 +47,7 @@ def run_server() -> None:
         # Keyboard
         if kbhit():
             if ord(getch()) == 27:
-                print('Server exiting')
+                print("Server exiting")
                 break
 
         for sock in read_sockets:
@@ -62,27 +61,27 @@ def run_server() -> None:
 
             # Incoming message from existing connection
             else:
-                data = sock.recv(RECEIVE_BUFFER_SIZE).decode('utf-8')
-                log.debug(f'Received data: {data}')
+                data = sock.recv(RECEIVE_BUFFER_SIZE).decode("utf-8")
+                log.debug(f"Received data: {data}")
                 if data:
-                    data = data.replace('\n', '\r')
-                    data = data.replace('\r\r', '\r')
+                    data = data.replace("\n", "\r")
+                    data = data.replace("\r\r", "\r")
                     cmd_buffer += data
-            idx = cmd_buffer.find('\r')
+            idx = cmd_buffer.find("\r")
 
             if idx >= 0:
-                command = cmd_buffer[:idx].upper().strip(' ')
-                cmd_buffer = cmd_buffer[idx+1:]
-                if command == 'EXIT':
+                command = cmd_buffer[:idx].upper().strip(" ")
+                cmd_buffer = cmd_buffer[idx + 1 :]
+                if command == "EXIT":
                     # send an error code, since the driver expects that for all
                     # commands
-                    sock.send(b'0')
-                    print('Server exiting.')
+                    sock.send(b"0")
+                    print("Server exiting.")
                     keep_going = False
-                elif command == 'CLOSE':
+                elif command == "CLOSE":
                     # send an error code, since the driver expects that for all
                     # commands
-                    sock.send(b'0')
+                    sock.send(b"0")
                     msg_str = f"Client ({socket_dict[sock][0]}, {socket_dict[sock][1]}) disconnected."
                     print(msg_str)
                     log.info(msg_str)
@@ -90,7 +89,7 @@ def run_server() -> None:
                     sock.close()
                 else:
                     response = command_handler(command)
-                    sock.send(bytes(f'{response}{LINE_TERM}', 'utf-8'))
+                    sock.send(bytes(f"{response}{LINE_TERM}", "utf-8"))
 
     server_socket.close()
 

@@ -93,7 +93,8 @@ def test_plot_button(tab, standalone_parameters_dataset) -> None:
     ],
 )
 def test_get_experiment_button(
-    get_button_function, standalone_parameters_dataset,
+    get_button_function,
+    standalone_parameters_dataset,
 ) -> None:
     ds = standalone_parameters_dataset
     box = get_button_function(ds)
@@ -104,9 +105,7 @@ def test_get_experiment_button(
 
 
 def test_get_parameters(standalone_parameters_dataset) -> None:
-    parameters = interactive_widget._get_parameters(
-        standalone_parameters_dataset
-    )
+    parameters = interactive_widget._get_parameters(standalone_parameters_dataset)
     assert bool(parameters["dependent"])  # not empty
     assert bool(parameters["independent"])  # not empty
 
@@ -144,12 +143,10 @@ def test_experiments_widget(standalone_parameters_dataset) -> None:
     assert grid.n_rows == 1 + 1
 
 
-@pytest.mark.parametrize('sort_by', [None, "run_id", "timestamp"])
+@pytest.mark.parametrize("sort_by", [None, "run_id", "timestamp"])
 def test_experiments_widget_sorting(standalone_parameters_dataset, sort_by) -> None:
     dss = [standalone_parameters_dataset]
-    widget = interactive_widget.experiments_widget(
-        data_sets=dss, sort_by=sort_by
-    )
+    widget = interactive_widget.experiments_widget(data_sets=dss, sort_by=sort_by)
     assert len(widget.children) == 3
     grid = widget.children[2]
     assert isinstance(grid, GridspecLayout)

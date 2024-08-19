@@ -23,5 +23,4 @@ class SR865A(SR86x):
         reset: bool = False,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-        super().__init__(name, address, max_frequency=4E6,
-                         reset=reset, **kwargs)
+        super().__init__(name, address, max_frequency=4e6, reset=reset, **kwargs)

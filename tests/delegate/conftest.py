@@ -11,19 +11,17 @@ PARENT_DIR = pathlib.Path(__file__).parent.absolute()
 
 @pytest.fixture(scope="function")
 def dac():
-    return MockDAC('dac', num_channels=3)
+    return MockDAC("dac", num_channels=3)
 
 
 @pytest.fixture(scope="function")
 def field_x():
-    return MockField('field_x')
+    return MockField("field_x")
 
 
 @pytest.fixture(scope="function")
 def lockin():
-    _lockin = MockLockin(
-        name='lockin'
-    )
+    _lockin = MockLockin(name="lockin")
     return _lockin
 
 

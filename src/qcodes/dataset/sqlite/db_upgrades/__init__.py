@@ -12,6 +12,7 @@ the current state of the SQLite API in QCoDeS (:mod:`.sqlite`). In
 principle, the upgrade functions should not have dependecies from
 :mod:`.queries` module.
 """
+
 from __future__ import annotations
 
 import logging
@@ -39,13 +40,12 @@ log = logging.getLogger(__name__)
 # use a Protocol to type optional arguments
 # see https://mypy.readthedocs.io/en/stable/protocols.html#callback-protocols
 class TUpgraderFunction(Protocol):
-
-    def __call__(self, conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
-        ...
+    def __call__(
+        self, conn: ConnectionPlus, show_progress_bar: bool = True
+    ) -> None: ...
 
     @property
-    def __name__(self) -> str:
-        ...
+    def __name__(self) -> str: ...
 
 
 # Functions decorated as 'upgrader' are inserted into this dict
@@ -66,6 +66,7 @@ def _get_no_of_runs(conn: ConnectionPlus) -> int:
     no_of_runs = no_of_runs or 0
     return no_of_runs
 
+
 def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     """
     Decorator for database version upgrade functions. An upgrade function
@@ -79,41 +80,46 @@ def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     The decorator takes care of logging about the upgrade and managing the
     database versioning.
     """
-    name_comps = func.__name__.split('_')
+    name_comps = func.__name__.split("_")
     if not len(name_comps) == 6:
-        raise NameError('Decorated function not a valid upgrader. '
-                        'Must have name "perform_db_upgrade_N_to_M"')
-    if not ''.join(name_comps[:3]+[name_comps[4]]) == 'performdbupgradeto':
-        raise NameError('Decorated function not a valid upgrader. '
-                        'Must have name "perform_db_upgrade_N_to_M"')
+        raise NameError(
+            "Decorated function not a valid upgrader. "
+            'Must have name "perform_db_upgrade_N_to_M"'
+        )
+    if not "".join(name_comps[:3] + [name_comps[4]]) == "performdbupgradeto":
+        raise NameError(
+            "Decorated function not a valid upgrader. "
+            'Must have name "perform_db_upgrade_N_to_M"'
+        )
     from_version = int(name_comps[3])
     to_version = int(name_comps[5])
 
-    if not to_version == from_version+1:
-        raise ValueError(f'Invalid upgrade versions in function name: '
-                         f'{func.__name__}; upgrade from version '
-                         f'{from_version} to version {to_version}.'
-                         ' Can only upgrade from version N'
-                         ' to version N+1')
+    if not to_version == from_version + 1:
+        raise ValueError(
+            f"Invalid upgrade versions in function name: "
+            f"{func.__name__}; upgrade from version "
+            f"{from_version} to version {to_version}."
+            " Can only upgrade from version N"
+            " to version N+1"
+        )
 
     @wraps(func)
     def do_upgrade(conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
-
-        log.info(f'Starting database upgrade version {from_version} '
-                 f'to {to_version}')
+        log.info(f"Starting database upgrade version {from_version} to {to_version}")
 
         start_version = get_user_version(conn)
         if start_version != from_version:
-            log.info(f'Skipping upgrade {from_version} -> {to_version} as'
-                     f' current database version is {start_version}.')
+            log.info(
+                f"Skipping upgrade {from_version} -> {to_version} as"
+                f" current database version is {start_version}."
+            )
             return
 
         # This function either raises or returns
         func(conn, show_progress_bar)
 
         set_user_version(conn, to_version)
-        log.info(f'Succesfully performed upgrade {from_version} '
-                 f'-> {to_version}')
+        log.info(f"Succesfully performed upgrade {from_version} -> {to_version}")
 
     _UPGRADE_ACTIONS[to_version] = do_upgrade
 
@@ -167,7 +173,7 @@ def perform_db_upgrade_0_to_1(
             transaction(atomic_conn, sql)
             # now assign GUIDs to existing runs
             cur = transaction(atomic_conn, "SELECT run_id FROM runs")
-            run_ids = [r[0] for r in many_many(cur, 'run_id')]
+            run_ids = [r[0] for r in many_many(cur, "run_id")]
 
             pbar = tqdm(
                 range(1, len(run_ids) + 1),
@@ -183,16 +189,15 @@ def perform_db_upgrade_0_to_1(
                         WHERE run_id == {run_id}
                         """
                 cur = transaction(atomic_conn, query)
-                timestamp = one(cur, 'run_timestamp')
-                timeint = int(np.round(timestamp*1000))
+                timestamp = one(cur, "run_timestamp")
+                timeint = int(np.round(timestamp * 1000))
                 sql = f"""
                         UPDATE runs
                         SET guid = ?
                         where run_id == {run_id}
                         """
                 sampleint = 3736062718  # 'deafcafe'
-                cur.execute(sql, (generate_guid(timeint=timeint,
-                                                sampleint=sampleint),))
+                cur.execute(sql, (generate_guid(timeint=timeint, sampleint=sampleint),))
     else:
         raise RuntimeError(f"found {n_run_tables} runs tables expected 1")
 
@@ -323,7 +328,6 @@ def perform_db_upgrade_6_to_7(
     n_run_tables = len(cur.fetchall())
 
     if n_run_tables == 1:
-
         pbar = tqdm(range(1), file=sys.stdout, disable=not show_progress_bar)
         pbar.set_description("Upgrading database; v6 -> v7")
         # iterate through the pbar for the sake of the side effect; it

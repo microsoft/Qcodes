@@ -26,6 +26,7 @@ class MockBackendBase:
     callable values. The keys are matched to input commands with regular
     expressions and on match the corresponding callable is called.
     """
+
     def __init__(self) -> None:
         self._command_dict: dict[str, Callable[..., Any]] = {}
 
@@ -70,6 +71,7 @@ class MockBackend(MockBackendBase):
     INST:CHN<n>:GRT
     Return the greeting of this channel
     """
+
     def __init__(self) -> None:
         super().__init__()
         self._channel_catalog: list[str] = ["1", "2", "4", "5"]  # Pre-existing
@@ -77,15 +79,16 @@ class MockBackend(MockBackendBase):
         self._greetings = {chn: "Hello" for chn in self._channel_catalog}
 
         self._command_dict = {
-            r":INST:CHN(\d):HLO":
-                lambda chn: self._greetings[chn] + " from channel " + str(chn),
+            r":INST:CHN(\d):HLO": lambda chn: self._greetings[chn]
+            + " from channel "
+            + str(chn),
             r":INST:CHN:ADD (\d), (.+)": self._add_channel,
             r":INST:CHN:DEL (\d)": self._channel_catalog.remove,
             r":INST:CHN:CAT": lambda: ",".join(str(i) for i in self._channel_catalog),
             r":INST:CHN(\d):GRT": self._greetings.get,
         }
 
-    def _add_channel(self, chn: int, greeting: str)->None:
+    def _add_channel(self, chn: int, greeting: str) -> None:
         """
         Add a channel on the mock instrument
         """
@@ -112,7 +115,6 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         # AutoLoadableChannelList.
         kwarg_list = []
         for channel_str in channels_str.split(","):
-
             if channel_str in channels_to_skip:
                 continue
 
@@ -121,7 +123,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
             new_kwargs = {
                 "name": f"channel{channel}",
                 "channel": channel,
-                "greeting": greeting
+                "greeting": greeting,
             }
             kwarg_list.append(new_kwargs)
 
@@ -147,7 +149,7 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         new_kwargs = {
             "name": f"channel{new_channel}",
             "channel": new_channel,
-            "greeting": kwargs.get("greeting", "Hello")
+            "greeting": kwargs.get("greeting", "Hello"),
         }
 
         return new_kwargs
@@ -161,20 +163,17 @@ class SimpleTestChannel(AutoLoadableInstrumentChannel):
         existence: bool = False,
         channel_list: AutoLoadableChannelList | None = None,
     ) -> None:
-
         super().__init__(parent, name, existence, channel_list)
         self._channel = channel
         self._greeting = greeting
 
-        self.add_parameter(
-            "hello",
-            get_cmd=f":INST:CHN{self._channel}:HLO"
-        )
+        self.add_parameter("hello", get_cmd=f":INST:CHN{self._channel}:HLO")
 
     def _create(self) -> None:
         """Create the channel on the instrument"""
         self.parent.root_instrument.write(
-            f":INST:CHN:ADD {self._channel}, {self._greeting}")
+            f":INST:CHN:ADD {self._channel}, {self._greeting}"
+        )
 
     def _remove(self) -> None:
         """Remove the channel from the instrument"""
@@ -187,7 +186,7 @@ class DummyInstrument(Instrument):
     channels
     """
 
-    def __init__(self, name: str)->None:
+    def __init__(self, name: str) -> None:
         super().__init__(name)
 
         self._backend = MockBackend()
@@ -198,7 +197,8 @@ class DummyInstrument(Instrument):
         )
 
         channels = AutoLoadableChannelList(
-            self, "channels", SimpleTestChannel, channels_to_skip=["5"])
+            self, "channels", SimpleTestChannel, channels_to_skip=["5"]
+        )
         self.add_submodule("channels", channels)
 
     def write_raw(self, cmd: str) -> None:
@@ -208,7 +208,7 @@ class DummyInstrument(Instrument):
         return self._backend.send(cmd)
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def dummy_instrument():
     instrument = DummyInstrument("instrument")
     yield instrument
@@ -232,16 +232,14 @@ def test_sanity(dummy_instrument) -> None:
     assert channels[3].hello() == "Hello from channel 5"
     # Test that we can generate a new instance of the channels without
     # conflicting names
-    new_channel_kwargs = SimpleTestChannel._get_new_instance_kwargs(
-        dummy_instrument)
+    new_channel_kwargs = SimpleTestChannel._get_new_instance_kwargs(dummy_instrument)
 
     new_channel = SimpleTestChannel(dummy_instrument, **new_channel_kwargs)
     # Instrument IO through the newly instantiated channel should raise an
     # exception before actually creating the channel on the instrument
     with pytest.raises(
-            RuntimeError,
-            match=r"Object does not exist \(anymore\) on the instrument"):
-
+        RuntimeError, match=r"Object does not exist \(anymore\) on the instrument"
+    ):
         new_channel.hello()
 
     # After creating the channel we should be able to talk to the instrument.
@@ -252,9 +250,8 @@ def test_sanity(dummy_instrument) -> None:
     # instrument
     new_channel.remove()
     with pytest.raises(
-            RuntimeError,
-            match=r"Object does not exist \(anymore\) on the instrument"):
-
+        RuntimeError, match=r"Object does not exist \(anymore\) on the instrument"
+    ):
         new_channel.hello()  # We have deleted the channel and it should no
         # longer be available
 
@@ -278,9 +275,8 @@ def test_channels_list(dummy_instrument) -> None:
     assert new_channel not in dummy_instrument.channels
     # Once removed we should no longer be able to talk to the channel
     with pytest.raises(
-            RuntimeError,
-            match=r"Object does not exist \(anymore\) on the instrument"):
-
+        RuntimeError, match=r"Object does not exist \(anymore\) on the instrument"
+    ):
         new_channel.hello()
     # Remove a channel that was pre-existing on the instrument.
     dummy_instrument.channels[-1].remove()

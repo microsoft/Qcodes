@@ -23,7 +23,7 @@ class KeysightN6705BChannel(InstrumentChannel):
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ) -> None:
         if chan not in [1, 2, 3, 4]:
-            raise ValueError('Invalid channel specified')
+            raise ValueError("Invalid channel specified")
 
         super().__init__(parent, name, **kwargs)
 

@@ -11,6 +11,7 @@ def test_aliases_dict() -> None:
     Test the class attribute 'aliases' which maps channel aliases
     (e.g. A1, B2, etc) to channel numbers.
     """
+
     def calc_channel_nr(alias: str) -> int:
         """
         We perform the calculation in a different way to verify correctness
@@ -18,9 +19,7 @@ def test_aliases_dict() -> None:
         offset_dict = dict(zip(["A", "B", "C", "D", "R"], range(0, 32, 6)))
         return offset_dict[alias[0]] + int(alias[1:])
 
-    assert all([
-        nr == calc_channel_nr(al) for al, nr in S46.channel_numbers.items()
-    ])
+    assert all([nr == calc_channel_nr(al) for al, nr in S46.channel_numbers.items()])
 
 
 @pytest.fixture(scope="function")
@@ -63,7 +62,7 @@ def test_runtime_error_on_bad_init(request: FixtureRequest) -> None:
 
     with pytest.raises(
         RuntimeError,
-        match="The driver is initialized from an undesirable instrument state"
+        match="The driver is initialized from an undesirable instrument state",
     ):
         S46(
             "s46_bad_state",
@@ -93,9 +92,7 @@ def test_init_six(s46_six: S46, caplog: LogCaptureFixture) -> None:
     assert len(s46_six.available_channels) == 26
 
     closed_channel_numbers = [1, 8, 13]
-    assert s46_six.closed_channels() == [
-        S46.aliases[i] for i in closed_channel_numbers
-    ]
+    assert s46_six.closed_channels() == [S46.aliases[i] for i in closed_channel_numbers]
 
     with caplog.at_level(logging.DEBUG):
         s46_six.open_all_channels()
@@ -147,10 +144,7 @@ def test_locking_mechanism(s46_six: S46) -> None:
     """
     s46_six.A1("close")
 
-    with pytest.raises(
-        LockAcquisitionError,
-        match="is already in use by channel"
-    ):
+    with pytest.raises(LockAcquisitionError, match="is already in use by channel"):
         # A1 should be closed already
         s46_six.A2("close")
     # release the lock
@@ -161,10 +155,7 @@ def test_locking_mechanism(s46_six: S46) -> None:
     # Let C1 acquire the lock
     s46_six.C1("close")
     # closing C2 should raise an error
-    with pytest.raises(
-        LockAcquisitionError,
-        match="is already in use by channel"
-    ):
+    with pytest.raises(LockAcquisitionError, match="is already in use by channel"):
         s46_six.C2("close")
 
     # Upon opening C1 we should be able to close C2

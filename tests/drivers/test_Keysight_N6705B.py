@@ -13,15 +13,17 @@ def _make_driver():
 
 
 def test_idn(driver) -> None:
-    assert {'firmware': 'D.01.08',
-            'model': 'N6705B',
-            'serial': 'MY50001897',
-            'vendor': 'Agilent Technologies'} == driver.IDN()
+    assert {
+        "firmware": "D.01.08",
+        "model": "N6705B",
+        "serial": "MY50001897",
+        "vendor": "Agilent Technologies",
+    } == driver.IDN()
 
 
 def test_channels(driver) -> None:
     # Ensure each channel got instantiated
     assert len(driver.channels) == 4
-    for (i, ch) in enumerate(driver.channels):
-        assert(ch.channel == i+1)
-        assert(ch.ch_name == f"ch{i+1}")
+    for i, ch in enumerate(driver.channels):
+        assert ch.channel == i + 1
+        assert ch.ch_name == f"ch{i+1}"

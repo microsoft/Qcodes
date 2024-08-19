@@ -135,20 +135,17 @@ class _BackgroundWriter(Thread):
         self.keep_writing = True
 
     def run(self) -> None:
-
         self.conn = connect(self.path)
 
         while self.keep_writing:
-
             item = self.queue.get()
-            if item['keys'] == 'stop':
+            if item["keys"] == "stop":
                 self.keep_writing = False
                 self.conn.close()
-            elif item['keys'] == 'finalize':
-                _WRITERS[self.path].active_datasets.remove(item['values'])
+            elif item["keys"] == "finalize":
+                _WRITERS[self.path].active_datasets.remove(item["values"])
             else:
-                self.write_results(
-                    item['keys'], item['values'], item['table_name'])
+                self.write_results(item["keys"], item["values"], item["table_name"])
             self.queue.task_done()
 
     def write_results(
@@ -164,7 +161,7 @@ class _BackgroundWriter(Thread):
         If the background writing thread is not alive this will do nothing.
         """
         if self.is_alive():
-            self.queue.put({'keys': 'stop', 'values': []})
+            self.queue.put({"keys": "stop", "values": []})
             self.queue.join()
             self.join()
 
@@ -181,16 +178,28 @@ _WRITERS: dict[str, _WriterStatus] = {}
 
 
 class DataSet(BaseDataSet):
-
     # the "persistent traits" are the attributes/properties of the DataSet
     # that are NOT tied to the representation of the DataSet in any particular
     # database
-    persistent_traits = ('name', 'guid', 'number_of_results',
-                         'parameters', 'paramspecs', 'exp_name', 'sample_name',
-                         'completed', 'snapshot', 'run_timestamp_raw',
-                         'description', 'completed_timestamp_raw', 'metadata',
-                         'dependent_parameters', 'parent_dataset_links',
-                         'captured_run_id', 'captured_counter')
+    persistent_traits = (
+        "name",
+        "guid",
+        "number_of_results",
+        "parameters",
+        "paramspecs",
+        "exp_name",
+        "sample_name",
+        "completed",
+        "snapshot",
+        "run_timestamp_raw",
+        "description",
+        "completed_timestamp_raw",
+        "metadata",
+        "dependent_parameters",
+        "parent_dataset_links",
+        "captured_run_id",
+        "captured_counter",
+    )
     background_sleep_time = 1e-3
 
     def __init__(
@@ -251,8 +260,9 @@ class DataSet(BaseDataSet):
 
         if run_id is not None:
             if not run_exists(self.conn, run_id):
-                raise ValueError(f"Run with run_id {run_id} does not exist in "
-                                 f"the database")
+                raise ValueError(
+                    f"Run with run_id {run_id} does not exist in the database"
+                )
             self._run_id = run_id
             self._completed = completed(self.conn, self.run_id)
             run_desc = self._get_run_description_from_db()
@@ -273,11 +283,15 @@ class DataSet(BaseDataSet):
             if exp_id is None:
                 exp_id = get_default_experiment_id(self.conn)
             name = name or "dataset"
-            _, run_id, __ = create_run(self.conn, exp_id, name,
-                                       generate_guid(),
-                                       parameters=None,
-                                       values=values,
-                                       metadata=metadata)
+            _, run_id, __ = create_run(
+                self.conn,
+                exp_id,
+                name,
+                generate_guid(),
+                parameters=None,
+                values=values,
+                metadata=metadata,
+            )
             # this is really the UUID (an ever increasing count in the db)
             self._run_id = run_id
             self._completed = False
@@ -290,9 +304,7 @@ class DataSet(BaseDataSet):
             else:
                 interdeps = InterDependencies_()
 
-            self.set_interdependencies(
-                interdeps=interdeps,
-                shapes=shapes)
+            self.set_interdependencies(interdeps=interdeps, shapes=shapes)
 
             self._metadata = get_metadata_from_run_id(self.conn, self.run_id)
             self._parent_dataset_links = []
@@ -304,7 +316,8 @@ class DataSet(BaseDataSet):
                 bg_writer=None,
                 write_in_background=None,
                 data_write_queue=queue,
-                active_datasets=set())
+                active_datasets=set(),
+            )
             _WRITERS[self.path_to_db] = ws
 
     def prepare(
@@ -316,7 +329,6 @@ class DataSet(BaseDataSet):
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
-
         self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
 
         if interdeps == InterDependencies_():
@@ -394,7 +406,7 @@ class DataSet(BaseDataSet):
     def number_of_results(self) -> int:
         sql = f'SELECT COUNT(*) FROM "{self.table_name}"'
         cursor = atomic_transaction(self.conn, sql)
-        return one(cursor, 'COUNT(*)')
+        return one(cursor, "COUNT(*)")
 
     @property
     def counter(self) -> int:
@@ -433,8 +445,7 @@ class DataSet(BaseDataSet):
 
     @property
     def paramspecs(self) -> dict[str, ParamSpec]:
-        return {ps.name: ps
-                for ps in self.get_parameters()}
+        return {ps.name: ps for ps in self.get_parameters()}
 
     @property
     def exp_id(self) -> int:
@@ -486,17 +497,20 @@ class DataSet(BaseDataSet):
             links: The links to assign to this dataset
         """
         if not self.pristine:
-            raise RuntimeError('Can not set parent dataset links on a dataset '
-                               'that has been started.')
+            raise RuntimeError(
+                "Can not set parent dataset links on a dataset "
+                "that has been started."
+            )
 
         if not all(isinstance(link, Link) for link in links):
-            raise ValueError('Invalid input. Did not receive a list of Links')
+            raise ValueError("Invalid input. Did not receive a list of Links")
 
         for link in links:
             if link.head != self.guid:
                 raise ValueError(
-                    'Invalid input. All links must point to this dataset. '
-                    'Got link(s) with head(s) pointing to another dataset.')
+                    "Invalid input. All links must point to this dataset. "
+                    "Got link(s) with head(s) pointing to another dataset."
+                )
 
         self._parent_dataset_links = links
 
@@ -543,12 +557,12 @@ class DataSet(BaseDataSet):
         the shape of the data to be measured.
         """
         if not isinstance(interdeps, InterDependencies_):
-            raise TypeError('Wrong input type. Expected InterDepencies_, '
-                            f'got {type(interdeps)}')
+            raise TypeError(
+                f"Wrong input type. Expected InterDepencies_, got {type(interdeps)}"
+            )
 
         if not self.pristine:
-            mssg = ('Can not set interdependencies on a DataSet that has '
-                    'been started.')
+            mssg = "Can not set interdependencies on a DataSet that has been started."
             raise RuntimeError(mssg)
         self._rundescriber = RunDescriber(interdeps, shapes=shapes)
 
@@ -584,8 +598,10 @@ class DataSet(BaseDataSet):
             with atomic(self.conn) as conn:
                 add_data_to_dynamic_columns(conn, self.run_id, {"snapshot": snapshot})
         elif self.snapshot is not None and not overwrite:
-            log.warning('This dataset already has a snapshot. Use overwrite'
-                        '=True to overwrite that')
+            log.warning(
+                "This dataset already has a snapshot. Use overwrite"
+                "=True to overwrite that"
+            )
 
     @property
     def pristine(self) -> bool:
@@ -594,7 +610,7 @@ class DataSet(BaseDataSet):
         meaning that parameters can still be added and removed, but results
         can not be added.
         """
-        return not(self._started or self._completed)
+        return not (self._started or self._completed)
 
     @property
     def running(self) -> bool:
@@ -664,15 +680,21 @@ class DataSet(BaseDataSet):
         writer_status = self._writer_status
 
         write_in_background_status = writer_status.write_in_background
-        if write_in_background_status is not None and write_in_background_status != start_bg_writer:
-            raise RuntimeError("All datasets written to the same database must "
-                               "be written either in the background or in the "
-                               "main thread. You cannot mix.")
+        if (
+            write_in_background_status is not None
+            and write_in_background_status != start_bg_writer
+        ):
+            raise RuntimeError(
+                "All datasets written to the same database must "
+                "be written either in the background or in the "
+                "main thread. You cannot mix."
+            )
         if start_bg_writer:
             writer_status.write_in_background = True
             if writer_status.bg_writer is None:
                 writer_status.bg_writer = _BackgroundWriter(
-                    writer_status.data_write_queue, self.conn)
+                    writer_status.data_write_queue, self.conn
+                )
             if not writer_status.bg_writer.is_alive():
                 writer_status.bg_writer.start()
         else:
@@ -688,8 +710,10 @@ class DataSet(BaseDataSet):
         if self.completed:
             return
         if self.pristine:
-            raise RuntimeError('Can not mark DataSet as complete before it '
-                               'has been marked as started.')
+            raise RuntimeError(
+                "Can not mark DataSet as complete before it "
+                "has been marked as started."
+            )
 
         self._perform_completion_actions()
         self.completed = True
@@ -726,28 +750,34 @@ class DataSet(BaseDataSet):
         writer_status = self._writer_status
 
         if writer_status.write_in_background:
-            item = {'keys': list(expected_keys), 'values': values,
-                    "table_name": self.table_name}
+            item = {
+                "keys": list(expected_keys),
+                "values": values,
+                "table_name": self.table_name,
+            }
             writer_status.data_write_queue.put(item)
         else:
-            insert_many_values(self.conn, self.table_name, list(expected_keys),
-                               values)
+            insert_many_values(self.conn, self.table_name, list(expected_keys), values)
 
     def _raise_if_not_writable(self) -> None:
         if self.pristine:
-            raise RuntimeError('This DataSet has not been marked as started. '
-                               'Please mark the DataSet as started before '
-                               'adding results to it.')
+            raise RuntimeError(
+                "This DataSet has not been marked as started. "
+                "Please mark the DataSet as started before "
+                "adding results to it."
+            )
         if self.completed:
-            raise CompletedError('This DataSet is complete, no further '
-                                 'results can be added to it.')
+            raise CompletedError(
+                "This DataSet is complete, no further results can be added to it."
+            )
 
     def _ensure_dataset_written(self) -> None:
         writer_status = self._writer_status
 
         if writer_status.write_in_background:
             writer_status.data_write_queue.put(
-                {'keys': 'finalize', 'values': self.run_id})
+                {"keys": "finalize", "values": self.run_id}
+            )
             while self.run_id in writer_status.active_datasets:
                 time.sleep(self.background_sleep_time)
         elif self.run_id in writer_status.active_datasets:
@@ -812,8 +842,9 @@ class DataSet(BaseDataSet):
             array or string.
         """
         if len(params) == 0:
-            valid_param_names = [ps.name
-                                 for ps in self._rundescriber.interdeps.non_dependencies]
+            valid_param_names = [
+                ps.name for ps in self._rundescriber.interdeps.non_dependencies
+            ]
         else:
             valid_param_names = self._validate_parameters(*params)
         return get_parameter_data(
@@ -862,12 +893,9 @@ class DataSet(BaseDataSet):
             a column and a indexed by a :py:class:`pandas.MultiIndex` formed
             by the dependencies.
         """
-        datadict = self.get_parameter_data(*params,
-                                           start=start,
-                                           end=end)
+        datadict = self.get_parameter_data(*params, start=start, end=end)
         dfs_dict = load_to_dataframe_dict(datadict)
         return dfs_dict
-
 
     def to_pandas_dataframe(
         self,
@@ -912,9 +940,7 @@ class DataSet(BaseDataSet):
             Return a pandas DataFrame with
                 df = ds.to_pandas_dataframe()
         """
-        datadict = self.get_parameter_data(*params,
-                                           start=start,
-                                           end=end)
+        datadict = self.get_parameter_data(*params, start=start, end=end)
         return load_to_concatenated_dataframe(datadict)
 
     def to_xarray_dataarray_dict(
@@ -1039,9 +1065,7 @@ class DataSet(BaseDataSet):
 
                 xds = ds.to_xarray_dataset()
         """
-        data = self.get_parameter_data(*params,
-                                       start=start,
-                                       end=end)
+        data = self.get_parameter_data(*params, start=start, end=end)
 
         return load_to_xarray_dataset(self, data, use_multi_index=use_multi_index)
 
@@ -1100,8 +1124,9 @@ class DataSet(BaseDataSet):
         callback_kwargs: Mapping[str, Any] | None = None,
     ) -> str:
         subscriber_id = uuid.uuid4().hex
-        subscriber = _Subscriber(self, subscriber_id, callback, state,
-                                 min_wait, min_count, callback_kwargs)
+        subscriber = _Subscriber(
+            self, subscriber_id, callback, state, min_wait, min_count, callback_kwargs
+        )
         self.subscribers[subscriber_id] = subscriber
         subscriber.start()
         return subscriber_id
@@ -1122,20 +1147,21 @@ class DataSet(BaseDataSet):
         # the dot dict behind the config does not convert the error and
         # actually raises a `KeyError`
         except (AttributeError, KeyError):
-            keys = ','.join(subscribers.keys())
+            keys = ",".join(subscribers.keys())
             raise RuntimeError(
                 f'subscribe_from_config: failed to subscribe "{name}" to '
-                f'DataSet from list of subscribers in `qcodesrc.json` '
-                f'(subscriptions.subscribers). Chose one of: {keys}')
+                f"DataSet from list of subscribers in `qcodesrc.json` "
+                f"(subscriptions.subscribers). Chose one of: {keys}"
+            )
         # get callback from string
-        parts = subscriber_info.factory.split('.')
-        import_path, type_name = '.'.join(parts[:-1]), parts[-1]
+        parts = subscriber_info.factory.split(".")
+        import_path, type_name = ".".join(parts[:-1]), parts[-1]
         module = importlib.import_module(import_path)
         factory = getattr(module, type_name)
 
         kwargs = {k: v for k, v in subscriber_info.subscription_kwargs.items()}
-        kwargs['callback'] = factory(self, **subscriber_info.factory_kwargs)
-        kwargs['state'] = {}
+        kwargs["callback"] = factory(self, **subscriber_info.factory_kwargs)
+        kwargs["state"] = {}
         return self.subscribe(**kwargs)
 
     def unsubscribe(self, uuid: str) -> None:
@@ -1186,7 +1212,8 @@ class DataSet(BaseDataSet):
         return "\n".join(out)
 
     def _enqueue_results(
-            self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]) -> None:
+        self, result_dict: Mapping[ParamSpecBase, numpy.ndarray]
+    ) -> None:
         """
         Enqueue the results into self._results
 
@@ -1202,38 +1229,34 @@ class DataSet(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = (set(interdeps.dependencies)
-                           .intersection(set(result_dict)))
+        toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
 
         new_results: dict[str, dict[str, numpy.ndarray]] = {}
 
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))
-            all_params = (inff_params
-                          .union(deps_params)
-                          .union({toplevel_param}))
+            all_params = inff_params.union(deps_params).union({toplevel_param})
 
             if self._in_memory_cache:
                 new_results[toplevel_param.name] = {}
-                new_results[toplevel_param.name][toplevel_param.name] = self._reshape_array_for_cache(
-                    toplevel_param,
-                    result_dict[toplevel_param]
+                new_results[toplevel_param.name][toplevel_param.name] = (
+                    self._reshape_array_for_cache(
+                        toplevel_param, result_dict[toplevel_param]
+                    )
                 )
                 for param in all_params:
                     if param is not toplevel_param:
-                        new_results[toplevel_param.name][param.name] = self._reshape_array_for_cache(
-                            param,
-                            result_dict[param]
+                        new_results[toplevel_param.name][param.name] = (
+                            self._reshape_array_for_cache(param, result_dict[param])
                         )
 
-            if toplevel_param.type == 'array':
-                res_list = self._finalize_res_dict_array(
-                    result_dict, all_params)
-            elif toplevel_param.type in ('numeric', 'text', 'complex'):
+            if toplevel_param.type == "array":
+                res_list = self._finalize_res_dict_array(result_dict, all_params)
+            elif toplevel_param.type in ("numeric", "text", "complex"):
                 res_list = self._finalize_res_dict_numeric_text_or_complex(
-                    result_dict, toplevel_param,
-                    inff_params, deps_params)
+                    result_dict, toplevel_param, inff_params, deps_params
+                )
             else:
                 res_dict: dict[str, VALUE] = {
                     ps.name: result_dict[ps] for ps in all_params
@@ -1243,8 +1266,7 @@ class DataSet(BaseDataSet):
 
         # Finally, handle standalone parameters
 
-        standalones = (set(interdeps.standalones)
-                       .intersection(set(result_dict)))
+        standalones = set(interdeps.standalones).intersection(set(result_dict))
 
         if standalones:
             stdln_dict = {st: result_dict[st] for st in standalones}
@@ -1270,23 +1292,23 @@ class DataSet(BaseDataSet):
 
         def reshaper(val: Any, ps: ParamSpecBase) -> VALUE:
             paramtype = ps.type
-            if paramtype == 'numeric':
+            if paramtype == "numeric":
                 return float(val)
-            elif paramtype == 'text':
+            elif paramtype == "text":
                 return str(val)
-            elif paramtype == 'complex':
+            elif paramtype == "complex":
                 return complex(val)
-            elif paramtype == 'array':
+            elif paramtype == "array":
                 if val.shape:
                     return val
                 else:
                     return numpy.reshape(val, (1,))
             else:
-                raise ValueError(f'Cannot handle unknown paramtype '
-                                 f'{paramtype!r} of {ps!r}.')
+                raise ValueError(
+                    f"Cannot handle unknown paramtype {paramtype!r} of {ps!r}."
+                )
 
-        res_dict = {ps.name: reshaper(result_dict[ps], ps)
-                    for ps in all_params}
+        res_dict = {ps.name: reshaper(result_dict[ps], ps) for ps in all_params}
 
         return [res_dict]
 
@@ -1307,13 +1329,12 @@ class DataSet(BaseDataSet):
         res_list: list[dict[str, VALUE]] = []
         all_params = inff_params.union(deps_params).union({toplevel_param})
 
-        t_map = {'numeric': float, 'text': str, 'complex': complex}
+        t_map = {"numeric": float, "text": str, "complex": complex}
 
         toplevel_shape = result_dict[toplevel_param].shape
         if toplevel_shape == ():
             # In the case of a single value, life is reasonably simple
-            res_list = [{ps.name: t_map[ps.type](result_dict[ps])
-                         for ps in all_params}]
+            res_list = [{ps.name: t_map[ps.type](result_dict[ps]) for ps in all_params}]
         else:
             # We first massage all values into np.arrays of the same
             # shape
@@ -1335,21 +1356,23 @@ class DataSet(BaseDataSet):
 
             # And then put everything into the list
 
-            res_list = [{p.name: flat_results[p.name][ind] for p in all_params}
-                        for ind in range(N)]
+            res_list = [
+                {p.name: flat_results[p.name][ind] for p in all_params}
+                for ind in range(N)
+            ]
 
         return res_list
 
     @staticmethod
     def _finalize_res_dict_standalones(
-            result_dict: Mapping[ParamSpecBase, numpy.ndarray]
+        result_dict: Mapping[ParamSpecBase, numpy.ndarray],
     ) -> list[dict[str, VALUE]]:
         """
         Massage all standalone parameters into the correct shape
         """
         res_list: list[dict[str, VALUE]] = []
         for param, value in result_dict.items():
-            if param.type == 'text':
+            if param.type == "text":
                 if value.shape:
                     new_res: list[dict[str, VALUE]] = [
                         {param.name: str(val)} for val in value
@@ -1358,13 +1381,13 @@ class DataSet(BaseDataSet):
                 else:
                     new_res = [{param.name: str(value)}]
                     res_list += new_res
-            elif param.type == 'numeric':
+            elif param.type == "numeric":
                 if value.shape:
                     res_list += [{param.name: number} for number in value]
                 else:
                     new_res = [{param.name: float(value)}]
                     res_list += new_res
-            elif param.type == 'complex':
+            elif param.type == "complex":
                 if value.shape:
                     res_list += [{param.name: number} for number in value]
                 else:
@@ -1387,11 +1410,10 @@ class DataSet(BaseDataSet):
 
         """
 
-        log.debug('Flushing to database')
+        log.debug("Flushing to database")
         writer_status = self._writer_status
         if len(self._results) > 0:
             try:
-
                 self.add_results(self._results)
                 if writer_status.write_in_background:
                     log.debug("Successfully enqueued result for write thread")
@@ -1402,9 +1424,9 @@ class DataSet(BaseDataSet):
                 if writer_status.write_in_background:
                     log.warning(f"Could not enqueue result; {e}")
                 else:
-                    log.warning(f'Could not commit to database; {e}')
+                    log.warning(f"Could not commit to database; {e}")
         else:
-            log.debug('No results to flush')
+            log.debug("No results to flush")
 
         if writer_status.write_in_background and block:
             log.debug("Waiting for write queue to empty.")
@@ -1836,9 +1858,17 @@ def new_data_set(
     """
     # note that passing `conn` is a secret feature that is unfortunately used
     # in `Runner` to pass a connection from an existing `Experiment`.
-    d = DataSet(path_to_db=None, run_id=None, conn=conn,
-                name=name, specs=specs, values=values,
-                metadata=metadata, exp_id=exp_id, in_memory_cache=in_memory_cache)
+    d = DataSet(
+        path_to_db=None,
+        run_id=None,
+        conn=conn,
+        name=name,
+        specs=specs,
+        values=values,
+        metadata=metadata,
+        exp_id=exp_id,
+        in_memory_cache=in_memory_cache,
+    )
 
     return d
 

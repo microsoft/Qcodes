@@ -2,6 +2,7 @@
 This module contains code used for benchmarking data saving speed of the
 database used under the QCoDeS dataset.
 """
+
 import os
 import shutil
 import tempfile
@@ -38,10 +39,10 @@ class Adding5Params:
     # latter case asv will run the benchmark for all the combinations of the
     # values
     params: ClassVar[list[dict[str, Any]]] = [
-        {'n_values': 10000, 'n_times': 2, 'paramtype': 'array'},
-        {'n_values': 100, 'n_times': 200, 'paramtype': 'array'},
-        {'n_values': 10000, 'n_times': 2, 'paramtype': 'numeric'},
-        {'n_values': 100, 'n_times': 200, 'paramtype': 'numeric'},
+        {"n_values": 10000, "n_times": 2, "paramtype": "array"},
+        {"n_values": 100, "n_times": 200, "paramtype": "array"},
+        {"n_values": 10000, "n_times": 2, "paramtype": "numeric"},
+        {"n_values": 100, "n_times": 200, "paramtype": "numeric"},
     ]
     # we are less interested in the cpu time used and more interested in
     # the wall clock time used to insert the data so use a timer that measures
@@ -59,31 +60,31 @@ class Adding5Params:
     def setup(self, bench_param):
         # Init DB
         self.tmpdir = tempfile.mkdtemp()
-        qcodes.config["core"]["db_location"] = os.path.join(self.tmpdir,
-                                                            'temp.db')
+        qcodes.config["core"]["db_location"] = os.path.join(self.tmpdir, "temp.db")
         qcodes.config["core"]["db_debug"] = False
         initialise_database()
 
         # Create experiment
-        self.experiment = new_experiment("test-experiment",
-                                         sample_name="test-sample")
+        self.experiment = new_experiment("test-experiment", sample_name="test-sample")
 
         # Create measurement
         meas = Measurement(self.experiment)
 
-        x1 = ManualParameter('x1')
-        x2 = ManualParameter('x2')
-        x3 = ManualParameter('x3')
-        y1 = ManualParameter('y1')
-        y2 = ManualParameter('y2')
+        x1 = ManualParameter("x1")
+        x2 = ManualParameter("x2")
+        x3 = ManualParameter("x3")
+        y1 = ManualParameter("y1")
+        y2 = ManualParameter("y2")
 
-        meas.register_parameter(x1, paramtype=bench_param['paramtype'])
-        meas.register_parameter(x2, paramtype=bench_param['paramtype'])
-        meas.register_parameter(x3, paramtype=bench_param['paramtype'])
-        meas.register_parameter(y1, setpoints=[x1, x2, x3],
-                                paramtype=bench_param['paramtype'])
-        meas.register_parameter(y2, setpoints=[x1, x2, x3],
-                                paramtype=bench_param['paramtype'])
+        meas.register_parameter(x1, paramtype=bench_param["paramtype"])
+        meas.register_parameter(x2, paramtype=bench_param["paramtype"])
+        meas.register_parameter(x3, paramtype=bench_param["paramtype"])
+        meas.register_parameter(
+            y1, setpoints=[x1, x2, x3], paramtype=bench_param["paramtype"]
+        )
+        meas.register_parameter(
+            y2, setpoints=[x1, x2, x3], paramtype=bench_param["paramtype"]
+        )
 
         self.parameters = [x1, x2, x3, y1, y2]
 
@@ -95,7 +96,7 @@ class Adding5Params:
 
         # Create values for parameters
         for _ in range(len(self.parameters)):
-            self.values.append(np.random.rand(bench_param['n_values']))
+            self.values.append(np.random.rand(bench_param["n_values"]))
 
     def teardown(self, bench_param):
         # Exit runner context manager
@@ -120,13 +121,13 @@ class Adding5Params:
     def time_test(self, bench_param):
         """Adding data for 5 parameters"""
         assert self.datasaver is not None
-        for _ in range(bench_param['n_times']):
+        for _ in range(bench_param["n_times"]):
             self.datasaver.add_result(
                 (self.parameters[0], self.values[0]),
                 (self.parameters[1], self.values[1]),
                 (self.parameters[2], self.values[2]),
                 (self.parameters[3], self.values[3]),
-                (self.parameters[4], self.values[4])
+                (self.parameters[4], self.values[4]),
             )
         # force writing to database so that it is written before we exit
         # the datasaver context manager

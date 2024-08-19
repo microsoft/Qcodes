@@ -171,7 +171,6 @@ def test_dataset_in_memory_reload_from_db_3d(
 def test_dataset_in_memory_without_cache_raises(
     meas_with_registered_param, DMM, DAC, tmp_path
 ) -> None:
-
     with pytest.raises(
         RuntimeError,
         match="Cannot disable the in memory cache for a dataset that is only in memory.",

@@ -25,7 +25,6 @@ def test_create_dataset_in_memory_explicit_db(empty_temp_db) -> None:
 
 
 def test_empty_ds_parameters(experiment) -> None:
-
     ds = DataSetInMem._create_new_run(name="foo")
 
     assert ds._parameters is None

@@ -444,6 +444,7 @@ def test_spherical_setpoints(current_driver, set_target) -> None:
     get_vector = FieldVector(**get_target)
     assert set_vector.is_equal(get_vector)
 
+
 # add some examples where floating point math results
 # in z > r due to round off errors and ensure
 # we handle them correctly
@@ -684,7 +685,6 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     ami3d.vector_ramp_rate(0.05)
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
-
         # Initiate the simultaneous ramp
         ami3d.cartesian((0.5, 0.5, 0.5))
 
@@ -770,7 +770,6 @@ def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ra
     restore_parameters_stack.enter_context(ami3d.block_during_ramp.set_to(True))
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):
-
         # Set individual ramp rates to known values
         ami3d._instrument_x.ramp_rate(0.09)
         ami3d._instrument_y.ramp_rate(0.10)
@@ -908,7 +907,6 @@ def test_reducing_current_ramp_limit_keeps_a_lower_ramp_rate_as_is(ami430) -> No
 
 
 def test_blocking_ramp_parameter(current_driver, caplog: LogCaptureFixture) -> None:
-
     assert current_driver.block_during_ramp() is True
 
     with caplog.at_level(logging.DEBUG, logger=LOG_NAME):

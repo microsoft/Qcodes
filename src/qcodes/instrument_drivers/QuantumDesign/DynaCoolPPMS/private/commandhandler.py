@@ -19,7 +19,7 @@ except ImportError as e:
     raise ImportError(message) from e
 
 
-CmdArgs = namedtuple('CmdArgs', 'cmd args')
+CmdArgs = namedtuple("CmdArgs", "cmd args")
 
 # The length of a command header, aka a command keyword
 # Every command sent from the driver via the server must have a
@@ -43,54 +43,64 @@ class CommandHandler:
         "long": win32com.client.VARIANT(VT_BYREF | VT_I4, 0),
     }
 
-    def __init__(self, inst_type: str = 'dynacool') -> None:
+    def __init__(self, inst_type: str = "dynacool") -> None:
         self.inst_type = inst_type
         pythoncom.CoInitialize()
-        client_id = f'QD.MULTIVU.{inst_type.upper()}.1'
+        client_id = f"QD.MULTIVU.{inst_type.upper()}.1"
         try:
             self._mvu = win32com.client.Dispatch(client_id)
         except pythoncom.com_error:
-            error_mssg = ('Could not connect to Multivu Application. Please '
-                          'make sure that the MultiVu Application is running.')
+            error_mssg = (
+                "Could not connect to Multivu Application. Please "
+                "make sure that the MultiVu Application is running."
+            )
             log.exception(error_mssg)
             raise ValueError(error_mssg)
 
         _variants = CommandHandler._variants
 
         # Hard-code what we know about the MultiVu API
-        self._gets = {'TEMP': CmdArgs(cmd=self._mvu.GetTemperature,
-                                      args=[_variants['double'],
-                                            _variants['long']]),
-                      'CHAT': CmdArgs(cmd=self._mvu.GetChamberTemp,
-                                      args=[_variants['double'],
-                                            _variants['long']]),
-                      'GLTS': CmdArgs(cmd=self._mvu.GetLastTempSetpoint,
-                                      args=[_variants['double'],
-                                            _variants['double'],
-                                            _variants['long']]),
-                      'GLFS': CmdArgs(cmd=self._mvu.GetFieldSetpoints,
-                                      args=[_variants['double'],
-                                            _variants['double'],
-                                            _variants['long'],
-                                            _variants['long']]),
-                      'CHAM': CmdArgs(cmd=self._mvu.GetChamber,
-                                      args=[_variants['long']]),
-                      'FELD': CmdArgs(cmd=self._mvu.GetField,
-                                      args=[_variants['double'],
-                                            _variants['long']]),
-                      '*IDN': CmdArgs(cmd=self.make_idn_string, args=[])}
+        self._gets = {
+            "TEMP": CmdArgs(
+                cmd=self._mvu.GetTemperature,
+                args=[_variants["double"], _variants["long"]],
+            ),
+            "CHAT": CmdArgs(
+                cmd=self._mvu.GetChamberTemp,
+                args=[_variants["double"], _variants["long"]],
+            ),
+            "GLTS": CmdArgs(
+                cmd=self._mvu.GetLastTempSetpoint,
+                args=[_variants["double"], _variants["double"], _variants["long"]],
+            ),
+            "GLFS": CmdArgs(
+                cmd=self._mvu.GetFieldSetpoints,
+                args=[
+                    _variants["double"],
+                    _variants["double"],
+                    _variants["long"],
+                    _variants["long"],
+                ],
+            ),
+            "CHAM": CmdArgs(cmd=self._mvu.GetChamber, args=[_variants["long"]]),
+            "FELD": CmdArgs(
+                cmd=self._mvu.GetField, args=[_variants["double"], _variants["long"]]
+            ),
+            "*IDN": CmdArgs(cmd=self.make_idn_string, args=[]),
+        }
 
-        self._sets = {'TEMP': self._mvu.SetTemperature,
-                      'FELD': self._mvu.SetField}
+        self._sets = {"TEMP": self._mvu.SetTemperature, "FELD": self._mvu.SetField}
 
         # validate the commands
         for cmd in chain(self._gets, self._sets):
             if len(cmd) != CMD_HEADER_LENGTH:
-                raise ValueError(f'Invalid command length: {cmd}.'
-                                 f' Must have length {CMD_HEADER_LENGTH}')
+                raise ValueError(
+                    f"Invalid command length: {cmd}."
+                    f" Must have length {CMD_HEADER_LENGTH}"
+                )
 
     def make_idn_string(self) -> str:
-        return f'0, QuantumDesign, {self.inst_type}, N/A, N/A'
+        return f"0, QuantumDesign, {self.inst_type}, N/A, N/A"
 
     def preparser(self, cmd_str: str) -> tuple[CmdArgs, bool]:
         """
@@ -105,6 +115,7 @@ class CommandHandler:
             A tuple of a CmdArgs tuple and a bool indicating whether this was
             a query
         """
+
         def err_func() -> int:
             return -2
 
@@ -115,13 +126,13 @@ class CommandHandler:
             args: list[Any] = []
             is_query = False
 
-        elif cmd_str.endswith('?'):
+        elif cmd_str.endswith("?"):
             cmd = self._gets[cmd_head].cmd
             args = self._gets[cmd_head].args
             is_query = True
         else:
             cmd = self._sets[cmd_head]
-            args = list(float(arg) for arg in cmd_str[5:].split(', '))
+            args = list(float(arg) for arg in cmd_str[5:].split(", "))
             is_query = False
 
         return CmdArgs(cmd=cmd, args=args), is_query
@@ -136,17 +147,16 @@ class CommandHandler:
             error_code: the error code returned from the MultiVu call
             vals: A list of the returned values (empty in case of a set cmd)
         """
-        response = f'{error_code}'
+        response = f"{error_code}"
 
         for val in vals:
-            response += f', {val}'
+            response += f", {val}"
 
         return response
 
     def __call__(self, cmd: str) -> str:
-
         cmd_and_args, is_query = self.preparser(cmd)
-        log.debug(f'Parsed {cmd} into {cmd_and_args}')
+        log.debug(f"Parsed {cmd} into {cmd_and_args}")
 
         # Actually perform the call into the MultiVu API
         error_code = cmd_and_args.cmd(*cmd_and_args.args)

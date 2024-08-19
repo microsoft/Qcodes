@@ -385,7 +385,8 @@ class Keithley7510Buffer(InstrumentChannel):
             setpoint_names=((self.setpoints.label,),) * n_elements,
         )
         data._data = tuple(
-            tuple(processed_data[element]) for element in elements  # type: ignore[arg-type]
+            tuple(processed_data[element])  # type: ignore[arg-type]
+            for element in elements
         )
         for i in range(len(data.names)):
             setattr(data, data.names[i], tuple(processed_data[data.names[i]]))  # type: ignore[arg-type]
@@ -648,7 +649,6 @@ class Keithley7510DigitizeSense(InstrumentChannel):
     }
 
     def __init__(self, parent: VisaInstrument, name: str, proper_function: str) -> None:
-
         super().__init__(parent, name)
 
         self._proper_function = proper_function

@@ -118,18 +118,15 @@ class DataSetCache(Generic[DatasetType_co]):
 
         expanded_data = {}
         for param_name, single_param_dict in new_data.items():
-            expanded_data[param_name] = _expand_single_param_dict(
-                single_param_dict
-            )
+            expanded_data[param_name] = _expand_single_param_dict(single_param_dict)
 
-        (
-            self._write_status,
-            self._data
-        ) = append_shaped_parameter_data_to_existing_arrays(
-            self.rundescriber,
-            self._write_status,
-            self._data,
-            new_data=expanded_data
+        (self._write_status, self._data) = (
+            append_shaped_parameter_data_to_existing_arrays(
+                self.rundescriber,
+                self._write_status,
+                self._data,
+                new_data=expanded_data,
+            )
         )
 
         if not all(status is None for status in self._write_status.values()):
@@ -158,7 +155,6 @@ class DataSetCache(Generic[DatasetType_co]):
         """
         data = self.data()
         return load_to_concatenated_dataframe(data)
-
 
     def to_xarray_dataarray_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
@@ -234,12 +230,10 @@ def load_new_data_from_db_and_append(
         conn, table_name, rundescriber, read_status
     )
 
-    (updated_write_status,
-     merged_data) = append_shaped_parameter_data_to_existing_arrays(
-        rundescriber,
-        write_status,
-        existing_data,
-        new_data
+    (updated_write_status, merged_data) = (
+        append_shaped_parameter_data_to_existing_arrays(
+            rundescriber, write_status, existing_data, new_data
+        )
     )
     return updated_write_status, updated_read_status, merged_data
 
@@ -267,14 +261,12 @@ def append_shaped_parameter_data_to_existing_arrays(
     Returns:
         Updated write and read status, and the updated ``data``
     """
-    parameters = tuple(ps.name for ps in
-                       rundescriber.interdeps.non_dependencies)
+    parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
     merged_data = {}
 
     updated_write_status = dict(write_status)
 
     for meas_parameter in parameters:
-
         existing_data_1_tree = existing_data.get(meas_parameter, {})
 
         new_data_1_tree = new_data.get(meas_parameter, {})
@@ -285,13 +277,14 @@ def append_shaped_parameter_data_to_existing_arrays(
         else:
             shape = None
 
-        (merged_data[meas_parameter],
-         updated_write_status[meas_parameter]) = _merge_data(
-            existing_data_1_tree,
-            new_data_1_tree,
-            shape,
-            single_tree_write_status=write_status.get(meas_parameter),
-            meas_parameter=meas_parameter
+        (merged_data[meas_parameter], updated_write_status[meas_parameter]) = (
+            _merge_data(
+                existing_data_1_tree,
+                new_data_1_tree,
+                shape,
+                single_tree_write_status=write_status.get(meas_parameter),
+                meas_parameter=meas_parameter,
+            )
         )
     return updated_write_status, merged_data
 
@@ -303,7 +296,6 @@ def _merge_data(
     single_tree_write_status: int | None,
     meas_parameter: str,
 ) -> tuple[dict[str, np.ndarray], int | None]:
-
     subtree_merged_data = {}
     subtree_parameters = existing_data.keys()
 
@@ -319,19 +311,18 @@ def _merge_data(
         existing_data.get(meas_parameter),
         new_data.get(meas_parameter),
         shape,
-        single_tree_write_status
+        single_tree_write_status,
     )
     if single_param_merged_data is not None:
         subtree_merged_data[meas_parameter] = single_param_merged_data
 
     for subtree_param in subtree_parameters:
         if subtree_param != meas_parameter:
-
             single_param_merged_data, new_write_status = _merge_data_single_param(
                 existing_data.get(subtree_param),
                 new_data.get(subtree_param),
                 shape,
-                single_tree_write_status
+                single_tree_write_status,
             )
             if single_param_merged_data is not None:
                 subtree_merged_data[subtree_param] = single_param_merged_data
@@ -353,11 +344,7 @@ def _merge_data_single_param(
             existing_values, new_values, single_tree_write_status, shape=shape
         )
     elif new_values is not None:
-        (merged_data,
-         new_write_status) = _create_new_data_dict(
-            new_values,
-            shape
-        )
+        (merged_data, new_write_status) = _create_new_data_dict(new_values, shape)
     elif existing_values is not None:
         merged_data = existing_values
         new_write_status = single_tree_write_status
@@ -408,32 +395,35 @@ def _insert_into_data_dict(
 
             for i in range(n_existing):
                 data[i] = np.atleast_1d(existing_values[i])
-            for i, j in enumerate(range(n_existing, n_existing+n_new)):
+            for i, j in enumerate(range(n_existing, n_existing + n_new)):
                 data[j] = np.atleast_1d(new_values[i])
         return data, None
     else:
-        if existing_values.dtype.kind in ('U', 'S'):
+        if existing_values.dtype.kind in ("U", "S"):
             # string type arrays may be too small for the new data
             # read so rescale if needed.
             if new_values.dtype.itemsize > existing_values.dtype.itemsize:
                 existing_values = existing_values.astype(new_values.dtype)
         n_values = new_values.size
-        new_write_status = write_status+n_values
+        new_write_status = write_status + n_values
         if new_write_status > existing_values.size:
-            log.warning(f"Incorrect shape of dataset: Dataset is expected to "
-                        f"contain {existing_values.size} points but trying to "
-                        f"add an amount of data that makes it contain {new_write_status} points. Cache will "
-                        f"be flattened into a 1D array")
-            return (np.append(existing_values.flatten(),
-                              new_values.flatten(), axis=0),
-                    new_write_status)
+            log.warning(
+                f"Incorrect shape of dataset: Dataset is expected to "
+                f"contain {existing_values.size} points but trying to "
+                f"add an amount of data that makes it contain {new_write_status} points. Cache will "
+                f"be flattened into a 1D array"
+            )
+            return (
+                np.append(existing_values.flatten(), new_values.flatten(), axis=0),
+                new_write_status,
+            )
         else:
             existing_values.ravel()[write_status:new_write_status] = new_values.ravel()
             return existing_values, new_write_status
 
 
 def _expand_single_param_dict(
-        single_param_dict: Mapping[str, np.ndarray]
+    single_param_dict: Mapping[str, np.ndarray],
 ) -> dict[str, np.ndarray]:
     sizes = {name: array.size for name, array in single_param_dict.items()}
     maxsize = max(sizes.values())
@@ -446,8 +436,7 @@ def _expand_single_param_dict(
         else:
             assert array.size == 1
             expanded_param_dict[name] = np.full_like(
-                single_param_dict[max_names[0]],
-                array.ravel()[0], dtype=array.dtype
+                single_param_dict[max_names[0]], array.ravel()[0], dtype=array.dtype
             )
 
     return expanded_param_dict

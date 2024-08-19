@@ -6,9 +6,9 @@ from qcodes.instrument_drivers.mock_instruments import MockField
 
 
 def test_mock_dac(dac) -> None:
-    assert dac.ch01.voltage() == 0.
-    dac.ch01.voltage(1.)
-    assert dac.ch01.voltage() == 1.
+    assert dac.ch01.voltage() == 0.0
+    dac.ch01.voltage(1.0)
+    assert dac.ch01.voltage() == 1.0
 
 
 def test_mock_field_delegate(station, field_x, chip_config) -> None:

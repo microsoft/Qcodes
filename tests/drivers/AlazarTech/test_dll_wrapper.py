@@ -1,6 +1,5 @@
 """Tests DLL wrapper infrastructure"""
 
-
 import gc
 import logging
 import os
@@ -12,7 +11,8 @@ from pytest import LogCaptureFixture
 from qcodes.instrument_drivers.AlazarTech.dll_wrapper import DllWrapperMeta, WrappedDll
 
 pytestmark = pytest.mark.skipif(
-    os.name != 'nt', reason='These tests are relevant only for Windows')
+    os.name != "nt", reason="These tests are relevant only for Windows"
+)
 
 
 def test_wrapped_dll_singleton_behavior(caplog: LogCaptureFixture) -> None:
@@ -21,8 +21,9 @@ def test_wrapped_dll_singleton_behavior(caplog: LogCaptureFixture) -> None:
 
     def creating_msg(dll_path):
         return f"Creating new instance for DLL path {dll_path}."
-    dll_path_1 = 'ntdll.dll'
-    dll_path_3 = 'kernel32.dll'
+
+    dll_path_1 = "ntdll.dll"
+    dll_path_3 = "kernel32.dll"
 
     assert DllWrapperMeta._instances == WeakValueDictionary()
 

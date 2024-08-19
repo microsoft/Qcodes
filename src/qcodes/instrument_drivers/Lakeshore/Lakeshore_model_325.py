@@ -89,6 +89,7 @@ class LakeshoreModel325Status(IntFlag):
     """
     IntFlag that defines status codes for Lakeshore Model 325
     """
+
     sensor_units_overrang = 128
     sensor_units_zero = 64
     temp_overrange = 32
@@ -288,7 +289,6 @@ class LakeshoreModel325Curve(InstrumentChannel):
         for value_index, (temperature_value, sensor_value) in enumerate(
             zip(temperature_values, sensor_values)
         ):
-
             cmd_str = (
                 f"CRVPT {self._index}, {value_index + 1}, "
                 f"{sensor_value:3.3f}, {temperature_value:3.3f}"

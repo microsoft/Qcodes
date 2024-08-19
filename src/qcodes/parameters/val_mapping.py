@@ -5,6 +5,7 @@ from typing import TypeVar
 
 T = TypeVar("T")
 
+
 def create_on_off_val_mapping(
     on_val: T | bool = True, off_val: T | bool = False
 ) -> OrderedDict[str | bool, T | bool]:

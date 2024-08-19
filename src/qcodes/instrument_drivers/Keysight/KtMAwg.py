@@ -33,9 +33,7 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             raise ValueError(f"Invalid channel: {chan}, expecting ch1:ch3")
 
         super().__init__(parent, name, **kwargs)
-        self._channel = ctypes.create_string_buffer(
-            f"Channel{chan}".encode("ascii")
-        )
+        self._channel = ctypes.create_string_buffer(f"Channel{chan}".encode("ascii"))
 
         # Used to access waveforms loaded into the driver
         self._awg_handle: ctypes.c_int32 | None = None
@@ -48,12 +46,12 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             get_cmd=partial(
                 self.root_instrument._get_vi_int,
                 KTMAWG_ATTR_TERMINAL_CONFIGURATION,
-                ch=self._channel
+                ch=self._channel,
             ),
             set_cmd=partial(
                 self.root_instrument._set_vi_int,
                 KTMAWG_ATTR_TERMINAL_CONFIGURATION,
-                ch=self._channel
+                ch=self._channel,
             ),
             val_mapping={
                 "differential": KTMAWG_VAL_TERMINAL_CONFIGURATION_DIFFERENTIAL,
@@ -68,12 +66,12 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             get_cmd=partial(
                 self.root_instrument._get_vi_int,
                 KTMAWG_ATTR_OPERATION_MODE,
-                ch=self._channel
+                ch=self._channel,
             ),
             set_cmd=partial(
                 self.root_instrument._set_vi_int,
                 KTMAWG_ATTR_OPERATION_MODE,
-                ch=self._channel
+                ch=self._channel,
             ),
             val_mapping={
                 "continuous": KTMAWG_VAL_OPERATE_CONTINUOUS,
@@ -88,12 +86,12 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
             get_cmd=partial(
                 self.root_instrument._get_vi_bool,
                 KTMAWG_ATTR_OUTPUT_ENABLED,
-                ch=self._channel
+                ch=self._channel,
             ),
             set_cmd=partial(
                 self.root_instrument._set_vi_bool,
                 KTMAWG_ATTR_OUTPUT_ENABLED,
-                ch=self._channel
+                ch=self._channel,
             ),
             val_mapping=create_on_off_val_mapping(on_val=1, off_val=0),
         )
@@ -140,14 +138,14 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
     def load_waveform(self, filename: str) -> None:
         path = ctypes.create_string_buffer(filename.encode("ascii"))
         self._awg_handle = ctypes.c_int32(-1)
-        status = self.root_instrument._dll.\
-            KtMAwg_WaveformCreateChannelWaveformFromFile(
-                self.root_instrument._session,
-                self._channel,
-                b"SineWaveform",
-                0, path,
-                ctypes.byref(self._awg_handle),
-            )
+        status = self.root_instrument._dll.KtMAwg_WaveformCreateChannelWaveformFromFile(
+            self.root_instrument._session,
+            self._channel,
+            b"SineWaveform",
+            0,
+            path,
+            ctypes.byref(self._awg_handle),
+        )
         self.root_instrument._catch_error(status)
 
     def clear_waveform(self) -> None:
@@ -168,14 +166,10 @@ class KeysightM9336AAWGChannel(InstrumentChannel):
 
         self._catch_error(status)
 
-        status = self.root_instrument._dll.KtMAwg_Resolve(
-            self.root_instrument._session
-        )
+        status = self.root_instrument._dll.KtMAwg_Resolve(self.root_instrument._session)
         self._catch_error(status)
 
-        status = self.root_instrument._dll.KtMAwg_Apply(
-            self.root_instrument._session
-        )
+        status = self.root_instrument._dll.KtMAwg_Apply(self.root_instrument._session)
         self._catch_error(status)
 
         status = self.root_instrument._dll.KtMAwg_InitiateGenerationByChannel(
@@ -241,6 +235,7 @@ class KeysightM9336A(Instrument):
     IVI-C drivers from Keysight. The output configuration, gain
     can be controlled and a waveform can be loaded from a file.
     """
+
     _default_buf_size = 256
 
     def __init__(
@@ -281,8 +276,7 @@ class KeysightM9336A(Instrument):
         self._get_firmware_revision = partial(
             self._get_vi_string, KTMAWG_ATTR_INSTRUMENT_FIRMWARE_REVISION
         )
-        self._get_model = partial(self._get_vi_string,
-                                  KTMAWG_ATTR_INSTRUMENT_MODEL)
+        self._get_model = partial(self._get_vi_string, KTMAWG_ATTR_INSTRUMENT_MODEL)
         self._get_serial_number = partial(
             self._get_vi_string, KTMAWG_ATTR_MODULE_SERIAL_NUMBER
         )
@@ -311,7 +305,7 @@ class KeysightM9336A(Instrument):
             "vendor": self._get_manufacturer(),
             "driver desc": self._get_driver_desc(),
             "driver prefix": self._get_driver_prefix(),
-            "driver revision": self._get_driver_revision()
+            "driver revision": self._get_driver_revision(),
         }
         return id_dict
 
@@ -323,13 +317,11 @@ class KeysightM9336A(Instrument):
         err = ctypes.c_int32(0)
         err_msg = ctypes.create_string_buffer(256)
 
-        self._dll.KtMAwg_GetError(self._session,
-                                  ctypes.byref(err),
-                                  255,
-                                  err_msg)
+        self._dll.KtMAwg_GetError(self._session, ctypes.byref(err), 255, err_msg)
 
-        raise ValueError(f"Got dll error num {err.value}"
-                         f"msg {err_msg.value.decode('ascii')}")
+        raise ValueError(
+            f"Got dll error num {err.value} msg {err_msg.value.decode('ascii')}"
+        )
 
     # Query the driver for errors
 
@@ -342,7 +334,7 @@ class KeysightM9336A(Instrument):
                 self._session, ctypes.byref(error_code), error_message
             )
             assert status == 0
-            error_dict[error_code.value] = error_message.value.decode('utf-8')
+            error_dict[error_code.value] = error_message.value.decode("utf-8")
 
         return error_dict
 
@@ -367,10 +359,7 @@ class KeysightM9336A(Instrument):
 
     def _set_vi_bool(self, attr: int, value: bool, ch: bytes = b"") -> None:
         v = ctypes.c_uint16(1) if value else ctypes.c_uint16(0)
-        status = self._dll.KtMAwg_SetAttributeViBoolean(self._session,
-                                                        ch,
-                                                        attr,
-                                                        v)
+        status = self._dll.KtMAwg_SetAttributeViBoolean(self._session, ch, attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
@@ -386,19 +375,13 @@ class KeysightM9336A(Instrument):
 
     def _set_vi_real64(self, attr: int, value: float, ch: bytes = b"") -> None:
         v = ctypes.c_double(value)
-        status = self._dll.KtMAwg_SetAttributeViReal64(self._session,
-                                                       ch,
-                                                       attr,
-                                                       v)
+        status = self._dll.KtMAwg_SetAttributeViReal64(self._session, ch, attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 
     def _set_vi_int(self, attr: int, value: int, ch: bytes = b"") -> None:
         v = ctypes.c_int32(value)
-        status = self._dll.KtMAwg_SetAttributeViInt32(self._session,
-                                                      ch,
-                                                      attr,
-                                                      v)
+        status = self._dll.KtMAwg_SetAttributeViInt32(self._session, ch, attr, v)
         if status:
             raise ValueError(f"Driver error: {status}")
 

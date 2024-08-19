@@ -16,11 +16,11 @@ def mb():
 def test_as_csv() -> None:
     from qcodes.instrument_drivers.Keysight.keysightb1500.message_builder import as_csv
 
-    assert '1' == as_csv([1])
+    assert "1" == as_csv([1])
 
-    assert '1,2,3' == as_csv([1, 2, 3])
+    assert "1,2,3" == as_csv([1, 2, 3])
 
-    assert '1,2' == as_csv([c.ChNr.SLOT_01_CH1, c.ChNr.SLOT_02_CH1])
+    assert "1,2" == as_csv([c.ChNr.SLOT_01_CH1, c.ChNr.SLOT_02_CH1])
 
 
 def _skip():
@@ -29,7 +29,7 @@ def _skip():
 
 def test_cmd(mb) -> None:
     cmd = mb.aad(1, 0).ach(1, 5).ab()
-    assert 'AAD 1,0;ACH 1,5;AB' == cmd.message
+    assert "AAD 1,0;ACH 1,5;AB" == cmd.message
 
 
 def test_raise_error_on_appending_command_after_final_command(mb) -> None:
@@ -47,276 +47,286 @@ def test_exception_on_too_long_message(mb) -> None:
         f"Command is too long ({len(str(mb._msg))}>256-termchars) "
         f"and will overflow input buffer of instrument. "
         f"(Consider using the ST/END/DO/RU commands for very long "
-        f"programs.)")
+        f"programs.)"
+    )
     with pytest.raises(Exception, match=match):
         _ = mb.message
 
 
 def test_clear_message_queue(mb) -> None:
     mb.aad(1, 0)
-    assert mb.message == 'AAD 1,0'
+    assert mb.message == "AAD 1,0"
 
     mb.clear_message_queue()
 
-    assert mb.message == ''
+    assert mb.message == ""
 
 
 def test_aad(mb) -> None:
-    assert 'AAD 1,0' == \
-           mb.aad(c.ChNr.SLOT_01_CH1,
-                  c.AAD.Type.HIGH_SPEED).message
+    assert "AAD 1,0" == mb.aad(c.ChNr.SLOT_01_CH1, c.AAD.Type.HIGH_SPEED).message
 
     mb.clear_message_queue()
 
-    assert 'AAD 1,1' == \
-           mb.aad(c.ChNr.SLOT_01_CH1,
-                  adc_type=c.AAD.Type.HIGH_RESOLUTION).message
+    assert (
+        "AAD 1,1"
+        == mb.aad(c.ChNr.SLOT_01_CH1, adc_type=c.AAD.Type.HIGH_RESOLUTION).message
+    )
 
 
 def test_ab(mb) -> None:
-    assert 'AB' == mb.ab().message
+    assert "AB" == mb.ab().message
 
 
 def test_ach(mb) -> None:
-    assert 'ACH 1,5' == mb.ach(c.ChNr.SLOT_01_CH1,
-                               c.ChNr.SLOT_05_CH1).message
+    assert "ACH 1,5" == mb.ach(c.ChNr.SLOT_01_CH1, c.ChNr.SLOT_05_CH1).message
 
     mb.clear_message_queue()
 
-    assert 'ACH 1' == mb.ach(c.ChNr.SLOT_01_CH1).message
+    assert "ACH 1" == mb.ach(c.ChNr.SLOT_01_CH1).message
 
     mb.clear_message_queue()
 
-    assert 'ACH' == mb.ach().message
+    assert "ACH" == mb.ach().message
 
 
 def test_act(mb) -> None:
-    assert 'ACT 0,1' == mb.act(c.ACT.Mode.AUTO, 1).message
+    assert "ACT 0,1" == mb.act(c.ACT.Mode.AUTO, 1).message
 
     mb.clear_message_queue()
 
-    assert 'ACT 2' == mb.act(c.ACT.Mode.PLC).message
+    assert "ACT 2" == mb.act(c.ACT.Mode.PLC).message
 
 
 def test_acv(mb) -> None:
-    assert 'ACV 7,0.01' == \
-           mb.acv(c.ChNr.SLOT_07_CH1, 0.01).message
+    assert "ACV 7,0.01" == mb.acv(c.ChNr.SLOT_07_CH1, 0.01).message
 
 
 def test_adj(mb) -> None:
-    assert 'ADJ 9,1' == mb.adj(c.ChNr.SLOT_09_CH1,
-                               c.ADJ.Mode.MANUAL).message
+    assert "ADJ 9,1" == mb.adj(c.ChNr.SLOT_09_CH1, c.ADJ.Mode.MANUAL).message
 
 
 def test_adj_query(mb) -> None:
-    assert 'ADJ? 1' == mb.adj_query(c.ChNr.SLOT_01_CH1).message
+    assert "ADJ? 1" == mb.adj_query(c.ChNr.SLOT_01_CH1).message
 
     mb.clear_message_queue()
 
-    assert 'ADJ? 1,1' == mb.adj_query(c.ChNr.SLOT_01_CH1,
-                                      c.ADJQuery.Mode.MEASURE).message
+    assert (
+        "ADJ? 1,1" == mb.adj_query(c.ChNr.SLOT_01_CH1, c.ADJQuery.Mode.MEASURE).message
+    )
 
 
 def test_ait(mb) -> None:
-    assert 'AIT 2,3,0.001' == mb.ait(c.AIT.Type.HIGH_SPEED_PULSED,
-                                     c.AIT.Mode.MEAS_TIME_MODE,
-                                     0.001).message
+    assert (
+        "AIT 2,3,0.001"
+        == mb.ait(
+            c.AIT.Type.HIGH_SPEED_PULSED, c.AIT.Mode.MEAS_TIME_MODE, 0.001
+        ).message
+    )
     mb.clear_message_queue()
-    assert 'AIT 2,3' == mb.ait(c.AIT.Type.HIGH_SPEED_PULSED,
-                               c.AIT.Mode.MEAS_TIME_MODE).message
+    assert (
+        "AIT 2,3"
+        == mb.ait(c.AIT.Type.HIGH_SPEED_PULSED, c.AIT.Mode.MEAS_TIME_MODE).message
+    )
 
 
 def test_aitm(mb) -> None:
-    assert 'AITM 0' == mb.aitm(c.APIVersion.B1500).message
+    assert "AITM 0" == mb.aitm(c.APIVersion.B1500).message
 
 
 def test_aitm_query(mb: MessageBuilder) -> None:
-    assert 'AITM?' == mb.aitm_query().message
+    assert "AITM?" == mb.aitm_query().message
 
 
 def test_als(mb) -> None:
     with pytest.raises(NotImplementedError):
-        mb.als(c.ChNr.SLOT_01_CH1, 1, b'a')
+        mb.als(c.ChNr.SLOT_01_CH1, 1, b"a")
 
 
 def test_als_query(mb) -> None:
-    assert 'ALS? 1' == mb.als_query(c.ChNr.SLOT_01_CH1).message
+    assert "ALS? 1" == mb.als_query(c.ChNr.SLOT_01_CH1).message
 
 
 def test_alw(mb) -> None:
     with pytest.raises(NotImplementedError):
-        mb.alw(c.ChNr.SLOT_01_CH1, 1, b'a')
+        mb.alw(c.ChNr.SLOT_01_CH1, 1, b"a")
 
 
 def test_alw_query(mb) -> None:
-    assert 'ALW? 1' == mb.alw_query(c.ChNr.SLOT_01_CH1).message
+    assert "ALW? 1" == mb.alw_query(c.ChNr.SLOT_01_CH1).message
 
 
 def test_av(mb) -> None:
-    assert 'AV 10' == mb.av(10).message
+    assert "AV 10" == mb.av(10).message
     mb.clear_message_queue()
-    assert 'AV -50' == mb.av(-50).message
+    assert "AV -50" == mb.av(-50).message
     mb.clear_message_queue()
-    assert 'AV 100,1' == mb.av(100, c.AV.Mode.MANUAL).message
+    assert "AV 100,1" == mb.av(100, c.AV.Mode.MANUAL).message
 
 
 def test_az(mb) -> None:
-    assert 'AZ 0' == mb.az(False).message
+    assert "AZ 0" == mb.az(False).message
     mb.clear_message_queue()
-    assert 'AZ 1' == mb.az(True).message
+    assert "AZ 1" == mb.az(True).message
 
 
 def test_bc(mb) -> None:
-    assert 'BC' == mb.bc().message
+    assert "BC" == mb.bc().message
 
 
 def test_bdm(mb: MessageBuilder) -> None:
-    assert 'BDM 0,1' == mb.bdm(c.BDM.Interval.SHORT,
-                               c.BDM.Mode.CURRENT).message
+    assert "BDM 0,1" == mb.bdm(c.BDM.Interval.SHORT, c.BDM.Mode.CURRENT).message
 
 
 def test_bdt(mb: MessageBuilder) -> None:
-    assert 'BDT 0.1,0.001' == mb.bdt(hold=0.1, delay=1e-3).message
+    assert "BDT 0.1,0.001" == mb.bdt(hold=0.1, delay=1e-3).message
 
 
 def test_bdv(mb) -> None:
-    assert 'BDV 1,0,0,100,0.01' == mb.bdv(chnum=c.ChNr.SLOT_01_CH1,
-                                          v_range=c.VOutputRange.AUTO,
-                                          start=0, stop=100,
-                                          i_comp=0.01).message
+    assert (
+        "BDV 1,0,0,100,0.01"
+        == mb.bdv(
+            chnum=c.ChNr.SLOT_01_CH1,
+            v_range=c.VOutputRange.AUTO,
+            start=0,
+            stop=100,
+            i_comp=0.01,
+        ).message
+    )
 
 
 def test_bgi(mb) -> None:
-    assert 'BGI 1,0,1e-08,14,1e-06' == \
-           mb.bgi(chnum=c.ChNr.SLOT_01_CH1,
-                  searchmode=c.BinarySearchMode.LIMIT,
-                  stop_condition=1e-8,
-                  i_range=14,
-                  target=1e-6).message
+    assert (
+        "BGI 1,0,1e-08,14,1e-06"
+        == mb.bgi(
+            chnum=c.ChNr.SLOT_01_CH1,
+            searchmode=c.BinarySearchMode.LIMIT,
+            stop_condition=1e-8,
+            i_range=14,
+            target=1e-6,
+        ).message
+    )
 
 
 def test_bgv(mb) -> None:
-    assert 'BGV 1,0,0.1,12,5' == mb.bgv(1, 0, 0.1, 12, 5).message
+    assert "BGV 1,0,0.1,12,5" == mb.bgv(1, 0, 0.1, 12, 5).message
 
 
 def test_bsi(mb) -> None:
-    assert 'BSI 1,0,1e-12,1e-06,10' == mb.bsi(1, 0, 1e-12, 1e-6,
-                                              10).message
+    assert "BSI 1,0,1e-12,1e-06,10" == mb.bsi(1, 0, 1e-12, 1e-6, 10).message
 
 
 def test_bsm(mb) -> None:
-    assert 'BSM 1,2,3' == mb.bsm(1, 2, 3).message
+    assert "BSM 1,2,3" == mb.bsm(1, 2, 3).message
 
 
 def test_bssi(mb) -> None:
-    assert 'BSSI 1,0,1e-06,10' == mb.bssi(1, 0, 1e-6, 10).message
+    assert "BSSI 1,0,1e-06,10" == mb.bssi(1, 0, 1e-6, 10).message
 
 
 def test_bssv(mb) -> None:
-    assert 'BSSV 1,0,5,1e-06' == mb.bssv(1, 0, 5, 1e-6).message
+    assert "BSSV 1,0,5,1e-06" == mb.bssv(1, 0, 5, 1e-6).message
 
 
 def test_bst(mb) -> None:
-    assert 'BST 5,0.1' == mb.bst(5, 0.1).message
+    assert "BST 5,0.1" == mb.bst(5, 0.1).message
 
 
 def test_bsv(mb) -> None:
-    assert 'BSV 1,0,0,20,1e-06' == mb.bsv(1, 0, 0, 20, 1e-6).message
+    assert "BSV 1,0,0,20,1e-06" == mb.bsv(1, 0, 0, 20, 1e-6).message
 
 
 def test_bsvm(mb) -> None:
-    assert 'BSVM 1' == mb.bsvm(1).message
+    assert "BSVM 1" == mb.bsvm(1).message
 
 
 def test_ca(mb) -> None:
-    assert 'CA' == mb.ca().message
+    assert "CA" == mb.ca().message
 
 
 def test_cal_query(mb) -> None:
-    assert '*CAL?' == mb.cal_query().message
+    assert "*CAL?" == mb.cal_query().message
 
 
 def test_cl(mb) -> None:
-    assert 'CL' == mb.cl().message
+    assert "CL" == mb.cl().message
     mb.clear_message_queue()
-    assert 'CL 1,2,3,5' == mb.cl([1, 2, 3, 5]).message
+    assert "CL 1,2,3,5" == mb.cl([1, 2, 3, 5]).message
 
 
 def test_clcorr(mb) -> None:
-    assert 'CLCORR 9,1' == mb.clcorr(9, 1).message
+    assert "CLCORR 9,1" == mb.clcorr(9, 1).message
 
 
 def test_cm(mb) -> None:
-    assert 'CM 0' == mb.cm(False).message
+    assert "CM 0" == mb.cm(False).message
 
 
 def test_cmm(mb) -> None:
-    assert 'CMM 1,2' == mb.cmm(1, 2).message
+    assert "CMM 1,2" == mb.cmm(1, 2).message
 
 
 def test_cn(mb) -> None:
-    assert 'CN' == mb.cn().message
+    assert "CN" == mb.cn().message
     mb.clear_message_queue()
-    assert 'CN 1,2,3,5' == mb.cn([1, 2, 3, 5]).message
+    assert "CN 1,2,3,5" == mb.cn([1, 2, 3, 5]).message
 
 
 def test_cnx(mb) -> None:
-    assert 'CNX' == mb.cnx().message
+    assert "CNX" == mb.cnx().message
     mb.clear_message_queue()
-    assert 'CNX 1,2,3,5' == mb.cnx([1, 2, 3, 5]).message
+    assert "CNX 1,2,3,5" == mb.cnx([1, 2, 3, 5]).message
 
 
 def test_corr_query(mb) -> None:
-    assert 'CORR? 9,3' == mb.corr_query(9, 3).message
+    assert "CORR? 9,3" == mb.corr_query(9, 3).message
 
 
 def test_corrdt(mb) -> None:
-    assert 'CORRDT 9,3000000,0,0,0,0,0,0' == mb.corrdt(9, 3000000, 0,
-                                                       0, 0, 0, 0,
-                                                       0).message
+    assert (
+        "CORRDT 9,3000000,0,0,0,0,0,0"
+        == mb.corrdt(9, 3000000, 0, 0, 0, 0, 0, 0).message
+    )
 
 
 def test_corrdt_query(mb) -> None:
-    assert 'CORRDT? 9,1' == mb.corrdt_query(9, 1).message
+    assert "CORRDT? 9,1" == mb.corrdt_query(9, 1).message
 
 
 def test_corrl(mb) -> None:
-    assert 'CORRL 9,3000000' == mb.corrl(9, 3000000).message
+    assert "CORRL 9,3000000" == mb.corrl(9, 3000000).message
 
 
 def test_corrl_query(mb) -> None:
-    assert 'CORRL? 9' == mb.corrl_query(9).message
+    assert "CORRL? 9" == mb.corrl_query(9).message
     mb.clear_message_queue()
-    assert 'CORRL? 9,2' == mb.corrl_query(9, 2).message
+    assert "CORRL? 9,2" == mb.corrl_query(9, 2).message
 
 
 def test_corrser_query(mb: MessageBuilder) -> None:
-    assert 'CORRSER? 101,1,1e-07,1e-08,10' == \
-           mb.corrser_query(101,
-                            True,
-                            1E-7,
-                            1E-8,
-                            10).message
+    assert (
+        "CORRSER? 101,1,1e-07,1e-08,10"
+        == mb.corrser_query(101, True, 1e-7, 1e-8, 10).message
+    )
 
 
 def test_corrst(mb) -> None:
-    assert 'CORRST 3,1,1' == mb.corrst(3, 1, 1).message
+    assert "CORRST 3,1,1" == mb.corrst(3, 1, 1).message
 
 
 def test_corrst_query(mb) -> None:
-    assert 'CORRST? 1,2' == mb.corrst_query(1, 2).message
+    assert "CORRST? 1,2" == mb.corrst_query(1, 2).message
 
 
 def test_dcorr(mb) -> None:
-    assert 'DCORR 3,1,100,0.1,0.2' == mb.dcorr(3, 1, 100, 0.1, 0.2).message
+    assert "DCORR 3,1,100,0.1,0.2" == mb.dcorr(3, 1, 100, 0.1, 0.2).message
 
 
 def test_dcorr_query(mb) -> None:
-    assert 'DCORR? 3,1' == mb.dcorr_query(3, 1).message
+    assert "DCORR? 3,1" == mb.dcorr_query(3, 1).message
 
 
 def test_dcv(mb) -> None:
-    assert 'DCV 3,2.5' == mb.dcv(3, 2.5).message
+    assert "DCV 3,2.5" == mb.dcv(3, 2.5).message
 
 
 def test_di(mb) -> None:
@@ -640,10 +650,9 @@ def test_err_query(mb) -> None:
 
 
 def test_errx_query(mb) -> None:
-    assert 'ERRX?' == mb.errx_query().message
+    assert "ERRX?" == mb.errx_query().message
     mb.clear_message_queue()
-    assert 'ERRX? 0' == mb.errx_query(mode=c.ERRX.Mode.CODE_AND_MESSAGE
-                                      ).message
+    assert "ERRX? 0" == mb.errx_query(mode=c.ERRX.Mode.CODE_AND_MESSAGE).message
 
 
 def test_ers_query(mb) -> None:
@@ -672,30 +681,33 @@ def test_eruhva_query(mb) -> None:
 
 
 def test_fc(mb) -> None:
-    assert 'FC 3,1000' == mb.fc(3, 1000).message
-
+    assert "FC 3,1000" == mb.fc(3, 1000).message
 
 
 def test_fl(mb) -> None:
-    assert 'FL 1' == mb.fl(True).message
+    assert "FL 1" == mb.fl(True).message
     mb.clear_message_queue()
-    assert 'FL 0,1,3,5' == mb.fl(False, [1, 3, 5]).message
+    assert "FL 0,1,3,5" == mb.fl(False, [1, 3, 5]).message
     mb.clear_message_queue()
-    assert 'FL 0,1,2,3,4,5,6,7,8,9,10' == \
-           mb.fl(False, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).message
+    assert (
+        "FL 0,1,2,3,4,5,6,7,8,9,10"
+        == mb.fl(False, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).message
+    )
     mb.clear_message_queue()
     with pytest.raises(ValueError):
         _ = mb.fl(False, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).message
 
 
 def test_fmt(mb) -> None:
-    assert 'FMT 1' == \
-           mb.fmt(c.FMT.Format.ASCII_12_DIGITS_WITH_HEADER_CRLF_EOI
-                  ).message
+    assert "FMT 1" == mb.fmt(c.FMT.Format.ASCII_12_DIGITS_WITH_HEADER_CRLF_EOI).message
     mb.clear_message_queue()
-    assert 'FMT 2,1' == \
-           mb.fmt(c.FMT.Format.ASCII_12_DIGITS_NO_HEADER_CRLF_EOI,
-                  c.FMT.Mode.PRIMARY_SOURCE_OUTPUT_DATA).message
+    assert (
+        "FMT 2,1"
+        == mb.fmt(
+            c.FMT.Format.ASCII_12_DIGITS_NO_HEADER_CRLF_EOI,
+            c.FMT.Mode.PRIMARY_SOURCE_OUTPUT_DATA,
+        ).message
+    )
 
 
 def test_hvsmuop(mb) -> None:
@@ -703,18 +715,17 @@ def test_hvsmuop(mb) -> None:
 
 
 def test_hvsmuop_query(mb) -> None:
-    assert 'HVSMUOP?' == \
-           mb.hvsmuop_query().message
+    assert "HVSMUOP?" == mb.hvsmuop_query().message
 
 
 def test_idn_query(mb) -> None:
-    assert 'IN' == mb.in_().message
+    assert "IN" == mb.in_().message
     mb.clear_message_queue()
-    assert 'IN 1,2,3,5,6' == mb.in_([1, 2, 3, 5, 6]).message
+    assert "IN 1,2,3,5,6" == mb.in_([1, 2, 3, 5, 6]).message
 
 
 def test_imp(mb) -> None:
-    assert 'IMP 10' == mb.imp(c.IMP.MeasurementMode.Z_THETA_RAD).message
+    assert "IMP 10" == mb.imp(c.IMP.MeasurementMode.Z_THETA_RAD).message
 
 
 def test_in_(mb) -> None:
@@ -853,13 +864,15 @@ def test_ml(mb) -> None:
 
 
 def test_mm(mb) -> None:
-    assert 'MM 1,1' == \
-           mb.mm(mode=c.MM.Mode.SPOT,
-                 channels=[c.ChNr.SLOT_01_CH1]).message
+    assert "MM 1,1" == mb.mm(mode=c.MM.Mode.SPOT, channels=[c.ChNr.SLOT_01_CH1]).message
     mb.clear_message_queue()
-    assert 'MM 2,1,3' == mb.mm(mode=c.MM.Mode.STAIRCASE_SWEEP,
-                               channels=[c.ChNr.SLOT_01_CH1,
-                                         c.ChNr.SLOT_03_CH1]).message
+    assert (
+        "MM 2,1,3"
+        == mb.mm(
+            mode=c.MM.Mode.STAIRCASE_SWEEP,
+            channels=[c.ChNr.SLOT_01_CH1, c.ChNr.SLOT_03_CH1],
+        ).message
+    )
 
 
 def test_msc(mb) -> None:
@@ -873,9 +886,9 @@ def test_msp(mb) -> None:
 
 
 def test_mt(mb) -> None:
-    assert 'MT 0.0,0.42,32' == mb.mt(0.0, 0.42, 32).message
+    assert "MT 0.0,0.42,32" == mb.mt(0.0, 0.42, 32).message
     mb.clear_message_queue()
-    assert 'MT 0.0,0.42,32,0.12' == mb.mt(0.0, 0.42, 32, 0.12).message
+    assert "MT 0.0,0.42,32,0.12" == mb.mt(0.0, 0.42, 32, 0.12).message
 
 
 def test_mtdcv(mb) -> None:
@@ -1039,9 +1052,9 @@ def test_ri(mb) -> None:
 
 
 def test_rm(mb) -> None:
-    assert 'RM 1,2' == mb.rm(1, c.RM.Mode.AUTO_UP).message
+    assert "RM 1,2" == mb.rm(1, c.RM.Mode.AUTO_UP).message
     mb.clear_message_queue()
-    assert 'RM 2,3,60' == mb.rm(2, c.RM.Mode.AUTO_UP_DOWN, 60).message
+    assert "RM 2,3,60" == mb.rm(2, c.RM.Mode.AUTO_UP_DOWN, 60).message
     mb.clear_message_queue()
     with pytest.raises(ValueError):
         mb.rm(c.ChNr.SLOT_01_CH1, c.RM.Mode.DEFAULT, 22)
@@ -1078,8 +1091,7 @@ def test_sap(mb) -> None:
 
 
 def test_sar(mb) -> None:
-    assert 'SAR 1,0' == mb.sar(1,
-                               enable_picoamp_autoranging=True).message
+    assert "SAR 1,0" == mb.sar(1, enable_picoamp_autoranging=True).message
 
 
 def test_scr(mb) -> None:
@@ -1208,7 +1220,7 @@ def test_srp(mb) -> None:
 
 
 def test_ssl(mb) -> None:
-    assert 'SSL 9,0' == mb.ssl(9, enable_indicator_led=False).message
+    assert "SSL 9,0" == mb.ssl(9, enable_indicator_led=False).message
 
 
 def test_ssp(mb) -> None:
@@ -1247,7 +1259,7 @@ def test_tacv(mb) -> None:
 
 
 def test_tc(mb) -> None:
-    assert 'TC 3,0' == mb.tc(3, 0).message
+    assert "TC 3,0" == mb.tc(3, 0).message
 
 
 def test_tdcv(mb) -> None:
@@ -1296,9 +1308,9 @@ def test_tgxo(mb) -> None:
 
 
 def test_ti(mb) -> None:
-    assert 'TI 1' == mb.ti(chnum=1).message
+    assert "TI 1" == mb.ti(chnum=1).message
     mb.clear_message_queue()
-    assert 'TI 1,-14' == mb.ti(chnum=1, i_range=c.IMeasRange.FIX_1uA).message
+    assert "TI 1,-14" == mb.ti(chnum=1, i_range=c.IMeasRange.FIX_1uA).message
 
 
 def test_tiv(mb) -> None:
@@ -1332,9 +1344,9 @@ def test_tsq(mb) -> None:
 
 
 def test_tsr(mb) -> None:
-    assert 'TSR' == mb.tsr().message
+    assert "TSR" == mb.tsr().message
     mb.clear_message_queue()
-    assert 'TSR 1' == mb.tsr(c.ChNr.SLOT_01_CH1).message
+    assert "TSR 1" == mb.tsr(c.ChNr.SLOT_01_CH1).message
 
 
 def test_tst(mb) -> None:
@@ -1488,26 +1500,22 @@ def test_wz_query(mb) -> None:
 
 
 def test_xe(mb) -> None:
-    assert 'XE' == mb.xe().message
+    assert "XE" == mb.xe().message
 
 
 def test_nplc_setting_for_high_speed_vs_high_resolution_mode(mb) -> None:
-    msg = (mb
-           .ait(adc_type=c.AIT.Type.HIGH_SPEED,
-                mode=c.AIT.Mode.NPLC,
-                coeff=3)
-           .ait(adc_type=c.AIT.Type.HIGH_RESOLUTION,
-                mode=c.AIT.Mode.NPLC,
-                coeff=8)
-           .message
-           )
-    assert msg == 'AIT 0,2,3;AIT 1,2,8'
+    msg = (
+        mb.ait(adc_type=c.AIT.Type.HIGH_SPEED, mode=c.AIT.Mode.NPLC, coeff=3)
+        .ait(adc_type=c.AIT.Type.HIGH_RESOLUTION, mode=c.AIT.Mode.NPLC, coeff=8)
+        .message
+    )
+    assert msg == "AIT 0,2,3;AIT 1,2,8"
 
 
 def test_set_resolution_mode_for_each_smu(mb) -> None:
-    msg = (mb
-           .aad(chnum=1, adc_type=c.AAD.Type.HIGH_SPEED)
-           .aad(chnum=2, adc_type=c.AAD.Type.HIGH_RESOLUTION)
-           .message
-           )
-    assert msg == 'AAD 1,0;AAD 2,1'
+    msg = (
+        mb.aad(chnum=1, adc_type=c.AAD.Type.HIGH_SPEED)
+        .aad(chnum=2, adc_type=c.AAD.Type.HIGH_RESOLUTION)
+        .message
+    )
+    assert msg == "AAD 1,0;AAD 2,1"
