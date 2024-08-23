@@ -125,7 +125,7 @@ ipython==8.26.0
     #   ipywidgets
     #   qcodes
     #   qcodes-loop
-ipywidgets==8.1.3
+ipywidgets==8.1.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -163,7 +163,7 @@ jupyter-core==5.7.2
     #   nbformat
 jupyterlab-pygments==0.3.0
     # via nbconvert
-jupyterlab-widgets==3.0.11
+jupyterlab-widgets==3.0.13
     # via ipywidgets
 kiwisolver==1.4.5
     # via matplotlib
@@ -500,7 +500,7 @@ websockets==13.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-widgetsnbextension==4.0.11
+widgetsnbextension==4.0.13
     # via ipywidgets
 wrapt==1.16.0
     # via
