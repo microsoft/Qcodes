@@ -216,7 +216,7 @@ minversion = "7.2"
 junit_family = "legacy"
 testpaths = "tests"
 addopts = "-n auto --dist=loadfile"
-
+asyncio_default_fixture_loop_scope = "function"
 markers = "serial"
 
 # we ignore warnings
