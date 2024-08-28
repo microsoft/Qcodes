@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING
 
 import pytest
@@ -120,7 +121,7 @@ def test_removed_parameter_from_prop_instrument_works(request):
     a.voltage.set(1)
 
 
-def test_remove_parameter_from_class_attr_works(request):
+def test_remove_parameter_from_class_attr_works(request, caplog):
     request.addfinalizer(DummyClassAttrInstr.close_all)
     a = DummyClassAttrInstr("my_instr")
 
@@ -142,7 +143,12 @@ def test_remove_parameter_from_class_attr_works(request):
     # does not alter the class attribute
     assert hasattr(a, "frequency")
     assert a.frequency is None
-    a.remove_parameter("frequency")
+    with caplog.at_level(logging.WARNING):
+        a.remove_parameter("frequency")
+    assert (
+        "Could not remove attribute frequency from my_instr"
+        in caplog.records[0].message
+    )
     assert a.frequency is None
 
     # removing a classattr raises since it is not a parameter
