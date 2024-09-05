@@ -165,7 +165,7 @@ jupyterlab-pygments==0.3.0
     # via nbconvert
 jupyterlab-widgets==3.0.13
     # via ipywidgets
-kiwisolver==1.4.5
+kiwisolver==1.4.7
     # via matplotlib
 lazy-loader==0.4
     # via qcodes-loop
