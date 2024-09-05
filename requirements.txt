@@ -210,7 +210,7 @@ nbsphinx==0.9.5
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-numpy==2.1.0
+numpy==2.1.1
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
