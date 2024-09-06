@@ -1,0 +1,3 @@
+`dond` now takes an optional `squeeze` flag as input. Inspired by Matplotlib's `plt.subplots` argument
+of the same name, this allows the user to always get the same type returned from the function if set to False.
+This makes it easier to write type checked code that uses `dond` as a function.
