@@ -209,7 +209,12 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         is_property = isinstance(getattr(self.__class__, name, None), property)
 
         if not is_property and hasattr(self, name):
-            delattr(self, name)
+            try:
+                delattr(self, name)
+            except AttributeError:
+                self.log.warning(
+                    "Could not remove attribute %s from %s", name, self.full_name
+                )
 
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
