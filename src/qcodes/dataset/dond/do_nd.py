@@ -583,7 +583,7 @@ def dond(
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
     in_memory_cache: bool | None = None,
-    squeeze: Literal[False] = False,
+    squeeze: Literal[False],
 ) -> MultiAxesTupleListWithDataSet: ...
 
 
@@ -603,7 +603,27 @@ def dond(
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
     in_memory_cache: bool | None = None,
-    squeeze: Literal[True] = True,
+    squeeze: Literal[True],
+) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet: ...
+
+
+@overload
+def dond(
+    *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
+    write_period: float | None = None,
+    measurement_name: str | Sequence[str] = "",
+    exp: Experiment | Sequence[Experiment] | None = None,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    do_plot: bool | None = None,
+    show_progress: bool | None = None,
+    use_threads: bool | None = None,
+    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    log_info: str | None = None,
+    break_condition: BreakConditionT | None = None,
+    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
+    in_memory_cache: bool | None = None,
+    squeeze: bool = True,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet: ...
 
 
