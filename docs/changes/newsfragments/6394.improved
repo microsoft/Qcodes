@@ -1,1 +1,0 @@
-Improve handling of corner cases where `Instrument.remove_parameter` could raise an exception.
