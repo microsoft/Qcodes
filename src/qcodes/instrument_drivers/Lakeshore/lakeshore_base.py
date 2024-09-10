@@ -275,7 +275,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
                 self.setpoint_ramp_enabled,
                 self.setpoint_ramp_rate,
             ],
-            set_cmd=f"RAMP {output_index},{{setpoint_ramping_enabled}},{{setpoint_ramping_rate}}",
+            set_cmd=f"RAMP {output_index},{{setpoint_ramp_enabled}},{{setpoint_ramp_rate}}",
             get_cmd=f"RAMP? {output_index}",
         )
 
