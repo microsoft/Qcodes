@@ -451,7 +451,7 @@ traitlets==5.14.3
     #   nbsphinx
 types-jsonschema==4.23.0.20240813
     # via qcodes (pyproject.toml)
-types-pytz==2024.1.0.20240417
+types-pytz==2024.2.0.20240913
     # via pandas-stubs
 types-pywin32==306.0.0.20240822
     # via qcodes (pyproject.toml)
