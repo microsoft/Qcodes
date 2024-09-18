@@ -150,7 +150,7 @@ jsonschema==4.23.0
     #   zhinst-toolkit
 jsonschema-specifications==2023.12.1
     # via jsonschema
-jupyter-client==8.6.2
+jupyter-client==8.6.3
     # via
     #   ipykernel
     #   nbclient
