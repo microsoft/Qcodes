@@ -35,7 +35,7 @@ def clean_string(s: str) -> str:
 
     return s
 
-def parse_string_strip(s: str) -> str:
+def _parse_string_strip(s: str) -> str:
     """Parse an output of the VISA instrument, remove redundant terminators like \n"""
     return s.strip()
 
@@ -241,7 +241,7 @@ class RigolDG4000(VisaInstrument):
                 ch + "output_polarity",
                 get_cmd=output + "POL?",
                 set_cmd=output + "POL {}",
-                get_parser=parse_string_strip,
+                get_parser=_parse_string_strip,
                 val_mapping={"normal": "NORMAL", "inverted": "INVERTED"},
             )
 
@@ -249,7 +249,7 @@ class RigolDG4000(VisaInstrument):
                 ch + "output_enabled",
                 get_cmd=output + "STAT?",
                 set_cmd=output + "STAT {}",
-                get_parser=parse_string_strip,
+                get_parser=_parse_string_strip,
                 val_mapping=on_off_map,
             )
 
@@ -465,7 +465,7 @@ class RigolDG4000(VisaInstrument):
             self.add_parameter(
                 ch + "harmonic_order",
                 get_cmd=source + "HARM:ORDE?",
-                get_parser=float,
+                get_parser=int,
                 set_cmd=source + "HARM:ORDE {}",
                 vals=Ints(2, 16),
             )
@@ -623,7 +623,7 @@ class RigolDG4000(VisaInstrument):
             self.add_parameter(
                 ch + "sweep_step",
                 get_cmd=source + "SWE:STEP?",
-                get_parser=float,
+                get_parser=int,
                 set_cmd=source + "SWE:STEP {}",
                 vals=Ints(2, 2048),
             )
