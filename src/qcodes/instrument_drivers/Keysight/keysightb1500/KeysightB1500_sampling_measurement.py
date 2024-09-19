@@ -64,14 +64,12 @@ class SamplingMeasurement(ParameterWithSetpoints):
 
         # if time out to be set is lower than the default value
         # then keep default
-        if time_out < default_timeout:
-            time_out = default_timeout
+        time_out = max(time_out, default_timeout)
 
         self.root_instrument.write(MessageBuilder().fmt(1, 0).message)
 
         with self.root_instrument.timeout.set_to(time_out):
-            raw_data = self.root_instrument.ask(
-                MessageBuilder().xe().message)
+            raw_data = self.root_instrument.ask(MessageBuilder().xe().message)
 
         self.data = fmt_response_base_parser(raw_data)
         convert_dummy_val_to_nan(self.data)
@@ -89,15 +87,16 @@ class SamplingMeasurement(ParameterWithSetpoints):
         """
 
         if self.data.status is None:
-            raise MeasurementNotTaken('First run sampling_measurement'
-                                      ' method to generate the data')
+            raise MeasurementNotTaken(
+                "First run sampling_measurement method to generate the data"
+            )
         else:
             data = self.data
             total_count = len(data.status)
             normal_count = data.status.count(constants.MeasurementStatus.N.name)
             exception_count = total_count - normal_count
             if total_count == normal_count:
-                print('All measurements are normal')
+                print("All measurements are normal")
             else:
                 indices = [i for i, x in enumerate(data.status) if x in {"C", "T"}]
                 warnings.warn(
@@ -105,6 +104,7 @@ class SamplingMeasurement(ParameterWithSetpoints):
                     f"out of compliance at {indices!s}"
                 )
 
-            compliance_list = [constants.MeasurementError[key].value
-                               for key in data.status]
+            compliance_list = [
+                constants.MeasurementError[key].value for key in data.status
+            ]
             return compliance_list

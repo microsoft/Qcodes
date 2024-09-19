@@ -435,76 +435,86 @@ class AlazarATSAPI(WrappedDll):
     def abort_async_read(self, handle: int) -> ReturnCode:
         return self._sync_dll_call("AlazarAbortAsyncRead", handle)
 
-    signatures.update({"AlazarAbortAsyncRead": Signature(
-        argument_types=[HANDLE])})
+    signatures.update({"AlazarAbortAsyncRead": Signature(argument_types=[HANDLE])})
 
     def error_to_text(self, return_code: ReturnCode) -> str:
-        return self._sync_dll_call('AlazarErrorToText', return_code)
+        return self._sync_dll_call("AlazarErrorToText", return_code)
 
-    signatures.update({"AlazarErrorToText": Signature(
-        argument_types=[U32], return_type=ctypes.c_char_p)})
+    signatures.update(
+        {
+            "AlazarErrorToText": Signature(
+                argument_types=[U32], return_type=ctypes.c_char_p
+            )
+        }
+    )
 
     def force_trigger(self, handle: int) -> ReturnCode:
-        return self._sync_dll_call('AlazarForceTrigger', handle)
+        return self._sync_dll_call("AlazarForceTrigger", handle)
 
-    signatures.update({"AlazarForceTrigger": Signature(
-        argument_types=[HANDLE])})
+    signatures.update({"AlazarForceTrigger": Signature(argument_types=[HANDLE])})
 
     def force_trigger_enable(self, handle: int) -> ReturnCode:
-        return self._sync_dll_call('AlazarForceTriggerEnable', handle)
+        return self._sync_dll_call("AlazarForceTriggerEnable", handle)
 
-    signatures.update({"AlazarForceTriggerEnable": Signature(
-        argument_types=[HANDLE])})
+    signatures.update({"AlazarForceTriggerEnable": Signature(argument_types=[HANDLE])})
 
     def busy(self, handle: int) -> int:
-        return self._sync_dll_call('AlazarBusy', handle)
+        return self._sync_dll_call("AlazarBusy", handle)
 
-    signatures.update({"AlazarBusy": Signature(
-        argument_types=[HANDLE], return_type=U32)})
+    signatures.update(
+        {"AlazarBusy": Signature(argument_types=[HANDLE], return_type=U32)}
+    )
 
-    def configure_record_average(self,
-                                 handle: int,
-                                 mode: int,
-                                 samples_per_record: int,
-                                 records_per_average: int,
-                                 options: int
-                                 ) -> ReturnCode:
+    def configure_record_average(
+        self,
+        handle: int,
+        mode: int,
+        samples_per_record: int,
+        records_per_average: int,
+        options: int,
+    ) -> ReturnCode:
         return self._sync_dll_call(
-            'AlazarConfigureRecordAverage',
-            handle, mode, samples_per_record, records_per_average, options)
+            "AlazarConfigureRecordAverage",
+            handle,
+            mode,
+            samples_per_record,
+            records_per_average,
+            options,
+        )
 
-    signatures.update({"AlazarConfigureRecordAverage": Signature(
-        argument_types=[HANDLE, U32, U32, U32, U32])})
+    signatures.update(
+        {
+            "AlazarConfigureRecordAverage": Signature(
+                argument_types=[HANDLE, U32, U32, U32, U32]
+            )
+        }
+    )
 
-    def free_buffer_u16(self,
-                        handle: int,
-                        buffer: POINTER_c_uint16
-                        ) -> ReturnCode:
-        return self._sync_dll_call('AlazarFreeBufferU16', handle, buffer)
+    def free_buffer_u16(self, handle: int, buffer: POINTER_c_uint16) -> ReturnCode:
+        return self._sync_dll_call("AlazarFreeBufferU16", handle, buffer)
 
-    signatures.update({"AlazarFreeBufferU16": Signature(
-        argument_types=[HANDLE, POINTER(U16)])})
+    signatures.update(
+        {"AlazarFreeBufferU16": Signature(argument_types=[HANDLE, POINTER(U16)])}
+    )
 
-    def free_buffer_u8(self,
-                       handle: int,
-                       buffer: POINTER_c_uint8
-                       ) -> ReturnCode:
-        return self._sync_dll_call('AlazarFreeBufferU8', handle, buffer)
+    def free_buffer_u8(self, handle: int, buffer: POINTER_c_uint8) -> ReturnCode:
+        return self._sync_dll_call("AlazarFreeBufferU8", handle, buffer)
 
-    signatures.update({"AlazarFreeBufferU8": Signature(
-        argument_types=[HANDLE, POINTER(U8)])})
+    signatures.update(
+        {"AlazarFreeBufferU8": Signature(argument_types=[HANDLE, POINTER(U8)])}
+    )
 
     def set_led(self, handle: int, led_on: bool) -> ReturnCode:
-        return self._sync_dll_call('AlazarSetLED', handle, led_on)
+        return self._sync_dll_call("AlazarSetLED", handle, led_on)
 
-    signatures.update({"AlazarSetLED": Signature(
-        argument_types=[HANDLE, U32])})
+    signatures.update({"AlazarSetLED": Signature(argument_types=[HANDLE, U32])})
 
     def triggered(self, handle: int) -> int:
-        return self._sync_dll_call('AlazarTriggered', handle)
+        return self._sync_dll_call("AlazarTriggered", handle)
 
-    signatures.update({"AlazarTriggered": Signature(
-        argument_types=[HANDLE], return_type=U32)})
+    signatures.update(
+        {"AlazarTriggered": Signature(argument_types=[HANDLE], return_type=U32)}
+    )
 
     ## OTHER API-RELATED METHODS ##
 
@@ -527,11 +537,7 @@ class AlazarATSAPI(WrappedDll):
         """
         bps = ctypes.c_uint8(0)  # bps bits per sample
         max_s = ctypes.c_uint32(0)  # max_s memory size in samples
-        self.get_channel_info(
-            handle,
-            ctypes.byref(max_s),
-            ctypes.byref(bps)
-        )
+        self.get_channel_info(handle, ctypes.byref(max_s), ctypes.byref(bps))
         return max_s.value, bps.value
 
     def get_cpld_version_(self, handle: int) -> str:
@@ -550,11 +556,7 @@ class AlazarATSAPI(WrappedDll):
         """
         major = ctypes.c_uint8(0)
         minor = ctypes.c_uint8(0)
-        self.get_cpld_version(
-            handle,
-            ctypes.byref(major),
-            ctypes.byref(minor)
-        )
+        self.get_cpld_version(handle, ctypes.byref(major), ctypes.byref(minor))
         cpld_ver = str(major.value) + "." + str(minor.value)
         return cpld_ver
 
@@ -573,13 +575,11 @@ class AlazarATSAPI(WrappedDll):
         minor = ctypes.c_uint8(0)
         revision = ctypes.c_uint8(0)
         self.get_driver_version(
-            ctypes.byref(major),
-            ctypes.byref(minor),
-            ctypes.byref(revision)
+            ctypes.byref(major), ctypes.byref(minor), ctypes.byref(revision)
         )
-        driver_ver = (str(major.value) + "."
-                      + str(minor.value) + "."
-                      + str(revision.value))
+        driver_ver = (
+            str(major.value) + "." + str(minor.value) + "." + str(revision.value)
+        )
         return driver_ver
 
     def get_sdk_version_(self) -> str:
@@ -597,13 +597,9 @@ class AlazarATSAPI(WrappedDll):
         minor = ctypes.c_uint8(0)
         revision = ctypes.c_uint8(0)
         self.get_sdk_version(
-            ctypes.byref(major),
-            ctypes.byref(minor),
-            ctypes.byref(revision)
+            ctypes.byref(major), ctypes.byref(minor), ctypes.byref(revision)
         )
-        sdk_ver = (str(major.value) + "."
-                   + str(minor.value) + "."
-                   + str(revision.value))
+        sdk_ver = str(major.value) + "." + str(minor.value) + "." + str(revision.value)
         return sdk_ver
 
     def query_capability_(self, handle: int, capability: int) -> int:
@@ -625,8 +621,7 @@ class AlazarATSAPI(WrappedDll):
         """
         value = ctypes.c_uint32(0)
         reserved = 0
-        self.query_capability(
-            handle, capability, reserved, ctypes.byref(value))
+        self.query_capability(handle, capability, reserved, ctypes.byref(value))
         return value.value
 
     def read_register_(self, handle: int, offset: int) -> int:
@@ -645,10 +640,7 @@ class AlazarATSAPI(WrappedDll):
         """
         output = ctypes.c_uint32(0)
         self.read_register(
-            handle,
-            offset,
-            ctypes.byref(output),
-            REGISTER_ACCESS_PASSWORD
+            handle, offset, ctypes.byref(output), REGISTER_ACCESS_PASSWORD
         )
         return output.value
 
@@ -664,5 +656,4 @@ class AlazarATSAPI(WrappedDll):
             offset: The offset in memory to write to
             value: The value to write
         """
-        self.write_register(
-            handle, offset, value, REGISTER_ACCESS_PASSWORD)
+        self.write_register(handle, offset, value, REGISTER_ACCESS_PASSWORD)

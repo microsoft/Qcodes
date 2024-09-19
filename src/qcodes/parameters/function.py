@@ -81,7 +81,7 @@ class Function(MetadatableWithName):
         arg_parser: Callable[..., Any] | None = None,
         return_parser: Callable[..., Any] | None = None,
         docstring: str | None = None,
-        **kwargs: Any
+        **kwargs: Any,
     ):
         super().__init__(**kwargs)
 

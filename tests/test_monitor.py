@@ -1,6 +1,7 @@
 """
 Test suite for monitor
 """
+
 from __future__ import annotations
 
 import json
@@ -24,10 +25,7 @@ monitor.WEBSOCKET_PORT = random.randint(50000, 60000)
 @pytest.fixture(name="inst_and_monitor")
 def _make_inst_and_monitor():
     instr = DummyInstrument("MonitorDummy")
-    param = Parameter("DummyParam",
-                      unit="V",
-                      get_cmd=None,
-                      set_cmd=None)
+    param = Parameter("DummyParam", unit="V", get_cmd=None, set_cmd=None)
     param(1)
     monitor_parameters = cast(
         tuple[Parameter, ...], tuple(instr.parameters.values())[1:]
@@ -51,7 +49,6 @@ def _make_channel_instr():
 
 @pytest.fixture(name="channel_instr_monitor", params=[True, False])
 def _make_channel_instr_monitor(channel_instr, request: FixtureRequest):
-
     m = monitor.Monitor(
         channel_instr.A.dummy_start,
         channel_instr.B.dummy_start,
@@ -128,7 +125,6 @@ async def test_instrument_update(inst_and_monitor) -> None:
     async with websockets.connect(
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:
-
         # Receive data from monitor
         data_b = await websocket.recv()
         data = json.loads(data_b)
@@ -173,7 +169,6 @@ async def test_monitor_root_instr(channel_instr_monitor) -> None:
     async with websockets.connect(
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:
-
         # Receive data from monitor
         data_b = await websocket.recv()
         data = json.loads(data_b)

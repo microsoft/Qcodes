@@ -31,25 +31,30 @@ class VoltageParameter(MultiParameter):
         name: the name of the current output. Default 'volt'.
             Also used as the name of the whole parameter.
     """
-    def __init__(self,
-                 measured_param: Parameter,
-                 v_amp_ins: "SR560",
-                 name: str = 'volt',
-                 snapshot_value: bool = True):
+
+    def __init__(
+        self,
+        measured_param: Parameter,
+        v_amp_ins: "SR560",
+        name: str = "volt",
+        snapshot_value: bool = True,
+    ):
         p_name = measured_param.name
 
-        super().__init__(name=name,
-                         names=(p_name+'_raw', name),
-                         shapes=((), ()),
-                         instrument=v_amp_ins)
+        super().__init__(
+            name=name,
+            names=(p_name + "_raw", name),
+            shapes=((), ()),
+            instrument=v_amp_ins,
+        )
 
         self._measured_param = measured_param
 
         p_label = getattr(measured_param, "label", "")
         p_unit = getattr(measured_param, "unit", "")
 
-        self.labels = (p_label, 'Voltage')
-        self.units = (p_unit, 'V')
+        self.labels = (p_label, "Voltage")
+        self.units = (p_unit, "V")
 
     def get_raw(self) -> tuple[ParamRawDataType, ParamRawDataType]:
         volt = self._measured_param.get()
@@ -82,11 +87,43 @@ class SR560(Instrument):
     def __init__(self, name: str, **kwargs: "Unpack[InstrumentBaseKWArgs]"):
         super().__init__(name, **kwargs)
 
-        cutoffs = ['DC', 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000,
-                   3000, 10000, 30000, 100000, 300000, 1000000]
+        cutoffs = [
+            "DC",
+            0.03,
+            0.1,
+            0.3,
+            1,
+            3,
+            10,
+            30,
+            100,
+            300,
+            1000,
+            3000,
+            10000,
+            30000,
+            100000,
+            300000,
+            1000000,
+        ]
 
-        gains = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000,
-                 10000, 20000, 50000]
+        gains = [
+            1,
+            2,
+            5,
+            10,
+            20,
+            50,
+            100,
+            200,
+            500,
+            1000,
+            2000,
+            5000,
+            10000,
+            20000,
+            50000,
+        ]
 
         self.cutoff_lo: Parameter = self.add_parameter(
             "cutoff_lo",
@@ -132,10 +169,14 @@ class SR560(Instrument):
         """Parameter gain"""
 
     def get_idn(self) -> dict[str, str | None]:
-        vendor = 'Stanford Research Systems'
-        model = 'SR560'
+        vendor = "Stanford Research Systems"
+        model = "SR560"
         serial = None
         firmware = None
 
-        return {'vendor': vendor, 'model': model,
-                'serial': serial, 'firmware': firmware}
+        return {
+            "vendor": vendor,
+            "model": model,
+            "serial": serial,
+            "firmware": firmware,
+        }

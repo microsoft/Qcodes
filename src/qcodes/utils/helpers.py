@@ -2,6 +2,7 @@
 Module left for backwards compatibility.
 Please do not import from this in any new code
 """
+
 import logging
 from collections.abc import Hashable
 from typing import Any, Optional

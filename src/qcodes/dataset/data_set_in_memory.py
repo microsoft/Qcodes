@@ -233,7 +233,6 @@ class DataSetInMem(BaseDataSet):
         import xarray as xr
 
         with xr.open_dataset(path, engine="h5netcdf") as loaded_data:
-
             parent_dataset_links = str_to_links(
                 loaded_data.attrs.get("parent_dataset_links", "[]")
             )
@@ -303,7 +302,6 @@ class DataSetInMem(BaseDataSet):
 
     @classmethod
     def _load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
-
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
             raise RuntimeError(
@@ -342,7 +340,6 @@ class DataSetInMem(BaseDataSet):
 
     @classmethod
     def _set_cache_from_netcdf(cls, ds: DataSetInMem, xr_path: Path | None) -> bool:
-
         success = True
         if xr_path is not None and xr_path.is_file():
             ds._cache = DataSetCacheDeferred(ds, xr_path)
@@ -663,16 +660,16 @@ class DataSetInMem(BaseDataSet):
             all_params = inff_params.union(deps_params).union({toplevel_param})
 
             new_results[toplevel_param.name] = {}
-            new_results[toplevel_param.name][
-                toplevel_param.name
-            ] = self._reshape_array_for_cache(
-                toplevel_param, result_dict[toplevel_param]
+            new_results[toplevel_param.name][toplevel_param.name] = (
+                self._reshape_array_for_cache(
+                    toplevel_param, result_dict[toplevel_param]
+                )
             )
             for param in all_params:
                 if param is not toplevel_param:
-                    new_results[toplevel_param.name][
-                        param.name
-                    ] = self._reshape_array_for_cache(param, result_dict[param])
+                    new_results[toplevel_param.name][param.name] = (
+                        self._reshape_array_for_cache(param, result_dict[param])
+                    )
 
         # Finally, handle standalone parameters
 
@@ -741,7 +738,6 @@ class DataSetInMem(BaseDataSet):
         return list(old_interdeps.paramspecs)
 
     def _complete(self, value: bool) -> None:
-
         with contextlib.closing(
             conn_from_dbpath_or_conn(conn=None, path_to_db=self._path_to_db)
         ) as conn:

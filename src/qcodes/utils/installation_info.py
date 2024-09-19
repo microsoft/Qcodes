@@ -3,6 +3,7 @@ This module contains helper functions that provide information about how
 QCoDeS is installed and about what other packages are installed along with
 QCoDeS
 """
+
 import json
 import logging
 import subprocess
@@ -21,12 +22,13 @@ def is_qcodes_installed_editably() -> bool | None:
     answer: bool | None
 
     try:
-        pipproc = subprocess.run(['python', '-m', 'pip', 'list', '-e', '--no-index',
-                                  '--format=json'],
-                                 check=True,
-                                 stdout=subprocess.PIPE)
-        e_pkgs = json.loads(pipproc.stdout.decode('utf-8'))
-        answer = any([d["name"] == 'qcodes' for d in e_pkgs])
+        pipproc = subprocess.run(
+            ["python", "-m", "pip", "list", "-e", "--no-index", "--format=json"],
+            check=True,
+            stdout=subprocess.PIPE,
+        )
+        e_pkgs = json.loads(pipproc.stdout.decode("utf-8"))
+        answer = any([d["name"] == "qcodes" for d in e_pkgs])
     except Exception as e:  # we actually do want a catch-all here
         log.warning(f"{type(e)}: {e!s}")
         answer = None

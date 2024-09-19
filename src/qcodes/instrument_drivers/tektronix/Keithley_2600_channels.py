@@ -2,6 +2,7 @@
 Alias left for backwards compatibility.
 Keithly drivers have moved to the Keithley module
 """
+
 import logging
 import sys
 from enum import Enum
@@ -24,6 +25,7 @@ else:
 
     class StrEnum(str, Enum):
         pass
+
 
 log = logging.getLogger(__name__)
 

@@ -1,17 +1,20 @@
 """
 These are the basic black box tests for the doNd functions.
 """
+
 import logging
 import re
 
 import hypothesis.strategies as hst
 import matplotlib
 import matplotlib.axes
+import matplotlib.colorbar
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from pytest import FixtureRequest, LogCaptureFixture
+from typing_extensions import assert_type
 
 import qcodes as qc
 from qcodes import config, validators
@@ -1816,3 +1819,36 @@ def test_dond_get_after_set_stores_get_value(_param_set, _param_set_2, _param) -
     assert a.set_count == n_points
     assert b.get_count == n_points
     assert b.set_count == 0
+
+
+@pytest.mark.usefixtures("plot_close", "experiment")
+def test_dond_return_type(_param_set, _param) -> None:
+    n_points = 11
+
+    # test that with squeeze=False we get MultiAxesTupleListWithDataSet as the return type
+    dss, axs, cbs = dond(
+        LinSweep(_param_set, -10, -20, n_points), _param, squeeze=False
+    )
+
+    assert isinstance(dss, tuple)
+    assert_type(dss, tuple[DataSetProtocol, ...])
+    assert len(dss) == 1
+    assert isinstance(dss[0], DataSetProtocol)
+
+    assert isinstance(axs, tuple)
+    assert_type(
+        axs,
+        tuple[tuple["matplotlib.axes.Axes | None", ...], ...],
+    )
+    assert len(axs) == 1
+    assert len(axs[0]) == 1
+    assert axs[0][0] is None
+
+    assert isinstance(cbs, tuple)
+    assert_type(
+        cbs,
+        tuple[tuple["matplotlib.colorbar.Colorbar | None", ...], ...],
+    )
+    assert len(cbs) == 1
+    assert len(cbs[0]) == 1
+    assert cbs[0][0] is None

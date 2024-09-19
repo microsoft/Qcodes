@@ -85,12 +85,13 @@ class LakeshoreBaseOutput(InstrumentChannel):
             parameter_class=GroupParameter,
         )
         """Specifies whether the output remains on or shuts off after power cycle."""
-        self.output_group = Group([self.mode, self.input_channel,
-                                   self.powerup_enable],
-                                  set_cmd=f'OUTMODE {output_index}, {{mode}}, '
-                                          f'{{input_channel}}, '
-                                          f'{{powerup_enable}}',
-                                  get_cmd=f'OUTMODE? {output_index}')
+        self.output_group = Group(
+            [self.mode, self.input_channel, self.powerup_enable],
+            set_cmd=f"OUTMODE {output_index}, {{mode}}, "
+            f"{{input_channel}}, "
+            f"{{powerup_enable}}",
+            get_cmd=f"OUTMODE? {output_index}",
+        )
 
         # Parameters for Closed Loop PID Parameter Command
         if self._has_pid:
@@ -274,7 +275,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
                 self.setpoint_ramp_enabled,
                 self.setpoint_ramp_rate,
             ],
-            set_cmd=f"RAMP {output_index},{{setpoint_ramping_enabled}},{{setpoint_ramping_rate}}",
+            set_cmd=f"RAMP {output_index},{{setpoint_ramp_enabled}},{{setpoint_ramp_rate}}",
             get_cmd=f"RAMP? {output_index}",
         )
 
@@ -393,11 +394,13 @@ class LakeshoreBaseOutput(InstrumentChannel):
             from the `output_range` parameter itself
         """
         if self.range_limits.get_latest() is None:
-            raise RuntimeError('Error when calling set_range_from_temperature: '
-                               'You must specify the output range limits '
-                               'before automatically setting the range '
-                               '(e.g. inst.range_limits([0.021, 0.1, 0.2, '
-                               '1.1, 2, 4, 8]))')
+            raise RuntimeError(
+                "Error when calling set_range_from_temperature: "
+                "You must specify the output range limits "
+                "before automatically setting the range "
+                "(e.g. inst.range_limits([0.021, 0.1, 0.2, "
+                "1.1, 2, 4, 8]))"
+            )
         range_limits = self.range_limits.get_latest()
         i = bisect(range_limits, temperature)
         # if temperature is larger than the highest range, then bisect returns
@@ -406,9 +409,10 @@ class LakeshoreBaseOutput(InstrumentChannel):
         i = min(i, len(range_limits) - 1)
         # there is a `+1` because `self.RANGES` includes `'off'` as the first
         # value.
-        orange = self.INVERSE_RANGES[i+1] # this is `output range` not the fruit
-        self.log.debug(f'setting output range from temperature '
-                       f'({temperature} K) to {orange}.')
+        orange = self.INVERSE_RANGES[i + 1]  # this is `output range` not the fruit
+        self.log.debug(
+            f"setting output range from temperature ({temperature} K) to {orange}."
+        )
         self.output_range(orange)
         return self.output_range()
 
@@ -460,25 +464,24 @@ class LakeshoreBaseOutput(InstrumentChannel):
         wait_cycle_time = wait_cycle_time or self.wait_cycle_time.get_latest()
         assert wait_cycle_time is not None
         tolerance = wait_tolerance or self.wait_tolerance.get_latest()
-        equilibration_time = (wait_equilibration_time or
-                                   self.wait_equilibration_time.get_latest())
+        equilibration_time = (
+            wait_equilibration_time or self.wait_equilibration_time.get_latest()
+        )
 
         active_channel_id = self.input_channel()
-        active_channel_name_on_instrument = (
-            self.root_instrument
-                .input_channel_parameter_values_to_channel_name_on_instrument[
-                active_channel_id
-            ]
-        )
+        active_channel_name_on_instrument = self.root_instrument.input_channel_parameter_values_to_channel_name_on_instrument[
+            active_channel_id
+        ]
         active_channel = getattr(
-            self.root_instrument,
-            active_channel_name_on_instrument
+            self.root_instrument, active_channel_name_on_instrument
         )
 
-        if active_channel.units() != 'kelvin':
-            raise ValueError(f"Waiting until the setpoint is reached requires "
-                             f"channel's {active_channel._channel!r} units to "
-                             f"be set to 'kelvin'.")
+        if active_channel.units() != "kelvin":
+            raise ValueError(
+                f"Waiting until the setpoint is reached requires "
+                f"channel's {active_channel._channel!r} units to "
+                f"be set to 'kelvin'."
+            )
 
         t_setpoint = self.setpoint()
 
@@ -496,6 +499,7 @@ class LakeshoreBaseOutput(InstrumentChannel):
                 time_enter_tolerance_zone = time_now
 
             time.sleep(wait_cycle_time)
+
 
 @deprecated(
     "Base class renamed to LakeshoreBaseOutput", category=QCoDeSDeprecationWarning
@@ -599,8 +603,9 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
                 string (e.g. "32"), as returned by the corresponding
                 instrument command
         """
-        codes = self._get_sum_terms(list(self.SENSOR_STATUSES.keys()),
-                                    int(sum_of_codes))
+        codes = self._get_sum_terms(
+            list(self.SENSOR_STATUSES.keys()), int(sum_of_codes)
+        )
         return ", ".join(self.SENSOR_STATUSES[k] for k in codes)
 
     @staticmethod
@@ -633,7 +638,8 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
         # will obviously will not make it to the returned list; and also get
         # rid of '0' as it will make the loop below infinite
         terms_left = np.array(
-            [term for term in terms_left if term <= number and term != 0])
+            [term for term in terms_left if term <= number and term != 0]
+        )
 
         # Handle the special case of number being 0
         if number == 0:
@@ -651,6 +657,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
             terms_left = terms_left[terms_left <= number]
 
         return terms_in_number
+
 
 @deprecated(
     "Base class renamed to LakeshoreBaseSensorChannel",
@@ -675,6 +682,7 @@ class LakeshoreBase(VisaInstrument):
     instances (subclasses of those) in your `LakeshoreBase`'s subclass
     constructor via `add_submodule` method.
     """
+
     # Redefine this in the model-specific class in case you want to use a
     # different class for sensor channels
     CHANNEL_CLASS = LakeshoreBaseSensorChannel
@@ -706,10 +714,9 @@ class LakeshoreBase(VisaInstrument):
         # Note that `snapshotable` is set to false in order to avoid duplicate
         # snapshotting which otherwise will happen because each channel is also
         # added as a submodule to the instrument.
-        channels = ChannelList(self,
-                               "TempSensors",
-                               self.CHANNEL_CLASS,
-                               snapshotable=False)
+        channels = ChannelList(
+            self, "TempSensors", self.CHANNEL_CLASS, snapshotable=False
+        )
         for channel_name, command in self.channel_name_command.items():
             channel = self.CHANNEL_CLASS(self, channel_name, command)
             channels.append(channel)

@@ -10,7 +10,6 @@ import json
 import logging
 import logging.handlers
 import os
-import platform
 import sys
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -40,21 +39,24 @@ log: logging.Logger = logging.getLogger(__name__)
 LevelType = int | str
 
 LOGGING_DIR = "logs"
-LOGGING_SEPARATOR = ' ¦ '
+LOGGING_SEPARATOR = " ¦ "
 """:data:`LOGGING_SEPARATOR` defines the str used to separate parts of the log
  message.
 """
 HISTORY_LOG_NAME = "command_history.log"
-PYTHON_LOG_NAME = 'qcodes.log'
+PYTHON_LOG_NAME = "qcodes.log"
 
-FORMAT_STRING_DICT = OrderedDict([
-    ('asctime', 's'),
-    ('name', 's'),
-    ('levelname', 's'),
-    ('module', 's'),
-    ('funcName', 's'),
-    ('lineno', 'd'),
-    ('message', 's')])
+FORMAT_STRING_DICT = OrderedDict(
+    [
+        ("asctime", "s"),
+        ("name", "s"),
+        ("levelname", "s"),
+        ("module", "s"),
+        ("funcName", "s"),
+        ("lineno", "d"),
+        ("message", "s"),
+    ]
+)
 """:data:`FORMAT_STRING_DICT` defines the format used in logging messages.
 """
 
@@ -74,6 +76,10 @@ _azure_monitor_opentelemetry_exporter_filter = logging.Filter(
 )
 
 
+@deprecated(
+    "filter_out_telemetry_log_records is deprecated and will be removed",
+    category=QCoDeSDeprecationWarning,
+)
 def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
     """
     here we filter any message that is likely to be thrown from
@@ -91,8 +97,9 @@ def get_formatter() -> logging.Formatter:
     Returns :class:`logging.Formatter` according to
     :data:`FORMAT_STRING_DICT`
     """
-    format_string_items = [f'%({name}){fmt}'
-                           for name, fmt in FORMAT_STRING_DICT.items()]
+    format_string_items = [
+        f"%({name}){fmt}" for name, fmt in FORMAT_STRING_DICT.items()
+    ]
     format_string = LOGGING_SEPARATOR.join(format_string_items)
     return logging.Formatter(format_string)
 
@@ -102,9 +109,11 @@ def get_formatter_for_telemetry() -> logging.Formatter:
     Returns :class:`logging.Formatter` with only name, function name and
     message keywords from FORMAT_STRING_DICT
     """
-    format_string_items = [f'%({name}){fmt}'
-                           for name, fmt in FORMAT_STRING_DICT.items()
-                           if name in ['message', 'name', 'funcName']]
+    format_string_items = [
+        f"%({name}){fmt}"
+        for name, fmt in FORMAT_STRING_DICT.items()
+        if name in ["message", "name", "funcName"]
+    ]
     format_string = LOGGING_SEPARATOR.join(format_string_items)
     return logging.Formatter(format_string)
 
@@ -139,10 +148,12 @@ def get_level_name(level: str | int) -> str:
     elif isinstance(level, int):
         return logging.getLevelName(level)
     else:
-        raise RuntimeError('get_level_name: '
-                           f'Cannot to convert level {level} of type '
-                           f'{type(level)} to logging level name. Need '
-                           'string or int.')
+        raise RuntimeError(
+            "get_level_name: "
+            f"Cannot to convert level {level} of type "
+            f"{type(level)} to logging level name. Need "
+            "string or int."
+        )
 
 
 def get_level_code(level: str | int) -> int:
@@ -167,10 +178,12 @@ def get_level_code(level: str | int) -> int:
             # remove this else block when we drop support for Python 3.10
             return logging.getLevelName(level)  # pyright: ignore[reportDeprecated]
     else:
-        raise RuntimeError('get_level_code: '
-                           f'Cannot to convert level {level} of type '
-                           f'{type(level)} to logging level code. Need '
-                           'string or int.')
+        raise RuntimeError(
+            "get_level_code: "
+            f"Cannot to convert level {level} of type "
+            f"{type(level)} to logging level code. Need "
+            "string or int."
+        )
 
 
 def generate_log_file_name() -> str:
@@ -181,7 +194,7 @@ def generate_log_file_name() -> str:
 
     pid = str(os.getpid())
     dt_str = datetime.now().strftime("%y%m%d")
-    python_log_name = '-'.join([dt_str, pid, PYTHON_LOG_NAME])
+    python_log_name = "-".join([dt_str, pid, PYTHON_LOG_NAME])
     return python_log_name
 
 
@@ -189,9 +202,7 @@ def get_log_file_name() -> str:
     """
     Get the full path to the log file currently used.
     """
-    return os.path.join(get_qcodes_user_path(),
-                        LOGGING_DIR,
-                        generate_log_file_name())
+    return os.path.join(get_qcodes_user_path(), LOGGING_DIR, generate_log_file_name())
 
 
 def flush_telemetry_traces() -> None:
@@ -202,71 +213,6 @@ def flush_telemetry_traces() -> None:
     global telemetry_handler
     if qc.config.telemetry.enabled and telemetry_handler is not None:
         telemetry_handler.flush()
-
-
-@deprecated(
-    "OpenCensus integration is deprecated. Please use your own telemetry integration as needed, we recommend OpenTelemetry",
-    category=QCoDeSDeprecationWarning,
-)
-def _create_telemetry_handler() -> "AzureLogHandler":
-    """
-    Configure, create, and return the telemetry handler
-    """
-    from opencensus.ext.azure.log_exporter import (  # type: ignore[import-not-found]
-        AzureLogHandler,
-    )
-    global telemetry_handler
-
-    # The default_custom_dimensions will appear in the "customDimensions"
-    # field in Azure log analytics for every log message alongside any
-    # custom dimensions that message may have. All messages additionally come
-    # with custom dimensions fileName, level, lineNumber, module, and process
-    default_custom_dimensions = {"pythonExecutable": sys.executable}
-
-    class CustomDimensionsFilter(logging.Filter):
-        """
-        Add application-wide properties to the customDimension field of
-        AzureLogHandler records
-        """
-
-        def __init__(self, custom_dimensions: dict[str, str]):
-            super().__init__()
-            self.custom_dimensions = custom_dimensions
-
-        def filter(self, record: logging.LogRecord) -> bool:
-            """
-            Add the default custom_dimensions into the current log record
-            """
-            cdim = self.custom_dimensions.copy()
-            cdim.update(getattr(record, "custom_dimensions", {}))
-            record.custom_dimensions = cdim
-
-            return True
-
-    # Transport module of opencensus-ext-azure logs info 'transmission
-    # succeeded' which is also exported to azure if AzureLogHandler is
-    # in root_logger. The following lines stops that.
-    logging.getLogger("opencensus.ext.azure.common.transport").setLevel(logging.WARNING)
-
-    loc = qc.config.GUID_components.location
-    stat = qc.config.GUID_components.work_station
-
-    def callback_function(envelope: "Envelope") -> bool:
-        envelope.tags["ai.user.accountId"] = platform.node()
-        envelope.tags["ai.user.id"] = f"{loc:02x}-{stat:06x}"
-        return True
-
-    telemetry_handler = AzureLogHandler(
-        connection_string=f"InstrumentationKey="
-        f"{qc.config.telemetry.instrumentation_key}"
-    )
-    assert telemetry_handler is not None
-    telemetry_handler.add_telemetry_processor(callback_function)
-    telemetry_handler.setLevel(logging.INFO)
-    telemetry_handler.addFilter(CustomDimensionsFilter(default_custom_dimensions))
-    telemetry_handler.setFormatter(get_formatter_for_telemetry())
-
-    return telemetry_handler
 
 
 def start_logger() -> None:
@@ -303,7 +249,6 @@ def start_logger() -> None:
     console_handler = logging.StreamHandler()
     console_handler.setLevel(qc.config.logger.console_level)
     console_handler.setFormatter(get_formatter())
-    console_handler.addFilter(filter_out_telemetry_log_records)
     root_logger.addHandler(console_handler)
 
     # file
@@ -322,15 +267,13 @@ def start_logger() -> None:
     logging.captureWarnings(capture=True)
 
     if qc.config.telemetry.enabled:
-        root_logger.addHandler(
-            _create_telemetry_handler()  # pyright: ignore[reportDeprecated]
-        )
+        log.warning("Enabling telemetry in QCoDes config has no effect.")
 
     log.info("QCoDes logger setup completed")
 
     log_qcodes_versions(log)
 
-    print(f'Qcodes Logfile : {filename}')
+    print(f"Qcodes Logfile : {filename}")
 
 
 def start_command_history_logger(log_dir: str | None = None) -> None:
@@ -346,10 +289,10 @@ def start_command_history_logger(log_dir: str | None = None) -> None:
     # get_ipython is part of the public api but IPython does
     # not use __all__ to mark this
     from IPython import get_ipython  # type: ignore[attr-defined]
+
     ipython = get_ipython()
     if ipython is None:
-        log.warning("Command history can't be saved"
-                    " outside of IPython/Jupyter")
+        log.warning("Command history can't be saved outside of IPython/Jupyter")
         return
 
     log_dir = log_dir or os.path.join(get_qcodes_user_path(), LOGGING_DIR)
@@ -406,13 +349,14 @@ def conditionally_start_all_logging() -> None:
         Start logging if the GUID components and the instrumentation key for
         telemetry are set up, and not in a test environment.
     """
+
     def start_logging_on_import() -> bool:
         config = qc.config
-        if config.logger.start_logging_on_import == 'always':
+        if config.logger.start_logging_on_import == "always":
             return True
-        elif config.logger.start_logging_on_import == 'never':
+        elif config.logger.start_logging_on_import == "never":
             return False
-        elif config.logger.start_logging_on_import == 'if_telemetry_set_up':
+        elif config.logger.start_logging_on_import == "if_telemetry_set_up":
             return (
                 config.GUID_components.location != 0
                 and config.GUID_components.work_station != 0
@@ -420,16 +364,17 @@ def conditionally_start_all_logging() -> None:
                 != "00000000-0000-0000-0000-000000000000"
             )
         else:
-            raise RuntimeError('Error in qcodesrc validation.')
+            raise RuntimeError("Error in qcodesrc validation.")
 
     def running_in_test_or_tool() -> bool:
         import sys
+
         tools = (
-            'pytest.py',
-            'pytest',
-            r'sphinx\__main__.py',    # Sphinx docs building
-            '_jb_pytest_runner.py',  # Jetbrains Pycharm
-            'testlauncher.py'        # VSCode
+            "pytest.py",
+            "pytest",
+            r"sphinx\__main__.py",  # Sphinx docs building
+            "_jb_pytest_runner.py",  # Jetbrains Pycharm
+            "testlauncher.py",  # VSCode
         )
         return any(sys.argv[0].endswith(tool) for tool in tools)
 
@@ -479,14 +424,12 @@ def console_level(level: LevelType) -> "Iterator[None]":
     """
     global console_handler
     if console_handler is None:
-        raise RuntimeError("Console handler is None. Cannot set the level"
-                           " on it")
+        raise RuntimeError("Console handler is None. Cannot set the level on it")
     with handler_level(level, handler=console_handler):
         yield
 
 
 class LogCapture:
-
     """
     Context manager to grab all log messages, optionally
     from a specific logger.
@@ -510,7 +453,7 @@ class LogCapture:
         for h in self.stashed_handlers:
             self.logger.removeHandler(h)
 
-    def __enter__(self) -> 'LogCapture':
+    def __enter__(self) -> "LogCapture":
         self.log_capture = io.StringIO()
         self.string_handler = logging.StreamHandler(self.log_capture)
         self.string_handler.setLevel(self.level)

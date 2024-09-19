@@ -16,32 +16,32 @@ def test_delegate_dict() -> None:
         td.d
 
     # but you can still get other attributes
-    assert td.apples == 'green'
+    assert td.apples == "green"
 
-    d = {'apples': 'red', 'oranges': 'orange'}
+    d = {"apples": "red", "oranges": "orange"}
     td.d = d  # type: ignore[attr-defined]
 
     # you can get the whole dict still
     assert td.d == d
 
     # class attributes override the dict
-    assert td.apples == 'green'
+    assert td.apples == "green"
 
     # instance attributes do too
-    td.apples = 'rotten'
-    assert td.apples == 'rotten'
+    td.apples = "rotten"
+    assert td.apples == "rotten"
 
     # other dict attributes come through and can be added on the fly
-    assert td.oranges == 'orange'
-    d['bananas'] = 'yellow'
-    assert td.bananas == 'yellow'
+    assert td.oranges == "orange"
+    d["bananas"] = "yellow"
+    assert td.bananas == "yellow"
 
     # missing items still raise AttributeError, not KeyError
     with pytest.raises(AttributeError):
         td.kiwis
 
     # all appropriate items are in dir() exactly once
-    for attr in ['apples', 'oranges', 'bananas']:
+    for attr in ["apples", "oranges", "bananas"]:
         assert dir(td).count(attr) == 1
 
 
@@ -67,14 +67,14 @@ def test_delegate_dicts() -> None:
     assert td.dogs == 3
 
     # all appropriate items are in dir() exactly once
-    for attr in ['cats', 'dogs', 'chickens']:
+    for attr in ["cats", "dogs", "chickens"]:
         assert dir(td).count(attr) == 1
 
 
 def test_delegate_object() -> None:
     class Recipient:
-        black = '#000'
-        white = '#fff'
+        black = "#000"
+        white = "#fff"
 
     class ToObject(DelegateAttributes):
         delegate_attr_objects: ClassVar[list[str]] = ["recipient"]
@@ -86,12 +86,12 @@ def test_delegate_object() -> None:
     # recipient not connected yet but you can look at other attributes
     with pytest.raises(AttributeError):
         to_obj.recipient
-    assert to_obj.gray == '#888'
+    assert to_obj.gray == "#888"
 
     to_obj.recipient = recipient  # type: ignore[attr-defined]
 
     # now you can access recipient through to_obj
-    assert to_obj.black == '#000'
+    assert to_obj.black == "#000"
 
     # to_obj overrides but you can still access other recipient attributes
     #  "soft" black
@@ -100,7 +100,7 @@ def test_delegate_object() -> None:
     assert to_obj.white == "#fff"
 
     # all appropriate items are in dir() exactly once
-    for attr in ['black', 'white', 'gray']:
+    for attr in ["black", "white", "gray"]:
         assert dir(to_obj).count(attr) == 1
 
 
@@ -140,7 +140,7 @@ def test_delegate_objects() -> None:
         to_objs.f
 
     # all appropriate items are in dir() exactly once
-    for attr in 'abcde':
+    for attr in "abcde":
         assert dir(to_objs).count(attr) == 1
 
 
@@ -150,7 +150,7 @@ def test_delegate_both() -> None:
         paper = 1
         scissors = 2
 
-    my_recipient_dict = {'paper': 'Petta et al.', 'year': 2005}
+    my_recipient_dict = {"paper": "Petta et al.", "year": 2005}
 
     class ToBoth(DelegateAttributes):
         delegate_attr_objects: ClassVar[list[str]] = ["recipient_object"]
@@ -163,11 +163,11 @@ def test_delegate_both() -> None:
     tb = ToBoth()
 
     # main object overrides recipients
-    assert tb.rock == 'Eiger'
-    assert tb.water == 'Lac Leman'
+    assert tb.rock == "Eiger"
+    assert tb.water == "Lac Leman"
 
     # dict overrides object
-    assert tb.paper == 'Petta et al.'
+    assert tb.paper == "Petta et al."
     assert tb.year == 2005
 
     # object comes last
@@ -178,5 +178,5 @@ def test_delegate_both() -> None:
         tb.ninja
 
     # all appropriate items are in dir() exactly once
-    for attr in ['rock', 'paper', 'scissors', 'year', 'water']:
+    for attr in ["rock", "paper", "scissors", "year", "water"]:
         assert dir(tb).count(attr) == 1

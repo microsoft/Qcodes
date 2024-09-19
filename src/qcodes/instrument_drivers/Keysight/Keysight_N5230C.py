@@ -20,5 +20,5 @@ class KeysightN5230C(N52xx.KeysightPNABase):
             min_power=-90,
             max_power=13,
             nports=2,
-            **kwargs
+            **kwargs,
         )

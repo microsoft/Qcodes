@@ -30,11 +30,13 @@ def test_snapshot() -> None:
 
     # We need to use `InstrumentBase` (not a bare mock) in order for
     # `snapshot` methods call resolution to work out
-    mainframe = InstrumentBase(name='mainframe')
+    mainframe = InstrumentBase(name="mainframe")
     mainframe.write = MagicMock()  # type: ignore[attr-defined]
     slot_nr = 1
     smu = KeysightB1517A(
-        parent=mainframe, name="B1517A", slot_nr=slot_nr  # type: ignore[arg-type]
+        parent=mainframe,  # type: ignore[arg-type]
+        name="B1517A",
+        slot_nr=slot_nr,
     )
 
     smu.use_high_speed_adc()
@@ -45,17 +47,17 @@ def test_snapshot() -> None:
 
     s = smu.snapshot()
 
-    assert '_source_config' in s
-    assert 'output_range' in s['_source_config']
-    assert isinstance(s['_source_config']['output_range'], VOutputRange)
-    assert '_measure_config' in s
-    assert 'v_measure_range' in s['_measure_config']
-    assert 'i_measure_range' in s['_measure_config']
-    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
-    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
-    assert '_timing_parameters' in s
-    assert 'number' in s['_timing_parameters']
-    assert isinstance(s['_timing_parameters']['number'], int)
+    assert "_source_config" in s
+    assert "output_range" in s["_source_config"]
+    assert isinstance(s["_source_config"]["output_range"], VOutputRange)
+    assert "_measure_config" in s
+    assert "v_measure_range" in s["_measure_config"]
+    assert "i_measure_range" in s["_measure_config"]
+    assert isinstance(s["_measure_config"]["v_measure_range"], VMeasRange)
+    assert isinstance(s["_measure_config"]["i_measure_range"], IMeasRange)
+    assert "_timing_parameters" in s
+    assert "number" in s["_timing_parameters"]
+    assert isinstance(s["_timing_parameters"]["number"], int)
 
 
 def test_v_measure_range_config_raises_type_error(smu) -> None:
@@ -75,8 +77,8 @@ def test_v_measure_range_config_sets_range_correctly(smu) -> None:
     smu.v_measure_range_config(v_measure_range=VMeasRange.MIN_0V5)
     s = smu.snapshot()
 
-    assert isinstance(s['_measure_config']['v_measure_range'], VMeasRange)
-    assert s['_measure_config']['v_measure_range'] == 5
+    assert isinstance(s["_measure_config"]["v_measure_range"], VMeasRange)
+    assert s["_measure_config"]["v_measure_range"] == 5
 
 
 def test_getting_voltage_after_calling_v_measure_range_config(smu) -> None:
@@ -110,8 +112,8 @@ def test_i_measure_range_config_sets_range_correctly(smu) -> None:
     smu.i_measure_range_config(i_measure_range=IMeasRange.MIN_1nA)
     s = smu.snapshot()
 
-    assert isinstance(s['_measure_config']['i_measure_range'], IMeasRange)
-    assert s['_measure_config']['i_measure_range'] == 11
+    assert isinstance(s["_measure_config"]["i_measure_range"], IMeasRange)
+    assert s["_measure_config"]["i_measure_range"] == 11
 
 
 def test_getting_current_after_calling_i_measure_range_config(smu) -> None:
@@ -146,33 +148,37 @@ def test_force_voltage_with_autorange(smu) -> None:
     smu.source_config(output_range=VOutputRange.AUTO)
     smu.voltage(10)
 
-    mainframe.write.assert_called_once_with('DV 1,0,10')
+    mainframe.write.assert_called_once_with("DV 1,0,10")
 
 
 def test_force_voltage_autorange_and_compliance(smu) -> None:
     mainframe = smu.parent
 
-    smu.source_config(output_range=VOutputRange.AUTO,
-                      compliance=1e-6,
-                      compl_polarity=CompliancePolarityMode.AUTO,
-                      min_compliance_range=IOutputRange.MIN_10uA)
+    smu.source_config(
+        output_range=VOutputRange.AUTO,
+        compliance=1e-6,
+        compl_polarity=CompliancePolarityMode.AUTO,
+        min_compliance_range=IOutputRange.MIN_10uA,
+    )
     smu.voltage(20)
 
-    mainframe.write.assert_called_once_with('DV 1,0,20,1e-06,0,15')
+    mainframe.write.assert_called_once_with("DV 1,0,20,1e-06,0,15")
 
 
 def test_new_source_config_should_invalidate_old_source_config(smu) -> None:
     mainframe = smu.parent
 
-    smu.source_config(output_range=VOutputRange.AUTO,
-                      compliance=1e-6,
-                      compl_polarity=CompliancePolarityMode.AUTO,
-                      min_compliance_range=IOutputRange.MIN_10uA)
+    smu.source_config(
+        output_range=VOutputRange.AUTO,
+        compliance=1e-6,
+        compl_polarity=CompliancePolarityMode.AUTO,
+        min_compliance_range=IOutputRange.MIN_10uA,
+    )
 
     smu.source_config(output_range=VOutputRange.AUTO)
     smu.voltage(20)
 
-    mainframe.write.assert_called_once_with('DV 1,0,20')
+    mainframe.write.assert_called_once_with("DV 1,0,20")
 
 
 def test_unconfigured_source_defaults_to_autorange_v(smu) -> None:
@@ -180,7 +186,7 @@ def test_unconfigured_source_defaults_to_autorange_v(smu) -> None:
 
     smu.voltage(10)
 
-    mainframe.write.assert_called_once_with('DV 1,0,10')
+    mainframe.write.assert_called_once_with("DV 1,0,10")
 
 
 def test_unconfigured_source_defaults_to_autorange_i(smu) -> None:
@@ -188,7 +194,7 @@ def test_unconfigured_source_defaults_to_autorange_i(smu) -> None:
 
     smu.current(0.2)
 
-    mainframe.write.assert_called_once_with('DI 1,0,0.2')
+    mainframe.write.assert_called_once_with("DI 1,0,0.2")
 
 
 def test_force_current_with_autorange(smu) -> None:
@@ -197,19 +203,21 @@ def test_force_current_with_autorange(smu) -> None:
     smu.source_config(output_range=IOutputRange.AUTO)
     smu.current(0.1)
 
-    mainframe.write.assert_called_once_with('DI 1,0,0.1')
+    mainframe.write.assert_called_once_with("DI 1,0,0.1")
 
 
 def test_raise_warning_output_range_mismatches_output_command(smu) -> None:
     smu.source_config(output_range=VOutputRange.AUTO)
-    msg = re.escape("Asking to force current, but source_config contains a "
-                    "voltage output range")
+    msg = re.escape(
+        "Asking to force current, but source_config contains a voltage output range"
+    )
     with pytest.raises(TypeError, match=msg):
         smu.current(0.1)
 
     smu.source_config(output_range=IOutputRange.AUTO)
-    msg = re.escape("Asking to force voltage, but source_config contains a "
-                    "current output range")
+    msg = re.escape(
+        "Asking to force voltage, but source_config contains a current output range"
+    )
     with pytest.raises(TypeError, match=msg):
         smu.voltage(0.1)
 
@@ -267,7 +275,7 @@ def test_some_voltage_sourcing_and_current_measurement(smu) -> None:
 
     smu.voltage(6)
 
-    mainframe.write.assert_called_once_with('DV 1,5,6,1e-09')
+    mainframe.write.assert_called_once_with("DV 1,5,6,1e-09")
 
     assert pytest.approx(0.005e-9) == smu.current()
 
@@ -280,7 +288,7 @@ def test_use_high_resolution_adc(smu) -> None:
 
     smu.use_high_resolution_adc()
 
-    mainframe.write.assert_called_once_with('AAD 1,1')
+    mainframe.write.assert_called_once_with("AAD 1,1")
 
 
 def test_use_high_speed_adc(smu) -> None:
@@ -288,7 +296,7 @@ def test_use_high_speed_adc(smu) -> None:
 
     smu.use_high_speed_adc()
 
-    mainframe.write.assert_called_once_with('AAD 1,0')
+    mainframe.write.assert_called_once_with("AAD 1,0")
 
 
 def test_measurement_mode_at_init(smu) -> None:
@@ -300,7 +308,7 @@ def test_measurement_mode_to_enum_value(smu) -> None:
     mainframe = smu.parent
 
     smu.measurement_mode(MM.Mode.SAMPLING)
-    mainframe.write.assert_called_once_with('MM 10,1')
+    mainframe.write.assert_called_once_with("MM 10,1")
 
     new_mode = smu.measurement_mode()
     assert new_mode == MM.Mode.SAMPLING
@@ -310,7 +318,7 @@ def test_measurement_mode_to_int_value(smu) -> None:
     mainframe = smu.parent
 
     smu.measurement_mode(10)
-    mainframe.write.assert_called_once_with('MM 10,1')
+    mainframe.write.assert_called_once_with("MM 10,1")
 
     new_mode = smu.measurement_mode()
     assert new_mode == MM.Mode.SAMPLING
@@ -320,58 +328,57 @@ def test_setting_timing_parameters(smu) -> None:
     mainframe = smu.parent
 
     smu.timing_parameters(0.0, 0.42, 32)
-    mainframe.write.assert_called_once_with('MT 0.0,0.42,32')
+    mainframe.write.assert_called_once_with("MT 0.0,0.42,32")
 
     mainframe.reset_mock()
 
     smu.timing_parameters(0.0, 0.42, 32, 0.02)
-    mainframe.write.assert_called_once_with('MT 0.0,0.42,32,0.02')
+    mainframe.write.assert_called_once_with("MT 0.0,0.42,32,0.02")
 
 
 def test_set_average_samples_for_high_speed_adc(smu) -> None:
     mainframe = smu.parent
 
     smu.set_average_samples_for_high_speed_adc(131, 2)
-    mainframe.write.assert_called_once_with('AV 131,2')
+    mainframe.write.assert_called_once_with("AV 131,2")
 
     mainframe.reset_mock()
 
     smu.set_average_samples_for_high_speed_adc(132)
-    mainframe.write.assert_called_once_with('AV 132,0')
-
+    mainframe.write.assert_called_once_with("AV 132,0")
 
 
 def test_measurement_operation_mode(smu) -> None:
     mainframe = smu.parent
 
     smu.measurement_operation_mode(constants.CMM.Mode.COMPLIANCE_SIDE)
-    mainframe.write.assert_called_once_with('CMM 1,0')
+    mainframe.write.assert_called_once_with("CMM 1,0")
 
     mainframe.reset_mock()
 
-    mainframe.ask.return_value = 'CMM 1,0'
+    mainframe.ask.return_value = "CMM 1,0"
     cmm_mode = smu.measurement_operation_mode()
-    assert cmm_mode == [(constants.ChNr.SLOT_01_CH1,
-                         constants.CMM.Mode.COMPLIANCE_SIDE)]
+    assert cmm_mode == [
+        (constants.ChNr.SLOT_01_CH1, constants.CMM.Mode.COMPLIANCE_SIDE)
+    ]
 
 
 def test_current_measurement_range(smu) -> None:
     mainframe = smu.parent
 
     smu.current_measurement_range(constants.IMeasRange.FIX_1A)
-    mainframe.write.assert_called_once_with('RI 1,-20')
+    mainframe.write.assert_called_once_with("RI 1,-20")
 
     mainframe.reset_mock()
 
-    mainframe.ask.return_value = 'RI 1,-20'
+    mainframe.ask.return_value = "RI 1,-20"
     cmm_mode = smu.current_measurement_range()
-    assert cmm_mode == [(constants.ChNr.SLOT_01_CH1,
-                         constants.IMeasRange.FIX_1A)]
+    assert cmm_mode == [(constants.ChNr.SLOT_01_CH1, constants.IMeasRange.FIX_1A)]
 
 
 def test_get_sweep_mode_range_start_end_steps(smu) -> None:
     mainframe = smu.parent
-    mainframe.ask.return_value = 'WV1,1,50,+3.0E+00,-3.0E+00,201'
+    mainframe.ask.return_value = "WV1,1,50,+3.0E+00,-3.0E+00,201"
 
     sweep_mode = smu.iv_sweep.sweep_mode()
     assert constants.SweepMode(1) == sweep_mode
@@ -403,11 +410,15 @@ def test_iv_sweep_delay(smu) -> None:
     smu.iv_sweep.trigger_delay(0.1)
     smu.iv_sweep.measure_delay(15.4)
 
-    mainframe.write.assert_has_calls([call("WT 43.12,0.0,0.0,0.0,0.0"),
-                                      call("WT 43.12,34.01,0.0,0.0,0.0"),
-                                      call("WT 43.12,34.01,0.01,0.0,0.0"),
-                                      call("WT 43.12,34.01,0.01,0.1,0.0"),
-                                      call("WT 43.12,34.01,0.01,0.1,15.4")])
+    mainframe.write.assert_has_calls(
+        [
+            call("WT 43.12,0.0,0.0,0.0,0.0"),
+            call("WT 43.12,34.01,0.0,0.0,0.0"),
+            call("WT 43.12,34.01,0.01,0.0,0.0"),
+            call("WT 43.12,34.01,0.01,0.1,0.0"),
+            call("WT 43.12,34.01,0.01,0.1,15.4"),
+        ]
+    )
 
 
 def test_iv_sweep_mode_start_end_steps_compliance(smu) -> None:
@@ -421,14 +432,17 @@ def test_iv_sweep_mode_start_end_steps_compliance(smu) -> None:
     smu.iv_sweep.current_compliance(45e-3)
     smu.iv_sweep.power_compliance(0.2)
 
-    mainframe.write.assert_has_calls([call('WV 1,3,0,0.0,0.0,1'),
-                                      call('WV 1,3,20,0.0,0.0,1'),
-                                      call('WV 1,3,20,0.2,0.0,1'),
-                                      call('WV 1,3,20,0.2,12.3,1'),
-                                      call('WV 1,3,20,0.2,12.3,13'),
-                                      call('WV 1,3,20,0.2,12.3,13,0.045'),
-                                      call('WV 1,3,20,0.2,12.3,13,0.045,0.2')]
-                                     )
+    mainframe.write.assert_has_calls(
+        [
+            call("WV 1,3,0,0.0,0.0,1"),
+            call("WV 1,3,20,0.0,0.0,1"),
+            call("WV 1,3,20,0.2,0.0,1"),
+            call("WV 1,3,20,0.2,12.3,1"),
+            call("WV 1,3,20,0.2,12.3,13"),
+            call("WV 1,3,20,0.2,12.3,13,0.045"),
+            call("WV 1,3,20,0.2,12.3,13,0.045,0.2"),
+        ]
+    )
 
 
 def test_set_sweep_auto_abort(smu) -> None:

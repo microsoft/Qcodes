@@ -27,10 +27,12 @@ def _activate_log_plot_measurement(driver):
 
 
 def test_idn(driver) -> None:
-    assert {'firmware': '0.1',
-            'model': 'N9030B',
-            'serial': '1000',
-            'vendor': 'Keysight Technologies'} == driver.IDN()
+    assert {
+        "firmware": "0.1",
+        "model": "N9030B",
+        "serial": "1000",
+        "vendor": "Keysight Technologies",
+    } == driver.IDN()
 
 
 def test_swept_sa_setup(sa) -> None:

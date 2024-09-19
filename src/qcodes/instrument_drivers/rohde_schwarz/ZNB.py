@@ -60,7 +60,10 @@ class FixedFrequencyTraceIQ(MultiParameter):
             ),
             setpoint_units=(("s",), ("s",)),
             setpoint_labels=(("time",), ("time",)),
-            shapes=((npts,), (npts,),),
+            shapes=(
+                (npts,),
+                (npts,),
+            ),
             **kwargs,
         )
         self.set_cw_sweep(npts, bandwidth)
@@ -122,8 +125,14 @@ class FixedFrequencyPointIQ(MultiParameter):
             names=("I", "Q"),
             labels=(f"{instrument.short_name} I", f"{instrument.short_name} Q"),
             units=("", ""),
-            setpoints=((), (),),
-            shapes=((), (),),
+            setpoints=(
+                (),
+                (),
+            ),
+            shapes=(
+                (),
+                (),
+            ),
             **kwargs,
         )
 
@@ -164,8 +173,14 @@ class FixedFrequencyPointMagPhase(MultiParameter):
                 f"{instrument.short_name} phase",
             ),
             units=("", "rad"),
-            setpoints=((), (),),
-            shapes=((), (),),
+            setpoints=(
+                (),
+                (),
+            ),
+            shapes=(
+                (),
+                (),
+            ),
             **kwargs,
         )
 
@@ -215,7 +230,10 @@ class FrequencySweepMagPhase(MultiParameter):
                 (f"{instrument.short_name}_frequency",),
                 (f"{instrument.short_name}_frequency",),
             ),
-            shapes=((npts,), (npts,),),
+            shapes=(
+                (npts,),
+                (npts,),
+            ),
             **kwargs,
         )
         self.set_sweep(start, stop, npts)
@@ -233,7 +251,6 @@ class FrequencySweepMagPhase(MultiParameter):
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
         return abs(data), np.angle(data)
-
 
 
 class FrequencySweepDBPhase(MultiParameter):
@@ -269,7 +286,10 @@ class FrequencySweepDBPhase(MultiParameter):
                 (f"{instrument.short_name}_frequency",),
                 (f"{instrument.short_name}_frequency",),
             ),
-            shapes=((npts,), (npts,),),
+            shapes=(
+                (npts,),
+                (npts,),
+            ),
             **kwargs,
         )
         self.set_sweep(start, stop, npts)
@@ -286,7 +306,7 @@ class FrequencySweepDBPhase(MultiParameter):
         assert isinstance(self.instrument, RohdeSchwarzZNBChannel)
         with self.instrument.format.set_to("Complex"):
             data = self.instrument._get_sweep_data(force_polar=True)
-        return 20*np.log10(np.abs(data)), np.angle(data)
+        return 20 * np.log10(np.abs(data)), np.angle(data)
 
 
 class FrequencySweep(ArrayParameter):
@@ -428,8 +448,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         self.vna_parameter: Parameter = self.add_parameter(
             name="vna_parameter",
             label="VNA parameter",
-            get_cmd=f"CALC{self._instrument_channel}:PAR:MEAS? "
-                    f"'{self._tracename}'",
+            get_cmd=f"CALC{self._instrument_channel}:PAR:MEAS? '{self._tracename}'",
             get_parser=self._strip,
         )
         """Parameter vna_parameter"""
@@ -451,8 +470,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             set_cmd=self._set_bandwidth,
             get_parser=int,
             vals=vals.Enum(
-                *np.append(10 ** 6,
-                           np.kron([1, 1.5, 2, 3, 5, 7], 10 ** np.arange(6)))
+                *np.append(10**6, np.kron([1, 1.5, 2, 3, 5, 7], 10 ** np.arange(6)))
             ),
             docstring="Measurement bandwidth of the IF filter. "
             "The inverse of this sets the integration "
@@ -482,8 +500,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             get_cmd=f"SENS{n}:FREQ:START?",
             set_cmd=self._set_start,
             get_parser=float,
-            vals=vals.Numbers(self._parent._min_freq,
-                              self._parent._max_freq - 10),
+            vals=vals.Numbers(self._parent._min_freq, self._parent._max_freq - 10),
         )
         """Parameter start"""
         self.stop: Parameter = self.add_parameter(
@@ -491,8 +508,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             get_cmd=f"SENS{n}:FREQ:STOP?",
             set_cmd=self._set_stop,
             get_parser=float,
-            vals=vals.Numbers(self._parent._min_freq + 1,
-                              self._parent._max_freq),
+            vals=vals.Numbers(self._parent._min_freq + 1, self._parent._max_freq),
         )
         """Parameter stop"""
         self.center: Parameter = self.add_parameter(
@@ -510,8 +526,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             get_cmd=f"SENS{n}:FREQ:SPAN?",
             set_cmd=self._set_span,
             get_parser=float,
-            vals=vals.Numbers(1,
-                              self._parent._max_freq - self._parent._min_freq),
+            vals=vals.Numbers(1, self._parent._max_freq - self._parent._min_freq),
         )
         """Parameter span"""
         self.npts: Parameter = self.add_parameter(
@@ -758,8 +773,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         self.write(f"SENS{channel}:FREQ:START {val:.7f}")
         stop = self.stop()
         if val >= stop:
-            raise ValueError("Stop frequency must be larger than start "
-                             "frequency.")
+            raise ValueError("Stop frequency must be larger than start frequency.")
         # we get start as the vna may not be able to set it to the
         # exact value provided.
         start = self.start()
@@ -771,8 +785,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         channel = self._instrument_channel
         start = self.start()
         if val <= start:
-            raise ValueError("Stop frequency must be larger than start "
-                             "frequency.")
+            raise ValueError("Stop frequency must be larger than start frequency.")
         self.write(f"SENS{channel}:FREQ:STOP {val:.7f}")
         # We get stop as the vna may not be able to set it to the
         # exact value provided.
@@ -829,7 +842,10 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         stop = self.stop()
         npts = self.npts()
         for _, parameter in self.parameters.items():
-            if isinstance(parameter, (FrequencySweep, FrequencySweepMagPhase, FrequencySweepDBPhase)):
+            if isinstance(
+                parameter,
+                (FrequencySweep, FrequencySweepMagPhase, FrequencySweepDBPhase),
+            ):
                 try:
                     parameter.set_sweep(start, stop, npts)
                 except AttributeError:
@@ -850,7 +866,6 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         self.sweep_time()
 
     def _get_sweep_data(self, force_polar: bool = False) -> np.ndarray:
-
         if not self._parent.rf_power():
             log.warning("RF output is off when getting sweep data")
         # It is possible that the instrument and QCoDeS disagree about
@@ -891,10 +906,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                         f" {data_format_command}"
                     )
                 data = np.array(data_str.rstrip().split(",")).astype("float64")
-                if self.format() in ["Polar",
-                                     "Complex",
-                                     "Smith",
-                                     "Inverse Smith"]:
+                if self.format() in ["Polar", "Complex", "Smith", "Inverse Smith"]:
                     data = data[0::2] + 1j * data[1::2]
             finally:
                 self.root_instrument.cont_meas_on()
@@ -976,8 +988,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
         with self.status.set_to(1):
             with self.root_instrument.timeout.set_to(self._get_timeout()):
                 self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
-                data_str = self.ask(f"CALC{self._instrument_channel}:DATA? "
-                                    f"SDAT")
+                data_str = self.ask(f"CALC{self._instrument_channel}:DATA? SDAT")
             data = np.array(data_str.rstrip().split(",")).astype("float64")
             i = data[0::2]
             q = data[1::2]
@@ -1026,7 +1037,6 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         reset_channels: bool = True,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ) -> None:
-
         super().__init__(name=name, address=address, **kwargs)
 
         # TODO(JHN) I could not find a way to get max and min freq from
@@ -1065,6 +1075,54 @@ class RohdeSchwarzZNBBase(VisaInstrument):
             val_mapping={True: "1\n", False: "0\n"},
         )
         """Parameter rf_power"""
+
+        self.ref_osc_source: Parameter = self.add_parameter(
+            name="ref_osc_source",
+            label="Reference oscillator source",
+            get_cmd="ROSC:SOUR?",
+            set_cmd="ROSC:SOUR {}",
+            # strip newline
+            get_parser=lambda s: s.rstrip(),
+            vals=vals.Enum("INT", "EXT", "int", "ext", "internal", "external"),
+        )
+        """Reference oscillator source"""
+
+        self.ref_osc_external_freq: Parameter = self.add_parameter(
+            name="ref_osc_external_freq",
+            label="Reference oscillator frequency",
+            docstring="Frequency of the external reference clock signal at REF IN",
+            get_cmd="ROSC:EXT:FREQ?",
+            set_cmd="ROSC:EXT:FREQ {}Hz",
+            # The response contains the unit (Hz), so we have to strip it
+            get_parser=lambda f: float(f.strip("Hz")),
+            unit="Hz",
+            # Data sheet: 1 MHz to 20 MHz, in steps of 1 MHz
+            vals=vals.Enum(*np.linspace(1e6, 20e6, 20)),
+        )
+        """Frequency of the external reference clock signal at REF IN"""
+
+        self.ref_osc_PLL_locked: Parameter = self.add_parameter(
+            name="ref_osc_PLL_locked",
+            label="Reference frequency PLL lock",
+            get_cmd=self._get_PLL_locked,
+            docstring="If an external reference signal or an internal high "
+            "precision clock (option B4) is used, the local oscillator is "
+            "phase locked to a reference signal. This parameter will be "
+            "False if the phase locked loop (PLL) fails. "
+            "\n"
+            "For external reference: check frequency and level of the "
+            "supplied reference signal.",
+        )
+        """
+        If an external reference signal or an internal high precision clock
+        (option B4) is used, the local oscillator is phase locked to a
+        reference signal. This parameter will be False if the phase locked loop
+        (PLL) fails.
+
+        For external reference: check frequency and level of the supplied
+        reference signal.
+        """
+
         self.add_function("reset", call_cmd="*RST")
         self.add_function("tooltip_on", call_cmd="SYST:ERR:DISP ON")
         self.add_function("tooltip_off", call_cmd="SYST:ERR:DISP OFF")
@@ -1104,6 +1162,13 @@ class RohdeSchwarzZNBBase(VisaInstrument):
         if reset_channels:
             self.rf_off()
         self.connect_message()
+
+    def _get_PLL_locked(self) -> bool:
+        # query the bits of the "questionable hardware integrity" register
+        hw_integrity_bits = int(self.ask("STATus:QUEStionable:INTegrity:HARDware?"))
+        # if bit number 1 is set, the PLL locking has failed
+        pll_lock_failed = bool(hw_integrity_bits & 0b10)
+        return not pll_lock_failed
 
     def display_grid(self, rows: int, cols: int) -> None:
         """

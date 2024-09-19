@@ -28,6 +28,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         name: user defined name for the module
         slot: the slot the module is installed
     """
+
     def __init__(
         self,
         parent: Union["VisaInstrument", "InstrumentChannel"],
@@ -60,8 +61,8 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         be bypassed by "AUTO0" mode. See manual and programmer's reference
         for detail."""
 
-        layout = self.ask(f'SYSTEM:MODule:TERMinal:TYPE? {self.slot}')
-        self._is_locked = (layout == 'NONE')
+        layout = self.ask(f"SYSTEM:MODule:TERMinal:TYPE? {self.slot}")
+        self._is_locked = layout == "NONE"
         if self._is_locked:
             logging.warning(
                 f"For slot {slot}, no configuration module"
@@ -78,9 +79,11 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
         connections. There will be no effect when try to connect any channels.
         """
         if self._is_locked:
-            logging.warning("Warning: no configuration module connected, "
-                            "or safety interlock enabled. "
-                            "Making any connection is not allowed")
+            logging.warning(
+                "Warning: no configuration module connected, "
+                "or safety interlock enabled. "
+                "Making any connection is not allowed"
+            )
         return self.parent.write(cmd)
 
     def validate_value(self, row: int, column: int) -> None:
@@ -93,13 +96,13 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
             column: column value
         """
         if (row > self.row) or (column > self.column):
-            raise ValueError('row/column value out of range')
+            raise ValueError("row/column value out of range")
 
     def _get_relay_protection_mode(self) -> str:
-        return self.ask(f'SYSTem:MODule:ROW:PROTection? {self.slot}')
+        return self.ask(f"SYSTem:MODule:ROW:PROTection? {self.slot}")
 
     def _set_relay_protection_mode(self, mode: str) -> None:
-        self.write(f'SYSTem:MODule:ROW:PROTection {self.slot}, {mode}')
+        self.write(f"SYSTem:MODule:ROW:PROTection {self.slot}, {mode}")
 
     def to_channel_list(
         self, paths: list[tuple[int, int]], wiring_config: str | None = ""
@@ -119,14 +122,12 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
             4-digit channel number
         """
         numbering_function = self.get_numbering_function(
-            self.row,
-            self.column,
-            wiring_config
+            self.row, self.column, wiring_config
         )
 
         channels = []
         for row, column in paths:
-            channel = f'{self.slot}{numbering_function(row, column)}'
+            channel = f"{self.slot}{numbering_function(row, column)}"
             channels.append(channel)
         channel_list = f"(@{','.join(channels)})"
         return channel_list
@@ -151,14 +152,14 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
             The numbering function to convert row and column in to a 3-digit
             number
         """
-        layout = f'{rows}x{columns}'
+        layout = f"{rows}x{columns}"
         available_layouts = {
             "4x32": ["M1H", "M2H", "M1L", "M2L"],
             "4x64": ["MH", "ML"],
-            "4x128": [''],
+            "4x128": [""],
             "8x32": ["MH", "ML"],
-            "8x64": [''],
-            "16x32": ['']
+            "8x64": [""],
+            "16x32": [""],
         }
 
         if layout not in available_layouts:
@@ -169,17 +170,10 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
                 f"Invalid wiring config '{wiring_config}' for layout {layout}"
             )
 
-        offsets = {
-            "M1H": 0,
-            "M2H": 1,
-            "M1L": 2,
-            "M2L": 3,
-            "MH": 0,
-            "ML": 1
-        }
+        offsets = {"M1H": 0, "M2H": 1, "M1L": 2, "M2L": 3, "MH": 0, "ML": 1}
 
         offset = 0
-        if wiring_config != '':
+        if wiring_config != "":
             offset = offsets[wiring_config] * columns
 
         channels_per_row = 800 / rows

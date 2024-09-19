@@ -3,6 +3,7 @@ QCoDeS driver for the MSO/DPO5000/B, DPO7000/C,
 DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
 MSO70000/C/DX Series Digital Oscilloscopes
 """
+
 import textwrap
 import time
 from functools import partial
@@ -45,6 +46,7 @@ class TektronixDPOModeError(Exception):
     Raise this exception if we are in a wrong mode to
     perform an action
     """
+
     pass
 
 
@@ -60,6 +62,7 @@ class TektronixDPO7000xx(VisaInstrument):
     DPO70000/B/C/D/DX/SX, DSA70000/B/C/D, and
     MSO70000/C/DX Series Digital Oscilloscopes
     """
+
     number_of_channels = 4
     number_of_measurements = 8  # The number of available
     # measurements does not change.
@@ -70,33 +73,17 @@ class TektronixDPO7000xx(VisaInstrument):
     ) -> None:
         super().__init__(name, address, **kwargs)
 
-        self.add_submodule(
-            "horizontal",
-            TektronixDPOHorizontal(self, "horizontal")
-        )
+        self.add_submodule("horizontal", TektronixDPOHorizontal(self, "horizontal"))
 
-        self.add_submodule(
-            "data",
-            TektronixDPOData(self, "data")
-        )
+        self.add_submodule("data", TektronixDPOData(self, "data"))
 
-        self.add_submodule(
-            "waveform",
-            TektronixDPOWaveformFormat(
-                self, "waveform"
-            )
-        )
+        self.add_submodule("waveform", TektronixDPOWaveformFormat(self, "waveform"))
 
-        measurement_list = ChannelList(
-            self, "measurement", TektronixDPOMeasurement
-        )
+        measurement_list = ChannelList(self, "measurement", TektronixDPOMeasurement)
         for measurement_number in range(1, self.number_of_measurements):
-
             measurement_name = f"measurement{measurement_number}"
             measurement_module = TektronixDPOMeasurement(
-                self,
-                measurement_name,
-                measurement_number
+                self, measurement_name, measurement_number
             )
 
             self.add_submodule(measurement_name, measurement_module)
@@ -104,15 +91,11 @@ class TektronixDPO7000xx(VisaInstrument):
 
         self.add_submodule("measurement", measurement_list)
         self.add_submodule(
-            "statistics",
-            TektronixDPOMeasurementStatistics(
-                self, "statistics"
-            )
+            "statistics", TektronixDPOMeasurementStatistics(self, "statistics")
         )
 
         channel_list = ChannelList(self, "channel", TektronixDPOChannel)
         for channel_number in range(1, self.number_of_channels + 1):
-
             channel_name = f"channel{channel_number}"
             channel_module = TektronixDPOChannel(
                 self,
@@ -239,8 +222,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         if identifier not in self.valid_identifiers:
             raise ValueError(
-                f"Identifier {identifier} must be one of "
-                f"{self.valid_identifiers}"
+                f"Identifier {identifier} must be one of {self.valid_identifiers}"
             )
 
         self._identifier = identifier
@@ -335,6 +317,7 @@ class TektronixDPOWaveform(InstrumentChannel):
         Parameters defined in this submodule require the correct
         data source being selected first.
         """
+
         def inner() -> str:
             self.root_instrument.data.source(self._identifier)
             return self.ask(cmd_string)
@@ -342,20 +325,16 @@ class TektronixDPOWaveform(InstrumentChannel):
         return inner
 
     def _get_trace_data(self) -> np.ndarray:
-
         self.root_instrument.data.source(self._identifier)
         waveform = self.root_instrument.waveform
 
         if not waveform.is_binary():
             raw_data = self.root_instrument.visa_handle.query_ascii_values(
-                "CURVE?",
-                container=np.array
+                "CURVE?", container=np.array
             )
         else:
             bytes_per_sample = waveform.bytes_per_sample()
-            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[
-                bytes_per_sample
-            ]
+            data_type = {1: "b", 2: "h", 4: "f", 8: "d"}[bytes_per_sample]
 
             if waveform.data_format() == "unsigned_integer":
                 data_type = data_type.upper()
@@ -366,11 +345,10 @@ class TektronixDPOWaveform(InstrumentChannel):
                 "CURVE?",
                 datatype=data_type,
                 is_big_endian=is_big_endian,
-                container=np.array
+                container=np.array,
             )
 
-        return (raw_data - self.raw_data_offset()) * self.scale() \
-            + self.offset()
+        return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
 
     def _get_trace_setpoints(self) -> np.ndarray:
         """
@@ -450,6 +428,7 @@ class TektronixDPOChannel(InstrumentChannel):
     defined here reflect the waveforms as they are displayed on
     the instrument display.
     """
+
     def __init__(
         self,
         parent: Instrument | InstrumentChannel,
@@ -699,6 +678,7 @@ class TektronixDPOTrigger(InstrumentChannel):
     See page75, Using A (Main) and B (Delayed) triggers.
     https://download.tek.com/manual/MSO70000C-DX-DPO70000C-DX-MSO-DPO7000C-MSO-DPO5000B-Oscilloscope-Quick-Start-User-Manual-071298006.pdf
     """
+
     def __init__(
         self,
         parent: Instrument,
@@ -711,9 +691,9 @@ class TektronixDPOTrigger(InstrumentChannel):
 
         trigger_types = ["edge", "logic", "pulse"]
         if self._identifier == "A":
-            trigger_types.extend([
-                "video", "i2c", "can", "spi", "communication", "serial", "rs232"
-            ])
+            trigger_types.extend(
+                ["video", "i2c", "can", "spi", "communication", "serial", "rs232"]
+            )
 
         self.type: Parameter = self.add_parameter(
             "type",
@@ -750,9 +730,7 @@ class TektronixDPOTrigger(InstrumentChannel):
             f"CH{i}" for i in range(1, TektronixDPO7000xx.number_of_channels)
         ]
 
-        trigger_sources.extend([
-            f"D{i}" for i in range(0, 16)
-        ])
+        trigger_sources.extend([f"D{i}" for i in range(0, 16)])
 
         if self._identifier == "A":
             trigger_sources.append("line")
@@ -794,7 +772,6 @@ class TektronixDPOMeasurementParameter(Parameter):
     """
 
     def _get(self, metric: str) -> float:
-
         measurement_channel = cast(TektronixDPOMeasurement, self.instrument)
         if measurement_channel.type.get_latest() != self.name:
             measurement_channel.type(self.name)
@@ -832,6 +809,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
     """
     The measurement submodule
     """
+
     # It was found by trial and error that adjusting
     # the measurement type and source takes some time
     # to reflect properly on the value of the
@@ -932,14 +910,13 @@ class TektronixDPOMeasurement(InstrumentChannel):
             self.add_parameter(
                 name=measurement,
                 unit=unit,
-                parameter_class=TektronixDPOMeasurementParameter
+                parameter_class=TektronixDPOMeasurementParameter,
             )
 
         for src in [1, 2]:
             self.add_parameter(
                 f"source{src}",
-                get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce"
-                        f"{src}?",
+                get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
                 set_cmd=partial(self._set_source, src),
                 vals=Enum(*(TektronixDPOWaveform.valid_identifiers + ["HISTogram"])),
             )
@@ -950,9 +927,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
 
     def _set_measurement_type(self, value: str) -> None:
         self._adjustment_time = time.perf_counter()
-        self.write(
-            f"MEASUrement:MEAS{self._measurement_number}:TYPe {value}"
-        )
+        self.write(f"MEASUrement:MEAS{self._measurement_number}:TYPe {value}")
 
     def _set_source(self, source_number: int, value: str) -> None:
         self._adjustment_time = time.perf_counter()

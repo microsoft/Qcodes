@@ -42,7 +42,6 @@ class ParameterWithSetpoints(Parameter):
         snapshot_value: bool = False,
         **kwargs: Any,
     ) -> None:
-
         if not isinstance(vals, Arrays):
             raise ValueError(
                 f"A ParameterWithSetpoints must have an Arrays "

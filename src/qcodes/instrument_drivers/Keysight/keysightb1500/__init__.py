@@ -14,8 +14,9 @@ The structure of the module is as follows:
     infrastructure for low-level interfacing with the Parameter Analyzer.
 
 """
+
 from . import constants
 from .KeysightB1500_base import KeysightB1500
 from .message_builder import MessageBuilder
 
-__all__ = ['KeysightB1500', 'MessageBuilder', 'constants']
+__all__ = ["KeysightB1500", "MessageBuilder", "constants"]

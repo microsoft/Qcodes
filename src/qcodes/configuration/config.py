@@ -23,7 +23,7 @@ BASE_SCHEMA = {
     "type": "object",
     "description": "schema for a user qcodes config file",
     "properties": {},
-    "required": []
+    "required": [],
 }
 
 # https://github.com/python/mypy/issues/4182
@@ -56,21 +56,18 @@ class Config:
     # home dir, os independent
     home_file_name = expanduser(os.path.join("~", config_file_name))
     """Filename of home config"""
-    schema_home_file_name = home_file_name.replace(config_file_name,
-                                                   schema_file_name)
+    schema_home_file_name = home_file_name.replace(config_file_name, schema_file_name)
     """Filename of home schema"""
 
     # this is for *nix people
     env_file_name = os.environ.get("QCODES_CONFIG", "")
     """Filename of env config"""
-    schema_env_file_name = env_file_name.replace(config_file_name,
-                                                 schema_file_name)
+    schema_env_file_name = env_file_name.replace(config_file_name, schema_file_name)
     """Filename of env schema"""
     # current working dir
     cwd_file_name = os.path.join(Path.cwd(), config_file_name)
     """Filename of cwd config"""
-    schema_cwd_file_name = cwd_file_name.replace(config_file_name,
-                                                 schema_file_name)
+    schema_cwd_file_name = cwd_file_name.replace(config_file_name, schema_file_name)
     """Filename of cwd schema"""
 
     current_schema: DotDict | None = None
@@ -134,26 +131,25 @@ class Config:
 
         self._loaded_config_files = [self.default_file_name]
 
-        self._update_config_from_file(self.home_file_name,
-                                      self.schema_home_file_name,
-                                      config)
-        self._update_config_from_file(self.env_file_name,
-                                      self.schema_env_file_name,
-                                      config)
-        self._update_config_from_file(self.cwd_file_name,
-                                      self.schema_cwd_file_name,
-                                      config)
+        self._update_config_from_file(
+            self.home_file_name, self.schema_home_file_name, config
+        )
+        self._update_config_from_file(
+            self.env_file_name, self.schema_env_file_name, config
+        )
+        self._update_config_from_file(
+            self.cwd_file_name, self.schema_cwd_file_name, config
+        )
         if path is not None:
             self.config_file_path = path
         if self.config_file_path is not None:
-            config_file = os.path.join(self.config_file_path,
-                                       self.config_file_name)
-            schema_file = os.path.join(self.config_file_path,
-                                       self.schema_file_name)
+            config_file = os.path.join(self.config_file_path, self.config_file_name)
+            schema_file = os.path.join(self.config_file_path, self.schema_file_name)
             self._update_config_from_file(config_file, schema_file, config)
         if config is None:
-            raise RuntimeError("Could not load config from any of the "
-                               "expected locations.")
+            raise RuntimeError(
+                "Could not load config from any of the expected locations."
+            )
         self.current_config = config
         self.current_config_path = self._loaded_config_files[-1]
 
@@ -212,7 +208,7 @@ class Config:
                     # so that default types and values can NEVER
                     # be overwritten
                     new_user = json.load(f)["properties"]["user"]
-                    user = schema["properties"]['user']
+                    user = schema["properties"]["user"]
                     user["properties"].update(new_user["properties"])
             else:
                 logger.warning(EMPTY_USER_SCHEMA.format(extra_schema_path))
@@ -291,14 +287,13 @@ class Config:
                     key: {
                         "type": value_type,
                         "default": default,
-                        "description": description
+                        "description": description,
                     }
                 }
             # the schema is nested we only update properties of the user object
             if self.current_schema is None:
-                raise RuntimeError("Cannot add value as no current schema is "
-                                   "set")
-            user = self.current_schema['properties']["user"]
+                raise RuntimeError("Cannot add value as no current schema is set")
+            user = self.current_schema["properties"]["user"]
             user["properties"].update(schema_entry)
             self.validate(self.current_config, self.current_schema)
 
@@ -313,7 +308,7 @@ class Config:
             if not self._diff_schema:
                 self._diff_schema = BASE_SCHEMA
 
-            props = self._diff_schema['properties']
+            props = self._diff_schema["properties"]
             if props.get("user", True):
                 props["user"] = {}
             props["user"].update(schema_entry)
@@ -332,7 +327,7 @@ class Config:
         with open(path) as fp:
             config = json.load(fp)
 
-        logger.debug(f'Loading config from {path}')
+        logger.debug(f"Loading config from {path}")
 
         config_dot_dict = DotDict(config)
         return config_dot_dict
@@ -386,15 +381,14 @@ class Config:
         if self.current_schema is None:
             raise RuntimeError("No schema found, cannot describe entry.")
         sch = self.current_schema["properties"]
-        for key in name.split('.'):
+        for key in name.split("."):
             if val is None:
-                raise RuntimeError(f"Cannot describe {name} Some part of it "
-                                   f"is null")
+                raise RuntimeError(f"Cannot describe {name} Some part of it is null")
             val = val[key]
             if sch.get(key):
                 sch = sch[key]
             else:
-                sch = sch['properties'][key]
+                sch = sch["properties"][key]
         description = sch.get("description", None) or "Generic value"
         _type = str(sch.get("type", None)) or "Not defined"
         default = sch.get("default", None) or "Not defined"
@@ -408,7 +402,7 @@ class Config:
 
     def __getitem__(self, name: str) -> Any:
         val = self.current_config
-        for key in name.split('.'):
+        for key in name.split("."):
             if val is None:
                 raise KeyError(f"{name} not found in current config")
             val = val[key]
@@ -419,9 +413,11 @@ class Config:
 
     def __repr__(self) -> str:
         old = super().__repr__()
-        output = (f"Current values: \n {self.current_config} \n"
-                  f"Current paths: \n {self._loaded_config_files} \n"
-                  f"{old}")
+        output = (
+            f"Current values: \n {self.current_config} \n"
+            f"Current paths: \n {self._loaded_config_files} \n"
+            f"{old}"
+        )
         return output
 
 
@@ -440,8 +436,8 @@ class DotDict(dict[str, Any]):
                 self.__setitem__(key, value[key])
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if '.' in key:
-            myKey, restOfKey = key.split('.', 1)
+        if "." in key:
+            myKey, restOfKey = key.split(".", 1)
             target = self.setdefault(myKey, DotDict())
             target[restOfKey] = value
         else:
@@ -450,18 +446,18 @@ class DotDict(dict[str, Any]):
             dict.__setitem__(self, key, value)
 
     def __getitem__(self, key: str) -> Any:
-        if '.' not in key:
+        if "." not in key:
             return dict.__getitem__(self, key)
-        myKey, restOfKey = key.split('.', 1)
+        myKey, restOfKey = key.split(".", 1)
         target = dict.__getitem__(self, myKey)
         return target[restOfKey]
 
     def __contains__(self, key: object) -> bool:
         if not isinstance(key, str):
             return False
-        if '.' not in key:
+        if "." not in key:
             return super().__contains__(key)
-        myKey, restOfKey = key.split('.', 1)
+        myKey, restOfKey = key.split(".", 1)
         target = dict.__getitem__(self, myKey)
         return restOfKey in target
 

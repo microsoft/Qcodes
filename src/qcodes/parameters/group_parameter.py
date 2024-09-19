@@ -3,6 +3,7 @@ This module implements a :class:`.Group` intended to hold multiple
 parameters that are to be gotten and set by the same command. The parameters
 should be of type :class:`GroupParameter`
 """
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -53,7 +54,6 @@ class GroupParameter(Parameter):
         initial_value: float | int | str | None = None,
         **kwargs: Any,
     ) -> None:
-
         if "set_cmd" in kwargs or "get_cmd" in kwargs:
             raise ValueError(
                 "A GroupParameter does not use 'set_cmd' or 'get_cmd' kwarg"

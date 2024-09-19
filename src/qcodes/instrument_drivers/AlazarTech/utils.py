@@ -24,6 +24,7 @@ class TraceParameter(Parameter):
     an Alazar card is relatively slow, hence it makes sense to first set the
     values of the parameters, and then "synchronize them to the card".
     """
+
     def __init__(self, *args: Any, **kwargs: Any):
         self._synced_to_card = False
         super().__init__(*args, **kwargs)

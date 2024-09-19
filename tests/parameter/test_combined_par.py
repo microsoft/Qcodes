@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from pytest_mock import MockerFixture
 
+
 @pytest.fixture()
 def parameters() -> Generator[list[ManualParameter], None, None]:
     parameters = [ManualParameter(name) for name in ["X", "Y", "Z"]]
@@ -41,10 +42,7 @@ def test_sweep(parameters: list[ManualParameter]) -> None:
     for i in sweep_values:
         value = sweep_values.set(i)
         res.append([i, value])
-    expected = [
-            [0, [1, 1, 1]],
-            [1, [1, 1, 1]]
-            ]
+    expected = [[0, [1, 1, 1]], [1, [1, 1, 1]]]
     assert res == expected
 
 
@@ -53,7 +51,7 @@ def test_set(parameters: list[ManualParameter], mocker: MockerFixture) -> None:
 
     sweep_values = combine(*parameters, name="combined").sweep(setpoints)
 
-    mock_method = mocker.patch.object(sweep_values, 'set')
+    mock_method = mocker.patch.object(sweep_values, "set")
     for i in sweep_values:
         sweep_values.set(i)
 
@@ -97,14 +95,14 @@ def test_aggregator(
     z_set = np.linspace(z_start_stop[0], z_start_stop[1], npoints).reshape(npoints, 1)
     setpoints = np.hstack((x_set, y_set, z_set))
     expected_results = [linear(*set) for set in setpoints]
-    sweep_values = combine(*parameters,
-                           name="combined",
-                           aggregator=linear).sweep(setpoints)
+    sweep_values = combine(*parameters, name="combined", aggregator=linear).sweep(
+        setpoints
+    )
 
     results = []
     for i, value in enumerate(sweep_values):
-            res = sweep_values.set(value)
-            results.append(sweep_values._aggregate(*res))
+        res = sweep_values.set(value)
+        results.append(sweep_values._aggregate(*res))
 
     assert results == expected_results
 
@@ -114,15 +112,12 @@ def test_meta(parameters: list[ManualParameter]) -> None:
     label = "Linear Combination"
     unit = "a.u"
     aggregator = linear
-    sweep_values = combine(*parameters,
-                           name=name,
-                           label=label,
-                           unit=unit,
-                           aggregator=aggregator
-                           )
+    sweep_values = combine(
+        *parameters, name=name, label=label, unit=unit, aggregator=aggregator
+    )
     snap = sweep_values.snapshot()
     out = OrderedDict()
-    out['__class__'] = full_class(sweep_values)
+    out["__class__"] = full_class(sweep_values)
     out["unit"] = unit
     out["label"] = label
     out["full_name"] = name
@@ -135,8 +130,7 @@ def test_meta(parameters: list[ManualParameter]) -> None:
 def test_mutable(parameters: list[ManualParameter]) -> None:
     setpoints = np.array([[1, 1, 1], [1, 1, 1]])
 
-    sweep_values = combine(*parameters,
-                           name="combined")
+    sweep_values = combine(*parameters, name="combined")
     a = sweep_values.sweep(setpoints)
     setpoints = np.array([[2, 1, 1], [1, 1, 1]])
     b = sweep_values.sweep(setpoints)
@@ -147,17 +141,13 @@ def test_arrays(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 2)
-    sweep_values = combine(*parameters,
-                           name="combined").sweep(x_vals, y_vals, z_vals)
+    sweep_values = combine(*parameters, name="combined").sweep(x_vals, y_vals, z_vals)
     res = []
     for i in sweep_values:
         value = sweep_values.set(i)
         res.append([i, value])
 
-    expected = [
-            [0, [1, 1, 1]],
-            [1, [1, 1, 1]]
-            ]
+    expected = [[0, [1, 1, 1]], [1, [1, 1, 1]]]
     assert res == expected
 
 
@@ -166,8 +156,7 @@ def test_wrong_len(parameters: list[ManualParameter]) -> None:
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 3)
     with pytest.raises(ValueError):
-        combine(*parameters,
-                name="combined").sweep(x_vals, y_vals, z_vals)
+        combine(*parameters, name="combined").sweep(x_vals, y_vals, z_vals)
 
 
 def test_invalid_name(parameters: list[ManualParameter]) -> None:
@@ -175,18 +164,16 @@ def test_invalid_name(parameters: list[ManualParameter]) -> None:
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 1, 2)
     with pytest.raises(ValueError):
-        combine(*parameters,
-                name="combined with spaces").sweep(x_vals, y_vals, z_vals)
+        combine(*parameters, name="combined with spaces").sweep(x_vals, y_vals, z_vals)
 
 
 def test_len(parameters: list[ManualParameter]) -> None:
     x_vals = np.linspace(1, 1, 2)
     y_vals = np.linspace(1, 1, 2)
     z_vals = np.linspace(1, 0, 2)
-    sweep_values = combine(*parameters,
-                           name="combined").sweep(x_vals, y_vals, z_vals)
+    sweep_values = combine(*parameters, name="combined").sweep(x_vals, y_vals, z_vals)
     assert len(x_vals) == len(sweep_values.setpoints)
 
 
 def linear(x: float, y: float, z: float) -> float:
-    return x+y+z
+    return x + y + z

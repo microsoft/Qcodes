@@ -1,6 +1,7 @@
 """
 This module takes care of the SQLite settings.
 """
+
 from __future__ import annotations
 
 import sqlite3
@@ -23,34 +24,36 @@ def _read_settings() -> tuple[dict[str, str | int], dict[str, bool | int | str]]
     # For the limits, there are known default values
     # (known from https://www.sqlite.org/limits.html)
     DEFAULT_LIMITS: dict[str, str | int]
-    DEFAULT_LIMITS = {'MAX_ATTACHED': 10,
-                      'MAX_COLUMN': 2000,
-                      'MAX_COMPOUND_SELECT': 500,
-                      'MAX_EXPR_DEPTH': 1000,
-                      'MAX_FUNCTION_ARG': 100,
-                      'MAX_LENGTH': 1_000_000_000,
-                      'MAX_LIKE_PATTERN_LENGTH': 50_000,
-                      'MAX_PAGE_COUNT': 1_073_741_823,
-                      'MAX_SQL_LENGTH': 1_000_000,
-                      'MAX_VARIABLE_NUMBER': 999}
+    DEFAULT_LIMITS = {
+        "MAX_ATTACHED": 10,
+        "MAX_COLUMN": 2000,
+        "MAX_COMPOUND_SELECT": 500,
+        "MAX_EXPR_DEPTH": 1000,
+        "MAX_FUNCTION_ARG": 100,
+        "MAX_LENGTH": 1_000_000_000,
+        "MAX_LIKE_PATTERN_LENGTH": 50_000,
+        "MAX_PAGE_COUNT": 1_073_741_823,
+        "MAX_SQL_LENGTH": 1_000_000,
+        "MAX_VARIABLE_NUMBER": 999,
+    }
 
-    conn = sqlite3.connect(':memory:')
+    conn = sqlite3.connect(":memory:")
     c = conn.cursor()
     opt_num = 0
-    resp = ''
+    resp = ""
 
     limits: dict[str, str | int]
     limits = DEFAULT_LIMITS.copy()
     settings = {}
 
-    c.execute(f'select sqlite_compileoption_get({opt_num});')
+    c.execute(f"select sqlite_compileoption_get({opt_num});")
     resp = c.fetchone()[0]
 
     # SQLite only responds back what options have been changed from
     # the default, so we can't know a priori how many responses we'll get
     while resp is not None:
         opt_num += 1
-        lst = resp.split('=')
+        lst = resp.split("=")
         val: str | int | None
         if len(lst) == 2:
             (param, val_str) = lst
@@ -72,12 +75,12 @@ def _read_settings() -> tuple[dict[str, str | int], dict[str, bool | int | str]]
         else:
             settings.update({param: True})
 
-        c.execute(f'select sqlite_compileoption_get({opt_num});')
+        c.execute(f"select sqlite_compileoption_get({opt_num});")
         resp = c.fetchone()[0]
 
-    c.execute('select sqlite_version();')
+    c.execute("select sqlite_version();")
     resp = c.fetchone()[0]
-    settings.update({'VERSION': resp})
+    settings.update({"VERSION": resp})
 
     c.close()
 

@@ -53,9 +53,12 @@ def test_load_by_id() -> None:
 
     # let's take a run number that is not in the temporary test database file
     non_existing_run_id = run_id + 1
-    with pytest.raises(ValueError, match=f"Run with run_id "
-                                         f"{non_existing_run_id} does not "
-                                         f"exist in the database"):
+    with pytest.raises(
+        ValueError,
+        match=f"Run with run_id "
+        f"{non_existing_run_id} does not "
+        f"exist in the database",
+    ):
         _ = load_by_id(non_existing_run_id)
 
 
@@ -245,12 +248,12 @@ def test_completed_timestamp_with_default_format() -> None:
     )
 
 
-@pytest.mark.usefixtures('experiment')
+@pytest.mark.usefixtures("experiment")
 def test_load_by_guid(some_interdeps) -> None:
     ds = DataSet()
     ds.set_interdependencies(some_interdeps[1])
     ds.mark_started()
-    ds.add_results([{'ps1': 1, 'ps2': 2}])
+    ds.add_results([{"ps1": 1, "ps2": 2}])
 
     loaded_ds = load_by_guid(ds.guid)
 
@@ -258,19 +261,21 @@ def test_load_by_guid(some_interdeps) -> None:
 
 
 def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
-
     def create_ds_with_exp_id(exp_id):
         ds = DataSet(exp_id=exp_id)
         ds.set_interdependencies(some_interdeps[1])
         ds.mark_started()
-        ds.add_results([{'ps1': 1, 'ps2': 2}])
+        ds.add_results([{"ps1": 1, "ps2": 2}])
         return ds
+
     # create 3 experiments that mix two experiment names and two sample names
     exp_names = ["te1", "te2", "te1"]
     sample_names = ["ts1", "ts2", "ts2"]
 
-    exps = [new_experiment(exp_name, sample_name=sample_name)
-            for exp_name, sample_name in zip(exp_names, sample_names)]
+    exps = [
+        new_experiment(exp_name, sample_name=sample_name)
+        for exp_name, sample_name in zip(exp_names, sample_names)
+    ]
 
     created_ds = [create_ds_with_exp_id(exp.exp_id) for exp in exps]
 
@@ -282,10 +287,9 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
     # since we are not copying runs from multiple dbs we can always load by
     # captured_run_id and this is equivalent to load_by_id
     for i in range(1, 4):
-        loaded_ds = load_by_run_spec(captured_run_id=i,
-                                     conn=conn)
-        assert loaded_ds.guid == guids[i-1]
-        assert loaded_ds.the_same_dataset_as(created_ds[i-1])
+        loaded_ds = load_by_run_spec(captured_run_id=i, conn=conn)
+        assert loaded_ds.guid == guids[i - 1]
+        assert loaded_ds.the_same_dataset_as(created_ds[i - 1])
 
     # All the datasets datasets have the same captured counter
     # so we cannot load by that alone
@@ -308,9 +312,7 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
         captured_counter=1, experiment_name="te2", conn=conn
     )
     assert len(guids_cc1_te2) == 1
-    loaded_ds = load_by_run_spec(captured_counter=1,
-                                 experiment_name="te2",
-                                 conn=conn)
+    loaded_ds = load_by_run_spec(captured_counter=1, experiment_name="te2", conn=conn)
     assert loaded_ds.guid == guids_cc1_te2[0]
     assert loaded_ds.the_same_dataset_as(created_ds[1])
 
@@ -321,27 +323,25 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
     )
     assert len(guids_cc1_ts2) == 2
     with pytest.raises(NameError, match="More than one matching"):
-        load_by_run_spec(captured_counter=1,
-                         sample_name="ts2",
-                         conn=conn)
+        load_by_run_spec(captured_counter=1, sample_name="ts2", conn=conn)
 
     # but for  "test_sample1" there is only one
     guids_cc1_ts1 = get_guids_by_run_spec(
         captured_counter=1, sample_name="ts1", conn=conn
     )
     assert len(guids_cc1_ts1) == 1
-    loaded_ds = load_by_run_spec(captured_counter=1,
-                                 sample_name="ts1",
-                                 conn=conn)
+    loaded_ds = load_by_run_spec(captured_counter=1, sample_name="ts1", conn=conn)
     assert loaded_ds.the_same_dataset_as(created_ds[0])
     assert loaded_ds.guid == guids_cc1_ts1[0]
 
     # we can load all 3 if we are specific.
     for i in range(3):
-        loaded_ds = load_by_run_spec(captured_counter=1,
-                                     experiment_name=exp_names[i],
-                                     sample_name=sample_names[i],
-                                     conn=conn)
+        loaded_ds = load_by_run_spec(
+            captured_counter=1,
+            experiment_name=exp_names[i],
+            sample_name=sample_names[i],
+            conn=conn,
+        )
         assert loaded_ds.the_same_dataset_as(created_ds[i])
         assert loaded_ds.guid == guids[i]
 
@@ -354,7 +354,6 @@ def test_load_by_run_spec(empty_temp_db, some_interdeps) -> None:
 
 
 def test_callback(scalar_datasets_parameterized: DataSet) -> None:
-
     called_progress: list[float] = []
 
     def callback_closure(called_progress: list[float]):

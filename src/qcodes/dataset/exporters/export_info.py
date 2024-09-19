@@ -1,4 +1,5 @@
 """This module defines the ExportInfo dataclass."""
+
 from __future__ import annotations
 
 import json
@@ -10,7 +11,6 @@ from qcodes.dataset.export_config import DataExportType
 
 @dataclass
 class ExportInfo:
-
     export_paths: dict[str, str]
 
     def __post_init__(self) -> None:

@@ -43,17 +43,16 @@ def test_initial_set_with_without_cache() -> None:
 
 
 def test_set_initial_and_initial_cache_raises() -> None:
-    with pytest.raises(SyntaxError,
-                       match="`initial_value` and `initial_cache_value`"):
+    with pytest.raises(SyntaxError, match="`initial_value` and `initial_cache_value`"):
         Parameter(name="param", initial_value=1, initial_cache_value=2)
 
 
 def test_get_cache() -> None:
-    time_resolution = time.get_clock_info('time').resolution
+    time_resolution = time.get_clock_info("time").resolution
     sleep_delta = 2 * time_resolution
 
     # Create a gettable parameter
-    local_parameter = Parameter('test_param', set_cmd=None, get_cmd=None)
+    local_parameter = Parameter("test_param", set_cmd=None, get_cmd=None)
     before_set = datetime.now()
     time.sleep(sleep_delta)
     local_parameter.set(1)
@@ -78,7 +77,7 @@ def test_get_cache() -> None:
 def test_get_cache_raw_value() -> None:
     # To have a simple distinction between raw value and value of the
     # parameter lets create a parameter with an offset
-    p = Parameter('p', set_cmd=None, get_cmd=None, offset=42)
+    p = Parameter("p", set_cmd=None, get_cmd=None, offset=42)
     assert p.cache.timestamp is None
 
     # Initially, the parameter's raw value is None
@@ -98,8 +97,7 @@ def test_get_cache_unknown() -> None:
     trigger a get
     """
     value = 1
-    local_parameter = BetterGettableParam('test_param', set_cmd=None,
-                                          get_cmd=None)
+    local_parameter = BetterGettableParam("test_param", set_cmd=None, get_cmd=None)
     # fake a parameter that has a value but never been get/set to mock
     # an instrument.
     local_parameter.cache._value = value  # type: ignore[attr-defined]
@@ -124,13 +122,11 @@ def test_get_cache_known() -> None:
     trigger a get
     """
     value = 1
-    local_parameter = BetterGettableParam('test_param', set_cmd=None,
-                                          get_cmd=None)
+    local_parameter = BetterGettableParam("test_param", set_cmd=None, get_cmd=None)
     # fake a parameter that has a value acquired 10 sec ago
     start = datetime.now()
     set_time = start - timedelta(seconds=10)
-    local_parameter.cache._update_with(
-        value=value, raw_value=value, timestamp=set_time)
+    local_parameter.cache._update_with(value=value, raw_value=value, timestamp=set_time)
     assert local_parameter._get_count == 0
     assert local_parameter.cache.timestamp == set_time
     assert local_parameter.cache.get() == value
@@ -145,7 +141,7 @@ def test_get_cache_no_get() -> None:
     Test that cache.get on a parameter that does not have get is handled
     correctly.
     """
-    local_parameter = Parameter('test_param', set_cmd=None, get_cmd=False)
+    local_parameter = Parameter("test_param", set_cmd=None, get_cmd=False)
     # The parameter does not have a get method.
     with pytest.raises(AttributeError):
         local_parameter.get()
@@ -157,8 +153,9 @@ def test_get_cache_no_get() -> None:
     local_parameter.set(value)
     assert local_parameter.cache.get() == value
 
-    local_parameter2 = Parameter('test_param2', set_cmd=None,
-                                 get_cmd=False, initial_value=value)
+    local_parameter2 = Parameter(
+        "test_param2", set_cmd=None, get_cmd=False, initial_value=value
+    )
     with pytest.raises(AttributeError):
         local_parameter2.get()
     assert local_parameter2.cache.get() == value
@@ -167,11 +164,9 @@ def test_get_cache_no_get() -> None:
 def test_set_raw_value_on_cache() -> None:
     value = 1
     scale = 10
-    local_parameter = BetterGettableParam('test_param',
-                                          set_cmd=None,
-                                          scale=scale)
+    local_parameter = BetterGettableParam("test_param", set_cmd=None, scale=scale)
     before = datetime.now()
-    local_parameter.cache._set_from_raw_value(value*scale)
+    local_parameter.cache._set_from_raw_value(value * scale)
     after = datetime.now()
     assert local_parameter.cache.get(get_if_invalid=False) == value
     assert local_parameter.cache.raw_value == value * scale
@@ -184,18 +179,16 @@ def test_set_raw_value_on_cache() -> None:
 def test_max_val_age() -> None:
     value = 1
     start = datetime.now()
-    local_parameter = BetterGettableParam('test_param',
-                                          set_cmd=None,
-                                          max_val_age=1,
-                                          initial_value=value)
+    local_parameter = BetterGettableParam(
+        "test_param", set_cmd=None, max_val_age=1, initial_value=value
+    )
     assert local_parameter.cache.max_val_age == 1
     assert local_parameter._get_count == 0
     assert local_parameter.cache.get() == value
     assert local_parameter._get_count == 0
     # now fake the time stamp so get should be triggered
     set_time = start - timedelta(seconds=10)
-    local_parameter.cache._update_with(
-        value=value, raw_value=value, timestamp=set_time)
+    local_parameter.cache._update_with(value=value, raw_value=value, timestamp=set_time)
     # now that ts < max_val_age calling get_latest should update the time
     assert local_parameter.cache.timestamp == set_time
     assert local_parameter.cache.get() == value
@@ -212,9 +205,13 @@ def test_no_get_max_val_age() -> None:
     """
     value = 1
     with pytest.raises(SyntaxError):
-        _ = Parameter('test_param', set_cmd=None,
-                      get_cmd=False,
-                      max_val_age=1, initial_value=value)
+        _ = Parameter(
+            "test_param",
+            set_cmd=None,
+            get_cmd=False,
+            max_val_age=1,
+            initial_value=value,
+        )
 
 
 def test_no_get_max_val_age_runtime_error(
@@ -234,13 +231,10 @@ def test_no_get_max_val_age_runtime_error(
             self.set_raw = lambda x: x  # type: ignore[method-assign]
             self.set = self._wrap_set(self.set_raw)
 
-    local_parameter = LocalParameter('test_param',
-                                     None,
-                                     max_val_age=1)
+    local_parameter = LocalParameter("test_param", None, max_val_age=1)
     start = datetime.now()
     set_time = start - timedelta(seconds=10)
-    local_parameter.cache._update_with(
-        value=value, raw_value=value, timestamp=set_time)
+    local_parameter.cache._update_with(value=value, raw_value=value, timestamp=set_time)
 
     if get_if_invalid is True:
         with pytest.raises(RuntimeError, match="max_val_age` is not supported"):
@@ -260,7 +254,7 @@ def test_no_get_timestamp_none_runtime_error(
     set, cannot be get and does not support
     getting raises a RuntimeError.
     """
-    local_parameter = Parameter('test_param', get_cmd=False)
+    local_parameter = Parameter("test_param", get_cmd=False)
 
     if get_if_invalid is True:
         with pytest.raises(RuntimeError, match="Value of parameter test_param"):
@@ -289,33 +283,31 @@ _P = Parameter
 
 
 @pytest.mark.parametrize(
-    argnames=('p', 'value', 'raw_value'),
+    argnames=("p", "value", "raw_value"),
     argvalues=(
-        (_P('p', set_cmd=None, get_cmd=None), 4, 4),
-        (_P('p', set_cmd=False, get_cmd=None), 14, 14),
-        (_P('p', set_cmd=None, get_cmd=False), 14, 14),
-        (_P('p', set_cmd=None, get_cmd=None, vals=vals.OnOff()), 'on', 'on'),
-        (_P('p', set_cmd=None, get_cmd=None, val_mapping={'screw': 1}),
-         'screw', 1),
-        (_P('p', set_cmd=None, get_cmd=None, set_parser=str, get_parser=int),
-         14, '14'),
-        (_P('p', set_cmd=None, get_cmd=None, step=7), 14, 14),
-        (_P('p', set_cmd=None, get_cmd=None, offset=3), 14, 17),
-        (_P('p', set_cmd=None, get_cmd=None, scale=2), 14, 28),
-        (_P('p', set_cmd=None, get_cmd=None, offset=-3, scale=2), 14, 25),
+        (_P("p", set_cmd=None, get_cmd=None), 4, 4),
+        (_P("p", set_cmd=False, get_cmd=None), 14, 14),
+        (_P("p", set_cmd=None, get_cmd=False), 14, 14),
+        (_P("p", set_cmd=None, get_cmd=None, vals=vals.OnOff()), "on", "on"),
+        (_P("p", set_cmd=None, get_cmd=None, val_mapping={"screw": 1}), "screw", 1),
+        (_P("p", set_cmd=None, get_cmd=None, set_parser=str, get_parser=int), 14, "14"),
+        (_P("p", set_cmd=None, get_cmd=None, step=7), 14, 14),
+        (_P("p", set_cmd=None, get_cmd=None, offset=3), 14, 17),
+        (_P("p", set_cmd=None, get_cmd=None, scale=2), 14, 28),
+        (_P("p", set_cmd=None, get_cmd=None, offset=-3, scale=2), 14, 25),
     ),
     ids=(
-        'with_nothing_extra',
-        'without_set_cmd',
-        'without_get_cmd',
-        'with_on_off_validator',
-        'with_val_mapping',
-        'with_set_and_parsers',
-        'with_step',
-        'with_offset',
-        'with_scale',
-        'with_scale_and_offset',
-    )
+        "with_nothing_extra",
+        "without_set_cmd",
+        "without_get_cmd",
+        "with_on_off_validator",
+        "with_val_mapping",
+        "with_set_and_parsers",
+        "with_step",
+        "with_offset",
+        "with_scale",
+        "with_scale_and_offset",
+    ),
 )
 def test_set_latest_works_for_plain_memory_parameter(
     p: Parameter, value: str | int, raw_value: str | int
@@ -336,7 +328,7 @@ def test_set_latest_works_for_plain_memory_parameter(
     # `get_cmd=None`)
 
     if not p.gettable:
-        assert not hasattr(p, 'get')
+        assert not hasattr(p, "get")
         assert p.gettable is False
         return  # finish the test here for non-gettable parameters
 
@@ -373,9 +365,12 @@ def test_get_from_cache_marked_invalid() -> None:
 
     param._gettable = False
 
-    with pytest.raises(RuntimeError, match="Cannot return cache of a parameter"
-                                           " that does not have a get command"
-                                           " and has an invalid cache"):
+    with pytest.raises(
+        RuntimeError,
+        match="Cannot return cache of a parameter"
+        " that does not have a get command"
+        " and has an invalid cache",
+    ):
         param.cache.get(get_if_invalid=True)
     assert param._get_count == 2
 

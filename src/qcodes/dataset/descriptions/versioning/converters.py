@@ -5,6 +5,7 @@ This module contains functions which implement conversion between different
 
 
 """
+
 from __future__ import annotations
 
 from ..dependencies import InterDependencies_
@@ -45,9 +46,9 @@ def old_to_new(idps: InterDependencies) -> InterDependencies_:
 
     standalones = tuple(set(standalones_mut).difference(set(root_paramspecs)))
 
-    idps_ = InterDependencies_(dependencies=dependencies,
-                               inferences=inferences,
-                               standalones=standalones)
+    idps_ = InterDependencies_(
+        dependencies=dependencies, inferences=inferences, standalones=standalones
+    )
     return idps_
 
 
@@ -60,7 +61,6 @@ def new_to_old(idps: InterDependencies_) -> InterDependencies:
     """
 
     paramspecs: dict[str, ParamSpec] = {}
-
 
     # first the independent parameters
     for indeps in idps.dependencies.values():
@@ -124,19 +124,21 @@ def v1_to_v2(old: RunDescriberV1Dict) -> RunDescriberV2Dict:
     """
     Convert a v1 RunDescriber Dict to a v2 RunDescriber Dict
     """
-    interdeps_dict = old['interdependencies']
+    interdeps_dict = old["interdependencies"]
     interdeps_ = InterDependencies_._from_dict(interdeps_dict)
     interdepsdict = new_to_old(interdeps_)._to_dict()
-    return RunDescriberV2Dict(version=2, interdependencies_=interdeps_dict,
-                              interdependencies=interdepsdict)
+    return RunDescriberV2Dict(
+        version=2, interdependencies_=interdeps_dict, interdependencies=interdepsdict
+    )
 
 
 def v2_to_v3(old: RunDescriberV2Dict) -> RunDescriberV3Dict:
-    return RunDescriberV3Dict(version=3,
-                              interdependencies=old['interdependencies'],
-                              interdependencies_=old['interdependencies_'],
-                              shapes=None
-                              )
+    return RunDescriberV3Dict(
+        version=3,
+        interdependencies=old["interdependencies"],
+        interdependencies_=old["interdependencies_"],
+        shapes=None,
+    )
 
 
 def v0_to_v2(old: RunDescriberV0Dict) -> RunDescriberV2Dict:
@@ -155,10 +157,11 @@ def v1_to_v3(old: RunDescriberV1Dict) -> RunDescriberV3Dict:
 
 
 def v3_to_v2(new: RunDescriberV3Dict) -> RunDescriberV2Dict:
-    return RunDescriberV2Dict(version=2,
-                              interdependencies=new['interdependencies'],
-                              interdependencies_=new['interdependencies_'],
-                              )
+    return RunDescriberV2Dict(
+        version=2,
+        interdependencies=new["interdependencies"],
+        interdependencies_=new["interdependencies_"],
+    )
 
 
 def v2_to_v1(new: RunDescriberV2Dict) -> RunDescriberV1Dict:
@@ -166,8 +169,7 @@ def v2_to_v1(new: RunDescriberV2Dict) -> RunDescriberV1Dict:
     Convert a v2 RunDescriber Dict to a v1 RunDescriber Dict
     """
     rundescriberdictv1 = RunDescriberV1Dict(
-        version=1,
-        interdependencies=new['interdependencies_']
+        version=1, interdependencies=new["interdependencies_"]
     )
     return rundescriberdictv1
 
@@ -176,11 +178,10 @@ def v1_to_v0(new: RunDescriberV1Dict) -> RunDescriberV0Dict:
     """
     Convert a v1 RunDescriber Dict to a v0 RunDescriber Dict
     """
-    interdeps_dict = new['interdependencies']
+    interdeps_dict = new["interdependencies"]
     interdeps_ = InterDependencies_._from_dict(interdeps_dict)
     interdepsdict = new_to_old(interdeps_)._to_dict()
-    rundescriberv0dict = RunDescriberV0Dict(version=0,
-                                            interdependencies=interdepsdict)
+    rundescriberv0dict = RunDescriberV0Dict(version=0, interdependencies=interdepsdict)
     return rundescriberv0dict
 
 

@@ -12,12 +12,12 @@ class A:
 
 class BadKeysDict(dict[Any, Any]):
     def keys(self):
-        raise RuntimeError('you can\'t have the keys!')
+        raise RuntimeError("you can't have the keys!")
 
 
 class NoDelDict(dict[Any, Any]):
     def __delitem__(self, item):
-        raise KeyError('get your hands off me!')
+        raise KeyError("get your hands off me!")
 
 
 def test_normal() -> None:
@@ -28,7 +28,7 @@ def test_normal() -> None:
     strip_attrs(a)
 
     assert a.x == 5
-    assert not hasattr(a, 'z')
+    assert not hasattr(a, "z")
     assert a.y == 6
 
 
@@ -48,7 +48,7 @@ def test_pathological() -> None:
 
     a = A()
     a.__dict__ = NoDelDict()
-    s = 'can\'t touch this!'
+    s = "can't touch this!"
     a.x = s
 
     assert a.x == s

@@ -22,6 +22,7 @@ class HarvardDecadacException(Exception):
 
 DACException = HarvardDecadacException
 
+
 class DacReader:
     @staticmethod
     def _dac_parse(resp):
@@ -91,8 +92,7 @@ class DacReader:
                 f"been set."
             )
 
-    def _query_address(self, addr: int, count: int=1,
-                       versa_eeprom: bool=False):
+    def _query_address(self, addr: int, count: int = 1, versa_eeprom: bool = False):
         """
         Query the value at the dac address given.
 
@@ -126,18 +126,21 @@ class DacReader:
         val = 0
         for i in range(count):
             # Set DAC to point to address
-            ret = int(self._dac_parse(
-                self.ask_raw(f"A{addr};")))  # type: ignore[attr-defined]
+            ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))  # type: ignore[attr-defined]
             if ret != addr:
                 raise HarvardDecadacException(f"Failed to set EEPROM address {addr}.")
-            val += int(self._dac_parse(self.ask_raw(  # type: ignore[attr-defined]
-                query_command))) << (32*(count-i-1))
+            val += int(
+                self._dac_parse(
+                    self.ask_raw(  # type: ignore[attr-defined]
+                        query_command
+                    )
+                )
+            ) << (32 * (count - i - 1))
             addr += 1
 
         return val
 
-    def _write_address(self, addr: int, val: int,
-                       versa_eeprom: bool=False) -> None:
+    def _write_address(self, addr: int, val: int, versa_eeprom: bool = False) -> None:
         """
         Write a value to a given DAC address
 
@@ -174,10 +177,10 @@ class DacReader:
 
         # Write the value to the DAC
         # Set DAC to point to address
-        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))   # type: ignore[attr-defined]
+        ret = int(self._dac_parse(self.ask_raw(f"A{addr};")))  # type: ignore[attr-defined]
         if ret != addr:
             raise HarvardDecadacException(f"Failed to set EEPROM address {addr}.")
-        self.ask_raw(f"{write_command}{val};")   # type: ignore[attr-defined]
+        self.ask_raw(f"{write_command}{val};")  # type: ignore[attr-defined]
         # Check the write was successful
         if (
             int(self._dac_parse(self.ask_raw(query_command))) != val  # type: ignore[attr-defined]
@@ -191,6 +194,7 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
     """
     A single DAC channel of the DECADAC
     """
+
     _CHANNEL_VAL = vals.Ints(0, 3)
 
     def __init__(
@@ -210,10 +214,10 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
         # 5: DAC Low Limit
         # 6: Slope (double)
         # 8: DAC Value (double)
-        self._base_addr = 1536 + (16*4)*self._slot + 16*self._channel
+        self._base_addr = 1536 + (16 * 4) * self._slot + 16 * self._channel
 
         # Store min/max voltages
-        assert(min_val < max_val)
+        assert min_val < max_val
         self.min_val = min_val
         self.max_val = max_val
 
@@ -300,8 +304,9 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
         """Parameter ramp_rate"""
 
         # Add ramp function to the list of functions
-        self.add_function("ramp", call_cmd=self._ramp, args=(self._volt_val,
-                                                             self._ramp_val))
+        self.add_function(
+            "ramp", call_cmd=self._ramp, args=(self._volt_val, self._ramp_val)
+        )
 
         # If we have access to the VERSADAC (slot) EEPROM, we can set the
         # initial value of the channel.
@@ -343,13 +348,13 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
         c_val = self._dac_v_to_code(c_volt)  # Current voltage in DAC units
         e_val = self._dac_v_to_code(val)  # Endpoint in DAC units
         # Number of refreshes per second
-        t_rate = 1/(self.update_period.get() * 1e-6)
+        t_rate = 1 / (self.update_period.get() * 1e-6)
         # Number of seconds to ramp
-        secs = abs((c_volt - val)/rate)
+        secs = abs((c_volt - val) / rate)
 
         # The formula to calculate the slope is: Number of DAC steps divided by
         # the number of time steps in the ramp multiplied by 65536
-        slope = int(((e_val - c_val)/(t_rate*secs))*65536)
+        slope = int(((e_val - c_val) / (t_rate * secs)) * 65536)
 
         # Now let's set up our limits and ramo slope
         if slope > 0:
@@ -402,6 +407,7 @@ class HarvardDecadacSlot(InstrumentChannel, DacReader):
     """
     A single DAC Slot of the DECADAC
     """
+
     _SLOT_VAL = vals.Ints(0, 4)
     SLOT_MODE_DEFAULT = "Coarse"
 
@@ -420,9 +426,11 @@ class HarvardDecadacSlot(InstrumentChannel, DacReader):
         # Create a list of channels in the slot
         channels = ChannelList(self, "Slot_Channels", parent.DAC_CHANNEL_CLASS)
         for i in range(4):
-            channels.append(parent.DAC_CHANNEL_CLASS(self, f"Chan{i}",
-                                                     i, min_val=min_val,
-                                                     max_val=max_val))
+            channels.append(
+                parent.DAC_CHANNEL_CLASS(
+                    self, f"Chan{i}", i, min_val=min_val, max_val=max_val
+                )
+            )
         self.add_submodule("channels", channels)
         # Set the slot mode. Valid modes are:
         #   Off: Channel outputs are disconnected from the input, grounded
@@ -467,6 +475,7 @@ class HarvardDecadacSlot(InstrumentChannel, DacReader):
         """
         self._set_slot()
         return self.ask_raw(cmd)
+
 
 DacSlot = HarvardDecadacSlot
 
@@ -523,12 +532,12 @@ class HarvardDecadac(VisaInstrument, DacReader):
         self._feature_detect()
 
         # Create channels
-        channels = ChannelList(self, "Channels", self.DAC_CHANNEL_CLASS,
-                               snapshotable=False)
+        channels = ChannelList(
+            self, "Channels", self.DAC_CHANNEL_CLASS, snapshotable=False
+        )
         slots = ChannelList(self, "Slots", self.DAC_SLOT_CLASS)
         for i in range(5):  # Create the 6 DAC slots
-            slots.append(self.DAC_SLOT_CLASS(self, f"Slot{i}", i,
-                                             min_val, max_val))
+            slots.append(self.DAC_SLOT_CLASS(self, f"Slot{i}", i, min_val, max_val))
             slot_channels = slots[i].channels
             slot_channels = cast(ChannelList, slot_channels)
             channels.extend(slot_channels)
@@ -582,7 +591,7 @@ class HarvardDecadac(VisaInstrument, DacReader):
 
         return {"serial": self.serial_no, "hardware_version": self.version}
 
-    def connect_message(self, idn_param='IDN', begin_time=None):
+    def connect_message(self, idn_param="IDN", begin_time=None):
         """
         Print a connect message, taking into account the lack of a standard
         ``*IDN`` on the Harvard DAC

@@ -1,6 +1,7 @@
 """
 This file holds scaling logic for axis that is independent of plotting backend
 """
+
 from collections import OrderedDict
 
 import numpy as np

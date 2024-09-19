@@ -5,11 +5,10 @@ Since the original names of the constants are mostly preserved, it is
 convenient to find the uesful constants here based on the Alazar SDK manual.
 """
 
-
 from enum import IntEnum, IntFlag
 from typing import NewType
 
-ReturnCode = NewType('ReturnCode', int)
+ReturnCode = NewType("ReturnCode", int)
 
 API_SUCCESS = ReturnCode(512)
 API_DMA_IN_PROGRESS = ReturnCode(518)
@@ -173,63 +172,63 @@ ERROR_CODES: dict[ReturnCode, str] = {
 
 
 BOARD_NAMES = {
-    0: 'ATS_NONE',
-    1: 'ATS850',
-    2: 'ATS310',
-    3: 'ATS330',
-    4: 'ATS855',
-    5: 'ATS315',
-    6: 'ATS335',
-    7: 'ATS460',
-    8: 'ATS860',
-    9: 'ATS660',
-    10: 'ATS665',
-    11: 'ATS9462',
-    12: 'ATS9434',
-    13: 'ATS9870',
-    14: 'ATS9350',
-    15: 'ATS9325',
-    16: 'ATS9440',
-    17: 'ATS9410',
-    18: 'ATS9351',
-    19: 'ATS9310',
-    20: 'ATS9461',
-    21: 'ATS9850',
-    22: 'ATS9625',
-    23: 'ATG6500',
-    24: 'ATS9626',
-    25: 'ATS9360',
-    26: 'AXI9870',
-    27: 'ATS9370',
-    28: 'ATU7825',
-    29: 'ATS9373',
-    30: 'ATS9416',
-    31: 'ATS9637',
-    32: 'ATS9120',
-    33: 'ATS9371',
-    34: 'ATS9130',
-    35: 'ATS9352',
-    36: 'ATS9453',
+    0: "ATS_NONE",
+    1: "ATS850",
+    2: "ATS310",
+    3: "ATS330",
+    4: "ATS855",
+    5: "ATS315",
+    6: "ATS335",
+    7: "ATS460",
+    8: "ATS860",
+    9: "ATS660",
+    10: "ATS665",
+    11: "ATS9462",
+    12: "ATS9434",
+    13: "ATS9870",
+    14: "ATS9350",
+    15: "ATS9325",
+    16: "ATS9440",
+    17: "ATS9410",
+    18: "ATS9351",
+    19: "ATS9310",
+    20: "ATS9461",
+    21: "ATS9850",
+    22: "ATS9625",
+    23: "ATG6500",
+    24: "ATS9626",
+    25: "ATS9360",
+    26: "AXI9870",
+    27: "ATS9370",
+    28: "ATU7825",
+    29: "ATS9373",
+    30: "ATS9416",
+    31: "ATS9637",
+    32: "ATS9120",
+    33: "ATS9371",
+    34: "ATS9130",
+    35: "ATS9352",
+    36: "ATS9453",
 }
 
 
 # See table 4 Input Channel Configurations
 # on page 241 of the Alazar SDK manual
 _NUMBER_OF_CHANNELS_TO_BYTE_REPR: dict[int, tuple[int, ...]] = {
-    1:  tuple(2**i for i in range(16)),
-    2:  (3, 5, 6, 9, 10, 12),
-    4:  (15,),
-    8:  (255,),
-    16: (65535,)
-    }
+    1: tuple(2**i for i in range(16)),
+    2: (3, 5, 6, 9, 10, 12),
+    4: (15,),
+    8: (255,),
+    16: (65535,),
+}
 
 # See table 4 Input Channel Configurations
 # on page 241 of the Alazar SDK manual
 NUMBER_OF_CHANNELS_FROM_BYTE_REPR: dict[int, int] = {
     byte_repr: n_ch
-        for n_ch, byte_reprs in _NUMBER_OF_CHANNELS_TO_BYTE_REPR.items()
-        for byte_repr in byte_reprs
-    }
+    for n_ch, byte_reprs in _NUMBER_OF_CHANNELS_TO_BYTE_REPR.items()
+    for byte_repr in byte_reprs
+}
 
 
 REGISTER_ACCESS_PASSWORD = 0x32145876
@@ -259,31 +258,31 @@ class ClockEdge(IntEnum):
 
 class SampleRate(IntEnum):
     SAMPLE_RATE_USER_DEF = 0x00000040
-    SAMPLE_RATE_1KSPS = 0X00000001
-    SAMPLE_RATE_2KSPS = 0X00000002
-    SAMPLE_RATE_5KSPS = 0X00000004
-    SAMPLE_RATE_10KSPS = 0X00000008
-    SAMPLE_RATE_20KSPS = 0X0000000A
-    SAMPLE_RATE_50KSPS = 0X0000000C
-    SAMPLE_RATE_100KSPS = 0X0000000E
-    SAMPLE_RATE_200KSPS = 0X00000010
-    SAMPLE_RATE_500KSPS = 0X00000012
-    SAMPLE_RATE_1MSPS = 0X00000014
-    SAMPLE_RATE_2MSPS = 0X00000018
-    SAMPLE_RATE_5MSPS = 0X0000001A
-    SAMPLE_RATE_10MSPS = 0X0000001C
-    SAMPLE_RATE_20MSPS = 0X0000001E
-    SAMPLE_RATE_25MSPS = 0X00000021
-    SAMPLE_RATE_50MSPS = 0X00000022
-    SAMPLE_RATE_100MSPS = 0X00000024
+    SAMPLE_RATE_1KSPS = 0x00000001
+    SAMPLE_RATE_2KSPS = 0x00000002
+    SAMPLE_RATE_5KSPS = 0x00000004
+    SAMPLE_RATE_10KSPS = 0x00000008
+    SAMPLE_RATE_20KSPS = 0x0000000A
+    SAMPLE_RATE_50KSPS = 0x0000000C
+    SAMPLE_RATE_100KSPS = 0x0000000E
+    SAMPLE_RATE_200KSPS = 0x00000010
+    SAMPLE_RATE_500KSPS = 0x00000012
+    SAMPLE_RATE_1MSPS = 0x00000014
+    SAMPLE_RATE_2MSPS = 0x00000018
+    SAMPLE_RATE_5MSPS = 0x0000001A
+    SAMPLE_RATE_10MSPS = 0x0000001C
+    SAMPLE_RATE_20MSPS = 0x0000001E
+    SAMPLE_RATE_25MSPS = 0x00000021
+    SAMPLE_RATE_50MSPS = 0x00000022
+    SAMPLE_RATE_100MSPS = 0x00000024
     SAMPLE_RATE_125MSPS = 0x00000025
     SAMPLE_RATE_160MSPS = 0x00000026
     SAMPLE_RATE_180MSPS = 0x00000027
-    SAMPLE_RATE_200MSPS = 0X00000028
-    SAMPLE_RATE_250MSPS = 0X0000002B
-    SAMPLE_RATE_400MSPS = 0X0000002D
-    SAMPLE_RATE_500MSPS = 0X00000030
-    SAMPLE_RATE_800MSPS = 0X00000032
+    SAMPLE_RATE_200MSPS = 0x00000028
+    SAMPLE_RATE_250MSPS = 0x0000002B
+    SAMPLE_RATE_400MSPS = 0x0000002D
+    SAMPLE_RATE_500MSPS = 0x00000030
+    SAMPLE_RATE_800MSPS = 0x00000032
     SAMPLE_RATE_1000MSPS = 0x00000035
     SAMPLE_RATE_1GSPS = SAMPLE_RATE_1000MSPS
     SAMPLE_RATE_1200MSPS = 0x00000037
@@ -385,6 +384,7 @@ class TriggerSlope(IntEnum):
     Used in more than one place, for example, for ``AUX_IN_TRIGGER_ENABLE``
     Auxiallary IO mode
     """
+
     TRIGGER_SLOPE_POSITIVE = 0x00000001
     TRIGGER_SLOPE_NEGATIVE = 0x00000002
 
@@ -450,6 +450,7 @@ class AutoDMAFlag(IntFlag):
 
 class Channel(IntFlag):
     """Flags for selecting channel configuration"""
+
     ALL = 0x00000000
     A = 0x00000001
     B = 0x00000002
@@ -471,6 +472,7 @@ class Channel(IntFlag):
 
 class Capability(IntEnum):
     """Capability identifiers for :meth:`.AlazarATSAPI.query_capability`"""
+
     GET_SERIAL_NUMBER = 0x10000024
     # Date of the board's latest calibration data as a decimal number with
     # the format DDMMYY where DD is 1-31, MM is 1-12,
@@ -533,6 +535,7 @@ class RecordAverageMode(IntEnum):
     """
     Values for ``mode`` argument of ``AlazarConfigureRecordAverage`` function
     """
+
     DISABLE = CRA_MODE_DISABLE
     ENABLE_FPGA_AVE = CRA_MODE_ENABLE_FPGA_AVE
 
@@ -546,6 +549,7 @@ class RecordAverageOption(IntEnum):
     Values for ``options`` argument of ``AlazarConfigureRecordAverage``
     function
     """
+
     UNSIGNED = CRA_OPTION_UNSIGNED  #: Find sum of unsigned ADC samples codes
     SIGNED = CRA_OPTION_SIGNED  #: Find sum of signed ADC sample
 
@@ -560,6 +564,7 @@ class AlazarParameter(IntEnum):
     ``AlazarGetParameter``
     Defined by ``ALAZAR_PARAMETERS`` in ``AlazarCmd.h``
     """
+
     DATA_WIDTH = 0x10000009
     # The number of bits per sample
     SETGET_ASYNC_BUFFSIZE_BYTES = 0x10000039
@@ -606,6 +611,7 @@ class ECCMode(IntEnum):
     Values for ECC_MODE of ``Parameter``
     Defined by ``ALAZAR_ECC_MODES`` in ``AlazarCmd.h``
     """
+
     ECC_DISABLE = 0  # Disable
     ECC_ENABLE = 1  # Enable
 
@@ -615,6 +621,7 @@ class PackMode(IntEnum):
     Values for PACK_MODE of ``Parameter``
     Defined by ``ALAZAR_PACK_MODES`` in ``AlazarCmd.h``
     """
+
     PACK_DEFAULT = 0  # Default pack mode of the board
     PACK_8_BITS_PER_SAMPLE = 1  # 8 bits per sample
     PACK_12_BITS_PER_SAMPLE = 2  # 12 bits per sample
@@ -625,6 +632,7 @@ class AUXInputLevel(IntEnum):
     Values for GET_AUX_INPUT_LEVEL of ``Parameter``
     Defined by ``ALAZAR_AUX_INPUT_LEVELS`` in ``AlazarCmd.h``
     """
+
     AUX_INPUT_LOW = 0  # Low level
     AUX_INPUT_HIGH = 1  # High level
 
@@ -634,5 +642,6 @@ class APITraceStates(IntEnum):
     Values for API_FLAGS of ``Parameter``
     Defined by ``ALAZAR_API_TRACE_STATES`` in ``AlazarCmd.h``
     """
+
     API_ENABLE_TRACE = 1  # Trace enabled
     API_DISABLE_TRACE = 0  # Trace disabled

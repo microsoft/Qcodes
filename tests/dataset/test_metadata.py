@@ -1,6 +1,6 @@
 def test_get_metadata_from_dataset(dataset) -> None:
-    dataset.add_metadata('something', 123)
-    something = dataset.get_metadata('something')
+    dataset.add_metadata("something", 123)
+    something = dataset.get_metadata("something")
     assert 123 == something
 
 

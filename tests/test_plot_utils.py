@@ -1,6 +1,7 @@
 """
 Tests for `qcodes.utils.plotting`.
 """
+
 import matplotlib
 from pytest import fixture
 
@@ -15,23 +16,25 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa E402
 
 
-@fixture(scope='function')
+@fixture(scope="function")
 def dataset_with_data_outside_iqr_high_outlier(dataset):
-    return dataset_with_outliers_generator(dataset, data_offset=2, low_outlier=-2,
-                                           high_outlier=3)
+    return dataset_with_outliers_generator(
+        dataset, data_offset=2, low_outlier=-2, high_outlier=3
+    )
 
 
-@fixture(scope='function')
+@fixture(scope="function")
 def dataset_with_data_outside_iqr_low_outlier(dataset):
-    return dataset_with_outliers_generator(dataset, data_offset=2, low_outlier=-2,
-                                           high_outlier=3)
+    return dataset_with_outliers_generator(
+        dataset, data_offset=2, low_outlier=-2, high_outlier=3
+    )
 
 
-@fixture(scope='function')
+@fixture(scope="function")
 def dataset_with_outliers(dataset):
-    return dataset_with_outliers_generator(dataset, low_outlier=-3,
-                                           high_outlier=3,
-                                           background_noise=False)
+    return dataset_with_outliers_generator(
+        dataset, low_outlier=-3, high_outlier=3, background_noise=False
+    )
 
 
 def test_extend(dataset_with_outliers) -> None:
@@ -39,13 +42,13 @@ def test_extend(dataset_with_outliers) -> None:
     run_id = dataset_with_outliers.run_id
     _, cb = plot_by_id(run_id, auto_color_scale=False)
     assert cb[0] is not None
-    assert cb[0].extend == 'neither'
+    assert cb[0].extend == "neither"
     _, cb = plot_by_id(run_id, auto_color_scale=True, cutoff_percentile=(0, 0.5))
     assert cb[0] is not None
-    assert cb[0].extend == 'min'
+    assert cb[0].extend == "min"
     _, cb = plot_by_id(run_id, auto_color_scale=True, cutoff_percentile=(0.5, 0))
     assert cb[0] is not None
-    assert cb[0].extend == 'max'
+    assert cb[0].extend == "max"
     plt.close()
 
 

@@ -37,7 +37,7 @@ _META_DATA_KEY = "widget_notes"
 
 
 def _get_in(nested_keys: Sequence[str], dct: dict[str, Any]) -> dict[str, Any]:
-    """ Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys."""
+    """Returns dct[i0][i1]...[iX] where [i0, i1, ..., iX]==nested_keys."""
     return reduce(operator.getitem, nested_keys, dct)
 
 
@@ -68,9 +68,7 @@ def button(
 
 
 def button_to_text(title: str, body: str) -> Box:
-    def _button_to_input(
-        title: str, body: str, box: Box
-    ) -> Callable[[Button], None]:
+    def _button_to_input(title: str, body: str, box: Box) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
             text_input = Textarea(
                 value=body,
@@ -88,9 +86,7 @@ def button_to_text(title: str, body: str) -> Box:
 
         return on_click
 
-    def _back_button(
-        title: str, body: str, box: Box
-    ) -> Callable[[Button], None]:
+    def _back_button(title: str, body: str, box: Box) -> Callable[[Button], None]:
         def on_click(_: Button) -> None:
             box.children = (_changeable_button(title, body, box),)
 
@@ -98,7 +94,9 @@ def button_to_text(title: str, body: str) -> Box:
 
     def _changeable_button(title: str, body: str, box: Box) -> Button:
         return button(
-            title, "success", on_click=_button_to_input(title, body, box),
+            title,
+            "success",
+            on_click=_button_to_input(title, body, box),
         )
 
     box = VBox([], layout=Layout(height="auto", width="auto"))
@@ -108,9 +106,7 @@ def button_to_text(title: str, body: str) -> Box:
 
 def label(description: str) -> Label:
     """Returns a `ipywidgets.Label` with text."""
-    return Label(
-        value=description, layout=Layout(height="max-content", width="auto")
-    )
+    return Label(value=description, layout=Layout(height="max-content", width="auto"))
 
 
 def _update_nested_dict_browser(
@@ -146,12 +142,7 @@ def _nested_dict_browser(
 
     col_widths = [8, 16, 30]
     selected_table = _get_in(nested_keys, nested_dict)
-    nrows = (
-        sum(
-            len(v) if _should_expand(v) else 1 for v in selected_table.values()
-        )
-        + 1
-    )
+    nrows = sum(len(v) if _should_expand(v) else 1 for v in selected_table.values()) + 1
     ncols = 3
 
     if nrows > max_nrows:
@@ -160,9 +151,7 @@ def _nested_dict_browser(
         ncols = 2
 
     grid = GridspecLayout(nrows, col_widths[-1])
-    update = partial(
-        _update_nested_dict_browser, nested_dict=nested_dict, box=box
-    )
+    update = partial(_update_nested_dict_browser, nested_dict=nested_dict, box=box)
 
     # Header
     title = " ► ".join(nested_keys)
@@ -184,9 +173,7 @@ def _nested_dict_browser(
                     grid[row_index, col_widths[0] : col_widths[1]] = but
                     if _should_expand(v_):
                         sub_keys = ", ".join(v_.keys())
-                        but = button(
-                            sub_keys, "warning", update([*nested_keys, k, k_])
-                        )
+                        but = button(sub_keys, "warning", update([*nested_keys, k, k_]))
                     else:
                         but = label(str(v_))
                     grid[row_index, col_widths[1] :] = but
@@ -230,6 +217,7 @@ def _do_in_tab(
         which: Either "plot" or "snapshot".
     """
     from IPython.display import clear_output, display
+
     assert which in ("plot", "snapshot")
 
     def delete_tab(output: Output, tab: Tab) -> Callable[[Button], None]:
@@ -283,6 +271,7 @@ def _do_in_tab(
 def create_tab(do_display: bool = True) -> Tab:
     """Creates a `ipywidgets.Tab` which can display outputs in its tabs."""
     from IPython.display import display
+
     output = Output()
     tab = Tab(children=(output,))
 
@@ -319,7 +308,9 @@ def editable_metadata(ds: DataSetProtocol) -> Box:
                 button_kwargs=dict(icon="close"),
                 layout_kwargs=dict(width="50%"),
             )
-            subbox = HBox([save_button, cancel_button],)
+            subbox = HBox(
+                [save_button, cancel_button],
+            )
             box.children = (text_input, subbox)
 
         return on_click
@@ -523,8 +514,10 @@ def experiments_widget(
     elif sort_by == "timestamp":
         data_sets = sorted(
             data_sets,
-            key=lambda ds: ds.run_timestamp_raw if ds.run_timestamp_raw is not None else 0,
-            reverse=True
+            key=lambda ds: ds.run_timestamp_raw
+            if ds.run_timestamp_raw is not None
+            else 0,
+            reverse=True,
         )
 
     title = HTML("<h1>QCoDeS experiments widget</h1>")

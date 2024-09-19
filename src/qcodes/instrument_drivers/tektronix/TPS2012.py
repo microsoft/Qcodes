@@ -66,11 +66,11 @@ class ScopeArray(ArrayParameter):
 
     def calc_set_points(self) -> tuple[np.ndarray, int]:
         assert isinstance(self.instrument, TektronixTPS2012Channel)
-        message = self.instrument.ask('WFMPre?')
+        message = self.instrument.ask("WFMPre?")
         preamble = self._preambleparser(message)
-        xstart = preamble['x_zero']
-        xinc = preamble['x_incr']
-        no_of_points = preamble['no_of_points']
+        xstart = preamble["x_zero"]
+        xinc = preamble["x_incr"]
+        no_of_points = preamble["no_of_points"]
         xdata = np.linspace(xstart, no_of_points * xinc + xstart, no_of_points)
         return xdata, no_of_points
 
@@ -83,20 +83,22 @@ class ScopeArray(ArrayParameter):
         # in question must be displayed
         assert isinstance(self.instrument, TektronixTPS2012Channel)
         assert isinstance(self.root_instrument, TektronixTPS2012)
-        self.instrument.parameters['state'].set('ON')
-        self.root_instrument.data_source(f'CH{self.channel}')
+        self.instrument.parameters["state"].set("ON")
+        self.root_instrument.data_source(f"CH{self.channel}")
 
         xdata, no_of_points = self.calc_set_points()
-        self.setpoints = (tuple(xdata), )
-        self.shape = (no_of_points, )
+        self.setpoints = (tuple(xdata),)
+        self.shape = (no_of_points,)
 
         self.root_instrument.trace_ready = True
 
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.root_instrument, TektronixTPS2012)
         if not self.root_instrument.trace_ready:
-            raise TraceNotReady('Please run prepare_curvedata to prepare '
-                                'the scope for giving a trace.')
+            raise TraceNotReady(
+                "Please run prepare_curvedata to prepare "
+                "the scope for giving a trace."
+            )
         message = self._curveasker(self.channel)
         _, ydata, _ = self._curveparameterparser(message)
         # Due to the limitations in the current api the below solution
@@ -109,9 +111,9 @@ class ScopeArray(ArrayParameter):
 
     def _curveasker(self, ch: int) -> str:
         assert isinstance(self.instrument, TektronixTPS2012Channel)
-        self.instrument.write(f'DATa:SOURce CH{ch}')
-        message = self.instrument.ask('WAVFrm?')
-        self.instrument.write('*WAI')
+        self.instrument.write(f"DATa:SOURce CH{ch}")
+        message = self.instrument.ask("WAVFrm?")
+        self.instrument.write("*WAI")
         return message
 
     @staticmethod
@@ -130,13 +132,13 @@ class ScopeArray(ArrayParameter):
             is mapped to (-32768, 32767).
         """
         # TODO: Add support for data width = 1 mode?
-        output = np.zeros(int(len(curve)/2))  # data width 2
+        output = np.zeros(int(len(curve) / 2))  # data width 2
         # output = np.zeros(int(len(curve)))  # data width 1
         for ii, _ in enumerate(output):
             # casting FTWs
-            temp_1 = curve[2*ii:2*ii+1].encode('latin-1')  # data width 2
+            temp_1 = curve[2 * ii : 2 * ii + 1].encode("latin-1")  # data width 2
             temp_2 = binascii.b2a_hex(temp_1)
-            temp_3 = (int(temp_2, 16)-128)*256  # data width 2 (1)
+            temp_3 = (int(temp_2, 16) - 128) * 256  # data width 2 (1)
             output[ii] = temp_3
         return output
 
@@ -154,25 +156,25 @@ class ScopeArray(ArrayParameter):
               byte_order, no_of_points, waveform_ID, point_format,
               x_incr, x_zero, x_unit, y_multiplier, y_zero, y_offset, y_unit
         """
-        response_list = response.split(';')
+        response_list = response.split(";")
 
         outdict: OutputDict = {
-            'no_of_bytes': int(response_list[0]),
-            'no_of_bits': int(response_list[1]),
-            'encoding':  response_list[2],
-            'binary_format': response_list[3],
-            'byte_order': response_list[4],
-            'no_of_points': int(response_list[5]),
-            'waveform_ID':  response_list[6],
-            'point_format': response_list[7],
-            'x_incr': float(response_list[8]),
+            "no_of_bytes": int(response_list[0]),
+            "no_of_bits": int(response_list[1]),
+            "encoding": response_list[2],
+            "binary_format": response_list[3],
+            "byte_order": response_list[4],
+            "no_of_points": int(response_list[5]),
+            "waveform_ID": response_list[6],
+            "point_format": response_list[7],
+            "x_incr": float(response_list[8]),
             # outdict['point_offset'] = response_list[9]  # Always zero
-            'x_zero': float(response_list[10]),
-            'x_unit': response_list[11],
-            'y_multiplier': float(response_list[12]),
-            'y_zero': float(response_list[13]),
-            'y_offset': float(response_list[14]),
-            'y_unit': response_list[15]
+            "x_zero": float(response_list[10]),
+            "x_unit": response_list[11],
+            "y_multiplier": float(response_list[12]),
+            "y_zero": float(response_list[13]),
+            "y_offset": float(response_list[14]),
+            "y_unit": response_list[15],
         }
         return outdict
 
@@ -191,9 +193,9 @@ class ScopeArray(ArrayParameter):
             of s and curve values in units of V; (time, voltages) and
             the number of points as an integer
         """
-        fulldata = waveform.split(';')
-        preamblestr = ';'.join(fulldata[:16])
-        curvestr = ';'.join(fulldata[16:])
+        fulldata = waveform.split(";")
+        preamblestr = ";".join(fulldata[:16])
+        curvestr = ";".join(fulldata[16:])
 
         preamble = self._preambleparser(preamblestr)
         # the raw curve data starts with a header containing the char #
@@ -201,20 +203,20 @@ class ScopeArray(ArrayParameter):
         # array in bytes
         # and the length of the array. I.e. the string #45000 is 5000 bytes
         # represented by 4 digits.
-        total_number_of_bytes = preamble['no_of_bytes']*preamble['no_of_points']
+        total_number_of_bytes = preamble["no_of_bytes"] * preamble["no_of_points"]
         raw_data_offset = 2 + len(str(total_number_of_bytes))
         curvestr = curvestr[raw_data_offset:-1]
         rawcurve = self._binaryparser(curvestr)
 
-        yoff = preamble['y_offset']
+        yoff = preamble["y_offset"]
         yoff -= 2**15  # data width 2
-        ymult = preamble['y_multiplier']
-        ydata = ymult*(rawcurve-yoff)
-        assert len(ydata) == preamble['no_of_points']
-        xstart = preamble['x_zero']
-        xinc = preamble['x_incr']
-        xdata = np.linspace(xstart, len(ydata)*xinc+xstart, len(ydata))
-        return xdata, ydata, preamble['no_of_points']
+        ymult = preamble["y_multiplier"]
+        ydata = ymult * (rawcurve - yoff)
+        assert len(ydata) == preamble["no_of_points"]
+        xstart = preamble["x_zero"]
+        xinc = preamble["x_incr"]
+        xdata = np.linspace(xstart, len(ydata) * xinc + xstart, len(ydata))
+        return xdata, ydata, preamble["no_of_points"]
 
 
 class TektronixTPS2012Channel(InstrumentChannel):
@@ -268,7 +270,7 @@ class TektronixTPS2012Channel(InstrumentChannel):
         # 'SELect?' returns a ';'-separated string of 0s and 1s
         # denoting state display state of ch1, ch2, ?, ?, ?
         # (maybe ch1, ch2, math, ref1, ref2 ..?)
-        selected = list(map(int, self.ask('SELect?').split(';')))
+        selected = list(map(int, self.ask("SELect?").split(";")))
         state = selected[ch - 1]
         return state
 
@@ -306,15 +308,15 @@ class TektronixTPS2012(VisaInstrument):
 
         # functions
 
-        self.add_function('force_trigger',
-                          call_cmd='TRIGger FORce',
-                          docstring='Force trigger event')
-        self.add_function('run',
-                          call_cmd='ACQuire:STATE RUN',
-                          docstring='Start acquisition')
-        self.add_function('stop',
-                          call_cmd='ACQuire:STATE STOP',
-                          docstring='Stop acquisition')
+        self.add_function(
+            "force_trigger", call_cmd="TRIGger FORce", docstring="Force trigger event"
+        )
+        self.add_function(
+            "run", call_cmd="ACQuire:STATE RUN", docstring="Start acquisition"
+        )
+        self.add_function(
+            "stop", call_cmd="ACQuire:STATE STOP", docstring="Stop acquisition"
+        )
 
         # general parameters
         self.trigger_type: Parameter = self.add_parameter(
@@ -428,7 +430,7 @@ class TektronixTPS2012(VisaInstrument):
         set_cmd for the horizontal_scale
         """
         self.trace_ready = False
-        self.write(f'HORizontal:SCAle {scale}')
+        self.write(f"HORizontal:SCAle {scale}")
 
     ##################################################
     # METHODS FOR THE USER                           #

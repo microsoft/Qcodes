@@ -39,12 +39,14 @@ class ChannelTrace(ParameterWithSetpoints):
         self._valid_channels = (1, 2)
 
         if channel not in self._valid_channels:
-            raise ValueError('Invalid channel specifier. SR830 only has '
-                             'channels 1 and 2.')
+            raise ValueError(
+                "Invalid channel specifier. SR830 only has channels 1 and 2."
+            )
 
         if not isinstance(self.root_instrument, SR830):
-            raise ValueError('Invalid parent instrument. ChannelBuffer '
-                             'can only live on an SR830.')
+            raise ValueError(
+                "Invalid parent instrument. ChannelBuffer can only live on an SR830."
+            )
 
         self.channel = channel
         self.update_unit()
@@ -52,14 +54,14 @@ class ChannelTrace(ParameterWithSetpoints):
     def update_unit(self) -> None:
         assert isinstance(self.root_instrument, SR830)
         params = self.root_instrument.parameters
-        if params[f'ch{self.channel}_ratio'].get() != 'none':
-            self.unit = '%'
+        if params[f"ch{self.channel}_ratio"].get() != "none":
+            self.unit = "%"
         else:
-            disp = params[f'ch{self.channel}_display'].get()
-            if disp == 'Phase':
-                self.unit = 'deg'
+            disp = params[f"ch{self.channel}_display"].get()
+            if disp == "Phase":
+                self.unit = "deg"
             else:
-                self.unit = 'V'
+                self.unit = "V"
             self.label = disp
 
     def get_raw(self) -> ParamRawDataType:
@@ -69,11 +71,12 @@ class ChannelTrace(ParameterWithSetpoints):
         assert isinstance(self.root_instrument, SR830)
         N = self.root_instrument.buffer_npts()
         if N == 0:
-            raise ValueError('No points stored in SR830 data buffer.'
-                             ' Can not poll anything.')
+            raise ValueError(
+                "No points stored in SR830 data buffer. Can not poll anything."
+            )
 
         # poll raw binary data
-        self.root_instrument.write(f'TRCL ? {self.channel}, 0, {N}')
+        self.root_instrument.write(f"TRCL ? {self.channel}, 0, {N}")
         rawdata = self.root_instrument.visa_handle.read_raw()
 
         # parse it
@@ -103,12 +106,14 @@ class ChannelBuffer(ArrayParameter):
         self._valid_channels = (1, 2)
 
         if channel not in self._valid_channels:
-            raise ValueError('Invalid channel specifier. SR830 only has '
-                             'channels 1 and 2.')
+            raise ValueError(
+                "Invalid channel specifier. SR830 only has channels 1 and 2."
+            )
 
         if not isinstance(instrument, SR830):
-            raise ValueError('Invalid parent instrument. ChannelBuffer '
-                             'can only live on an SR830.')
+            raise ValueError(
+                "Invalid parent instrument. ChannelBuffer can only live on an SR830."
+            )
 
         super().__init__(
             name,
@@ -132,31 +137,31 @@ class ChannelBuffer(ArrayParameter):
         N = self.instrument.buffer_npts()  # problem if this is zero?
         # TODO (WilliamHPNielsen): what if SR was changed during acquisition?
         SR = self.instrument.buffer_SR()
-        if SR == 'Trigger':
-            self.setpoint_units = ('',)
-            self.setpoint_names = ('trig_events',)
-            self.setpoint_labels = ('Trigger event number',)
+        if SR == "Trigger":
+            self.setpoint_units = ("",)
+            self.setpoint_names = ("trig_events",)
+            self.setpoint_labels = ("Trigger event number",)
             self.setpoints = (tuple(np.arange(0, N)),)
         else:
-            dt = 1/SR
-            self.setpoint_units = ('s',)
-            self.setpoint_names = ('Time',)
-            self.setpoint_labels = ('Time',)
-            self.setpoints = (tuple(np.linspace(0, N*dt, N)),)
+            dt = 1 / SR
+            self.setpoint_units = ("s",)
+            self.setpoint_names = ("Time",)
+            self.setpoint_labels = ("Time",)
+            self.setpoints = (tuple(np.linspace(0, N * dt, N)),)
 
         self.shape = (N,)
 
         params = self.instrument.parameters
         # YES, it should be: comparing to the string 'none' and not
         # the None literal
-        if params[f'ch{self.channel}_ratio'].get() != 'none':
-            self.unit = '%'
+        if params[f"ch{self.channel}_ratio"].get() != "none":
+            self.unit = "%"
         else:
-            disp = params[f'ch{self.channel}_display'].get()
-            if disp == 'Phase':
-                self.unit = 'deg'
+            disp = params[f"ch{self.channel}_display"].get()
+            if disp == "Phase":
+                self.unit = "deg"
             else:
-                self.unit = 'V'
+                self.unit = "V"
 
         if self.channel == 1:
             self.instrument._buffer1_ready = True
@@ -174,12 +179,12 @@ class ChannelBuffer(ArrayParameter):
             ready = self.instrument._buffer2_ready
 
         if not ready:
-            raise RuntimeError('Buffer not ready. Please run '
-                               'prepare_buffer_readout')
+            raise RuntimeError("Buffer not ready. Please run prepare_buffer_readout")
         N = self.instrument.buffer_npts()
         if N == 0:
-            raise ValueError('No points stored in SR830 data buffer.'
-                             ' Can not poll anything.')
+            raise ValueError(
+                "No points stored in SR830 data buffer. Can not poll anything."
+            )
 
         # poll raw binary data
         self.instrument.write(f"TRCL ? {self.channel}, 0, {N}")
@@ -266,10 +271,10 @@ class SR830(VisaInstrument):
     _CURR_ENUM = Enum(*_CURR_TO_N.keys())
 
     _INPUT_CONFIG_TO_N: ClassVar[dict[str, int]] = {
-        'a': 0,
-        'a-b': 1,
-        'I 1M': 2,
-        'I 100M': 3,
+        "a": 0,
+        "a-b": 1,
+        "I 1M": 2,
+        "I 100M": 3,
     }
 
     _N_TO_INPUT_CONFIG: ClassVar[dict[int, str]] = {
@@ -482,7 +487,7 @@ class SR830(VisaInstrument):
         """Parameter sync_filter"""
 
         def parse_offset_get(s: str) -> tuple[float, int]:
-            parts = s.split(',')
+            parts = s.split(",")
 
             return float(parts[0]), int(parts[1])
 
@@ -505,18 +510,22 @@ class SR830(VisaInstrument):
 
         # Aux input/output
         for i in [1, 2, 3, 4]:
-            self.add_parameter(f'aux_in{i}',
-                               label=f'Aux input {i}',
-                               get_cmd=f'OAUX? {i}',
-                               get_parser=float,
-                               unit='V')
+            self.add_parameter(
+                f"aux_in{i}",
+                label=f"Aux input {i}",
+                get_cmd=f"OAUX? {i}",
+                get_parser=float,
+                unit="V",
+            )
 
-            self.add_parameter(f'aux_out{i}',
-                               label=f'Aux output {i}',
-                               get_cmd=f'AUXV? {i}',
-                               get_parser=float,
-                               set_cmd=f'AUXV {i}, {{}}',
-                               unit='V')
+            self.add_parameter(
+                f"aux_out{i}",
+                label=f"Aux output {i}",
+                get_cmd=f"AUXV? {i}",
+                get_parser=float,
+                set_cmd=f"AUXV {i}, {{}}",
+                unit="V",
+            )
 
         # Setup
         self.output_interface: Parameter = self.add_parameter(
@@ -629,64 +638,88 @@ class SR830(VisaInstrument):
 
         # Channel setup
         for ch in range(1, 3):
-
             # detailed validation and mapping performed in set/get functions
-            self.add_parameter(f'ch{ch}_ratio',
-                               label=f'Channel {ch} ratio',
-                               get_cmd=partial(self._get_ch_ratio, ch),
-                               set_cmd=partial(self._set_ch_ratio, ch),
-                               vals=Strings())
-            self.add_parameter(f'ch{ch}_display',
-                               label=f'Channel {ch} display',
-                               get_cmd=partial(self._get_ch_display, ch),
-                               set_cmd=partial(self._set_ch_display, ch),
-                               vals=Strings())
-            self.add_parameter(f'ch{ch}_databuffer',
-                               channel=ch,
-                               parameter_class=ChannelBuffer)
-            self.add_parameter(f'ch{ch}_datatrace',
-                               channel=ch,
-                               vals=Arrays(shape=(self.buffer_npts.get,)),
-                               setpoints=(self.sweep_setpoints,),
-                               parameter_class=ChannelTrace)
+            self.add_parameter(
+                f"ch{ch}_ratio",
+                label=f"Channel {ch} ratio",
+                get_cmd=partial(self._get_ch_ratio, ch),
+                set_cmd=partial(self._set_ch_ratio, ch),
+                vals=Strings(),
+            )
+            self.add_parameter(
+                f"ch{ch}_display",
+                label=f"Channel {ch} display",
+                get_cmd=partial(self._get_ch_display, ch),
+                set_cmd=partial(self._set_ch_display, ch),
+                vals=Strings(),
+            )
+            self.add_parameter(
+                f"ch{ch}_databuffer", channel=ch, parameter_class=ChannelBuffer
+            )
+            self.add_parameter(
+                f"ch{ch}_datatrace",
+                channel=ch,
+                vals=Arrays(shape=(self.buffer_npts.get,)),
+                setpoints=(self.sweep_setpoints,),
+                parameter_class=ChannelTrace,
+            )
 
         # Auto functions
-        self.add_function('auto_gain', call_cmd='AGAN')
-        self.add_function('auto_reserve', call_cmd='ARSV')
-        self.add_function('auto_phase', call_cmd='APHS')
-        self.add_function('auto_offset', call_cmd='AOFF {0}',
-                          args=[Enum(1, 2, 3)])
+        self.add_function("auto_gain", call_cmd="AGAN")
+        self.add_function("auto_reserve", call_cmd="ARSV")
+        self.add_function("auto_phase", call_cmd="APHS")
+        self.add_function("auto_offset", call_cmd="AOFF {0}", args=[Enum(1, 2, 3)])
 
         # Interface
-        self.add_function('reset', call_cmd='*RST')
+        self.add_function("reset", call_cmd="*RST")
 
-        self.add_function('disable_front_panel', call_cmd='OVRM 0')
-        self.add_function('enable_front_panel', call_cmd='OVRM 1')
+        self.add_function("disable_front_panel", call_cmd="OVRM 0")
+        self.add_function("enable_front_panel", call_cmd="OVRM 1")
 
-        self.add_function('send_trigger', call_cmd='TRIG',
-                          docstring=("Send a software trigger. "
-                                     "This command has the same effect as a "
-                                     "trigger at the rear panel trigger"
-                                     " input."))
+        self.add_function(
+            "send_trigger",
+            call_cmd="TRIG",
+            docstring=(
+                "Send a software trigger. "
+                "This command has the same effect as a "
+                "trigger at the rear panel trigger"
+                " input."
+            ),
+        )
 
-        self.add_function('buffer_start', call_cmd='STRT',
-                          docstring=("The buffer_start command starts or "
-                                     "resumes data storage. buffer_start"
-                                     " is ignored if storage is already in"
-                                     " progress."))
+        self.add_function(
+            "buffer_start",
+            call_cmd="STRT",
+            docstring=(
+                "The buffer_start command starts or "
+                "resumes data storage. buffer_start"
+                " is ignored if storage is already in"
+                " progress."
+            ),
+        )
 
-        self.add_function('buffer_pause', call_cmd='PAUS',
-                          docstring=("The buffer_pause command pauses data "
-                                     "storage. If storage is already paused "
-                                     "or reset then this command is ignored."))
+        self.add_function(
+            "buffer_pause",
+            call_cmd="PAUS",
+            docstring=(
+                "The buffer_pause command pauses data "
+                "storage. If storage is already paused "
+                "or reset then this command is ignored."
+            ),
+        )
 
-        self.add_function('buffer_reset', call_cmd='REST',
-                          docstring=("The buffer_reset command resets the data"
-                                     " buffers. The buffer_reset command can "
-                                     "be sent at any time - any storage in "
-                                     "progress, paused or not, will be reset."
-                                     " This command will erase the data "
-                                     "buffer."))
+        self.add_function(
+            "buffer_reset",
+            call_cmd="REST",
+            docstring=(
+                "The buffer_reset command resets the data"
+                " buffers. The buffer_reset command can "
+                "be sent at any time - any storage in "
+                "progress, paused or not, will be reset."
+                " This command will erase the data "
+                "buffer."
+            ),
+        )
 
         # Initialize the proper units of the outputs and sensitivities
         self.input_config()
@@ -697,21 +730,20 @@ class SR830(VisaInstrument):
 
         self.connect_message()
 
-
     SNAP_PARAMETERS: ClassVar[dict[str, str]] = {
-            'x': '1',
-            'y': '2',
-            'r': '3',
-            'p': '4',
-        'phase': '4',
-            'θ': '4',
-         'aux1': '5',
-         'aux2': '6',
-         'aux3': '7',
-         'aux4': '8',
-         'freq': '9',
-          'ch1': '10',
-          'ch2': '11'
+        "x": "1",
+        "y": "2",
+        "r": "3",
+        "p": "4",
+        "phase": "4",
+        "θ": "4",
+        "aux1": "5",
+        "aux2": "6",
+        "aux3": "7",
+        "aux4": "8",
+        "freq": "9",
+        "ch1": "10",
+        "ch2": "11",
     }
 
     def snap(self, *parameters: str) -> tuple[float, ...]:
@@ -756,19 +788,22 @@ class SR830(VisaInstrument):
         """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
-                'It is only possible to request values of 2 to 6 parameters'
-                ' at a time.')
+                "It is only possible to request values of 2 to 6 parameters"
+                " at a time."
+            )
 
         for name in parameters:
             if name.lower() not in self.SNAP_PARAMETERS:
-                raise KeyError(f'{name} is an unknown parameter. Refer'
-                               f' to `SNAP_PARAMETERS` for a list of valid'
-                               f' parameter names')
+                raise KeyError(
+                    f"{name} is an unknown parameter. Refer"
+                    f" to `SNAP_PARAMETERS` for a list of valid"
+                    f" parameter names"
+                )
 
         p_ids = [self.SNAP_PARAMETERS[name.lower()] for name in parameters]
         output = self.ask(f'SNAP? {",".join(p_ids)}')
 
-        return tuple(float(val) for val in output.split(','))
+        return tuple(float(val) for val in output.split(","))
 
     def increment_sensitivity(self) -> bool:
         """
@@ -793,7 +828,7 @@ class SR830(VisaInstrument):
         return self._change_sensitivity(-1)
 
     def _change_sensitivity(self, dn: int) -> bool:
-        if self.input_config() in ['a', 'a-b']:
+        if self.input_config() in ["a", "a-b"]:
             n_to = self._N_TO_VOLT
             to_n = self._VOLT_TO_N
         else:
@@ -809,76 +844,60 @@ class SR830(VisaInstrument):
         return True
 
     def _set_buffer_SR(self, SR: int) -> None:
-        self.write(f'SRAT {SR}')
+        self.write(f"SRAT {SR}")
         self._buffer1_ready = False
         self._buffer2_ready = False
         self.sweep_setpoints.update_units_if_constant_sample_rate()
 
     def _get_ch_ratio(self, channel: int) -> str:
-        val_mapping = {1: {0: 'none',
-                           1: 'Aux In 1',
-                           2: 'Aux In 2'},
-                       2: {0: 'none',
-                           1: 'Aux In 3',
-                           2: 'Aux In 4'}}
-        resp = int(self.ask(f'DDEF ? {channel}').split(',')[1])
+        val_mapping = {
+            1: {0: "none", 1: "Aux In 1", 2: "Aux In 2"},
+            2: {0: "none", 1: "Aux In 3", 2: "Aux In 4"},
+        }
+        resp = int(self.ask(f"DDEF ? {channel}").split(",")[1])
 
         return val_mapping[channel][resp]
 
     def _set_ch_ratio(self, channel: int, ratio: str) -> None:
-        val_mapping = {1: {'none': 0,
-                           'Aux In 1': 1,
-                           'Aux In 2': 2},
-                       2: {'none': 0,
-                           'Aux In 3': 1,
-                           'Aux In 4': 2}}
+        val_mapping = {
+            1: {"none": 0, "Aux In 1": 1, "Aux In 2": 2},
+            2: {"none": 0, "Aux In 3": 1, "Aux In 4": 2},
+        }
         vals = val_mapping[channel].keys()
         if ratio not in vals:
-            raise ValueError(f'{ratio} not in {vals}')
+            raise ValueError(f"{ratio} not in {vals}")
         ratio_int = val_mapping[channel][ratio]
-        disp_val = int(self.ask(f'DDEF ? {channel}').split(',')[0])
-        self.write(f'DDEF {channel}, {disp_val}, {ratio_int}')
+        disp_val = int(self.ask(f"DDEF ? {channel}").split(",")[0])
+        self.write(f"DDEF {channel}, {disp_val}, {ratio_int}")
         self._buffer_ready = False
 
     def _get_ch_display(self, channel: int) -> str:
-        val_mapping = {1: {0: 'X',
-                           1: 'R',
-                           2: 'X Noise',
-                           3: 'Aux In 1',
-                           4: 'Aux In 2'},
-                       2: {0: 'Y',
-                           1: 'Phase',
-                           2: 'Y Noise',
-                           3: 'Aux In 3',
-                           4: 'Aux In 4'}}
-        resp = int(self.ask(f'DDEF ? {channel}').split(',')[0])
+        val_mapping = {
+            1: {0: "X", 1: "R", 2: "X Noise", 3: "Aux In 1", 4: "Aux In 2"},
+            2: {0: "Y", 1: "Phase", 2: "Y Noise", 3: "Aux In 3", 4: "Aux In 4"},
+        }
+        resp = int(self.ask(f"DDEF ? {channel}").split(",")[0])
 
         return val_mapping[channel][resp]
 
     def _set_ch_display(self, channel: int, disp: str) -> None:
-        val_mapping = {1: {'X': 0,
-                           'R': 1,
-                           'X Noise': 2,
-                           'Aux In 1': 3,
-                           'Aux In 2': 4},
-                       2: {'Y': 0,
-                           'Phase': 1,
-                           'Y Noise': 2,
-                           'Aux In 3': 3,
-                           'Aux In 4': 4}}
+        val_mapping = {
+            1: {"X": 0, "R": 1, "X Noise": 2, "Aux In 1": 3, "Aux In 2": 4},
+            2: {"Y": 0, "Phase": 1, "Y Noise": 2, "Aux In 3": 3, "Aux In 4": 4},
+        }
         vals = val_mapping[channel].keys()
         if disp not in vals:
-            raise ValueError(f'{disp} not in {vals}')
+            raise ValueError(f"{disp} not in {vals}")
         disp_int = val_mapping[channel][disp]
         # Since ratio AND display are set simultaneously,
         # we get and then re-set the current ratio value
-        ratio_val = int(self.ask(f'DDEF ? {channel}').split(',')[1])
-        self.write(f'DDEF {channel}, {disp_int}, {ratio_val}')
+        ratio_val = int(self.ask(f"DDEF ? {channel}").split(",")[1])
+        self.write(f"DDEF {channel}, {disp_int}, {ratio_val}")
         self._buffer_ready = False
         # we update the unit of the datatrace
         # according to the choice of channel
         params = self.parameters
-        dataparam = params[f'ch{channel}_datatrace']
+        dataparam = params[f"ch{channel}_datatrace"]
         assert isinstance(dataparam, ChannelTrace)
         dataparam.update_unit()
 
@@ -895,33 +914,33 @@ class SR830(VisaInstrument):
     def _get_input_config(self, s: int) -> str:
         mode = self._N_TO_INPUT_CONFIG[int(s)]
 
-        if mode in ['a', 'a-b']:
+        if mode in ["a", "a-b"]:
             self.sensitivity.vals = self._VOLT_ENUM
-            self._set_units('V')
+            self._set_units("V")
         else:
             self.sensitivity.vals = self._CURR_ENUM
-            self._set_units('A')
+            self._set_units("A")
 
         return mode
 
     def _set_input_config(self, s: str) -> int:
-        if s in ['a', 'a-b']:
+        if s in ["a", "a-b"]:
             self.sensitivity.vals = self._VOLT_ENUM
-            self._set_units('V')
+            self._set_units("V")
         else:
             self.sensitivity.vals = self._CURR_ENUM
-            self._set_units('A')
+            self._set_units("A")
 
         return self._INPUT_CONFIG_TO_N[s]
 
     def _get_sensitivity(self, s: int) -> float:
-        if self.input_config() in ['a', 'a-b']:
+        if self.input_config() in ["a", "a-b"]:
             return self._N_TO_VOLT[int(s)]
         else:
             return self._N_TO_CURR[int(s)]
 
     def _set_sensitivity(self, s: float) -> int:
-        if self.input_config() in ['a', 'a-b']:
+        if self.input_config() in ["a", "a-b"]:
             return self._VOLT_TO_N[s]
         else:
             return self._CURR_TO_N[s]
@@ -937,6 +956,7 @@ class SR830(VisaInstrument):
                 number of steps needed to change to the optimal sensitivity may
                 be more or less than this maximum.
         """
+
         def autorange_once() -> bool:
             r = self.R()
             sens = self.sensitivity()
@@ -991,9 +1011,9 @@ class GeneratedSetPoints(Parameter):
         """
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
-        if SR != 'Trigger':
-            self.unit = 's'
-            self.label = 'Time'
+        if SR != "Trigger":
+            self.unit = "s"
+            self.label = "Time"
 
     def set_raw(self, value: Iterable[float | int]) -> None:
         self.sweep_array = value
@@ -1001,10 +1021,10 @@ class GeneratedSetPoints(Parameter):
     def get_raw(self) -> ParamRawDataType:
         assert isinstance(self.root_instrument, SR830)
         SR = self.root_instrument.buffer_SR.get()
-        if SR == 'Trigger':
+        if SR == "Trigger":
             return self.sweep_array
         else:
             N = self.root_instrument.buffer_npts.get()
-            dt = 1/SR
+            dt = 1 / SR
 
-            return np.linspace(0, N*dt, N)
+            return np.linspace(0, N * dt, N)

@@ -24,8 +24,10 @@ _channel_name_to_command_map: dict[str, str] = {"A": "A", "B": "B", "C": "C", "D
 # created in order to preserve uniformity of referencing to sensor channels
 # within this driver.
 _channel_name_to_outmode_command_map: dict[str, int] = {
-    ch_name: num_for_cmd + 1
-    for num_for_cmd, ch_name in enumerate(_channel_name_to_command_map.keys())
+    ch_name: num_for_cmd
+    for num_for_cmd, ch_name in enumerate(
+        ["None"] + list(_channel_name_to_command_map.keys())
+    )
 }
 
 

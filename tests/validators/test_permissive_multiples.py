@@ -15,11 +15,13 @@ multiples: list[list[float | np.floating]] = [
     [np.pi, 5 * np.pi / 2, 0, -np.pi / 2],
 ]
 
-not_multiples = [[801e-9, 4.002e-5],
-                 [1.5, 0.9999999],
-                 [0.2226],
-                 [0.6667, 28 / 9],
-                 [3 * np.pi / 4]]
+not_multiples = [
+    [801e-9, 4.002e-5],
+    [1.5, 0.9999999],
+    [0.2226],
+    [0.6667, 28 / 9],
+    [3 * np.pi / 4],
+]
 
 
 def test_passing() -> None:

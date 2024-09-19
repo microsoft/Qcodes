@@ -110,11 +110,14 @@ def test_generate_guid(loc, stat, smpl) -> None:
             _ = generate_guid()
 
 
-@settings(max_examples=50, deadline=None,
-          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=50,
+    deadline=None,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 @given(loc=hst.integers(-10, 350))
 def test_set_guid_location_code(loc, monkeypatch) -> None:
-    monkeypatch.setattr('builtins.input', lambda x: str(loc))
+    monkeypatch.setattr("builtins.input", lambda x: str(loc))
     orig_cfg = qc.config
     original_loc = orig_cfg["GUID_components"]["location"]
     set_guid_location_code()
@@ -127,11 +130,14 @@ def test_set_guid_location_code(loc, monkeypatch) -> None:
         assert cfg["GUID_components"]["location"] == original_loc
 
 
-@settings(max_examples=50, deadline=1000,
-          suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    max_examples=50,
+    deadline=1000,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 @given(ws=hst.integers(-10, 17000000))
 def test_set_guid_workstation_code(ws, monkeypatch) -> None:
-    monkeypatch.setattr('builtins.input', lambda x: str(ws))
+    monkeypatch.setattr("builtins.input", lambda x: str(ws))
 
     orig_cfg = qc.config
     original_ws = orig_cfg["GUID_components"]["work_station"]
@@ -175,10 +181,10 @@ def test_filter_guid(locs, stats, smpls) -> None:
 
         comps = parse_guid(guid)
 
-        assert comps['location'] == loc
-        assert comps['work_station'] == stat
-        assert comps['sample'] == smpl
-        assert comps['time'] - gen_time < 2
+        assert comps["location"] == loc
+        assert comps["work_station"] == stat
+        assert comps["sample"] == smpl
+        assert comps["time"] - gen_time < 2
 
         return guid
 
@@ -265,7 +271,6 @@ def test_validation() -> None:
 
 @pytest.mark.usefixtures("seed_random")
 def test_random_sample_guid() -> None:
-
     cfg = qc.config
     cfg["GUID_components"]["GUID_type"] = "random_sample"
 
@@ -276,7 +281,6 @@ def test_random_sample_guid() -> None:
 
 
 def test_random_sample_and_sample_int_in_guid_raises() -> None:
-
     cfg = qc.config
     cfg["GUID_components"]["GUID_type"] = "random_sample"
 

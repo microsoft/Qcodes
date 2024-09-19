@@ -16,7 +16,6 @@ def test_wrong_input_type_raises() -> None:
 
 
 def test_equality(some_paramspecbases) -> None:
-
     (psb1, psb2, psb3, _) = some_paramspecbases
 
     idp1 = InterDependencies_(dependencies={psb1: (psb2, psb3)})
@@ -33,19 +32,19 @@ def test_equality(some_paramspecbases) -> None:
 
 
 def test_keys_of_result_of_to_dict(some_interdeps) -> None:
-
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
         ser_desc = desc._to_dict()
-        assert list(ser_desc.keys()) == ['version',
-                                         'interdependencies',
-                                         'interdependencies_',
-                                         'shapes']
+        assert list(ser_desc.keys()) == [
+            "version",
+            "interdependencies",
+            "interdependencies_",
+            "shapes",
+        ]
 
 
 def test_to_and_from_dict_roundtrip(some_interdeps) -> None:
-
     for idps in some_interdeps:
         desc = RunDescriber(interdeps=idps)
 
@@ -58,7 +57,6 @@ def test_to_and_from_dict_roundtrip(some_interdeps) -> None:
 
 
 def test_yaml_creation_and_loading(some_interdeps) -> None:
-
     yaml = YAML()
 
     for idps in some_interdeps:
@@ -67,11 +65,13 @@ def test_yaml_creation_and_loading(some_interdeps) -> None:
         yaml_str = serial.to_yaml_for_storage(desc)
         assert isinstance(yaml_str, str)
         ydict = dict(yaml.load(yaml_str))
-        assert list(ydict.keys()) == ['version',
-                                      'interdependencies',
-                                      'interdependencies_',
-                                      'shapes']
-        assert ydict['version'] == serial.STORAGE_VERSION
+        assert list(ydict.keys()) == [
+            "version",
+            "interdependencies",
+            "interdependencies_",
+            "shapes",
+        ]
+        assert ydict["version"] == serial.STORAGE_VERSION
 
         new_desc = serial.from_yaml_to_current(yaml_str)
         assert new_desc == desc
@@ -85,8 +85,7 @@ def test_jsonization_as_v0_for_storage(some_interdeps) -> None:
     idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_json = json.dumps({'version': 0,
-                           'interdependencies': idps_old._to_dict()})
+    old_json = json.dumps({"version": 0, "interdependencies": idps_old._to_dict()})
 
     assert serial.to_json_as_version(new_desc, 0) == old_json
 
@@ -99,10 +98,14 @@ def test_default_jsonization_for_storage(some_interdeps) -> None:
     idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    expected_json = json.dumps({'version': 3,
-                                'interdependencies': idps_old._to_dict(),
-                                'interdependencies_': idps_new._to_dict(),
-                                'shapes': None})
+    expected_json = json.dumps(
+        {
+            "version": 3,
+            "interdependencies": idps_old._to_dict(),
+            "interdependencies_": idps_new._to_dict(),
+            "shapes": None,
+        }
+    )
 
     assert serial.to_json_for_storage(new_desc) == expected_json
 
@@ -117,7 +120,7 @@ def test_dictization_as_v0_for_storage(some_interdeps) -> None:
     idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_desc = {'version': 0, 'interdependencies': idps_old._to_dict()}
+    old_desc = {"version": 0, "interdependencies": idps_old._to_dict()}
 
     assert serial.to_dict_as_version(new_desc, 0) == old_desc
 
@@ -132,10 +135,12 @@ def test_default_dictization_for_storage(some_interdeps) -> None:
     idps_old = new_to_old(idps_new)
 
     new_desc = RunDescriber(idps_new)
-    old_desc = {'version': 3,
-                'interdependencies': idps_old._to_dict(),
-                'interdependencies_': idps_new._to_dict(),
-                'shapes': None}
+    old_desc = {
+        "version": 3,
+        "interdependencies": idps_old._to_dict(),
+        "interdependencies_": idps_new._to_dict(),
+        "shapes": None,
+    }
 
     assert serial.to_dict_for_storage(new_desc) == old_desc
 
@@ -149,8 +154,8 @@ def test_dictization_of_current_version(some_interdeps) -> None:
         idps_old = new_to_old(desc.interdeps)
 
         ser = desc._to_dict()
-        assert ser['version'] == 3
-        assert ser['interdependencies'] == idps_old._to_dict()
-        assert ser['interdependencies_'] == idps._to_dict()
-        assert ser['shapes'] is None
+        assert ser["version"] == 3
+        assert ser["interdependencies"] == idps_old._to_dict()
+        assert ser["interdependencies_"] == idps._to_dict()
+        assert ser["shapes"] is None
         assert len(ser.keys()) == 4

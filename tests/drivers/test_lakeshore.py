@@ -23,16 +23,18 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-VISA_LOGGER = '.'.join((InstrumentBase.__module__, 'com', 'visa'))
+VISA_LOGGER = ".".join((InstrumentBase.__module__, "com", "visa"))
 
 P = ParamSpec("P")
 T = TypeVar("T")
+
 
 class MockVisaInstrument:
     """
     Mixin class that overrides write_raw and ask_raw to simulate an
     instrument.
     """
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.visa_log = get_instrument_logger(self, VISA_LOGGER)  # type: ignore[arg-type]
@@ -66,12 +68,11 @@ class MockVisaInstrument:
                     self.cmds[getattr(f, "command_name")] = f
 
     def write_raw(self, cmd) -> None:
-        cmd_parts = cmd.split(' ')
+        cmd_parts = cmd.split(" ")
         cmd_str = cmd_parts[0].upper()
         if cmd_str in self.cmds:
-            args = ''.join(cmd_parts[1:])
-            self.visa_log.debug(f'Query: '
-                      f'{cmd} for command {cmd_str} with args {args}')
+            args = "".join(cmd_parts[1:])
+            self.visa_log.debug(f"Query: {cmd} for command {cmd_str} with args {args}")
             self.cmds[cmd_str](args)
         else:
             super().write_raw(cmd)  # type: ignore[misc]
@@ -95,6 +96,7 @@ def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.query_name = name.upper()  # type: ignore[attr-defined]
         return func
+
     return wrapper
 
 
@@ -102,6 +104,7 @@ def command(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def wrapper(func: Callable[P, T]) -> Callable[P, T]:
         func.command_name = name.upper()  # type: ignore[attr-defined]
         return func
+
     return wrapper
 
 
@@ -111,7 +114,9 @@ def split_args(split_char: str = ","):
         def decorated_func(self, string_arg):
             args = string_arg.split(split_char)
             return func(self, *args)
+
         return decorated_func
+
     return wrapper
 
 
@@ -139,24 +144,45 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
 
         # initial values
         self.heaters: dict[str, DictClass] = {}
-        self.heaters['0'] = DictClass(P=1, I=2, D=3,
-                                      mode=5, input_channel=2,
-                                      powerup_enable=0, polarity=0,
-                                      use_filter=0, delay=1,
-                                      output_range=0,
-                                      setpoint=4)
-        self.heaters['1'] = DictClass(P=1, I=2, D=3,
-                                      mode=5, input_channel=2,
-                                      powerup_enable=0, polarity=0,
-                                      use_filter=0, delay=1,
-                                      output_range=0,
-                                      setpoint=4)
-        self.heaters['2'] = DictClass(P=1, I=2, D=3,
-                                      mode=5, input_channel=2,
-                                      powerup_enable=0, polarity=0,
-                                      use_filter=0, delay=1,
-                                      output_range=0,
-                                      setpoint=4)
+        self.heaters["0"] = DictClass(
+            P=1,
+            I=2,
+            D=3,
+            mode=5,
+            input_channel=2,
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
+        self.heaters["1"] = DictClass(
+            P=1,
+            I=2,
+            D=3,
+            mode=5,
+            input_channel=2,
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
+        self.heaters["2"] = DictClass(
+            P=1,
+            I=2,
+            D=3,
+            mode=5,
+            input_channel=2,
+            powerup_enable=0,
+            polarity=0,
+            use_filter=0,
+            delay=1,
+            output_range=0,
+            setpoint=4,
+        )
 
         self.channel_mock = {
             str(i): DictClass(
@@ -194,28 +220,31 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         # start at 7K.
         return max(4, 7 - delta)
 
-    @query('PID?')
+    @query("PID?")
     def pidq(self, arg):
         heater = self.heaters[arg]
-        return f'{heater.P},{heater.I},{heater.D}'
+        return f"{heater.P},{heater.I},{heater.D}"
 
-    @command('PID')
+    @command("PID")
     @split_args()
     def pid(self, output, P, I, D):  # noqa  E741
-        for a, v in zip(['P', 'I', 'D'], [P, I, D]):
+        for a, v in zip(["P", "I", "D"], [P, I, D]):
             setattr(self.heaters[output], a, v)
 
-    @query('OUTMODE?')
+    @query("OUTMODE?")
     def outmodeq(self, arg):
         heater = self.heaters[arg]
-        return (f'{heater.mode},{heater.input_channel},'
-                f'{heater.powerup_enable},{heater.polarity},'
-                f'{heater.use_filter},{heater.delay}')
+        return (
+            f"{heater.mode},{heater.input_channel},"
+            f"{heater.powerup_enable},{heater.polarity},"
+            f"{heater.use_filter},{heater.delay}"
+        )
 
-    @command('OUTMODE')
+    @command("OUTMODE")
     @split_args()
-    def outputmode(self, output, mode, input_channel, powerup_enable,
-                   polarity, use_filter, delay):
+    def outputmode(
+        self, output, mode, input_channel, powerup_enable, polarity, use_filter, delay
+    ):
         h = self.heaters[output]
         h.output = output
         h.mode = mode
@@ -225,17 +254,20 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         h.use_filter = use_filter
         h.delay = delay
 
-    @query('INSET?')
+    @query("INSET?")
     def insetq(self, channel):
         ch = self.channel_mock[channel]
-        return (f'{ch.enabled},{ch.dwell},'
-                f'{ch.pause},{ch.curve_number},'
-                f'{ch.temperature_coefficient}')
+        return (
+            f"{ch.enabled},{ch.dwell},"
+            f"{ch.pause},{ch.curve_number},"
+            f"{ch.temperature_coefficient}"
+        )
 
-    @command('INSET')
+    @command("INSET")
     @split_args()
-    def inset(self, channel, enabled, dwell, pause, curve_number,
-              temperature_coefficient):
+    def inset(
+        self, channel, enabled, dwell, pause, curve_number, temperature_coefficient
+    ):
         ch = self.channel_mock[channel]
         ch.enabled = enabled
         ch.dwell = dwell
@@ -243,17 +275,27 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         ch.curve_number = curve_number
         ch.temperature_coefficient = temperature_coefficient
 
-    @query('INTYPE?')
+    @query("INTYPE?")
     def intypeq(self, channel):
         ch = self.channel_mock[channel]
-        return (f'{ch.excitation_mode},{ch.excitation_range_number},'
-                f'{ch.auto_range},{ch.range},'
-                f'{ch.current_source_shunted},{ch.units}')
+        return (
+            f"{ch.excitation_mode},{ch.excitation_range_number},"
+            f"{ch.auto_range},{ch.range},"
+            f"{ch.current_source_shunted},{ch.units}"
+        )
 
-    @command('INTYPE')
+    @command("INTYPE")
     @split_args()
-    def intype(self, channel, excitation_mode, excitation_range_number,
-               auto_range, range, current_source_shunted, units):
+    def intype(
+        self,
+        channel,
+        excitation_mode,
+        excitation_range_number,
+        auto_range,
+        range,
+        current_source_shunted,
+        units,
+    ):
         ch = self.channel_mock[channel]
         ch.excitation_mode = excitation_mode
         ch.excitation_range_number = excitation_range_number
@@ -262,45 +304,45 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
         ch.current_source_shunted = current_source_shunted
         ch.units = units
 
-    @query('RANGE?')
+    @query("RANGE?")
     def rangeq(self, heater):
         h = self.heaters[heater]
-        return f'{h.output_range}'
+        return f"{h.output_range}"
 
-    @command('RANGE')
+    @command("RANGE")
     @split_args()
     def range_cmd(self, heater, output_range):
         h = self.heaters[heater]
         h.output_range = output_range
 
-    @query('SETP?')
+    @query("SETP?")
     def setpointq(self, heater):
         h = self.heaters[heater]
-        return f'{h.setpoint}'
+        return f"{h.setpoint}"
 
-    @command('SETP')
+    @command("SETP")
     @split_args()
     def setpoint(self, heater, setpoint):
         h = self.heaters[heater]
         h.setpoint = setpoint
 
-    @query('TLIMIT?')
+    @query("TLIMIT?")
     def tlimitq(self, channel):
         chan = self.channel_mock[channel]
-        return f'{chan.tlimit}'
+        return f"{chan.tlimit}"
 
-    @command('TLIMIT')
+    @command("TLIMIT")
     @split_args()
     def tlimitcmd(self, channel, tlimit):
         chan = self.channel_mock[channel]
         chan.tlimit = tlimit
 
-    @query('KRDG?')
+    @query("KRDG?")
     def temperature(self, output):
         chan = self.channel_mock[output]
         if self.simulate_heating:
             return self.get_t_when_heating()
-        return f'{chan.T}'
+        return f"{chan.T}"
 
 
 def instrument_fixture(
@@ -319,11 +361,13 @@ def instrument_fixture(
                 yield inst
             finally:
                 inst.close()
+
         return wrapped_fixture
+
     return wrapper
 
 
-@instrument_fixture(scope='function')
+@instrument_fixture(scope="function")
 def lakeshore_372():
     return Model_372_Mock(
         "lakeshore_372_fixture",
@@ -345,10 +389,10 @@ def test_pid_set(lakeshore_372) -> None:
 
 def test_output_mode(lakeshore_372) -> None:
     ls = lakeshore_372
-    mode = 'off'
+    mode = "off"
     input_channel = 1
     powerup_enable = True
-    polarity = 'unipolar'
+    polarity = "unipolar"
     use_filter = True
     delay = 1
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
@@ -368,7 +412,7 @@ def test_output_mode(lakeshore_372) -> None:
 
 def test_range(lakeshore_372) -> None:
     ls = lakeshore_372
-    output_range = '10mA'
+    output_range = "10mA"
     for h in (ls.warmup_heater, ls.analog_heater, ls.sample_heater):
         h.output_range(output_range)
         assert h.output_range() == output_range

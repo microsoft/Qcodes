@@ -1,4 +1,5 @@
 """Instrument base class."""
+
 from __future__ import annotations
 
 import logging
@@ -25,11 +26,9 @@ class InstrumentProtocol(Protocol):
 
     log: InstrumentLoggerAdapter  # instrument logging
 
-    def ask(self, cmd: str) -> str:
-        ...
+    def ask(self, cmd: str) -> str: ...
 
-    def write(self, cmd: str) -> None:
-        ...
+    def write(self, cmd: str) -> None: ...
 
 
 T = TypeVar("T", bound="Instrument")
@@ -59,14 +58,13 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             ``name`` is used.
     """
 
-    _all_instruments: weakref.WeakValueDictionary[
-        str, Instrument
-    ] = weakref.WeakValueDictionary()
+    _all_instruments: weakref.WeakValueDictionary[str, Instrument] = (
+        weakref.WeakValueDictionary()
+    )
     _type: type[Instrument] | None = None
     _instances: weakref.WeakSet[Instrument] = weakref.WeakSet()
 
     def __init__(self, name: str, **kwargs: Unpack[InstrumentBaseKWArgs]) -> None:
-
         self._t0 = time.time()
 
         super().__init__(name=name, **kwargs)
@@ -266,13 +264,13 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
 
     @overload
     @classmethod
-    def find_instrument(cls, name: str, instrument_class: None = None) -> Instrument:
-        ...
+    def find_instrument(
+        cls, name: str, instrument_class: None = None
+    ) -> Instrument: ...
 
     @overload
     @classmethod
-    def find_instrument(cls, name: str, instrument_class: type[T]) -> T:
-        ...
+    def find_instrument(cls, name: str, instrument_class: type[T]) -> T: ...
 
     @classmethod
     def find_instrument(

@@ -19,7 +19,6 @@ def _make_gs200() -> "Iterator[YokogawaGS200]":
 
 
 def test_basic_init(gs200: YokogawaGS200) -> None:
-
     idn = gs200.get_idn()
     assert idn["vendor"] == "QCoDeS Yokogawa Mock"
 

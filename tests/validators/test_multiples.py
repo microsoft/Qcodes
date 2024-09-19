@@ -124,7 +124,7 @@ def test_divisors() -> None:
             n = Multiples(divisor=dd)  # type:ignore[arg-type]
 
     n = Multiples(divisor=3, min_value=1, max_value=10)
-    assert repr(n) == '<Ints 1<=v<=10, Multiples of 3>'
+    assert repr(n) == "<Ints 1<=v<=10, Multiples of 3>"
 
 
 def test_valid_values() -> None:

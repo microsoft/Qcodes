@@ -22,7 +22,7 @@ class KeysightP9374A(N52xx.KeysightPNAxBase):
             min_power=-43,
             max_power=20,
             nports=2,
-            **kwargs
+            **kwargs,
         )
 
         self.get_options()

@@ -47,7 +47,7 @@ def test_get_idn(switch_driver: Keysight34980A) -> None:
         "vendor": "Keysight",
         "model": "34980A",
         "serial": "1000",
-        "firmware": "0.1"
+        "firmware": "0.1",
     }
 
 
@@ -62,14 +62,14 @@ def test_scan_slots(switch_driver: Keysight34980A) -> None:
         "vendor": "Agilent Technologies",
         "model": "34934A-8x64",
         "serial": "AB10000000",
-        "firmware": "1.00"
+        "firmware": "1.00",
     }
 
     assert switch_driver.system_slots_info[3] == {
         "vendor": "Agilent Technologies",
         "model": "34934A-4x32",
         "serial": "AB10000001",
-        "firmware": "1.00"
+        "firmware": "1.00",
     }
 
 

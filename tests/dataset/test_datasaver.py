@@ -47,16 +47,17 @@ def test_default_callback(bg_writing) -> None:
 
     try:
         DataSaver.default_callback = {
-            'run_tables_subscription_callback': callback,
-            'run_tables_subscription_min_wait': 1,
-            'run_tables_subscription_min_count': 2}
+            "run_tables_subscription_callback": callback,
+            "run_tables_subscription_min_wait": 1,
+            "run_tables_subscription_min_count": 2,
+        }
 
         test_set = new_data_set("test-dataset")
         test_set.add_metadata("snapshot", "reasonable_snapshot")
         DataSaver(dataset=test_set, write_period=0, interdeps=InterDependencies_())
         test_set.mark_started(start_bg_writer=bg_writing)
         test_set.mark_completed()
-        assert CALLBACK_SNAPSHOT == 'reasonable_snapshot'
+        assert CALLBACK_SNAPSHOT == "reasonable_snapshot"
         assert CALLBACK_RUN_ID is not None
         assert CALLBACK_RUN_ID > 0
         assert CALLBACK_COUNT > 0
@@ -83,8 +84,7 @@ def test_numpy_types(bg_writing) -> None:
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
 
     dtypes: list[Callable] = [
         np.int8,
@@ -108,9 +108,20 @@ def test_numpy_types(bg_writing) -> None:
 
 
 @pytest.mark.usefixtures("experiment")
-@pytest.mark.parametrize('numeric_type',
-                         [int, float, np.int8, np.int16, np.int32, np.int64,
-                          np.float16, np.float32, np.float64])
+@pytest.mark.parametrize(
+    "numeric_type",
+    [
+        int,
+        float,
+        np.int8,
+        np.int16,
+        np.int32,
+        np.int64,
+        np.float16,
+        np.float32,
+        np.float64,
+    ],
+)
 @pytest.mark.parametrize("bg_writing", [True, False])
 def test_saving_numeric_values_as_text(numeric_type, bg_writing) -> None:
     """
@@ -124,17 +135,18 @@ def test_saving_numeric_values_as_text(numeric_type, bg_writing) -> None:
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
 
     try:
         value = numeric_type(2)
 
         gottype = np.array(value).dtype
 
-        msg = re.escape(f'Parameter {p.name} is of type '
-                        f'"{p.type}", but got a result of '
-                        f'type {gottype} ({value}).')
+        msg = re.escape(
+            f"Parameter {p.name} is of type "
+            f'"{p.type}", but got a result of '
+            f"type {gottype} ({value})."
+        )
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result((p.name, value))
     finally:

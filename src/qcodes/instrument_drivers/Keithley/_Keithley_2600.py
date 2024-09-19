@@ -38,6 +38,7 @@ else:
     class StrEnum(str, Enum):
         pass
 
+
 log = logging.getLogger(__name__)
 
 
@@ -48,7 +49,6 @@ class LuaSweepParameter(ArrayParameter):
     """
 
     def __init__(self, name: str, instrument: Instrument, **kwargs: Any) -> None:
-
         super().__init__(
             name=name,
             shape=(1,),
@@ -104,7 +104,6 @@ class LuaSweepParameter(ArrayParameter):
         self.mode = mode
 
     def get_raw(self) -> np.ndarray:
-
         if self.instrument is not None:
             data = self.instrument._fast_sweep(
                 self.start, self.stop, self.steps, self.mode
@@ -195,7 +194,6 @@ class TimeTrace(ParameterWithSetpoints):
         return self.instrument._execute_lua(script, npts)
 
     def get_raw(self) -> np.ndarray:
-
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
@@ -211,7 +209,6 @@ class TimeAxis(Parameter):
     """
 
     def get_raw(self) -> np.ndarray:
-
         if self.instrument is None:
             raise RuntimeError("No instrument attached to Parameter.")
 
@@ -264,9 +261,7 @@ class _ParameterWithStatus(Parameter):
             for i in bin(int(float(meas_status))).replace("0b", "").zfill(16)[::-1]
         ]
 
-        status = _from_bits_tuple_to_status[
-            (status_bits[0], status_bits[1])
-        ]  # pyright: ignore[reportArgumentType]
+        status = _from_bits_tuple_to_status[(status_bits[0], status_bits[1])]  # pyright: ignore[reportArgumentType]
 
         return float(value), status
 

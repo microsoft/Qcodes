@@ -4,17 +4,41 @@ from qcodes.validators import Strings
 
 from .conftest import AClass, a_func
 
-long_string = '+'.join(str(i) for i in range(100000))
-danish = '\u00d8rsted F\u00e6lled'
-chinese = '\u590f\u65e5\u7545\u9500\u699c\u5927\u724c\u7f8e'
+long_string = "+".join(str(i) for i in range(100000))
+danish = "\u00d8rsted F\u00e6lled"
+chinese = "\u590f\u65e5\u7545\u9500\u699c\u5927\u724c\u7f8e"
 
-strings = ['', '0', '10', '1.0e+10', 'a', 'Ja', 'Artichokes!',
-           danish, chinese, long_string]
+strings = [
+    "",
+    "0",
+    "10",
+    "1.0e+10",
+    "a",
+    "Ja",
+    "Artichokes!",
+    danish,
+    chinese,
+    long_string,
+]
 
-not_strings = [0, 1, 1.0e+10, bytes('', 'utf8'),
-               bytes(danish, 'utf8'), bytes(chinese, 'utf8'),
-               [], [1, 2, 3], {}, {'a': 1, 'b': 2},
-               True, False, None, AClass, AClass(), a_func]
+not_strings = [
+    0,
+    1,
+    1.0e10,
+    bytes("", "utf8"),
+    bytes(danish, "utf8"),
+    bytes(chinese, "utf8"),
+    [],
+    [1, 2, 3],
+    {},
+    {"a": 1, "b": 2},
+    True,
+    False,
+    None,
+    AClass,
+    AClass(),
+    a_func,
+]
 
 
 def test_unlimited() -> None:
@@ -27,7 +51,7 @@ def test_unlimited() -> None:
         with pytest.raises(TypeError):
             s.validate(vv)  # type: ignore[arg-type]
 
-    assert repr(s) == '<Strings>'
+    assert repr(s) == "<Strings>"
 
 
 def test_min() -> None:
@@ -45,7 +69,7 @@ def test_min() -> None:
                 s.validate(vv)  # type: ignore[arg-type]
 
     s = Strings(min_length=100)
-    assert repr(s) == '<Strings len>=100>'
+    assert repr(s) == "<Strings len>=100>"
 
 
 def test_max() -> None:
@@ -63,7 +87,7 @@ def test_max() -> None:
         with pytest.raises(TypeError):
             s.validate(vv)  # type: ignore[arg-type]
 
-    assert repr(s) == '<Strings len<=100>'
+    assert repr(s) == "<Strings len<=100>"
 
 
 def test_range() -> None:
@@ -80,10 +104,10 @@ def test_range() -> None:
         with pytest.raises(TypeError):
             s.validate(vv)  # type: ignore[arg-type]
 
-    assert repr(s) == '<Strings 1<=len<=10>'
+    assert repr(s) == "<Strings 1<=len<=10>"
 
     # single-valued range
-    assert repr(Strings(10, 10)) == '<Strings len=10>'
+    assert repr(Strings(10, 10)) == "<Strings len=10>"
 
 
 def test_failed_strings() -> None:
@@ -99,7 +123,7 @@ def test_failed_strings() -> None:
     with pytest.raises(TypeError):
         Strings(min_length=1e12)  # type: ignore[arg-type]
 
-    for length in [-1, 3.5, '2', None]:
+    for length in [-1, 3.5, "2", None]:
         with pytest.raises(TypeError):
             Strings(max_length=length)  # type: ignore[arg-type]
 

@@ -1,4 +1,5 @@
 """Base class for Instrument and InstrumentModule"""
+
 from __future__ import annotations
 
 import collections.abc
@@ -47,6 +48,7 @@ class InstrumentBaseKWArgs(TypedDict):
     Nicely formatted name of the instrument; if None,
     the ``name`` is used.
     """
+
 
 class InstrumentBase(MetadatableWithName, DelegateAttributes):
     """
@@ -207,7 +209,12 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         is_property = isinstance(getattr(self.__class__, name, None), property)
 
         if not is_property and hasattr(self, name):
-            delattr(self, name)
+            try:
+                delattr(self, name)
+            except AttributeError:
+                self.log.warning(
+                    "Could not remove attribute %s from %s", name, self.full_name
+                )
 
     def add_function(self, name: str, **kwargs: Any) -> None:
         """
@@ -305,7 +312,6 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
     def _get_component_by_name(
         self, potential_top_level_name: str, remaining_name_parts: list[str]
     ) -> MetadatableWithName:
-
         log.debug(
             "trying to find component %s on %s, remaining %s",
             potential_top_level_name,

@@ -43,8 +43,7 @@ def test_string_via_datasaver(experiment) -> None:
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
 
     data_saver.add_result(("p", "some text"))
     data_saver.flush_data_to_database()
@@ -66,7 +65,7 @@ def test_string(experiment) -> None:
     )
 
     meas = Measurement(experiment)
-    meas.register_parameter(p, paramtype='text')
+    meas.register_parameter(p, paramtype="text")
 
     with meas.run() as datasaver:
         datasaver.add_result((p, "some text"))
@@ -96,8 +95,10 @@ def test_string_with_wrong_paramtype(experiment) -> None:
     meas.register_parameter(p)
 
     with meas.run() as datasaver:
-        msg = re.escape('Parameter p is of type "numeric", but got a '
-                        "result of type <U9 (some text).")
+        msg = re.escape(
+            'Parameter p is of type "numeric", but got a '
+            "result of type <U9 (some text)."
+        )
         with pytest.raises(ValueError, match=msg):
             datasaver.add_result((p, "some text"))
 
@@ -117,12 +118,13 @@ def test_string_with_wrong_paramtype_via_datasaver() -> None:
 
     idps = InterDependencies_(standalones=(p,))
 
-    data_saver = DataSaver(
-        dataset=test_set, write_period=0, interdeps=idps)
+    data_saver = DataSaver(dataset=test_set, write_period=0, interdeps=idps)
 
     try:
-        msg = re.escape('Parameter p is of type "numeric", but got a '
-                        "result of type <U9 (some text).")
+        msg = re.escape(
+            'Parameter p is of type "numeric", but got a '
+            "result of type <U9 (some text)."
+        )
         with pytest.raises(ValueError, match=msg):
             data_saver.add_result(("p", "some text"))
     finally:
@@ -143,12 +145,12 @@ def test_string_saved_and_loaded_as_numeric_via_dataset() -> None:
     test_set.set_interdependencies(idps)
     test_set.mark_started()
 
-    test_set.add_results([{"p": 'some text'}])
+    test_set.add_results([{"p": "some text"}])
 
     test_set.mark_completed()
 
     try:
-        assert np.array(['some text']) == test_set.get_parameter_data()["p"]["p"]
+        assert np.array(["some text"]) == test_set.get_parameter_data()["p"]["p"]
     finally:
         test_set.conn.close()
 
@@ -170,7 +172,7 @@ def test_list_of_strings(experiment) -> None:
     )
 
     meas = Measurement(experiment)
-    meas.register_parameter(p, paramtype='text')
+    meas.register_parameter(p, paramtype="text")
 
     with meas.run() as datasaver:
         datasaver.add_result((p, list_of_strings))
@@ -185,8 +187,7 @@ def test_list_of_strings(experiment) -> None:
         test_set.conn.close()  # type: ignore[attr-defined]
 
 
-@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,),
-          deadline=None)
+@settings(suppress_health_check=(HealthCheck.function_scoped_fixture,), deadline=None)
 @given(
     p_values=hypnumpy.arrays(
         dtype=hst.sampled_from(
@@ -211,12 +212,9 @@ def test_string_and_date_data_in_array(experiment, p_values) -> None:
     )
 
     meas = Measurement(experiment)
-    meas.register_parameter(p, paramtype='array')
+    meas.register_parameter(p, paramtype="array")
 
     with meas.run() as datasaver:
         datasaver.add_result((p, p.get()))
     actual_data = datasaver.dataset.get_parameter_data()["p"]["p"]
-    np.testing.assert_array_equal(
-        actual_data,
-        p_values.reshape((1, *p_values.shape))
-    )
+    np.testing.assert_array_equal(actual_data, p_values.reshape((1, *p_values.shape)))

@@ -32,8 +32,10 @@ if TYPE_CHECKING:
         KeysightB1500,
     )
 
-_pattern = re.compile(r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
-                      r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})")
+_pattern = re.compile(
+    r"((?P<status>\w)(?P<chnr>\w)(?P<dtype>\w))?"
+    r"(?P<value>[+-]\d{1,3}\.\d{3,6}E[+-]\d{2})"
+)
 
 
 class KeysightB1500CVSweeper(InstrumentChannel):
@@ -241,19 +243,23 @@ class KeysightB1500CVSweeper(InstrumentChannel):
         measure delay will be 0.
         """
 
-        self._set_sweep_delays_group = Group([self.hold_time,
-                                       self.delay,
-                                       self.step_delay,
-                                       self.trigger_delay,
-                                       self.measure_delay],
-                                      set_cmd='WTDCV '
-                                              '{hold_time},'
-                                              '{delay},'
-                                              '{step_delay},'
-                                              '{trigger_delay},'
-                                              '{measure_delay}',
-                                      get_cmd=self._get_sweep_delays(),
-                                      get_parser=self._get_sweep_delays_parser)
+        self._set_sweep_delays_group = Group(
+            [
+                self.hold_time,
+                self.delay,
+                self.step_delay,
+                self.trigger_delay,
+                self.measure_delay,
+            ],
+            set_cmd="WTDCV "
+            "{hold_time},"
+            "{delay},"
+            "{step_delay},"
+            "{trigger_delay},"
+            "{measure_delay}",
+            get_cmd=self._get_sweep_delays(),
+            get_parser=self._get_sweep_delays_parser,
+        )
 
         self.sweep_mode: GroupParameter = self.add_parameter(
             name="sweep_mode",
@@ -339,19 +345,21 @@ class KeysightB1500CVSweeper(InstrumentChannel):
         """Parameter _chan"""
 
         self._set_sweep_steps_group = Group(
-            [self._chan,
-             self.sweep_mode,
-             self.sweep_start,
-             self.sweep_end,
-             self.sweep_steps],
-            set_cmd='WDCV '
-                    '{_chan},'
-                    '{sweep_mode},'
-                    '{sweep_start},'
-                    '{sweep_end},'
-                    '{sweep_steps}',
+            [
+                self._chan,
+                self.sweep_mode,
+                self.sweep_start,
+                self.sweep_end,
+                self.sweep_steps,
+            ],
+            set_cmd="WDCV "
+            "{_chan},"
+            "{sweep_mode},"
+            "{sweep_start},"
+            "{sweep_end},"
+            "{sweep_steps}",
             get_cmd=self._get_sweep_steps(),
-            get_parser=self._get_sweep_steps_parser
+            get_parser=self._get_sweep_steps_parser,
         )
 
     @staticmethod
@@ -364,12 +372,14 @@ class KeysightB1500CVSweeper(InstrumentChannel):
 
     @staticmethod
     def _get_sweep_delays_parser(response: str) -> dict[str, float]:
-        match = re.search('WTDCV(?P<hold_time>.+?),(?P<delay>.+?),'
-                          '(?P<step_delay>.+?),(?P<trigger_delay>.+?),'
-                          '(?P<measure_delay>.+?)(;|$)',
-                          response)
+        match = re.search(
+            "WTDCV(?P<hold_time>.+?),(?P<delay>.+?),"
+            "(?P<step_delay>.+?),(?P<trigger_delay>.+?),"
+            "(?P<measure_delay>.+?)(;|$)",
+            response,
+        )
         if not match:
-            raise ValueError('Sweep delays (WTDCV) not found.')
+            raise ValueError("Sweep delays (WTDCV) not found.")
 
         out_str = match.groupdict()
         out_dict = {key: float(value) for key, value in out_str.items()}
@@ -385,22 +395,23 @@ class KeysightB1500CVSweeper(InstrumentChannel):
 
     @staticmethod
     def _get_sweep_steps_parser(response: str) -> dict[str, int | float]:
-        match = re.search(r'WDCV(?P<_chan>.+?),(?P<sweep_mode>.+?),'
-                          r'(?P<sweep_start>.+?),(?P<sweep_end>.+?),'
-                          r'(?P<sweep_steps>.+?)(;|$)',
-                          response)
+        match = re.search(
+            r"WDCV(?P<_chan>.+?),(?P<sweep_mode>.+?),"
+            r"(?P<sweep_start>.+?),(?P<sweep_end>.+?),"
+            r"(?P<sweep_steps>.+?)(;|$)",
+            response,
+        )
         if not match:
-            raise ValueError('Sweep steps (WDCV) not found.')
+            raise ValueError("Sweep steps (WDCV) not found.")
 
         resp_dict = match.groupdict()
 
         out_dict: dict[str, int | float] = {}
-        out_dict['_chan'] = int(resp_dict['_chan'])
-        out_dict['sweep_mode'] = int(resp_dict['sweep_mode'])
-        out_dict['sweep_start'] = fixed_negative_float(
-            resp_dict['sweep_start'])
-        out_dict['sweep_end'] = fixed_negative_float(resp_dict['sweep_end'])
-        out_dict['sweep_steps'] = int(resp_dict['sweep_steps'])
+        out_dict["_chan"] = int(resp_dict["_chan"])
+        out_dict["sweep_mode"] = int(resp_dict["sweep_mode"])
+        out_dict["sweep_start"] = fixed_negative_float(resp_dict["sweep_start"])
+        out_dict["sweep_end"] = fixed_negative_float(resp_dict["sweep_end"])
+        out_dict["sweep_steps"] = int(resp_dict["sweep_steps"])
 
         return out_dict
 
@@ -419,26 +430,29 @@ class KeysightB1500CVSweeper(InstrumentChannel):
             type_id=constants.LRN.Type.CV_DC_BIAS_SWEEP_MEASUREMENT_SETTINGS
         )
         response = self.ask(msg.message)
-        match = re.search(r'WMDCV(?P<abort_function>.+?)'
-                          r'(,(?P<output_after_sweep>.+?)|;)',
-                          response)
+        match = re.search(
+            r"WMDCV(?P<abort_function>.+?)(,(?P<output_after_sweep>.+?)|;)",
+            response,
+        )
         if match is None:
-            raise RuntimeError("Did not find expected response for sweep "
-                               "auto abort settings")
+            raise RuntimeError(
+                "Did not find expected response for sweep auto abort settings"
+            )
         resp_dict = match.groupdict()
         return resp_dict
 
     def _get_sweep_auto_abort(self) -> int:
         resp_dict = self._get_sweep_auto_abort_settings()
-        return int(resp_dict['abort_function'])
+        return int(resp_dict["abort_function"])
 
     def _get_post_sweep_voltage_condition(self) -> int:
         resp_dict = self._get_sweep_auto_abort_settings()
-        if resp_dict['output_after_sweep'] is None:
-            raise ValueError("Received None. Set the parameter"
-                             "``post_sweep_voltage_condition`` first.")
-        return int(resp_dict['output_after_sweep'])
-
+        if resp_dict["output_after_sweep"] is None:
+            raise ValueError(
+                "Received None. Set the parameter"
+                "``post_sweep_voltage_condition`` first."
+            )
+        return int(resp_dict["output_after_sweep"])
 
 
 CVSweeper = KeysightB1500CVSweeper
@@ -459,6 +473,7 @@ class KeysightB1520A(KeysightB1500Module):
             class.
         slot_nr: Slot number of this module (not channel number)
     """
+
     phase_compensation_timeout = 60  # manual says around 30 seconds
     MODULE_KIND = ModuleKind.CMU
 
@@ -618,10 +633,12 @@ class KeysightB1520A(KeysightB1500Module):
             Averaging time = N / power line frequency
             """
 
-        self._adc_group = Group([self.adc_mode, self.adc_coef],
-                                set_cmd='ACT {adc_mode},{adc_coef}',
-                                get_cmd=self._get_adc_mode(),
-                                get_parser=self._get_adc_mode_parser)
+        self._adc_group = Group(
+            [self.adc_mode, self.adc_coef],
+            set_cmd="ACT {adc_mode},{adc_coef}",
+            get_cmd=self._get_adc_mode(),
+            get_parser=self._get_adc_mode_parser,
+        )
 
         self.ranging_mode: Parameter = self.add_parameter(
             name="ranging_mode",
@@ -790,6 +807,7 @@ class KeysightB1520A(KeysightB1500Module):
     def _cv_sweep_voltages(self) -> tuple[float, ...]:
         def sign(s: float) -> float:
             return s and (1, -1)[s < 0]
+
         start_value = self.cv_sweep.sweep_start()
         end_value = self.cv_sweep.sweep_end()
         step_value = self.cv_sweep.sweep_steps()
@@ -801,8 +819,7 @@ class KeysightB1520A(KeysightB1500Module):
                 elif sign(end_value) == 0:
                     end_value = sign(end_value) * 0.005  # resolution
                 else:
-                    raise AssertionError("Polarity of start and end is not "
-                                         "same.")
+                    raise AssertionError("Polarity of start and end is not same.")
 
         def linear_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             sweep_val = np.linspace(start, end, steps)
@@ -819,26 +836,26 @@ class KeysightB1520A(KeysightB1500Module):
                 half_list = list(np.linspace(start, end, steps // 2))
                 sweep_val = half_list + half_list[::-1]
             else:
-                half_list = list(np.linspace(start, end, steps // 2,
-                                             endpoint=False))
+                half_list = list(np.linspace(start, end, steps // 2, endpoint=False))
                 sweep_val = half_list + [end] + half_list[::-1]
             return tuple(sweep_val)
 
         def log_2way_sweep(start: float, end: float, steps: int) -> tuple[float, ...]:
             if steps % 2 == 0:
-                half_list = list(np.logspace(np.log10(start), np.log10(end),
-                                             steps // 2))
+                half_list = list(
+                    np.logspace(np.log10(start), np.log10(end), steps // 2)
+                )
                 sweep_val = half_list + half_list[::-1]
             else:
-                half_list = list(np.logspace(np.log10(start), np.log10(end),
-                                             steps // 2, endpoint=False))
+                half_list = list(
+                    np.logspace(
+                        np.log10(start), np.log10(end), steps // 2, endpoint=False
+                    )
+                )
                 sweep_val = half_list + [end] + half_list[::-1]
             return tuple(sweep_val)
 
-        modes = {1: linear_sweep,
-                 2: log_sweep,
-                 3: linear_2way_sweep,
-                 4: log_2way_sweep}
+        modes = {1: linear_sweep, 2: log_sweep, 3: linear_2way_sweep, 4: log_2way_sweep}
 
         return modes[mode](start_value, end_value, step_value)
 
@@ -863,15 +880,15 @@ class KeysightB1520A(KeysightB1500Module):
 
     def _get_voltage_dc(self) -> float:
         dcv = self._get_dcv()
-        return float(dcv['voltage_dc'])
+        return float(dcv["voltage_dc"])
 
     def _get_voltage_ac(self) -> float:
         dcv = self._get_dcv()
-        return float(dcv['voltage_ac'])
+        return float(dcv["voltage_ac"])
 
     def _get_frequency(self) -> float:
         dcv = self._get_dcv()
-        return float(dcv['frequency'])
+        return float(dcv["frequency"])
 
     def _set_frequency(self, value: float) -> None:
         msg = MessageBuilder().fc(self.channels[0], value)
@@ -887,9 +904,7 @@ class KeysightB1520A(KeysightB1500Module):
 
         parsed = [item for item in re.finditer(_pattern, response)]
 
-        if (
-                len(parsed) not in (2, 4)
-        ):
+        if len(parsed) not in (2, 4):
             raise ValueError("Result format not supported.")
 
         return float(parsed[0]["value"]), float(parsed[1]["value"])
@@ -926,28 +941,22 @@ class KeysightB1520A(KeysightB1500Module):
             Status result of performing the phase compensation as
             :class:`.constants.ADJQuery.Response`
         """
-        with self.root_instrument.timeout.set_to(
-                self.phase_compensation_timeout):
-            msg = MessageBuilder().adj_query(chnum=self.channels[0],
-                                             mode=mode)
+        with self.root_instrument.timeout.set_to(self.phase_compensation_timeout):
+            msg = MessageBuilder().adj_query(chnum=self.channels[0], mode=mode)
             response = self.ask(msg.message)
         return constants.ADJQuery.Response(int(response))
 
-
-
     @staticmethod
     def _get_adc_mode() -> str:
-        msg = MessageBuilder().lrn_query(
-            type_id=constants.LRN.Type.MFCMU_ADC_SETTING
-        )
+        msg = MessageBuilder().lrn_query(type_id=constants.LRN.Type.MFCMU_ADC_SETTING)
         cmd = msg.message
         return cmd
 
     @staticmethod
     def _get_adc_mode_parser(response: str) -> dict[str, int]:
-        match = re.search(r'ACT(?P<adc_mode>.+?),(?P<adc_coef>.+?)$', response)
+        match = re.search(r"ACT(?P<adc_mode>.+?),(?P<adc_coef>.+?)$", response)
         if not match:
-            raise ValueError('ADC mode and coef (ATC) not found.')
+            raise ValueError("ADC mode and coef (ATC) not found.")
 
         out_str = match.groupdict()
         out_dict = {key: int(value) for key, value in out_str.items()}
@@ -963,15 +972,15 @@ class KeysightB1520A(KeysightB1500Module):
         self.write(msg.message)
 
     def _set_measurement_mode(self, mode: MM.Mode | int) -> None:
-        self.root_instrument.set_measurement_mode(mode=mode,
-                                                  channels=(self.channels[0],))
+        self.root_instrument.set_measurement_mode(
+            mode=mode, channels=(self.channels[0],)
+        )
 
     def _set_impedance_model(self, val: constants.IMP.MeasurementMode) -> None:
         msg = MessageBuilder().imp(mode=val)
         self.write(msg.message)
-        if hasattr(self, 'run_sweep'):
-            self.run_sweep.update_name_label_unit_from_impedance_model(
-                model=val)
+        if hasattr(self, "run_sweep"):
+            self.run_sweep.update_name_label_unit_from_impedance_model(model=val)
 
     def _set_ac_dc_volt_monitor(self, val: bool) -> None:
         msg = MessageBuilder().lmn(enable_data_monitor=val)
@@ -984,7 +993,7 @@ class KeysightB1520A(KeysightB1500Module):
         msg = MessageBuilder().rc(
             chnum=self.channels[0],
             ranging_mode=self._ranging_mode,
-            measurement_range=self._measurement_range_for_non_auto
+            measurement_range=self._measurement_range_for_non_auto,
         )
         self.write(msg.message)
 
@@ -993,7 +1002,7 @@ class KeysightB1520A(KeysightB1500Module):
         msg = MessageBuilder().rc(
             chnum=self.channels[0],
             ranging_mode=self._ranging_mode,
-            measurement_range=self._measurement_range_for_non_auto
+            measurement_range=self._measurement_range_for_non_auto,
         )
         self.write(msg.message)
 
@@ -1101,8 +1110,7 @@ class KeysightB1520A(KeysightB1500Module):
         self.frequency(freq)
         self.voltage_ac(ac_rms)
         self.cv_sweep.sweep_auto_abort(abort_enabled)
-        self.cv_sweep.post_sweep_voltage_condition(
-            post_sweep_voltage_condition)
+        self.cv_sweep.post_sweep_voltage_condition(post_sweep_voltage_condition)
         self.cv_sweep.hold_time(hold_delay)
         self.cv_sweep.delay(delay)
         self.cv_sweep.step_delay(step_delay)
@@ -1140,13 +1148,13 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
     def __init__(self, name: str, instrument: KeysightB1520A, **kwargs: Any):
         super().__init__(
             name,
-            names=('', ''),
-            units=('', ''),
-            labels=('', ''),
+            names=("", ""),
+            units=("", ""),
+            labels=("", ""),
             shapes=((1,),) * 2,
-            setpoint_names=(('Voltage',),) * 2,
-            setpoint_labels=(('Voltage',),) * 2,
-            setpoint_units=(('V',),) * 2,
+            setpoint_names=(("Voltage",),) * 2,
+            setpoint_labels=(("Voltage",),) * 2,
+            setpoint_units=(("V",),) * 2,
             instrument=instrument,
             **kwargs,
         )
@@ -1167,17 +1175,17 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
         self.dc_voltage = _FMTResponse(None, None, None, None)
 
         self.power_line_frequency: int = 50
-        self._fudge: float = 1.5 # fudge factor for setting timeout
+        self._fudge: float = 1.5  # fudge factor for setting timeout
 
     def get_raw(self) -> tuple[tuple[float, ...], tuple[float, ...]]:
         if not self.instrument.setup_fnc_already_run:
-            raise Exception('Sweep setup has not yet been run successfully')
+            raise Exception("Sweep setup has not yet been run successfully")
 
         delay_time = self.instrument.cv_sweep.step_delay()
 
         nplc = self.instrument.adc_coef()
         num_steps = self.instrument.cv_sweep.sweep_steps()
-        power_line_time_period = 1/self.power_line_frequency
+        power_line_time_period = 1 / self.power_line_frequency
         calculated_time = 2 * nplc * power_line_time_period * num_steps
 
         estimated_timeout = max(delay_time, calculated_time) * num_steps
@@ -1210,7 +1218,6 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
     def update_name_label_unit_from_impedance_model(
         self, model: constants.IMP.MeasurementMode | None = None
     ) -> None:
-
         if model is None:
             model = self.instrument.impedance_model()
         # pyright does not seem to understand the type
@@ -1219,6 +1226,7 @@ class KeysightB1500CVSweepMeasurement(MultiParameter, StatusMixin):
         self.names, self.labels, self.units = get_name_label_unit_of_impedance_model(
             model
         )
+
 
 CVSweepMeasurement = KeysightB1500CVSweepMeasurement
 """
@@ -1251,9 +1259,7 @@ class KeysightB1500Correction(InstrumentChannel):
                 set this to OPEN, SHORT or LOAD. For ex: In case of open
                 correction corr = constants.CalibrationType.OPEN.
         """
-        msg = MessageBuilder().corrst(chnum=self._chnum,
-                                      corr=corr,
-                                      state=True)
+        msg = MessageBuilder().corrst(chnum=self._chnum, corr=corr, state=True)
         self.write(msg.message)
 
     def disable(self, corr: constants.CalibrationType) -> None:
@@ -1263,13 +1269,10 @@ class KeysightB1500Correction(InstrumentChannel):
         Args:
             corr: Correction type as in :class:`.constants.CalibrationType`
         """
-        msg = MessageBuilder().corrst(chnum=self._chnum,
-                                      corr=corr,
-                                      state=False)
+        msg = MessageBuilder().corrst(chnum=self._chnum, corr=corr, state=False)
         self.write(msg.message)
 
-    def is_enabled(self, corr: constants.CalibrationType
-                   ) -> constants.CORRST.Response:
+    def is_enabled(self, corr: constants.CalibrationType) -> constants.CORRST.Response:
         """
         Query instrument to see if a correction of the given type is
         enabled.
@@ -1282,11 +1285,13 @@ class KeysightB1500Correction(InstrumentChannel):
         response = self.ask(msg.message)
         return constants.CORRST.Response(int(response))
 
-    def set_reference_values(self,
-                             corr: constants.CalibrationType,
-                             mode: constants.DCORR.Mode,
-                             primary: float,
-                             secondary: float) -> None:
+    def set_reference_values(
+        self,
+        corr: constants.CalibrationType,
+        mode: constants.DCORR.Mode,
+        primary: float,
+        secondary: float,
+    ) -> None:
         """
         This command disables the open/short/load correction function and
         defines the calibration value or the reference value of the
@@ -1309,11 +1314,13 @@ class KeysightB1500Correction(InstrumentChannel):
                 standard. in Ω.
         """
 
-        msg = MessageBuilder().dcorr(chnum=self._chnum,
-                                     corr=corr,
-                                     mode=mode,
-                                     primary=primary,
-                                     secondary=secondary)
+        msg = MessageBuilder().dcorr(
+            chnum=self._chnum,
+            corr=corr,
+            mode=mode,
+            primary=primary,
+            secondary=secondary,
+        )
         self.write(msg.message)
 
     def get_reference_values(self, corr: constants.CalibrationType) -> str:
@@ -1334,14 +1341,12 @@ class KeysightB1500Correction(InstrumentChannel):
         dcorr_response_tuple = self._get_reference_values(corr=corr)
         return format_dcorr_response(dcorr_response_tuple)
 
-    def _get_reference_values(self, corr: constants.CalibrationType
-                              ) -> _DCORRResponse:
+    def _get_reference_values(self, corr: constants.CalibrationType) -> _DCORRResponse:
         msg = MessageBuilder().dcorr_query(chnum=self._chnum, corr=corr)
         response = self.ask(msg.message)
         return parse_dcorr_query_response(response)
 
-    def perform(self, corr: constants.CalibrationType
-                ) -> constants.CORR.Response:
+    def perform(self, corr: constants.CalibrationType) -> constants.CORR.Response:
         """
         Perform Open/Short/Load corrections using this method. Refer to the
         example notebook to understand how each of the corrections are
@@ -1364,10 +1369,7 @@ class KeysightB1500Correction(InstrumentChannel):
             Status of correction data measurement in the form of
             :class:`.constants.CORR.Response`
         """
-        msg = MessageBuilder().corr_query(
-            chnum=self._chnum,
-            corr=corr
-        )
+        msg = MessageBuilder().corr_query(chnum=self._chnum, corr=corr)
         response = self.ask(msg.message)
         return constants.CORR.Response(int(response))
 
@@ -1445,8 +1447,7 @@ class KeysightB1500FrequencyList(InstrumentChannel):
         frequencies in the list. If ``index`` is given, then the query
         returns the frequency value from the list at that index.
         """
-        msg = MessageBuilder().corrl_query(chnum=self._chnum,
-                                           index=index)
+        msg = MessageBuilder().corrl_query(chnum=self._chnum, index=index)
         response = self.ask(msg.message)
         return float(response)
 

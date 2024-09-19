@@ -27,7 +27,7 @@ conditionally_start_all_logging()
 
 # we dont want spyder to reload qcodes as this will overwrite the default station
 # instrument list and running monitor
-add_to_spyder_UMR_excludelist('qcodes')
+add_to_spyder_UMR_excludelist("qcodes")
 
 
 import atexit
@@ -84,7 +84,6 @@ from qcodes.utils import deprecate
 atexit.register(Instrument.close_all)
 
 if config.core.import_legacy_api:
-
     warnings.warn(
         "`core.import_legacy_api` and `gui.plotlib` config option has no effect "
         "and will be removed in the future. "

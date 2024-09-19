@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import matplotlib.axes
@@ -27,17 +27,17 @@ ParamMeasT = ParameterBase | Callable[[], None]
 
 AxesTuple = tuple["matplotlib.axes.Axes", "matplotlib.colorbar.Colorbar"]
 AxesTupleList = tuple[
-    list["matplotlib.axes.Axes"], list[Optional["matplotlib.colorbar.Colorbar"]]
+    list["matplotlib.axes.Axes"], list["matplotlib.colorbar.Colorbar | None"]
 ]
 AxesTupleListWithDataSet = tuple[
     DataSetProtocol,
-    tuple[Optional["matplotlib.axes.Axes"], ...],
-    tuple[Optional["matplotlib.colorbar.Colorbar"], ...],
+    tuple["matplotlib.axes.Axes | None", ...],
+    tuple["matplotlib.colorbar.Colorbar | None", ...],
 ]
 MultiAxesTupleListWithDataSet = tuple[
     tuple[DataSetProtocol, ...],
-    tuple[tuple[Optional["matplotlib.axes.Axes"], ...], ...],
-    tuple[tuple[Optional["matplotlib.colorbar.Colorbar"], ...], ...],
+    tuple[tuple["matplotlib.axes.Axes | None", ...], ...],
+    tuple[tuple["matplotlib.colorbar.Colorbar | None", ...], ...],
 ]
 
 

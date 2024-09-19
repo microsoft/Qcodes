@@ -34,9 +34,8 @@ class HP83650A(VisaInstrument):
         server_name: str | None = None,
         **kwargs: "Unpack[VisaInstrumentKWArgs]",
     ):
-
         self.verbose = verbose
-        log.debug('Initializing instrument')
+        log.debug("Initializing instrument")
         super().__init__(name, address, **kwargs)
 
         self.frequency: Parameter = self.add_parameter(
@@ -146,12 +145,12 @@ class HP83650A(VisaInstrument):
         self.connect_message()
 
     def reset(self) -> None:
-        log.debug('Resetting instrument')
-        self.write('*RST')
+        log.debug("Resetting instrument")
+        self.write("*RST")
         self.print_all()
 
     def print_all(self) -> None:
-        log.debug('Reading all settings from instrument')
+        log.debug("Reading all settings from instrument")
         print(f"{self.rfstatus.label}: {self.rfstatus.get()}")
         print(f"{self.power.label}: {self.power.get()} {self.power.unit}")
         print(f"{self.frequency.label}: {self.frequency.get():e} {self.frequency.unit}")

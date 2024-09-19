@@ -33,6 +33,7 @@ class KeysightB1500(VisaInstrument):
 
     For the list of supported modules, refer to :meth:`from_model_name`.
     """
+
     calibration_time_out = 60  # 30 seconds suggested by manual
 
     default_terminator = "\r\n"
@@ -117,8 +118,9 @@ class KeysightB1500(VisaInstrument):
         super().write(cmd)
         error_message = self.error_message()
         if error_message != '+0,"No Error."':
-            raise RuntimeError(f"While setting this parameter received "
-                               f"error: {error_message}")
+            raise RuntimeError(
+                f"While setting this parameter received error: {error_message}"
+            )
 
     def add_module(self, name: str, module: KeysightB1500Module) -> None:
         super().add_submodule(name, module)
@@ -146,10 +148,7 @@ class KeysightB1500(VisaInstrument):
     def _find_modules(self) -> None:
         from .constants import UNT
 
-        r = self.ask(MessageBuilder()
-                     .unt_query(mode=UNT.Mode.MODULE_INFO_ONLY)
-                     .message
-                     )
+        r = self.ask(MessageBuilder().unt_query(mode=UNT.Mode.MODULE_INFO_ONLY).message)
 
         slot_population = parse_module_query_response(r)
 
@@ -184,8 +183,9 @@ class KeysightB1500(VisaInstrument):
         elif model == "B1530A":
             return KeysightB1530A(slot_nr=slot_nr, parent=parent, name=name)
         else:
-            raise NotImplementedError(f"Module type {model} in slot"
-                                      f" {slot_nr} not yet supported.")
+            raise NotImplementedError(
+                f"Module type {model} in slot {slot_nr} not yet supported."
+            )
 
     def enable_channels(self, channels: constants.ChannelList | None = None) -> None:
         """Enable specified channels.
@@ -218,16 +218,18 @@ class KeysightB1500(VisaInstrument):
         """See :meth:`MessageBuilder.ait` for information"""
         if coeff is not None:
             coeff = int(coeff)
-        self.write(MessageBuilder()
-                   .ait(adc_type=adc_type, mode=mode, coeff=coeff)
-                   .message
-                   )
+        self.write(
+            MessageBuilder().ait(adc_type=adc_type, mode=mode, coeff=coeff).message
+        )
 
     def _reset_measurement_statuses_of_smu_spot_measurement_parameters(
-            self, parameter_name: str) -> None:
-        if parameter_name not in ('voltage', 'current'):
-            raise ValueError(f'Parameter name should be one of [voltage,current], '
-                             f'got {parameter_name}.')
+        self, parameter_name: str
+    ) -> None:
+        if parameter_name not in ("voltage", "current"):
+            raise ValueError(
+                f"Parameter name should be one of [voltage,current], "
+                f"got {parameter_name}."
+            )
         for smu in self.by_kind[constants.ModuleKind.SMU]:
             param = smu.parameters[parameter_name]
             assert isinstance(param, _ParameterWithStatus)
@@ -255,7 +257,7 @@ class KeysightB1500(VisaInstrument):
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_SPEED,
             mode=constants.AIT.Mode.NPLC,
-            coeff=n
+            coeff=n,
         )
 
     def use_nplc_for_high_resolution_adc(self, n: int | None = None) -> None:
@@ -277,7 +279,7 @@ class KeysightB1500(VisaInstrument):
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_RESOLUTION,
             mode=constants.AIT.Mode.NPLC,
-            coeff=n
+            coeff=n,
         )
 
     def use_manual_mode_for_high_speed_adc(self, n: int | None = None) -> None:
@@ -297,7 +299,7 @@ class KeysightB1500(VisaInstrument):
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_SPEED,
             mode=constants.AIT.Mode.MANUAL,
-            coeff=n
+            coeff=n,
         )
 
     def _set_autozero(self, do_autozero: bool) -> None:
@@ -413,18 +415,19 @@ class KeysightB1500(VisaInstrument):
         for measurements. It outputs a dictionary with 'mode' and
         'channels' as keys.
         """
-        msg = MessageBuilder().lrn_query(type_id=constants.LRN.
-                                         Type.TM_AV_CM_FMT_MM_SETTINGS)
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.TM_AV_CM_FMT_MM_SETTINGS
+        )
         response = self.ask(msg.message)
-        match = re.search('MM(?P<mode>.*?),(?P<channels>.*?)(;|$)', response)
+        match = re.search("MM(?P<mode>.*?),(?P<channels>.*?)(;|$)", response)
 
         if not match:
-            raise ValueError('Measurement Mode (MM) not found.')
+            raise ValueError("Measurement Mode (MM) not found.")
 
         out_dict: dict[str, constants.MM.Mode | list[int]] = {}
         resp_dict = match.groupdict()
-        out_dict['mode'] = constants.MM.Mode(int(resp_dict['mode']))
-        out_dict['channels'] = list(map(int, resp_dict['channels'].split(',')))
+        out_dict["mode"] = constants.MM.Mode(int(resp_dict["mode"]))
+        out_dict["channels"] = list(map(int, resp_dict["channels"].split(",")))
         return out_dict
 
     def get_response_format_and_mode(
@@ -433,20 +436,19 @@ class KeysightB1500(VisaInstrument):
         """
         This method queries the the data output format and mode.
         """
-        msg = MessageBuilder().lrn_query(type_id=constants.LRN.
-                                         Type.TM_AV_CM_FMT_MM_SETTINGS)
+        msg = MessageBuilder().lrn_query(
+            type_id=constants.LRN.Type.TM_AV_CM_FMT_MM_SETTINGS
+        )
         response = self.ask(msg.message)
-        match = re.search('FMT(?P<format>.*?),(?P<mode>.*?)(;|$)',
-                          response)
+        match = re.search("FMT(?P<format>.*?),(?P<mode>.*?)(;|$)", response)
 
         if not match:
-            raise ValueError('Measurement Mode (FMT) not found.')
+            raise ValueError("Measurement Mode (FMT) not found.")
 
         out_dict: dict[str, constants.FMT.Format | constants.FMT.Mode] = {}
         resp_dict = match.groupdict()
-        out_dict['format'] = constants.FMT.Format(int(resp_dict[
-                                                          'format']))
-        out_dict['mode'] = constants.FMT.Mode(int(resp_dict['mode']))
+        out_dict["format"] = constants.FMT.Format(int(resp_dict["format"]))
+        out_dict["mode"] = constants.FMT.Mode(int(resp_dict["mode"]))
         return out_dict
 
     def enable_smu_filters(
@@ -465,8 +467,9 @@ class KeysightB1500(VisaInstrument):
                 `constants.ChNr` If you do not specify chnum,  the FL
                 command sets the same mode for all channels.
         """
-        self.write(MessageBuilder().fl(enable_filter=enable_filter,
-                                       channels=channels).message)
+        self.write(
+            MessageBuilder().fl(enable_filter=enable_filter, channels=channels).message
+        )
 
 
 class IVSweepMeasurement(MultiParameter, StatusMixin):
@@ -482,15 +485,16 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
     def __init__(self, name: str, instrument: KeysightB1517A, **kwargs: Any):
         super().__init__(
             name,
-            names=tuple(['param1', 'param2']),
-            units=tuple(['A', 'A']),
-            labels=tuple(['Param1 Current', 'Param2 Current']),
+            names=tuple(["param1", "param2"]),
+            units=tuple(["A", "A"]),
+            labels=tuple(["Param1 Current", "Param2 Current"]),
             shapes=((1,),) * 2,
-            setpoint_names=(('Voltage',),) * 2,
-            setpoint_labels=(('Voltage',),) * 2,
-            setpoint_units=(('V',),) * 2,
+            setpoint_names=(("Voltage",),) * 2,
+            setpoint_labels=(("Voltage",),) * 2,
+            setpoint_units=(("V",),) * 2,
             instrument=instrument,
-            **kwargs)
+            **kwargs,
+        )
 
         self.instrument: KeysightB1517A
         self.root_instrument: KeysightB1500
@@ -535,7 +539,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         be in sync with the number of names.
         """
         measurement_mode = self.instrument.get_measurement_mode()
-        channels = measurement_mode['channels']
+        channels = measurement_mode["channels"]
 
         if names is None:
             names = [f"param{n+1}" for n in range(len(channels))]
@@ -546,7 +550,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             labels = tuple(names)
 
         if units is None:
-            units = ['A'] * len(names)
+            units = ["A"] * len(names)
 
         if len(labels) != len(names) or len(units) != len(names):
             raise ValueError(
@@ -604,18 +608,19 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
 
     def get_raw(self) -> tuple[tuple[float, ...], ...]:
         measurement_mode = self.instrument.get_measurement_mode()
-        channels = measurement_mode['channels']
+        channels = measurement_mode["channels"]
         n_channels = len(channels)
 
         if n_channels < 1:
-            raise ValueError('At least one measurement channel is needed for '
-                             'an IV sweep.')
+            raise ValueError(
+                "At least one measurement channel is needed for an IV sweep."
+            )
 
         if (
-                len(self.names) != n_channels
-                or len(self.units) != n_channels
-                or len(self.labels) != n_channels
-                or len(self.shapes) != n_channels
+            len(self.names) != n_channels
+            or len(self.units) != n_channels
+            or len(self.labels) != n_channels
+            or len(self.shapes) != n_channels
         ):
             raise ValueError(
                 f"The number of `.names` ({len(self.names)}), "
@@ -631,8 +636,9 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         smu = self.instrument.by_channel[channels[0]]
 
         if not smu.setup_fnc_already_run:
-            raise Exception(f'Sweep setup has not yet been run successfully '
-                            f'on {smu.full_name}')
+            raise Exception(
+                f"Sweep setup has not yet been run successfully on {smu.full_name}"
+            )
 
         delay_time = smu.iv_sweep.step_delay()
         if smu._average_coefficient < 0:
@@ -649,15 +655,16 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
         new_timeout = estimated_timeout * self._fudge
 
         format_and_mode = self.instrument.get_response_format_and_mode()
-        fmt_format = format_and_mode['format']
-        fmt_mode = format_and_mode['mode']
+        fmt_format = format_and_mode["format"]
+        fmt_mode = format_and_mode["mode"]
         try:
             self.root_instrument.write(MessageBuilder().fmt(1, 1).message)
             with self.root_instrument.timeout.set_to(new_timeout):
                 raw_data = self.instrument.ask(MessageBuilder().xe().message)
         finally:
-            self.root_instrument.write(MessageBuilder().fmt(fmt_format,
-                                                            fmt_mode).message)
+            self.root_instrument.write(
+                MessageBuilder().fmt(fmt_format, fmt_mode).message
+            )
 
         parsed_data = fmt_response_base_parser(raw_data)
 
@@ -682,8 +689,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
             setattr(self, f"param{channel_index+1}", single_channel_data)
 
         channel_values_to_return = tuple(
-            getattr(self, f"param{n + 1}").value
-            for n in range(n_channels)
+            getattr(self, f"param{n + 1}").value for n in range(n_channels)
         )
 
         source_voltage_index = n_channels

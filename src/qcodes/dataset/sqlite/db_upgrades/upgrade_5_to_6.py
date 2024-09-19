@@ -20,7 +20,7 @@ def upgrade_5_to_6(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
     not be tracked as schema upgrades.
     """
     no_of_runs_query = "SELECT max(run_id) FROM runs"
-    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), 'max(run_id)')
+    no_of_runs = one(atomic_transaction(conn, no_of_runs_query), "max(run_id)")
     no_of_runs = no_of_runs or 0
 
     # If one run fails, we want the whole upgrade to roll back, hence the
@@ -37,11 +37,12 @@ def upgrade_5_to_6(conn: ConnectionPlus, show_progress_bar: bool = True) -> None
         for run_id in pbar:
             json_str = get_run_description(atomic_conn, run_id)
             if json_str is None:
-                new_json = json.dumps({'version': 0,
-                                       'interdependencies': empty_idps_ser})
+                new_json = json.dumps(
+                    {"version": 0, "interdependencies": empty_idps_ser}
+                )
             else:
                 ser = json.loads(json_str)
-                new_ser = {'version': 0}  # let 'version' be the first entry
-                new_ser['interdependencies'] = ser['interdependencies']
+                new_ser = {"version": 0}  # let 'version' be the first entry
+                new_ser["interdependencies"] = ser["interdependencies"]
                 new_json = json.dumps(new_ser)
             update_run_description(atomic_conn, run_id, new_json)

@@ -10,6 +10,7 @@ from qcodes.parameters import Parameter, create_on_off_val_mapping
 if TYPE_CHECKING:
     from typing_extensions import Unpack
 
+
 class AgilentE8257D(VisaInstrument):
     """
     This is the QCoDeS driver for the Agilent E8257D signal generator.

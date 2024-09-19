@@ -6,7 +6,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import numpy as np
 from opentelemetry import trace
@@ -567,6 +567,66 @@ class _SweepMeasGroup:
         return self._parameters
 
 
+@overload
+def dond(
+    *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
+    write_period: float | None = None,
+    measurement_name: str | Sequence[str] = "",
+    exp: Experiment | Sequence[Experiment] | None = None,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    do_plot: bool | None = None,
+    show_progress: bool | None = None,
+    use_threads: bool | None = None,
+    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    log_info: str | None = None,
+    break_condition: BreakConditionT | None = None,
+    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
+    in_memory_cache: bool | None = None,
+    squeeze: Literal[False],
+) -> MultiAxesTupleListWithDataSet: ...
+
+
+@overload
+def dond(
+    *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
+    write_period: float | None = None,
+    measurement_name: str | Sequence[str] = "",
+    exp: Experiment | Sequence[Experiment] | None = None,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    do_plot: bool | None = None,
+    show_progress: bool | None = None,
+    use_threads: bool | None = None,
+    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    log_info: str | None = None,
+    break_condition: BreakConditionT | None = None,
+    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
+    in_memory_cache: bool | None = None,
+    squeeze: Literal[True],
+) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet: ...
+
+
+@overload
+def dond(
+    *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
+    write_period: float | None = None,
+    measurement_name: str | Sequence[str] = "",
+    exp: Experiment | Sequence[Experiment] | None = None,
+    enter_actions: ActionsT = (),
+    exit_actions: ActionsT = (),
+    do_plot: bool | None = None,
+    show_progress: bool | None = None,
+    use_threads: bool | None = None,
+    additional_setpoints: Sequence[ParameterBase] = tuple(),
+    log_info: str | None = None,
+    break_condition: BreakConditionT | None = None,
+    dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
+    in_memory_cache: bool | None = None,
+    squeeze: bool = True,
+) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet: ...
+
+
 @TRACER.start_as_current_span("qcodes.dataset.dond")
 def dond(
     *params: AbstractSweep | TogetherSweep | ParamMeasT | Sequence[ParamMeasT],
@@ -583,6 +643,7 @@ def dond(
     break_condition: BreakConditionT | None = None,
     dataset_dependencies: Mapping[str, Sequence[ParamMeasT]] | None = None,
     in_memory_cache: bool | None = None,
+    squeeze: bool = True,
 ) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
     """
     Perform n-dimentional scan from slowest (first) to the fastest (last), to
@@ -653,6 +714,13 @@ def dond(
             plotting and exporting. Useful to disable if the data is very large
             in order to save on memory consumption.
             If ``None``, the value for this will be read from ``qcodesrc.json`` config file.
+        squeeze: If True, will return a tuple of QCoDeS DataSet, Matplotlib axis,
+            Matplotlib colorbar if only one group of measurements was performed
+            and a tuple of tuples of these if more than one group of measurements
+            was performed. If False, will always return a tuple where the first
+            member is a tuple of QCoDeS DataSet(s) and the second member is a tuple
+            of Matplotlib axis(es) and the third member is a tuple of Matplotlib
+            colorbar(s).
 
     Returns:
         A tuple of QCoDeS DataSet, Matplotlib axis, Matplotlib colorbar. If
@@ -710,7 +778,11 @@ def dond(
         [], KeyboardInterrupt | BreakConditionInterrupt | None
     ] = lambda: None
     try:
-        with catch_interrupts() as interrupted, ExitStack() as stack, params_meas_caller as call_params_meas:
+        with (
+            catch_interrupts() as interrupted,
+            ExitStack() as stack,
+            params_meas_caller as call_params_meas,
+        ):
             datasavers = [
                 stack.enter_context(
                     group.measurement_cxt.run(in_memory_cache=in_memory_cache)
@@ -760,7 +832,7 @@ def dond(
             plots_axes.append(plot_axis)
             plots_colorbar.append(plot_color)
 
-    if len(measurements.groups) == 1:
+    if len(measurements.groups) == 1 and squeeze is True:
         return datasets[0], plots_axes[0], plots_colorbar[0]
     else:
         return tuple(datasets), tuple(plots_axes), tuple(plots_colorbar)

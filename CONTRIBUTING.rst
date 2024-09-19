@@ -4,6 +4,19 @@ Contributing
 Hi, thanks for your interest in the project! We, the development team, welcome all pull requests
 from developers of any skill level.
 
+This project welcomes contributions and suggestions. Most contributions require you to
+agree to a Contributor License Agreement (CLA) declaring that you have the right to,
+and actually do, grant us the rights to use your contribution. For details, visit
+https://cla.microsoft.com.
+
+When you submit a pull request, a CLA-bot will automatically determine whether you need
+to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the
+instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
+
+This project has adopted the `Microsoft Open Source Code of Conduct <https://opensource.microsoft.com/codeofconduct/>`__.
+For more information see the `Code of Conduct FAQ <https://opensource.microsoft.com/codeofconduct/faq/>`__
+or contact `opencode@microsoft.com <mailto:opencode@microsoft.com>`__ with any additional questions or comments.
+
 Who are we?
 Jens H. Nielsen, William H.P Nielsen, Mikhail Astafev and Trevor Morgan
 are the current maintainers, or core developers, of QCoDeS.
@@ -323,11 +336,8 @@ on Linux and on Windows.
     - Check that YAML, JSON and Python files are syntactically valid.
     - Check that there are no trailing whitespace or blank lines at the end of python files.
     - Check that all files uses the correct line endings (``\n`` for all files except ``.bat``)
-    - Run `pyupgrade  <https://github.com/asottile/pyupgrade>`_ on all python files.
-    - Run `Darker <https://github.com/akaihola/darker/>`_. This will enforce `Black <https://github.com/psf/black>`_
-      formatting and sorting of imports using `isort <https://pycqa.github.io/isort/>`_ on all new and changed code.
-      We do not format the entire codebase to not lose change history.
-    - Run `ruff <https://github.com/charliermarsh/ruff>`_ to check for comon style issues in python code.
+    - Run `ruff <https://github.com/charliermarsh/ruff>`_  check and ruff format to check for comon style
+      issues in python code and format the code.
 
 
 Furthermore we also run our test suite with the minimum requirements stated to ensure that QCoDeS does work
@@ -339,9 +349,6 @@ Optional checks
 In addition to the required checks we perform two optional checks that can be regarded as guidelines rather than
 requirements.
 
-- We use Codacy to perform a number of style checks using `Pylint` and `Pydocstyle` among others. Please
-  adapt your changes to these recommendations as you see fit. It is not a requirement that all Codacy warnings and
-  errors are fixed. Do not insert comments to disable these warnings.
 - We measure code coverage using `Codecov`. This measures if a line of code is executed as part of a test.
   As much as possible we would encourage you to add tests to cover all changes. However, this may not always be
   possible especially when writing instrument drivers.

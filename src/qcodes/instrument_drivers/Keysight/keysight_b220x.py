@@ -21,6 +21,7 @@ S = TypeVar("S", bound="KeysightB220X")
 P = ParamSpec("P")
 T = TypeVar("T")
 
+
 def post_execution_status_poll(
     func: "Callable[Concatenate[S, P], T]",
 ) -> "Callable[Concatenate[S, P], T]":
@@ -288,7 +289,7 @@ class KeysightB220X(VisaInstrument):
         If ground or bias mode is enabled it will connect all outputs to the
         GND or Bias Port
         """
-        self.write(f':OPEN:CARD {self._card}')
+        self.write(f":OPEN:CARD {self._card}")
 
     @post_execution_status_poll
     def bias_disable_all_outputs(self) -> None:
@@ -296,7 +297,7 @@ class KeysightB220X(VisaInstrument):
         Removes all outputs from list of ports that will be connected to GND
         input if port is unused and bias mode is enabled.
         """
-        self.write(f':BIAS:CHAN:DIS:CARD {self._card}')
+        self.write(f":BIAS:CHAN:DIS:CARD {self._card}")
 
     @post_execution_status_poll
     def bias_enable_all_outputs(self) -> None:
@@ -304,7 +305,7 @@ class KeysightB220X(VisaInstrument):
         Adds all outputs to list of ports that will be connected to bias input
         if port is unused and bias mode is enabled.
         """
-        self.write(f':BIAS:CHAN:ENAB:CARD {self._card}')
+        self.write(f":BIAS:CHAN:ENAB:CARD {self._card}")
 
     @post_execution_status_poll
     def bias_enable_output(self, output: int) -> None:
@@ -317,8 +318,7 @@ class KeysightB220X(VisaInstrument):
         """
         KeysightB220X._available_output_ports.validate(output)
 
-        self.write(f':BIAS:CHAN:ENAB (@{self._card}01{output:02d})'
-                   )
+        self.write(f":BIAS:CHAN:ENAB (@{self._card}01{output:02d})")
 
     @post_execution_status_poll
     def bias_disable_output(self, output: int) -> None:
@@ -331,7 +331,7 @@ class KeysightB220X(VisaInstrument):
         """
         KeysightB220X._available_output_ports.validate(output)
 
-        self.write(f':BIAS:CHAN:DIS (@{self._card}01{output:02d})')
+        self.write(f":BIAS:CHAN:DIS (@{self._card}01{output:02d})")
 
     @post_execution_status_poll
     def gnd_enable_output(self, output: int) -> None:
@@ -344,7 +344,7 @@ class KeysightB220X(VisaInstrument):
         """
         KeysightB220X._available_output_ports.validate(output)
 
-        self.write(f':AGND:CHAN:ENAB (@{self._card}01{output:02d})')
+        self.write(f":AGND:CHAN:ENAB (@{self._card}01{output:02d})")
 
     @post_execution_status_poll
     def gnd_disable_output(self, output: int) -> None:
@@ -357,7 +357,7 @@ class KeysightB220X(VisaInstrument):
         """
         KeysightB220X._available_output_ports.validate(output)
 
-        self.write(f':AGND:CHAN:DIS (@{self._card}01{output:02d})')
+        self.write(f":AGND:CHAN:DIS (@{self._card}01{output:02d})")
 
     @post_execution_status_poll
     def gnd_enable_all_outputs(self) -> None:
@@ -365,7 +365,7 @@ class KeysightB220X(VisaInstrument):
         Adds all outputs to list of ports that will be connected to GND input
         if port is unused and bias mode is enabled.
         """
-        self.write(f':AGND:CHAN:ENAB:CARD {self._card}')
+        self.write(f":AGND:CHAN:ENAB:CARD {self._card}")
 
     @post_execution_status_poll
     def gnd_disable_all_outputs(self) -> None:
@@ -373,7 +373,7 @@ class KeysightB220X(VisaInstrument):
         Removes all outputs from list of ports that will be connected to GND
         input if port is unused and bias mode is enabled.
         """
-        self.write(f':AGND:CHAN:DIS:CARD {self._card}')
+        self.write(f":AGND:CHAN:DIS:CARD {self._card}")
 
     @post_execution_status_poll
     def couple_port_autodetect(self) -> None:
@@ -387,30 +387,32 @@ class KeysightB220X(VisaInstrument):
 
         Also refer to the manual for more information.
         """
-        self.write(':COUP:PORT:DET')
+        self.write(":COUP:PORT:DET")
 
     def clear_status(self) -> None:
         """Clears status register and error queue of the instrument."""
-        self.write('*CLS')
+        self.write("*CLS")
 
     def reset(self) -> None:
         """Performs an instrument reset.
 
         Does not reset error queue!
         """
-        self.write('*RST')
+        self.write("*RST")
 
     @post_execution_status_poll
     def _set_connection_rule(self, mode: str) -> None:
-        if 'free' == self.connection_rule() and 'SROU' == mode:
-            warnings.warn('When going from *free* to *single* mode existing '
-                          'connections are not released.')
+        if "free" == self.connection_rule() and "SROU" == mode:
+            warnings.warn(
+                "When going from *free* to *single* mode existing "
+                "connections are not released."
+            )
 
-        self.write(f':CONN:RULE {self._card},{mode}')
+        self.write(f":CONN:RULE {self._card},{mode}")
 
     @post_execution_status_poll
     def _get_connection_rule(self) -> str:
-        return self.ask(f':CONN:RULE? {self._card}')
+        return self.ask(f":CONN:RULE? {self._card}")
 
     @staticmethod
     def parse_channel_list(channel_list: str) -> set[tuple[int, int]]:

@@ -115,29 +115,45 @@ def test_alazar_api_singleton_behavior(caplog: LogCaptureFixture) -> None:
 def test_find_boards() -> None:
     boards = AlazarTechATS.find_boards()
     assert len(boards) == 1
-    assert boards[0]['system_id'] == SYSTEM_ID
-    assert boards[0]['board_id'] == BOARD_ID
+    assert boards[0]["system_id"] == SYSTEM_ID
+    assert boards[0]["board_id"] == BOARD_ID
 
 
 def test_get_board_info(alazar_api) -> None:
     info = AlazarTechATS.get_board_info(
         api=alazar_api, system_id=SYSTEM_ID, board_id=BOARD_ID
     )
-    assert {'system_id', 'board_id', 'board_kind',
-            'max_samples', 'bits_per_sample'} == set(list(info.keys()))
-    assert info['system_id'] == SYSTEM_ID
-    assert info['board_id'] == BOARD_ID
+    assert {
+        "system_id",
+        "board_id",
+        "board_kind",
+        "max_samples",
+        "bits_per_sample",
+    } == set(list(info.keys()))
+    assert info["system_id"] == SYSTEM_ID
+    assert info["board_id"] == BOARD_ID
 
 
 def test_idn(alazar) -> None:
     idn = alazar.get_idn()
-    assert {'firmware', 'model', 'serial', 'vendor', 'CPLD_version',
-            'driver_version', 'SDK_version', 'latest_cal_date', 'memory_size',
-            'asopc_type', 'pcie_link_speed', 'pcie_link_width',
-            'bits_per_sample', 'max_samples'
-            } == set(list(idn.keys()))
-    assert idn['vendor'] == 'AlazarTech'
-    assert idn['model'][:3] == 'ATS'
+    assert {
+        "firmware",
+        "model",
+        "serial",
+        "vendor",
+        "CPLD_version",
+        "driver_version",
+        "SDK_version",
+        "latest_cal_date",
+        "memory_size",
+        "asopc_type",
+        "pcie_link_speed",
+        "pcie_link_width",
+        "bits_per_sample",
+        "max_samples",
+    } == set(list(idn.keys()))
+    assert idn["vendor"] == "AlazarTech"
+    assert idn["model"][:3] == "ATS"
 
 
 def test_return_codes_are_correct(alazar_api) -> None:
@@ -149,13 +165,13 @@ def test_return_codes_are_correct(alazar_api) -> None:
         real_msg = alazar_api.error_to_text(code)
         assert real_msg in msg
 
-    assert alazar_api.error_to_text(API_SUCCESS) == 'ApiSuccess'
+    assert alazar_api.error_to_text(API_SUCCESS) == "ApiSuccess"
 
     lower_unknown = API_SUCCESS - 1
-    assert alazar_api.error_to_text(lower_unknown) == 'Unknown'
+    assert alazar_api.error_to_text(lower_unknown) == "Unknown"
 
     upper_unknown = max(list(ERROR_CODES.keys())) + 1
-    assert alazar_api.error_to_text(upper_unknown) == 'Unknown'
+    assert alazar_api.error_to_text(upper_unknown) == "Unknown"
 
 
 def test_get_channel_info_convenient(alazar) -> None:
@@ -167,19 +183,19 @@ def test_get_channel_info_convenient(alazar) -> None:
 def test_get_cpld_version_convenient(alazar) -> None:
     cpld_ver = alazar.api.get_cpld_version_(alazar._handle)
     assert isinstance(cpld_ver, str)
-    assert len(cpld_ver.split('.')) == 2
+    assert len(cpld_ver.split(".")) == 2
 
 
 def test_get_driver_version_convenient(alazar_api) -> None:
     driver_ver = alazar_api.get_driver_version_()
     assert isinstance(driver_ver, str)
-    assert len(driver_ver.split('.')) == 3
+    assert len(driver_ver.split(".")) == 3
 
 
 def test_get_sdk_version_convenient(alazar_api) -> None:
     sdk_ver = alazar_api.get_sdk_version_()
     assert isinstance(sdk_ver, str)
-    assert len(sdk_ver.split('.')) == 3
+    assert len(sdk_ver.split(".")) == 3
 
 
 def test_query_capability_convenient(alazar) -> None:
@@ -209,9 +225,9 @@ def test_get_num_channels() -> None:
     assert 8 == AlazarTechATS.get_num_channels(255)
     assert 16 == AlazarTechATS.get_num_channels(65535)
 
-    with pytest.raises(RuntimeError, match='0'):
+    with pytest.raises(RuntimeError, match="0"):
         AlazarTechATS.get_num_channels(0)
-    with pytest.raises(RuntimeError, match='17'):
+    with pytest.raises(RuntimeError, match="17"):
         AlazarTechATS.get_num_channels(17)
-    with pytest.raises(RuntimeError, match='100'):
+    with pytest.raises(RuntimeError, match="100"):
         AlazarTechATS.get_num_channels(100)

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-OutputType = TypeVar('OutputType')
+OutputType = TypeVar("OutputType")
 
 CtypesTypes = (
     type[ctypes.c_uint8]
@@ -58,7 +58,7 @@ class AlazarTechATS(Instrument):
 
     # override dll_path in your init script or in the board constructor
     # if you have it somewhere else
-    dll_path = 'C:\\WINDOWS\\System32\\ATSApi'
+    dll_path = "C:\\WINDOWS\\System32\\ATSApi"
 
     api: AlazarATSAPI
 
@@ -123,11 +123,11 @@ class AlazarTechATS(Instrument):
         board.close()
 
         return {
-            'system_id': system_id,
-            'board_id': board_id,
-            'board_kind': board_model,
-            'max_samples': max_s,
-            'bits_per_sample': bps
+            "system_id": system_id,
+            "board_id": board_id,
+            "board_kind": board_model,
+            "max_samples": max_s,
+            "bits_per_sample": bps,
         }
 
     def __init__(
@@ -185,25 +185,24 @@ class AlazarTechATS(Instrument):
                 - 'max_samples': board memory size in samples
         """
         max_s, bps = self.api.get_channel_info_(self._handle)
-        pcie_link_speed = \
-            str(self.capability.query_pcie_link_speed()) + "GB/s"
+        pcie_link_speed = str(self.capability.query_pcie_link_speed()) + "GB/s"
 
         return {
-            'firmware': self.capability.query_firmware_version(),
-            'model': self.api.get_board_model(self._handle),
-            'max_samples': max_s,
-            'bits_per_sample': bps,
-            'serial': self.capability.query_serial(),
-            'vendor': 'AlazarTech',
-            'CPLD_version': self.api.get_cpld_version_(self._handle),
-            'driver_version': self.api.get_driver_version_(),
-            'SDK_version': self.api.get_sdk_version_(),
-            'latest_cal_date': self.capability.query_latest_calibration(),
-            'memory_size': str(self.capability.query_memory_size()),
-            'asopc_type': self.capability.query_asopc_type(),
-            'pcie_link_speed': pcie_link_speed,
-            'pcie_link_width': str(self.capability.query_pcie_link_width())
-            }
+            "firmware": self.capability.query_firmware_version(),
+            "model": self.api.get_board_model(self._handle),
+            "max_samples": max_s,
+            "bits_per_sample": bps,
+            "serial": self.capability.query_serial(),
+            "vendor": "AlazarTech",
+            "CPLD_version": self.api.get_cpld_version_(self._handle),
+            "driver_version": self.api.get_driver_version_(),
+            "SDK_version": self.api.get_sdk_version_(),
+            "latest_cal_date": self.capability.query_latest_calibration(),
+            "memory_size": str(self.capability.query_memory_size()),
+            "asopc_type": self.capability.query_asopc_type(),
+            "pcie_link_speed": pcie_link_speed,
+            "pcie_link_width": str(self.capability.query_pcie_link_width()),
+        }
 
     @contextmanager
     def syncing(self) -> Iterator[None]:
@@ -228,74 +227,81 @@ class AlazarTechATS(Instrument):
         """
         Syncs all parameters to Alazar card
         """
-        if self.clock_source() == 'EXTERNAL_CLOCK_10MHz_REF':
+        if self.clock_source() == "EXTERNAL_CLOCK_10MHz_REF":
             sample_rate = self.external_sample_rate
-            if self.external_sample_rate() == 'UNDEFINED':
-                raise RuntimeError("Using external 10 MHz Ref but external "
-                                   "sample_rate is not set")
-            if self.sample_rate() != 'UNDEFINED':
-                warnings.warn("Using external 10 MHz Ref but parameter sample_"
-                              "rate is set. This will have no effect and "
-                              "is ignored")
+            if self.external_sample_rate() == "UNDEFINED":
+                raise RuntimeError(
+                    "Using external 10 MHz Ref but external sample_rate is not set"
+                )
+            if self.sample_rate() != "UNDEFINED":
+                warnings.warn(
+                    "Using external 10 MHz Ref but parameter sample_"
+                    "rate is set. This will have no effect and "
+                    "is ignored"
+                )
             # mark the unused parameter as up to date
             self.sample_rate._set_updated()
         else:
-            if self.sample_rate() == 'UNDEFINED':
+            if self.sample_rate() == "UNDEFINED":
                 raise RuntimeError(
-                    "Using Internal clock but parameter sample_rate is not set")
-            if self.external_sample_rate() != 'UNDEFINED':
-                warnings.warn("Using Internal clock but parameter external_sample_rate is set."
-                              "This will have no effect and is ignored")
+                    "Using Internal clock but parameter sample_rate is not set"
+                )
+            if self.external_sample_rate() != "UNDEFINED":
+                warnings.warn(
+                    "Using Internal clock but parameter external_sample_rate is set."
+                    "This will have no effect and is ignored"
+                )
             # mark the unused parameter as up to date
             self.external_sample_rate._set_updated()
             sample_rate = self.sample_rate
 
         self.api.set_capture_clock(
-            self._handle, self.clock_source, sample_rate,
-            self.clock_edge, self.decimation
+            self._handle,
+            self.clock_source,
+            sample_rate,
+            self.clock_edge,
+            self.decimation,
         )
 
         for i in range(1, self.channels + 1):
             self.api.input_control(
-                self._handle, 2**(i-1),
-                self.parameters['coupling' + str(i)],
-                self.parameters['channel_range' + str(i)],
-                self.parameters['impedance' + str(i)]
+                self._handle,
+                2 ** (i - 1),
+                self.parameters["coupling" + str(i)],
+                self.parameters["channel_range" + str(i)],
+                self.parameters["impedance" + str(i)],
             )
-            if self.parameters.get('bwlimit' + str(i), None) is not None:
+            if self.parameters.get("bwlimit" + str(i), None) is not None:
                 self.api.set_bw_limit(
-                    self._handle, 2**(i-1),
-                    self.parameters['bwlimit' + str(i)]
+                    self._handle, 2 ** (i - 1), self.parameters["bwlimit" + str(i)]
                 )
 
         self.api.set_trigger_operation(
-            self._handle, self.trigger_operation,
-            self.trigger_engine1, self.trigger_source1,
-            self.trigger_slope1, self.trigger_level1,
-            self.trigger_engine2, self.trigger_source2,
-            self.trigger_slope2, self.trigger_level2
+            self._handle,
+            self.trigger_operation,
+            self.trigger_engine1,
+            self.trigger_source1,
+            self.trigger_slope1,
+            self.trigger_level1,
+            self.trigger_engine2,
+            self.trigger_source2,
+            self.trigger_slope2,
+            self.trigger_level2,
         )
         self.api.set_external_trigger(
-            self._handle, self.external_trigger_coupling,
-            self.external_trigger_range
+            self._handle, self.external_trigger_coupling, self.external_trigger_range
         )
         self.api.set_trigger_delay(self._handle, self.trigger_delay)
         self.api.set_trigger_time_out(self._handle, self.timeout_ticks)
-        self.api.configure_aux_io(
-            self._handle, self.aux_io_mode,
-            self.aux_io_param
-        )
+        self.api.configure_aux_io(self._handle, self.aux_io_mode, self.aux_io_param)
         self._parameters_synced = True
 
     def allocate_and_post_buffer(
-            self,
-            sample_type: CtypesTypes,
-            n_bytes: int
+        self, sample_type: CtypesTypes, n_bytes: int
     ) -> Buffer:
         buffer = Buffer(sample_type, n_bytes)
         self.api.post_async_buffer(
-            self._handle, ctypes.cast(
-                buffer.addr, ctypes.c_void_p), buffer.size_bytes
+            self._handle, ctypes.cast(buffer.addr, ctypes.c_void_p), buffer.size_bytes
         )
         return buffer
 
@@ -344,36 +350,37 @@ class AlazarTechATS(Instrument):
             Whatever is given by acquisition_controller.post_acquire method
         """
         if acquisition_controller is None:
-            raise RuntimeError("Cannot call acquire without an "
-                               "acquisition_controller")
+            raise RuntimeError("Cannot call acquire without an acquisition_controller")
 
         # region set parameters from args
         start_func = time.perf_counter()
         if self._parameters_synced is False:
-            raise RuntimeError("You must sync parameters to Alazar card "
-                               "before calling acquire by calling "
-                               "sync_settings_to_card")
-        self._set_if_present('mode', mode)
-        self._set_if_present('samples_per_record', samples_per_record)
-        self._set_if_present('records_per_buffer', records_per_buffer)
-        self._set_if_present('buffers_per_acquisition',
-                             buffers_per_acquisition)
-        self._set_if_present('channel_selection', channel_selection)
-        self._set_if_present('transfer_offset', transfer_offset)
-        self._set_if_present('external_startcapture', external_startcapture)
-        self._set_if_present('enable_record_headers', enable_record_headers)
-        self._set_if_present('alloc_buffers', alloc_buffers)
-        self._set_if_present('fifo_only_streaming', fifo_only_streaming)
-        self._set_if_present('interleave_samples', interleave_samples)
-        self._set_if_present('get_processed_data', get_processed_data)
-        self._set_if_present('allocated_buffers', allocated_buffers)
-        self._set_if_present('buffer_timeout', buffer_timeout)
+            raise RuntimeError(
+                "You must sync parameters to Alazar card "
+                "before calling acquire by calling "
+                "sync_settings_to_card"
+            )
+        self._set_if_present("mode", mode)
+        self._set_if_present("samples_per_record", samples_per_record)
+        self._set_if_present("records_per_buffer", records_per_buffer)
+        self._set_if_present("buffers_per_acquisition", buffers_per_acquisition)
+        self._set_if_present("channel_selection", channel_selection)
+        self._set_if_present("transfer_offset", transfer_offset)
+        self._set_if_present("external_startcapture", external_startcapture)
+        self._set_if_present("enable_record_headers", enable_record_headers)
+        self._set_if_present("alloc_buffers", alloc_buffers)
+        self._set_if_present("fifo_only_streaming", fifo_only_streaming)
+        self._set_if_present("interleave_samples", interleave_samples)
+        self._set_if_present("get_processed_data", get_processed_data)
+        self._set_if_present("allocated_buffers", allocated_buffers)
+        self._set_if_present("buffer_timeout", buffer_timeout)
 
         # endregion
         mode = self.mode.get()
-        if mode not in ('TS', 'NPT'):
-            raise Exception("Only the 'TS' and 'NPT' modes are implemented "
-                            "at this point")
+        if mode not in ("TS", "NPT"):
+            raise Exception(
+                "Only the 'TS' and 'NPT' modes are implemented at this point"
+            )
 
         # -----set final configurations-----
 
@@ -400,73 +407,83 @@ class AlazarTechATS(Instrument):
         # number of bytes per sample rounded up to the nearest integer
         whole_bytes_per_sample = (bits_per_sample + 7) // 8
         transfer_record_size = whole_bytes_per_sample * samples_per_record
-        transfer_buffer_size = (transfer_record_size *
-                                records_per_buffer * number_of_channels)
+        transfer_buffer_size = (
+            transfer_record_size * records_per_buffer * number_of_channels
+        )
 
         sample_type: type[ctypes.c_uint16] | type[ctypes.c_uint8] = (
-            ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8)
-        internal_buffer_size_requested = (bits_per_sample * samples_per_record *
-                                          records_per_buffer) // 8
+            ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8
+        )
+        internal_buffer_size_requested = (
+            bits_per_sample * samples_per_record * records_per_buffer
+        ) // 8
 
-        if mode == 'TS':
+        if mode == "TS":
             transfer_buffer_size //= buffers_per_acquisition
             internal_buffer_size_requested //= buffers_per_acquisition
 
         if internal_buffer_size_requested > max_buffer_size:
-            raise RuntimeError(f"Requested a buffer of size: "
-                               f"{internal_buffer_size_requested / 1024 ** 2}"
-                               f" MB. The maximum supported size is "
-                               f"{max_buffer_size / 1024 ** 2} MB "
-                               f"(recommended is <8MB).")
+            raise RuntimeError(
+                f"Requested a buffer of size: "
+                f"{internal_buffer_size_requested / 1024 ** 2}"
+                f" MB. The maximum supported size is "
+                f"{max_buffer_size / 1024 ** 2} MB "
+                f"(recommended is <8MB)."
+            )
 
         # Set record size for NPT mode
-        if mode == 'NPT':
+        if mode == "NPT":
             pretriggersize = 0  # pretriggersize is 0 for NPT always
             post_trigger_size = samples_per_record
-            self.api.set_record_size(
-                self._handle, pretriggersize,
-                post_trigger_size
-            )
+            self.api.set_record_size(self._handle, pretriggersize, post_trigger_size)
         # set acquisition parameters here for NPT, TS mode
         samples_per_buffer = 0
 
-        acquire_flags = (self.mode.raw_value |
-                         self.external_startcapture.raw_value |
-                         self.enable_record_headers.raw_value |
-                         self.alloc_buffers.raw_value |
-                         self.fifo_only_streaming.raw_value |
-                         self.interleave_samples.raw_value |
-                         self.get_processed_data.raw_value)
+        acquire_flags = (
+            self.mode.raw_value
+            | self.external_startcapture.raw_value
+            | self.enable_record_headers.raw_value
+            | self.alloc_buffers.raw_value
+            | self.fifo_only_streaming.raw_value
+            | self.interleave_samples.raw_value
+            | self.get_processed_data.raw_value
+        )
 
-        if mode == 'NPT':
-            records_per_acquisition = (
-                records_per_buffer * buffers_per_acquisition)
+        if mode == "NPT":
+            records_per_acquisition = records_per_buffer * buffers_per_acquisition
             self.api.before_async_read(
-                self._handle, self.channel_selection.raw_value,
+                self._handle,
+                self.channel_selection.raw_value,
                 self.transfer_offset.raw_value,
                 samples_per_record,
-                records_per_buffer, records_per_acquisition,
-                acquire_flags
+                records_per_buffer,
+                records_per_acquisition,
+                acquire_flags,
             )
-        elif mode == 'TS':
-            if (samples_per_record % buffers_per_acquisition != 0):
-                self.log.warning('buffers_per_acquisition is not a divisor '
-                                 'of samples per record which it should be '
-                                 'in TS mode, rounding down in samples per '
-                                 'buffer calculation')
-            samples_per_buffer = int(samples_per_record /
-                                     buffers_per_acquisition)
+        elif mode == "TS":
+            if samples_per_record % buffers_per_acquisition != 0:
+                self.log.warning(
+                    "buffers_per_acquisition is not a divisor "
+                    "of samples per record which it should be "
+                    "in TS mode, rounding down in samples per "
+                    "buffer calculation"
+                )
+            samples_per_buffer = int(samples_per_record / buffers_per_acquisition)
             if self.records_per_buffer() != 1:
-                self.log.warning('records_per_buffer should be 1 in TS mode, '
-                                 'defauling to 1')
+                self.log.warning(
+                    "records_per_buffer should be 1 in TS mode, defauling to 1"
+                )
                 self.records_per_buffer.set(1)
             records_per_buffer = cast(int, self.records_per_buffer())
 
             self.api.before_async_read(
-                self._handle, self.channel_selection.raw_value,
-                self.transfer_offset.raw_value, samples_per_buffer,
-                records_per_buffer, buffers_per_acquisition,
-                acquire_flags
+                self._handle,
+                self.channel_selection.raw_value,
+                self.transfer_offset.raw_value,
+                samples_per_buffer,
+                records_per_buffer,
+                buffers_per_acquisition,
+                acquire_flags,
             )
 
         self.clear_buffers()
@@ -476,10 +493,12 @@ class AlazarTechATS(Instrument):
         buffers_per_acquisition = cast(int, self.buffers_per_acquisition())
 
         if allocated_buffers > buffers_per_acquisition:
-            self.log.warning("'allocated_buffers' should be <= "
-                             "'buffers_per_acquisition'. Defaulting "
-                             "'allocated_buffers' to "
-                             f"{buffers_per_acquisition}")
+            self.log.warning(
+                "'allocated_buffers' should be <= "
+                "'buffers_per_acquisition'. Defaulting "
+                "'allocated_buffers' to "
+                f"{buffers_per_acquisition}"
+            )
             self.allocated_buffers.set(buffers_per_acquisition)
 
         allocated_buffers = cast(int, self.allocated_buffers())
@@ -488,8 +507,7 @@ class AlazarTechATS(Instrument):
         # post buffers to Alazar
         try:
             for _ in range(allocated_buffers):
-                buf = self.allocate_and_post_buffer(sample_type,
-                                                    transfer_buffer_size)
+                buf = self.allocate_and_post_buffer(sample_type, transfer_buffer_size)
                 self.buffer_list.append(buf)
 
             # -----start capture here-----
@@ -506,14 +524,12 @@ class AlazarTechATS(Instrument):
 
             done_setup = time.perf_counter()
 
-            while (buffers_completed < self.buffers_per_acquisition.get()):
+            while buffers_completed < self.buffers_per_acquisition.get():
                 # Wait for the buffer at the head of the list of available
                 # buffers to be filled by the board.
                 buf = self.buffer_list[buffers_completed % allocated_buffers]
                 self.api.wait_async_buffer_complete(
-                    self._handle,
-                    ctypes.cast(buf.addr, ctypes.c_void_p),
-                    buffer_timeout
+                    self._handle, ctypes.cast(buf.addr, ctypes.c_void_p), buffer_timeout
                 )
 
                 acquisition_controller.buffer_done_callback(buffers_completed)
@@ -521,12 +537,11 @@ class AlazarTechATS(Instrument):
                 # if buffers must be recycled, extract data and repost them
                 # otherwise continue to next buffer
                 if buffer_recycling:
-                    acquisition_controller.handle_buffer(
-                        buf.buffer, buffers_completed)
+                    acquisition_controller.handle_buffer(buf.buffer, buffers_completed)
                     self.api.post_async_buffer(
                         self._handle,
                         ctypes.cast(buf.addr, ctypes.c_void_p),
-                        buf.size_bytes
+                        buf.size_bytes,
                     )
                 buffers_completed += 1
                 bytes_transferred += buf.size_bytes
@@ -552,9 +567,11 @@ class AlazarTechATS(Instrument):
         for _, p in self.parameters.items():
             if isinstance(p, TraceParameter):
                 if p.synced_to_card is False:
-                    raise RuntimeError(f"TraceParameter {p} not synced to "
-                                       f"Alazar card detected. Aborting. Data "
-                                       f"may be corrupt")
+                    raise RuntimeError(
+                        f"TraceParameter {p} not synced to "
+                        f"Alazar card detected. Aborting. Data "
+                        f"may be corrupt"
+                    )
 
         # Compute the total transfer time, and display performance information.
         end_time = time.perf_counter()
@@ -572,8 +589,7 @@ class AlazarTechATS(Instrument):
         if transfer_time_sec > 0:
             buffers_per_sec = buffers_completed / transfer_time_sec
             bytes_per_sec = bytes_transferred / transfer_time_sec
-            records_per_sec = (records_per_buffer *
-                               buffers_completed / transfer_time_sec)
+            records_per_sec = records_per_buffer * buffers_completed / transfer_time_sec
         if self.log.isEnabledFor(logging.DEBUG):
             self.log.debug(
                 "Captured %d buffers (%f buffers per sec)",
@@ -641,8 +657,9 @@ class AlazarTechATS(Instrument):
         Returns:
              the corresponding value in volts
         """
-        return (((signal - 127.5) / 127.5) *
-                (self.parameters['channel_range' + str(channel)].get()))
+        return ((signal - 127.5) / 127.5) * (
+            self.parameters["channel_range" + str(channel)].get()
+        )
 
     def get_sample_rate(self, include_decimation: bool = True) -> float:
         """
@@ -652,18 +669,22 @@ class AlazarTechATS(Instrument):
         Returns:
             the number of samples (per channel) per second
         """
-        if (self.clock_source.get() == 'EXTERNAL_CLOCK_10MHz_REF'
-                and 'external_sample_rate' in self.parameters):
+        if (
+            self.clock_source.get() == "EXTERNAL_CLOCK_10MHz_REF"
+            and "external_sample_rate" in self.parameters
+        ):
             rate = self.external_sample_rate.get()
             # if we are using an external ref clock the sample rate
             # is set as an integer and not value mapped so we use a different
             # parameter to represent it
-        elif self.sample_rate.get() == 'EXTERNAL_CLOCK':
-            raise Exception('External clock is used, alazar driver '
-                            'could not determine sample speed.')
+        elif self.sample_rate.get() == "EXTERNAL_CLOCK":
+            raise Exception(
+                "External clock is used, alazar driver "
+                "could not determine sample speed."
+            )
         else:
             rate = self.sample_rate.get()
-        if rate == '1GHz_REFERENCE_CLOCK':
+        if rate == "1GHz_REFERENCE_CLOCK":
             rate = 1e9
 
         if include_decimation:
@@ -691,8 +712,7 @@ class AlazarTechATS(Instrument):
         """
         n_ch = NUMBER_OF_CHANNELS_FROM_BYTE_REPR.get(byte_rep, None)
         if n_ch is None:
-            raise RuntimeError(
-                f'Invalid channel configuration {byte_rep!r} supplied')
+            raise RuntimeError(f"Invalid channel configuration {byte_rep!r} supplied")
         return n_ch
 
     def _read_register(self, offset: int) -> int:
@@ -707,20 +727,20 @@ def _setup_ctypes_for_windll_lib_functions() -> None:
     Set up ``argtypes`` and ``restype`` for functions from ``ctypes.windll``
     libraries, which are used in this module.
     """
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         ctypes.windll.kernel32.VirtualAlloc.argtypes = [
             ctypes.c_void_p,
             ctypes.c_long,
             ctypes.c_long,
-            ctypes.c_long
+            ctypes.c_long,
         ]
         ctypes.windll.kernel32.VirtualAlloc.restype = ctypes.c_void_p
 
         ctypes.windll.kernel32.VirtualFree.argtypes = [
-                ctypes.c_void_p,
-                ctypes.c_long,
-                ctypes.c_long
-            ]
+            ctypes.c_void_p,
+            ctypes.c_long,
+            ctypes.c_long,
+        ]
         ctypes.windll.kernel32.VirtualFree.restype = ctypes.c_int
 
 
@@ -744,36 +764,33 @@ class Buffer:
         size_bytes: The size of the buffer to allocate, in bytes.
     """
 
-    def __init__(
-            self,
-            c_sample_type: CtypesTypes,
-            size_bytes: int
-    ):
+    def __init__(self, c_sample_type: CtypesTypes, size_bytes: int):
         self.size_bytes = size_bytes
         self.buffer: np.ndarray
 
         bytes_per_sample = {
-            ctypes.c_uint8:  1,
+            ctypes.c_uint8: 1,
             ctypes.c_uint16: 2,
             ctypes.c_uint32: 4,
-            ctypes.c_int32:  4,
-            ctypes.c_float:  4
+            ctypes.c_int32: 4,
+            ctypes.c_float: 4,
         }.get(c_sample_type, 0)
 
         self._allocated = True
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             MEM_COMMIT = 0x1000
             PAGE_READWRITE = 0x4
             self.addr = ctypes.windll.kernel32.VirtualAlloc(
-                0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE)
+                0, ctypes.c_long(size_bytes), MEM_COMMIT, PAGE_READWRITE
+            )
         else:
             self._allocated = True
-            ctypes_array = (c_sample_type *
-                            (size_bytes // bytes_per_sample))()
+            ctypes_array = (c_sample_type * (size_bytes // bytes_per_sample))()
             self.addr = ctypes.addressof(ctypes_array)
 
-        ctypes_array = (c_sample_type *
-                        (size_bytes // bytes_per_sample)).from_address(self.addr)
+        ctypes_array = (c_sample_type * (size_bytes // bytes_per_sample)).from_address(
+            self.addr
+        )
         self.buffer = np.ctypeslib.as_array(ctypes_array)
         self.ctypes_buffer = ctypes_array
 
@@ -782,10 +799,11 @@ class Buffer:
         uncommit memory allocated with this buffer object
         """
         self._allocated = False
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             MEM_RELEASE = 0x8000
             ctypes.windll.kernel32.VirtualFree(
-                ctypes.c_void_p(self.addr), 0, MEM_RELEASE)
+                ctypes.c_void_p(self.addr), 0, MEM_RELEASE
+            )
 
     def __del__(self) -> None:
         """
@@ -797,8 +815,9 @@ class Buffer:
         if self._allocated:
             self.free_mem()
             logger.warning(
-                'Buffer prevented memory leak; Memory released to Windows.\n'
-                'Memory should have been released before buffer was deleted.')
+                "Buffer prevented memory leak; Memory released to Windows.\n"
+                "Memory should have been released before buffer was deleted."
+            )
 
 
 class AcquisitionInterface(Generic[OutputType]):
@@ -847,8 +866,7 @@ class AcquisitionInterface(Generic[OutputType]):
             buffer_number: counter for which buffer we are handling
 
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        raise NotImplementedError("This method should be implemented in a subclass")
 
     def post_acquire(self) -> OutputType:
         """
@@ -860,8 +878,7 @@ class AcquisitionInterface(Generic[OutputType]):
             this function should return all relevant data that you want
             to get form the acquisition
         """
-        raise NotImplementedError(
-            'This method should be implemented in a subclass')
+        raise NotImplementedError("This method should be implemented in a subclass")
 
     def buffer_done_callback(self, buffers_completed: int) -> None:
         """
