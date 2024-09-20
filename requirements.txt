@@ -428,7 +428,7 @@ tornado==6.4.1
     #   ipykernel
     #   jupyter-client
     #   qcodes
-towncrier==23.11.0
+towncrier==24.8.0
     # via
     #   qcodes (pyproject.toml)
     #   sphinxcontrib-towncrier
