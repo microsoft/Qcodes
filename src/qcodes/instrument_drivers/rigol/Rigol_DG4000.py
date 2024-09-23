@@ -35,9 +35,11 @@ def clean_string(s: str) -> str:
 
     return s
 
+
 def _parse_string_strip(s: str) -> str:
     """Parse an output of the VISA instrument, remove redundant terminators like \n"""
     return s.strip()
+
 
 def parse_string_output(s: str) -> float | str:
     """Parse an output of the VISA instrument into either text of a number"""
