@@ -496,7 +496,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websockets==13.0.1
+websockets==13.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
