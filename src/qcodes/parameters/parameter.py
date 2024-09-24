@@ -15,7 +15,6 @@ from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 from .sweep_values import SweepFixedValues
 
 if TYPE_CHECKING:
-
     from qcodes.instrument.base import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
     from qcodes.validators import Validator
