@@ -491,8 +491,8 @@ class TektronixAWG5014(VisaInstrument):
                     get_parser=float,
                 )
 
-        self.set("trigger_impedance", 50)
-        if self.get("clock_freq") != 1e9:
+        self.trigger_impedance.set(50)
+        if self.clock_freq.get() != 1e9:
             log.info("AWG clock freq not set to 1GHz")
 
         self.connect_message()
@@ -657,12 +657,12 @@ class TektronixAWG5014(VisaInstrument):
         defined waveforms can be ON.
         """
         for i in range(1, self.num_channels + 1):
-            self.set(f"ch{i}_state", 1)
+            self.parameters[f"ch{i}_state"].set(1)
 
     def all_channels_off(self) -> None:
         """Set the state of all channels to be OFF."""
         for i in range(1, self.num_channels + 1):
-            self.set(f"ch{i}_state", 0)
+            self.parameters[f"ch{i}_state"].set(0)
 
     #####################
     # Sequences section #
@@ -947,7 +947,7 @@ class TektronixAWG5014(VisaInstrument):
         log.info("Generating sequence_cfg")
 
         AWG_sequence_cfg = {
-            "SAMPLING_RATE": self.get("clock_freq"),
+            "SAMPLING_RATE": self.clock_freq.get(),
             "CLOCK_SOURCE": (
                 1 if self.clock_source().startswith("INT") else 2
             ),  # Internal | External
@@ -957,27 +957,27 @@ class TektronixAWG5014(VisaInstrument):
             "EXTERNAL_REFERENCE_TYPE": 1,  # Fixed | Variable
             "REFERENCE_CLOCK_FREQUENCY_SELECTION": 1,
             # 10 MHz | 20 MHz | 100 MHz
-            "TRIGGER_SOURCE": 1 if self.get("trigger_source").startswith("EXT") else 2,
+            "TRIGGER_SOURCE": 1 if self.trigger_source.get().startswith("EXT") else 2,
             # External | Internal
             "TRIGGER_INPUT_IMPEDANCE": (
-                1 if self.get("trigger_impedance") == 50.0 else 2
+                1 if self.trigger_impedance.get() == 50.0 else 2
             ),  # 50 ohm | 1 kohm
             "TRIGGER_INPUT_SLOPE": (
-                1 if self.get("trigger_slope").startswith("POS") else 2
+                1 if self.trigger_slope.get().startswith("POS") else 2
             ),  # Positive | Negative
             "TRIGGER_INPUT_POLARITY": (
                 1 if self.ask("TRIGger:POLarity?").startswith("POS") else 2
             ),  # Positive | Negative
-            "TRIGGER_INPUT_THRESHOLD": self.get("trigger_level"),  # V
+            "TRIGGER_INPUT_THRESHOLD": self.trigger_level.get(),  # V
             "EVENT_INPUT_IMPEDANCE": (
-                1 if self.get("event_impedance") == 50.0 else 2
+                1 if self.event_impedance.get() == 50.0 else 2
             ),  # 50 ohm | 1 kohm
             "EVENT_INPUT_POLARITY": (
-                1 if self.get("event_polarity").startswith("POS") else 2
+                1 if self.event_polarity.get().startswith("POS") else 2
             ),  # Positive | Negative
-            "EVENT_INPUT_THRESHOLD": self.get("event_level"),  # V
+            "EVENT_INPUT_THRESHOLD": self.event_level(),  # V
             "JUMP_TIMING": (
-                1 if self.get("event_jump_timing").startswith("SYNC") else 2
+                1 if self.event_jump_timing.get().startswith("SYNC") else 2
             ),  # Sync | Async
             "RUN_MODE": 4,  # Continuous | Triggered | Gated | Sequence
             "RUN_STATE": 0,  # On | Off

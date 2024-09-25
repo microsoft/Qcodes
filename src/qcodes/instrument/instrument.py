@@ -129,7 +129,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         # start with an empty dict, just in case an instrument doesn't
         # heed our request to return all 4 fields.
         idn = {"vendor": None, "model": None, "serial": None, "firmware": None}
-        idn.update(self.get(idn_param))
+        idn.update(self.parameters[idn_param].get())
         t = time.time() - (begin_time or self._t0)
 
         con_msg = (

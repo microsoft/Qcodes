@@ -1,0 +1,3 @@
+The methods `get`, `set`, `call` and `__getitem__` on the `InstrumentBase` class have been deprecated.
+Parameters can be looked up by name using the `Instrument.parameters` dict and functions using `instrument.functions`
+which is cleaner and fully equivalent.

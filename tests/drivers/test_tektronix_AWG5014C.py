@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
-from qcodes.instrument_drivers.tektronix.AWG5014 import Tektronix_AWG5014
+from qcodes.instrument_drivers.tektronix import TektronixAWG5014
 
 
 @pytest.fixture(scope="function")
 def awg():
-    awg_sim = Tektronix_AWG5014(
+    awg_sim = TektronixAWG5014(
         "awg_sim",
         address="GPIB0::1::INSTR",
         timeout=1,
