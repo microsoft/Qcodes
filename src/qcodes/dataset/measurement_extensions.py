@@ -121,7 +121,7 @@ def parse_dond_into_args(
             callables
 
     Returns:
-
+        A tuple of the list of sweeps to perform and a list of the parameters to measure.
     """
     sweep_instances: list[AbstractSweep] = []
     params_meas: list[ParamMeasT] = []

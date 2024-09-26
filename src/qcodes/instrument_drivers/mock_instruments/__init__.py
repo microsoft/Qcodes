@@ -947,7 +947,7 @@ def setpoint_generator(
         *sp_bases: 1D Sequence or Numpy array of setpoints
 
     Returns:
-
+        tuple of setpoints in the expected format.
     """
     setpoints: list[np.ndarray | Sequence[float]] = []
     for i, sp_base in enumerate(sp_bases):
