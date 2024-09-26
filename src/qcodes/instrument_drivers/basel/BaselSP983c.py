@@ -25,6 +25,7 @@ class BaselSP983c(BaselSP983):
             used to set offset voltage parameter of the preamp and the
             source parameter should represent a voltage source that is
             connected to the "Offset Input Voltage" connector of the SP983C.
+
     """
 
     def get_idn(self) -> dict[str, str | None]:

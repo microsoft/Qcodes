@@ -30,6 +30,7 @@ def validate_all(*args: tuple[Validator[Any], Any], context: str = "") -> None:
         *args: Values to validate.
         context: keyword-only arg with a string to include in the error message
             giving the user context for the error.
+
     """
     if context:
         context = "; " + context
@@ -171,6 +172,7 @@ class Bool(Validator[bool | np.bool_]):
 
         Raises:
             TypeError: IF not a boolean.
+
         """
         if not isinstance(value, bool) and not isinstance(value, np.bool_):
             raise TypeError(f"{value!r} is not Boolean; {context}")
@@ -188,6 +190,7 @@ class Strings(Validator[str]):
     Raises:
         TypeError: If min_length or max_length negative. Or max_length lower
             than min_length.
+
     """
 
     def __init__(self, min_length: int = 0, max_length: int = BIGSTRING) -> None:
@@ -214,6 +217,7 @@ class Strings(Validator[str]):
         Raises:
             TypeError: If not a string.
             ValueError: If length is not between min_length and max_length.
+
         """
 
         if not isinstance(value, str):
@@ -251,6 +255,7 @@ class Numbers(Validator[numbertypes]):
     Raises:
         TypeError: If min or max value not a number. Or if min_value is
             larger than the max_value.
+
     """
 
     validtypes = (float, int, np.integer, np.floating)
@@ -285,6 +290,7 @@ class Numbers(Validator[numbertypes]):
         Raises:
             TypeError: If not int or float.
             ValueError: If number is not between the min and the max value.
+
         """
         if not isinstance(value, self.validtypes):
             raise TypeError(f"{value!r} is not an int or float; {context}")
@@ -324,6 +330,7 @@ class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
     Raises:
         TypeError: If min_value and max_value is not an integer. Or
             min_value is larger than the min_value.
+
     """
 
     validtypes = (int, np.integer)
@@ -357,6 +364,7 @@ class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
         Raises:
              TypeError: If not an integer.
              ValueError: If not between min_value and max_value.
+
         """
         if not isinstance(value, self.validtypes):
             raise TypeError(f"{value!r} is not an int; {context}")
@@ -403,6 +411,7 @@ class PermissiveInts(Ints):
 
         Raises:
             TypeError: If not an int or close to it.
+
         """
         castvalue: int | np.integer[Any]
         if isinstance(value, (float, np.floating)):
@@ -441,6 +450,7 @@ class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
 
         Raises:
             TypeError: If not a complex number.
+
         """
         # for some reason pyright does not think numpy complex
         # types as valid types here
@@ -460,6 +470,7 @@ class Enum(Validator[Hashable]):
 
     Raises:
         TypeError: If no value provided
+
     """
 
     def __init__(self, *values: Hashable | None) -> None:
@@ -514,6 +525,7 @@ class Multiples(Ints):
         divisor: the value need the be a multiple of this divisor
         max_value: value must be <= max_value
         min_value: value must be >= min_value
+
     """
 
     def __init__(self, divisor: int = 1, **kwargs: Any) -> None:
@@ -534,6 +546,7 @@ class Multiples(Ints):
 
         Raises:
             ValueError: If not a multiple of a divisor.
+
         """
         super().validate(value=value, context=context)
         if not value % self._divisor == 0:
@@ -568,6 +581,7 @@ class PermissiveMultiples(Validator[numbertypes]):
 
     Raises:
         ValueError: If divisor is zero.
+
     """
 
     def __init__(self, divisor: numbertypes, precision: float = 1e-9) -> None:
@@ -583,6 +597,7 @@ class PermissiveMultiples(Validator[numbertypes]):
 
         Raises:
             ValueError: If value is not the multiple of divisor.
+
         """
         self._numval.validate(value)
         # if zero, it passes by definition
@@ -658,6 +673,7 @@ class MultiType(Validator[Any]):
         TypeError: If no validators provided. Or if any of the provided
             argument is not a valid validator. Or if combiner is not in
             ['OR', 'AND'].
+
     """
 
     def __init__(
@@ -730,6 +746,7 @@ class MultiTypeOr(MultiType):
     Raises:
         TypeError: If no validators provided. Or if any of the provided
             argument is not a valid validator.
+
     """
 
     def __init__(
@@ -759,6 +776,7 @@ class MultiTypeAnd(MultiType):
     Raises:
         TypeError: If no validators provided. Or if any of the provided
             argument is not a valid validator.
+
     """
 
     def __init__(
@@ -793,6 +811,7 @@ class Arrays(Validator[np.ndarray]):
 
     Raises:
         TypeError: If value of arrays are not supported.
+
     """
 
     __real_types = (np.integer, np.floating)
@@ -996,6 +1015,7 @@ class Lists(Validator[list[T]]):
 
     Args:
         elt_validator: Used to validate the individual elements of the list.
+
     """
 
     def __init__(self, elt_validator: Validator[T] = Anything()) -> None:
@@ -1017,6 +1037,7 @@ class Lists(Validator[list[T]]):
 
         Raises:
             TypeError: If not list.
+
         """
         if not isinstance(value, list):
             raise TypeError(f"{value!r} is not a list; {context}")
@@ -1039,6 +1060,7 @@ class Sequence(Validator[typing.Sequence[Any]]):
             :class:`Sequence`.
         length: Length of sequence.
         require_sorted: True or False.
+
     """
 
     def __init__(
@@ -1070,6 +1092,7 @@ class Sequence(Validator[typing.Sequence[Any]]):
         Raises:
             TypeError: If not a sequence.
             ValueError: If not of given length or if not sorted.
+
         """
         if not isinstance(value, abc.Sequence):
             raise TypeError(f"{value!r} is not a sequence; {context}")
@@ -1115,6 +1138,7 @@ class Callable(Validator[typing.Callable[..., Any]]):
 
         Raises:
             TypeError: If not a callable.
+
         """
         if not callable(value):
             raise TypeError(f"{value!r} is not a callable; {context}")
@@ -1134,6 +1158,7 @@ class Dict(Validator[dict[Hashable, Any]]):
 
         Args:
             allowed_keys: if set, all keys must be in allowed_keys
+
         """
         self._allowed_keys = allowed_keys
         self._valid_values = ({0: 1},)
@@ -1149,6 +1174,7 @@ class Dict(Validator[dict[Hashable, Any]]):
         Raises:
             TypeError: If not a dictionary.
             SyntaxError: If keys are not in allowed keys.
+
         """
         if not isinstance(value, dict):
             raise TypeError(f"{value!r} is not a dictionary; {context}")

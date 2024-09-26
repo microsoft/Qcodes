@@ -18,6 +18,7 @@ def permissive_range(
         start: The starting value of the range.
         stop: The end value of the range.
         step: Spacing between the values.
+
     """
     signed_step = abs(step) * (1 if stop > start else -1)
     # take off a tiny bit for rounding errors

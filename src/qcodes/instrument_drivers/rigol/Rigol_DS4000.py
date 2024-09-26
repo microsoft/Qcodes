@@ -160,6 +160,7 @@ class ScopeArray(ArrayParameter):
             block: The data block
         Returns:
             The stripped data
+
         """
         # Validate header
         header = block[:11].decode("ascii")
@@ -255,6 +256,7 @@ class RigolDS4000(VisaInstrument):
             name: Name of the instrument used by QCoDeS
             address: Instrument address as used by VISA
             **kwargs: kwargs are forwarded to base class.
+
         """
 
         # Init VisaInstrument. device_clear MUST NOT be issued, otherwise communications hangs

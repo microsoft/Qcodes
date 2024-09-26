@@ -86,6 +86,7 @@ def do2d_retrace(
 
     Returns:
         The QCoDeS dataset.
+
     """
 
     if show_progress is None:

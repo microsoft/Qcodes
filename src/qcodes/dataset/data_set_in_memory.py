@@ -226,6 +226,7 @@ class DataSetInMem(BaseDataSet):
 
         Returns:
             The loaded dataset.
+
         """
         # in the code below floats and ints loaded from attributes are explicitly casted
         # this is due to some older versions of qcodes writing them with a different backend
@@ -560,6 +561,7 @@ class DataSetInMem(BaseDataSet):
         Args:
             snapshot: the raw JSON dump of the snapshot
             overwrite: force overwrite an existing snapshot
+
         """
         if self.snapshot is None or overwrite:
             self._add_to_dyn_column_if_in_db("snapshot", snapshot)
@@ -585,6 +587,7 @@ class DataSetInMem(BaseDataSet):
         Args:
             tag: represents the key in the metadata dictionary
             metadata: actual metadata
+
         """
 
         self._metadata[tag] = metadata
@@ -695,6 +698,7 @@ class DataSetInMem(BaseDataSet):
 
         Args:
             links: The links to assign to this dataset
+
         """
         if not self.pristine:
             raise RuntimeError(
@@ -895,6 +899,7 @@ def load_from_netcdf(
 
     Returns:
         The loaded dataset.
+
     """
     return DataSetInMem._load_from_netcdf(path=path, path_to_db=path_to_db)
 
@@ -916,6 +921,7 @@ def load_from_file(
 
     Returns:
         The loaded dataset.
+
     """
     path = Path(path)
     if not path.is_file():

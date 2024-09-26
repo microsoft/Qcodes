@@ -71,6 +71,7 @@ def make_connection_plus_from(
 
     Returns:
         the "same" connection but as ConnectionPlus object
+
     """
     if not isinstance(conn, ConnectionPlus):
         conn_plus = ConnectionPlus(conn)
@@ -93,6 +94,7 @@ def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
 
     Args:
         conn: connection to guard
+
     """
     with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
         if not isinstance(conn, ConnectionPlus):

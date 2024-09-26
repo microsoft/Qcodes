@@ -45,6 +45,7 @@ class GalilMotionController(Instrument):
             name: name for the instrument
             address: address of the controller
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name=name, **kwargs)
         self.g = gclib.py()
@@ -95,6 +96,7 @@ class GalilMotionController(Instrument):
 
         Args:
             val: time in milliseconds. -1 disables the timeout
+
         """
         if val < -1:
             raise RuntimeError("Timeout value cannot be set less than -1")
@@ -133,6 +135,7 @@ class GalilDMC4133VectorMode(InstrumentChannel):
             parent: an instance of DMC4133Controller
             name: name of the vector mode plane
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(parent, name, **kwargs)
         self._plane = name
@@ -269,6 +272,7 @@ class GalilDMC4133Motor(InstrumentChannel):
             parent: an instance of DMC4133Controller
             name: name of the motor to be controlled
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(parent, name, **kwargs)
         self._axis = name
@@ -487,6 +491,7 @@ class GalilDMC4133Controller(GalilMotionController):
             name: name for the instance
             address: address of the controller burned in
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name=name, address=address, **kwargs)
 
@@ -636,6 +641,7 @@ class GalilDMC4133Arm:
 
         Args:
             controller: an instance of DMC4133Controller
+
         """
         self.controller = controller
 

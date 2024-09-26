@@ -36,6 +36,7 @@ def get_description_map(curr: sqlite3.Cursor) -> dict[str, int]:
 
     Returns:
         dictionary mapping column names and their indices
+
     """
     return {c[0]: i for i, c in enumerate(curr.description)}
 
@@ -53,6 +54,7 @@ def one(curr: sqlite3.Cursor, column: int | str) -> Any:
 
     Returns:
         the value
+
     """
     res = curr.fetchall()
     if len(res) > 1:
@@ -102,6 +104,7 @@ def many(curr: sqlite3.Cursor, *columns: str) -> tuple[Any, ...]:
 
     Returns:
         list of  values
+
     """
     res = curr.fetchall()
     if len(res) > 1:
@@ -123,6 +126,7 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> list[tuple[Any, ...]]:
 
     Returns:
         list of lists of values
+
     """
     res = curr.fetchall()
 
@@ -157,6 +161,7 @@ def select_one_where(
 
     Raises:
         RuntimeError if not exactly one match is found.
+
     """
     query = f"""
     SELECT {column}
@@ -336,6 +341,7 @@ def length(conn: ConnectionPlus, formatted_name: str) -> int:
 
     Returns:
         the length of the table
+
     """
     # we replace ' in the table name to '' to make sure that
     # if the formatted name contains ' that will not cause the ' '
@@ -361,6 +367,7 @@ def insert_column(
         table: destination for the insertion
         name: column name
         paramtype: sqlite type of the column
+
     """
     # first check that the column is not already there
     # and do nothing if it is
@@ -392,6 +399,7 @@ def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
         conn: The connection
         table: the table name
         column: the column name
+
     """
     cur = atomic_transaction(conn, f"PRAGMA table_info({table})")
     description = get_description_map(cur)

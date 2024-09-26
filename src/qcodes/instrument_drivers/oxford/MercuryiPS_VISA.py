@@ -43,6 +43,7 @@ def _signal_parser(our_scaling: float, response: str) -> float:
         our_scaling: Whatever scale we might need to apply to get from
             e.g. A/min to A/s.
         response: What comes back from instrument.ask
+
     """
 
     # there might be a scale before the unit. We only want to deal in SI
@@ -83,6 +84,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
             UID: The UID as used internally by the MercuryiPS, e.g.
                 'GRPX'
             **kwargs: Forwarded to base class.
+
         """
         if ":" in UID:
             raise ValueError(
@@ -241,6 +243,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
 
         Returns:
             The response. Cf. MercuryiPS.ask for how much is returned
+
         """
         dressed_cmd = f"READ:DEV:{self.uid}:{self.psu_string}:{get_cmd}"
 
@@ -255,6 +258,7 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         Args:
             set_cmd: raw string for the command, e.g. 'SIG:FSET'
             value: Value to set
+
         """
         dressed_cmd = f"SET:DEV:{self.uid}:{self.psu_string}:{set_cmd}:{value}"
         # the instrument always very verbosely responds
@@ -298,6 +302,7 @@ class OxfordMercuryiPS(VisaInstrument):
                 return a boolean describing whether that field value is
                 acceptable.
             **kwargs: kwargs are forwarded to base class.
+
         """
 
         if field_limits is not None and not (callable(field_limits)):
@@ -476,6 +481,7 @@ class OxfordMercuryiPS(VisaInstrument):
 
         Returns:
             The normal IDN dict
+
         """
         raw_idn_string = self.ask("*IDN?")
         resps = raw_idn_string.split(":")
@@ -571,6 +577,7 @@ class OxfordMercuryiPS(VisaInstrument):
         Args:
             limit_func: must be a function mapping (Bx, By, Bz) -> True/False
               where True means that the field is INSIDE the allowed region
+
         """
 
         # first check that the current target is allowed
@@ -595,6 +602,7 @@ class OxfordMercuryiPS(VisaInstrument):
               exceeded. In 'safe' mode, the fields are ramped one-by-one in a
               blocking way that ensures that the total field stays within the
               safe region (provided that this region is convex).
+
         """
         if mode not in ["simul", "safe", "simul_block"]:
             raise ValueError(
@@ -633,6 +641,7 @@ class OxfordMercuryiPS(VisaInstrument):
 
         Args:
             cmd: the command to send to the instrument
+
         """
 
         visalog.debug(f"Writing to instrument {self.name}: {cmd}")

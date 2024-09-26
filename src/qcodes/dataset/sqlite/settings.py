@@ -20,6 +20,7 @@ def _read_settings() -> tuple[dict[str, str | int], dict[str, bool | int | str]]
         If a setting has a value, that value is provided. Else a boolean
         indicating wether SQLite was compiled with that option. A missing
         option, say, 'FOOBAR' is equivalent to {'FOOBAR': False}.
+
     """
     # For the limits, there are known default values
     # (known from https://www.sqlite.org/limits.html)

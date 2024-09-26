@@ -79,6 +79,7 @@ class DelegateGroup(Group):
             parameter.
         formatter: Optional formatter for value returned by get_parameters(),
             defaults to a namedtuple with the parameter names as keys.
+
     """
 
     def __init__(
@@ -161,6 +162,7 @@ class GroupedParameter(ParameterBase):
         unit: The unit of measure. Use ``''`` for unitless.
         label: Optional label, defaults to parameter name.
         default set method(s).
+
     """
 
     def __init__(
@@ -205,6 +207,7 @@ class GroupedParameter(ParameterBase):
 
         Returns:
             float: Returns the parameter value
+
         """
         self.group.set(value)
 

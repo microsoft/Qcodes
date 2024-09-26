@@ -44,6 +44,7 @@ class ScaledParameter(Parameter):
             but attaches _amplified or _attenuated depending if gain
             or division has been specified.
         unit: Resulting unit. It uses the one of 'output' by default.
+
     """
 
     class Role(enum.Enum):
@@ -170,6 +171,7 @@ class ScaledParameter(Parameter):
         """
         Returns:
             value at which was set at the sample
+
         """
         wrapped_value = cast(float, self._wrapped_parameter())
         multiplier = cast(float, self._multiplier())
@@ -198,6 +200,7 @@ class ScaledParameter(Parameter):
         Returns:
             value at which the attached parameter is (i.e. does
             not account for the scaling)
+
         """
         return self._wrapped_parameter.get()
 

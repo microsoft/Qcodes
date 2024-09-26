@@ -27,6 +27,7 @@ def _float_round(val: float) -> int:
 
     Returns:
         Rounded integer
+
     """
     return round(float(val))
 
@@ -49,6 +50,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
         parent (GS200)
         name: instrument name
         present
+
     """
 
     def __init__(
@@ -185,6 +187,7 @@ class YokogawaGS200Monitor(InstrumentChannel):
         Args:
             unit: Unit to update either VOLT or CURR.
             output_range: new range.
+
         """
         # Recheck measurement state next time we do a measurement
         self._enabled = False
@@ -298,6 +301,7 @@ class YokogawaGS200(VisaInstrument):
       name: What this instrument is called locally.
       address: The GPIB or USB address of this instrument
       kwargs: kwargs to be passed to VisaInstrument class
+
     """
 
     default_terminator = "\n"
@@ -533,6 +537,7 @@ class YokogawaGS200(VisaInstrument):
             step: The ramp steps in Volt
             delay: The time between finishing one step and
                 starting another in seconds.
+
         """
         self._assert_mode("VOLT")
         self._ramp_source(ramp_to, step, delay)
@@ -546,6 +551,7 @@ class YokogawaGS200(VisaInstrument):
             step: The ramp steps in Ampere
             delay: The time between finishing one step and starting
                 another in seconds.
+
         """
         self._assert_mode("CURR")
         self._ramp_source(ramp_to, step, delay)
@@ -559,6 +565,7 @@ class YokogawaGS200(VisaInstrument):
             step: The ramp steps in volts/ampere
             delay: The time between finishing one step and
                 starting another in seconds.
+
         """
         saved_step = self.output_level.step
         saved_inter_delay = self.output_level.inter_delay
@@ -580,6 +587,7 @@ class YokogawaGS200(VisaInstrument):
             mode: "CURR" or "VOLT"
             output_level: If missing, we assume that we are getting the
                 current level. Else we are setting it
+
         """
         self._assert_mode(mode)
         if output_level is not None:
@@ -594,6 +602,7 @@ class YokogawaGS200(VisaInstrument):
         Args:
             output_level: output level in Volt or Ampere, depending
                 on the current mode.
+
         """
         auto_enabled = self.auto_range()
 
@@ -645,6 +654,7 @@ class YokogawaGS200(VisaInstrument):
         Args:
             source_mode: "CURR" or "VOLT"
             source_range: New range.
+
         """
         if not self.measure.present:
             return
@@ -663,6 +673,7 @@ class YokogawaGS200(VisaInstrument):
 
         Args:
             val: auto range on or off
+
         """
         self._auto_range = val
         # Disable measurement if auto range is on
@@ -678,6 +689,7 @@ class YokogawaGS200(VisaInstrument):
 
         Args:
             mode: "CURR" or "VOLT"
+
         """
         if self.source_mode.get_latest() != mode:
             raise ValueError(
@@ -733,6 +745,7 @@ class YokogawaGS200(VisaInstrument):
                 10e-3, 100e-3, 200e-3]. If auto_range = False, then setting the
                 output can only happen if the set value is smaller than the
                 present range.
+
         """
         self._assert_mode(mode)
         output_range = float(output_range)
@@ -751,6 +764,7 @@ class YokogawaGS200(VisaInstrument):
                 30e0]. For current, we have the ranges [1e-3, 10e-3, 100e-3,
                 200e-3]. If auto_range = False, then setting the output can only
                 happen if the set value is smaller than the present range.
+
         """
         self._assert_mode(mode)
         return float(self.ask(":SOUR:RANG?"))

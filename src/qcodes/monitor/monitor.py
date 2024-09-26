@@ -147,6 +147,7 @@ class Monitor(Thread):
             interval: How often one wants to refresh the values.
             use_root_instrument: Defines if parameters are grouped according to
                                 parameter.root_instrument or parameter.instrument
+
         """
         super().__init__(daemon=True)
 

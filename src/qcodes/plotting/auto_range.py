@@ -29,6 +29,7 @@ def auto_range_iqr(
 
     Returns:
         region limits [vmin, vmax]
+
     """
     if isinstance(cutoff_percentile, tuple):
         t = cutoff_percentile[0]

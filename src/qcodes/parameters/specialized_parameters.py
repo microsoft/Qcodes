@@ -28,6 +28,7 @@ class ElapsedTimeParameter(Parameter):
     Args:
         name: The local name of the parameter. See the documentation of
             :class:`qcodes.parameters.Parameter` for more details.
+
     """
 
     def __init__(self, name: str, label: str = "Elapsed time", **kwargs: Any):
@@ -71,6 +72,7 @@ class InstrumentRefParameter(Parameter):
             and cannot be set after initiation.
 
         **kwargs: Passed to InstrumentRefParameter parent class
+
     """
 
     def __init__(

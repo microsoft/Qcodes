@@ -173,6 +173,7 @@ def expand_setpoints_helper(
     Returns:
         A list of tuples of parameters and values for the specified parameter
         and its setpoints.
+
     """
     if not isinstance(parameter, ParameterWithSetpoints):
         raise TypeError(

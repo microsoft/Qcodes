@@ -167,6 +167,7 @@ class DummyInstrument(DummyBase):
             gates: list of names that is used to create parameters for
                             the instrument
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
 
@@ -203,6 +204,7 @@ class DummyFailingInstrument(DummyBase):
             name: name for the instrument
             fail: if true, instrument will throw a runtime error on creation.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
 
@@ -948,6 +950,7 @@ def setpoint_generator(
 
     Returns:
         tuple of setpoints in the expected format.
+
     """
     setpoints: list[np.ndarray | Sequence[float]] = []
     for i, sp_base in enumerate(sp_bases):
@@ -971,6 +974,7 @@ class SnapShotTestInstrument(DummyBase):
         params: parameter names. The instrument will have these as parameters
         params_to_skip: parameters to skip updating in the snapshot. Must be
             a subset of params
+
     """
 
     def __init__(
@@ -1032,6 +1036,7 @@ class MockField(DummyBase):
             name: Instrument name
             vals: Soft limits. Defaults to Numbers(min_value=-1., max_value=1.).
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name=name, **kwargs)
         self._field = 0.0
@@ -1236,6 +1241,7 @@ class MockDAC(DummyBase):
                             the instrument
             num_channels: Number of channels to add to the mock instrument.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
 
@@ -1274,6 +1280,7 @@ class MockCustomChannel(InstrumentChannel):
                 interesting features. It's just an example of an additional
                 parameter a regular instrument channel does not have.
             **kwargs: Forwarded to base class.
+
         """
         if isinstance(channel, str):
             _, channel_name = channel.split(".")

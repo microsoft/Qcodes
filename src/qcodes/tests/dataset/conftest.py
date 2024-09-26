@@ -106,6 +106,7 @@ def temporarily_copied_DB(filepath: str, **kwargs):
 
     Kwargs:
         kwargs to be passed to connect
+
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         dbname_new = os.path.join(tmpdir, "temp.db")

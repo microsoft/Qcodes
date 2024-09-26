@@ -172,6 +172,7 @@ def qcodes_parameter_attr_getter(
     Returns:
         Attribute looked up, proxy object containing the code of the attribute as a
         repr or a default object.
+
     """
     if (
         inspect.isclass(object_to_document_attr_on)

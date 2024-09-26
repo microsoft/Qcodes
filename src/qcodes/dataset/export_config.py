@@ -30,6 +30,7 @@ def set_data_export_type(export_type: str) -> None:
     Args:
         export_type: Export type to use.
             Currently supported values: netcdf, csv.
+
     """
     # disable file export
     if export_type is None:
@@ -72,6 +73,7 @@ def get_data_export_type(
 
     Returns:
         Data export type
+
     """
     # If export_type is None, get value from config
     export_type = export_type or qcodes.config[DATASET_CONFIG_SECTION][EXPORT_TYPE]
@@ -103,6 +105,7 @@ def get_data_export_path() -> Path:
 
     Returns:
         Path
+
     """
     return (
         Path(_expand_export_path(qcodes.config[DATASET_CONFIG_SECTION][EXPORT_PATH]))
@@ -117,6 +120,7 @@ def set_data_export_prefix(export_prefix: str) -> None:
 
     Args:
         export_prefix: Prefix, e.g. "qcodes_"
+
     """
     qcodes.config[DATASET_CONFIG_SECTION][EXPORT_PREFIX] = export_prefix
 
@@ -127,6 +131,7 @@ def get_data_export_prefix() -> str:
 
     Returns:
         Prefix, e.g. "qcodes_"
+
     """
     return qcodes.config[DATASET_CONFIG_SECTION][EXPORT_PREFIX]
 

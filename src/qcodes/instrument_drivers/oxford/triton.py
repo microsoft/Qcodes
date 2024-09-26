@@ -36,6 +36,7 @@ class OxfordTriton(IPInstrument):
 
     Todo:
         fetch registry directly from fridge-computer
+
     """
 
     def __init__(
@@ -509,6 +510,7 @@ class OxfordTriton(IPInstrument):
             msg: message string
         Returns
             action: string describing the action
+
         """
         action = msg[17:]
         if action == "PCL":

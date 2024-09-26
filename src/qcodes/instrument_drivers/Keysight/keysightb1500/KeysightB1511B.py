@@ -19,6 +19,7 @@ class KeysightB1511B(KeysightB1517A):
             class.
         slot_nr: Slot number of this module (not channel number)
         asu_present: Flag to acknowledge ASU presence
+
     """
 
     def __init__(

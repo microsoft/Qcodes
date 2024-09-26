@@ -225,6 +225,7 @@ class Keithley2450Sense(InstrumentChannel):
             self.parent.sense_function.get() == self._proper_function. We
             ensure this through the 'sense' property on the main driver class
             which returns the proper submodule for any given function mode
+
     """
 
     function_modes: ClassVar[dict[str, _FunctionMode]] = {
@@ -390,6 +391,7 @@ class Keithley2450Source(InstrumentChannel):
             self.parent.source_function.get() == self._proper_function. We
             ensure this through the 'source' property on the main driver class
             which returns the proper submodule for any given function mode
+
     """
 
     function_modes: ClassVar[dict[str, _FunctionMode]] = {

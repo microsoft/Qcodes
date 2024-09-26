@@ -52,6 +52,7 @@ class MiniCircuitsUsbSPDT(MiniCircuitsSPDTBase):
             serial_number: the serial number of the device
                 (printed on the sticker on the back side, without s/n)
             kwargs: kwargs to be passed to Instrument class.
+
         """
         # import .net exception so we can catch it below
         # we keep this import local so that the module can be imported

@@ -66,6 +66,7 @@ def _appropriate_kwargs(plottype: str, colorbar_present: bool, **kwargs: Any) ->
         plottype: The plot type for which the kwargs should be adjusted
         colorbar_present: Is there a non-None colorbar in this plot iteration?
         **kwargs: Keyword arguments passed to the plotting function.
+
     """
 
     def linehandler(**kwargs: Any) -> Any:
@@ -157,6 +158,7 @@ def plot_dataset(
         1D plots)
 
     Config dependencies: (qcodesrc.json)
+
     """
     import matplotlib.axes
     import matplotlib.colorbar
@@ -344,6 +346,7 @@ def plot_and_save_image(
         data: The QCoDeS dataset to be plotted.
         save_pdf: Save figure in pdf format.
         save_png: Save figure in png format.
+
     """
     from matplotlib.figure import Figure
 
@@ -420,6 +423,7 @@ def _complex_to_real_preparser(
             "mag_and_phase"
         degrees: Whether to return the phase in degrees. The default is to
             return the phase in radians
+
     """
 
     if conversion not in ["real_and_imag", "mag_and_phase"]:
@@ -581,6 +585,7 @@ def plot_2d_scatterplot(
 
     Returns:
         The matplotlib axis handles for plot and colorbar
+
     """
     import matplotlib
 
@@ -651,6 +656,7 @@ def plot_on_a_plain_grid(
 
     Returns:
         The matplotlib axes handle for plot and colorbar
+
     """
     import matplotlib
 
@@ -814,6 +820,7 @@ def _make_rescaled_ticks_and_units(
     Returns:
         A tuple with the ticks formatter (matlplotlib.ticker.FuncFormatter) and
         the new label.
+
     """
     from matplotlib.ticker import FuncFormatter
 
@@ -872,5 +879,6 @@ def _is_string_valued_array(values: np.ndarray) -> bool:
 
     Returns:
         True, if the array contains string; False otherwise
+
     """
     return isinstance(values[0], str)

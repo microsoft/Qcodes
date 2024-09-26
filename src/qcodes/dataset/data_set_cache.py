@@ -83,6 +83,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
         Returns:
             The cached dataset.
+
         """
         if not self.live:
             self.load_data_from_db()
@@ -140,6 +141,7 @@ class DataSetCache(Generic[DatasetType_co]):
         Returns:
             A dict from parameter name to Pandas Dataframes. Each dataframe
             represents one parameter tree.
+
         """
         data = self.data()
         return load_to_dataframe_dict(data)
@@ -152,6 +154,7 @@ class DataSetCache(Generic[DatasetType_co]):
         Returns:
             A dict from parameter name to Pandas Dataframes. Each dataframe
             represents one parameter tree.
+
         """
         data = self.data()
         return load_to_concatenated_dataframe(data)
@@ -260,6 +263,7 @@ def append_shaped_parameter_data_to_existing_arrays(
 
     Returns:
         Updated write and read status, and the updated ``data``
+
     """
     parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
     merged_data = {}

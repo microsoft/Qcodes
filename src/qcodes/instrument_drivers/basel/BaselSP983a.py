@@ -24,6 +24,7 @@ class BaselSP983a(VisaInstrument):
             source parameter should represent a voltage source that is
             connected to the "Offset Input Voltage" connector of the SP983C.
         **kwargs: Forwarded to base class.
+
     """
 
     default_terminator = "\r\n"

@@ -285,6 +285,7 @@ def start_command_history_logger(log_dir: str | None = None) -> None:
     Args:
         log_dir: directory where log shall be stored to. If left out, defaults
             to ``~/.qcodes/logs/command_history.log``
+
     """
     # get_ipython is part of the public api but IPython does
     # not use __all__ to mark this
@@ -396,6 +397,7 @@ def handler_level(
     Args:
         level: Level to set the handlers to.
         handler: Handle or sequence of handlers which to change.
+
     """
     if isinstance(handler, logging.Handler):
         handler = (handler,)
@@ -421,6 +423,7 @@ def console_level(level: LevelType) -> "Iterator[None]":
 
     Args:
         level: Level to set the console handler to.
+
     """
     global console_handler
     if console_handler is None:

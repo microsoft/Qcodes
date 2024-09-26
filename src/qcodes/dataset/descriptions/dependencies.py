@@ -169,6 +169,7 @@ class InterDependencies_:
         Returns:
             A tuple with an exception type and an error message or None, if
             the paramtree is valid
+
         """
 
         # Validate the type
@@ -231,6 +232,7 @@ class InterDependencies_:
 
         Raises:
             ValueError if the parameter is not part of this object
+
         """
         if ps not in self:
             raise ValueError(f"Unknown parameter: {ps}")
@@ -247,6 +249,7 @@ class InterDependencies_:
 
         Raises:
             ValueError if the parameter is not part of this object
+
         """
         if ps not in self:
             raise ValueError(f"Unknown parameter: {ps}")
@@ -482,6 +485,7 @@ class InterDependencies_:
         Raises:
             DependencyError, if a dependency is missing
             InferenceError, if an inference is missing
+
         """
         params = {p.name for p in parameters}
 

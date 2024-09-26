@@ -142,6 +142,7 @@ class WrappedDll(metaclass=DllWrapperMeta):
 
     Args:
         dll_path: Path to the DLL library to load and wrap
+
     """
 
     signatures: ClassVar[dict[str, Signature]] = {}

@@ -22,6 +22,7 @@ class Link:
         tail: a guid representing the tail of the graph
         edge_type: a name to represent the type of the edge
         description: free-form optional field add a description of the graph
+
     """
 
     head: str
@@ -37,6 +38,7 @@ class Link:
         Args:
             node_guid: the guid
             node: either "head" or "tail"
+
         """
         try:
             validate_guid_format(node_guid)

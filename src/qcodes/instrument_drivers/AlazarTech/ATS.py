@@ -54,6 +54,7 @@ class AlazarTechATS(Instrument):
             makes it possible to provide another api, e.g. for a simulated
             driver for which the binary Alazar drivers do not need to be
             installed.
+
     """
 
     # override dll_path in your init script or in the board constructor
@@ -75,6 +76,7 @@ class AlazarTechATS(Instrument):
 
         Returns:
             list of board info dictionaries for each connected board
+
         """
         api = AlazarATSAPI(dll_path or cls.dll_path)
 
@@ -106,6 +108,7 @@ class AlazarTechATS(Instrument):
                 - board_kind (as string)
                 - max_samples
                 - bits_per_sample
+
         """
         # make a temporary instrument for this board, to make it easier
         # to get its info
@@ -183,6 +186,7 @@ class AlazarTechATS(Instrument):
                 - 'pcie_link_width': number of pcie links
                 - 'bits_per_sample': number of bits per one sample
                 - 'max_samples': board memory size in samples
+
         """
         max_s, bps = self.api.get_channel_info_(self._handle)
         pcie_link_speed = str(self.capability.query_pcie_link_speed()) + "GB/s"
@@ -218,6 +222,7 @@ class AlazarTechATS(Instrument):
                 with alazar.syncing():
                      alazar.trigger_source1('EXTERNAL')
                      alazar.trigger_level1(100)
+
         """
 
         yield
@@ -348,6 +353,7 @@ class AlazarTechATS(Instrument):
 
         Returns:
             Whatever is given by acquisition_controller.post_acquire method
+
         """
         if acquisition_controller is None:
             raise RuntimeError("Cannot call acquire without an acquisition_controller")
@@ -656,6 +662,7 @@ class AlazarTechATS(Instrument):
 
         Returns:
              the corresponding value in volts
+
         """
         return ((signal - 127.5) / 127.5) * (
             self.parameters["channel_range" + str(channel)].get()
@@ -668,6 +675,7 @@ class AlazarTechATS(Instrument):
 
         Returns:
             the number of samples (per channel) per second
+
         """
         if (
             self.clock_source.get() == "EXTERNAL_CLOCK_10MHz_REF"
@@ -762,6 +770,7 @@ class Buffer:
         c_sample_type: The datatype of the buffer to create. Should be a valid
             ctypes type.
         size_bytes: The size of the buffer to allocate, in bytes.
+
     """
 
     def __init__(self, c_sample_type: CtypesTypes, size_bytes: int):
@@ -877,6 +886,7 @@ class AcquisitionInterface(Generic[OutputType]):
         Returns:
             this function should return all relevant data that you want
             to get form the acquisition
+
         """
         raise NotImplementedError("This method should be implemented in a subclass")
 
@@ -890,6 +900,7 @@ class AcquisitionInterface(Generic[OutputType]):
         Args:
             buffers_completed: how many buffers have been completed and copied
                 to local memory at the time of this callback.
+
         """
         pass
 
@@ -917,6 +928,7 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
             name: The name of the AcquisitionController
             alazar_name: The name of the alazar instrument.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
         self._alazar: AlazarTechATS = self.find_instrument(

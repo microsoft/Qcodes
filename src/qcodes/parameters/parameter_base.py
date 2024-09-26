@@ -187,6 +187,7 @@ class ParameterBase(MetadatableWithName):
 
         register_name: Specifies if the parameter should be registered in datasets
             using a different name than the parameter's full_name
+
     """
 
     def __init__(
@@ -360,6 +361,7 @@ class ParameterBase(MetadatableWithName):
 
         Raises:
             RuntimeError: If removing the first validator when more than one validator is set.
+
         """
 
         if len(self._vals):
@@ -390,6 +392,7 @@ class ParameterBase(MetadatableWithName):
 
         Args:
             vals: Validator to add to the parameter.
+
         """
         self._vals.append(vals)
         self.__doc__ = self._build__doc__()
@@ -402,6 +405,7 @@ class ParameterBase(MetadatableWithName):
         Returns:
             The last validator added to the parameter or None if there are no
             validators associated with the parameter.
+
         """
         if len(self._vals) > 0:
             removed = self._vals.pop()
@@ -522,6 +526,7 @@ class ParameterBase(MetadatableWithName):
 
         Returns:
             base snapshot
+
         """
         if self.snapshot_exclude:
             warnings.warn(
@@ -772,6 +777,7 @@ class ParameterBase(MetadatableWithName):
 
         Returns:
             List of stepped values, including target value.
+
         """
         if step is None:
             return [value]
@@ -827,6 +833,7 @@ class ParameterBase(MetadatableWithName):
             TypeError: If the value is of the wrong type.
             ValueError: If the value is outside the bounds specified by the
                validator.
+
         """
         for validator in reversed(self._vals):
             if validator is not None:
@@ -852,6 +859,7 @@ class ParameterBase(MetadatableWithName):
             TypeError:  if step is set to not integer or None for an
                 integer parameter
             TypeError: if step is set to not a number on None
+
         """
         return self._step
 
@@ -895,6 +903,7 @@ class ParameterBase(MetadatableWithName):
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
+
         """
         return self._post_delay
 
@@ -923,6 +932,7 @@ class ParameterBase(MetadatableWithName):
         Raises:
             TypeError: If delay is not int nor float
             ValueError: If delay is negative
+
         """
         return self._inter_delay
 
@@ -1006,6 +1016,7 @@ class ParameterBase(MetadatableWithName):
             >>> with p.set_to(3, allow_changes=True):
             ...     p.set(5)  # now this works
             >>> print(f"value after second block: {p.get()}")  # still prints 2
+
         """
         context_manager = _SetParamContext(self, value, allow_changes=allow_changes)
         return context_manager
@@ -1029,6 +1040,7 @@ class ParameterBase(MetadatableWithName):
             >>> print(f"value after with block: {p.get()}")  # prints 2
             >>> with p.restore_at_exit(allow_changes=False):
             ...     p.set(5)  # raises an exception
+
         """
         return self.set_to(self.cache(), allow_changes=allow_changes)
 
@@ -1115,6 +1127,7 @@ class GetLatest(DelegateAttributes):
 
     Args:
         parameter: Parameter to be wrapped.
+
     """
 
     def __init__(self, parameter: ParameterBase):

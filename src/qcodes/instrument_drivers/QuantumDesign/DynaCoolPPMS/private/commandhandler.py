@@ -114,6 +114,7 @@ class CommandHandler:
         Returns:
             A tuple of a CmdArgs tuple and a bool indicating whether this was
             a query
+
         """
 
         def err_func() -> int:
@@ -146,6 +147,7 @@ class CommandHandler:
         Args:
             error_code: the error code returned from the MultiVu call
             vals: A list of the returned values (empty in case of a set cmd)
+
         """
         response = f"{error_code}"
 

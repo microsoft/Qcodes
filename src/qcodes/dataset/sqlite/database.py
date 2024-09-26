@@ -191,6 +191,7 @@ def get_db_version_and_newest_available_version(
 
     Returns:
         A tuple of (db_version, latest_available_version)
+
     """
     conn = connect(path_to_db, version=0)
     db_version = get_user_version(conn)
@@ -219,6 +220,7 @@ def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
+
     """
     # calling connect performs all the needed actions to create and upgrade
     # the db to the latest version.
@@ -239,6 +241,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
         conn: Connection to the database.
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF.
+
     """
     valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
     if journal_mode not in valid_journal_modes:
@@ -264,6 +267,7 @@ def initialise_or_create_database_at(
         journal_mode: Which `journal_mode` should be used for atomic commit and rollback.
             Options are DELETE, TRUNCATE, PERSIST, MEMORY, WAL and OFF. If set to None
             no changes are made.
+
     """
     qcodes.config.core.db_location = str(db_file_with_abs_path)
     initialise_database(journal_mode)
@@ -277,6 +281,7 @@ def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]
     Args:
         db_file_with_abs_path: Database file name with absolute path, for example
             ``C:\\mydata\\majorana_experiments.db``
+
     """
     db_location = qcodes.config["core"]["db_location"]
     try:
@@ -301,6 +306,7 @@ def conn_from_dbpath_or_conn(
 
     Returns:
         A `ConnectionPlus` object
+
     """
 
     if path_to_db is not None and conn is not None:

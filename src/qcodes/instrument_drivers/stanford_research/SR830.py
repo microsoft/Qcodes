@@ -33,6 +33,7 @@ class ChannelTrace(ParameterWithSetpoints):
             channel: The relevant channel (1 or 2). The name should
                 match this.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
 
@@ -102,6 +103,7 @@ class ChannelBuffer(ArrayParameter):
             instrument: The parent instrument
             channel: The relevant channel (1 or 2). The name should
                 should match this.
+
         """
         self._valid_channels = (1, 2)
 
@@ -785,6 +787,7 @@ class SR830(VisaInstrument):
                up to 32 µs.
              - The frequency is computed only every other period or 40 ms,
                whichever is longer.
+
         """
         if not 2 <= len(parameters) <= 6:
             raise KeyError(
@@ -813,6 +816,7 @@ class SR830(VisaInstrument):
 
         Returns:
             Whether or not the sensitivity was actually changed.
+
         """
         return self._change_sensitivity(1)
 
@@ -824,6 +828,7 @@ class SR830(VisaInstrument):
 
         Returns:
             Whether or not the sensitivity was actually changed.
+
         """
         return self._change_sensitivity(-1)
 
@@ -955,6 +960,7 @@ class SR830(VisaInstrument):
                 automatically change the sensitivity (default is 1). The actual
                 number of steps needed to change to the optimal sensitivity may
                 be more or less than this maximum.
+
         """
 
         def autorange_once() -> bool:

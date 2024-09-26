@@ -39,6 +39,7 @@ def detect_shape_of_measurement(
     Raises:
         TypeError: If the shape cannot be detected due to incorrect types of
             parameters or steps supplied.
+
     """
 
     loop_shape: list[int] = []

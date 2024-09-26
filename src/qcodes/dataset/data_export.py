@@ -73,6 +73,7 @@ def _all_steps_multiples_of_min_step(rows: np.ndarray) -> bool:
 
     Returns:
         The answer to the question
+
     """
 
     steps_list: list[np.ndarray] = []
@@ -101,6 +102,7 @@ def _rows_from_datapoints(inputsetpoints: np.ndarray) -> np.ndarray:
 
     Returns:
         A ndarray of the rows
+
     """
 
     rows = []
@@ -140,6 +142,7 @@ def _all_in_group_or_subgroup(rows: np.ndarray) -> bool:
     Returns:
         A boolean indicating whether the setpoints meet the
             criterion
+
     """
 
     groups = 1
@@ -178,6 +181,7 @@ def _strings_as_ints(inputarray: np.ndarray) -> np.ndarray:
 
     Args:
         inputarray: A 1D array of strings
+
     """
     newdata = np.zeros(len(inputarray))
     for n, word in enumerate(np.unique(inputarray)):
@@ -200,6 +204,7 @@ def get_1D_plottype(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
 
     Returns:
         Determined plot type as a string
+
     """
 
     if isinstance(xpoints[0], str) and not isinstance(ypoints[0], str):
@@ -227,6 +232,7 @@ def datatype_from_setpoints_1d(setpoints: np.ndarray) -> str:
 
     Returns:
         A string representing the plot type as described above
+
     """
     if np.allclose(setpoints, setpoints[0]):
         return "1D_point"
@@ -254,6 +260,7 @@ def get_2D_plottype(
 
     Returns:
         Determined plot type as a string
+
     """
 
     plottype = datatype_from_setpoints_2d(xpoints, ypoints)
@@ -279,6 +286,7 @@ def datatype_from_setpoints_2d(xpoints: np.ndarray, ypoints: np.ndarray) -> str:
 
     Returns:
         A string with the name of the determined plot type
+
     """
     # We represent categorical data as integer-valued data
     if isinstance(xpoints[0], str):

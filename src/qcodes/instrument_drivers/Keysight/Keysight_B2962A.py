@@ -31,6 +31,7 @@ class KeysightB2962AChannel(InstrumentChannel):
             name: The name of the channel
             chan: The number of the channel in question (1-2)
             **kwargs: Forwarded to base class.
+
         """
         # Sanity Check inputs
         if name not in ["ch1", "ch2"]:
@@ -140,6 +141,7 @@ class KeysightB2962A(VisaInstrument):
         - Implement any remaining parameters supported by the device
         - Similar drivers have special handlers to map return values of
           9.9e+37 to inf, is this needed?
+
     """
 
     default_terminator = "\n"

@@ -40,6 +40,7 @@ class IPInstrument(Instrument):
 
     See help for ``qcodes.Instrument`` for additional information on writing
     instrument subclasses.
+
     """
 
     def __init__(
@@ -75,6 +76,7 @@ class IPInstrument(Instrument):
         Args:
             address: The IP address or name.
             port: The IP port.
+
         """
         if address is not None:
             self._address = address
@@ -98,6 +100,7 @@ class IPInstrument(Instrument):
 
         Args:
             persistent: Set True to keep the socket open all the time.
+
         """
         self._persistent = persistent
         if persistent:
@@ -141,6 +144,7 @@ class IPInstrument(Instrument):
 
         Args:
             timeout: Seconds to allow for responses.
+
         """
         self._timeout = timeout
 
@@ -154,6 +158,7 @@ class IPInstrument(Instrument):
         Args:
             terminator: Character(s) to terminate each send.
                 Default '\n'.
+
         """
         self._terminator = terminator
 
@@ -184,6 +189,7 @@ class IPInstrument(Instrument):
 
         Args:
             cmd: The command to send to the instrument.
+
         """
 
         with self._ensure_connection:
@@ -200,6 +206,7 @@ class IPInstrument(Instrument):
 
         Returns:
             The instrument's string response.
+
         """
         with self._ensure_connection:
             self._send(cmd)
@@ -231,6 +238,7 @@ class IPInstrument(Instrument):
 
         Returns:
             dict: base snapshot
+
         """
         snap = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update
@@ -255,6 +263,7 @@ class EnsureConnection:
 
     Args:
         instrument: the instance to connect.
+
     """
 
     def __init__(self, instrument: IPInstrument):

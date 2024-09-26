@@ -171,6 +171,7 @@ class RigolDG1062Channel(InstrumentChannel):
             name: Name of the channel.
             channel: Number of the channel.
             **kwargs: Forwarded to base class.
+
         """
 
         super().__init__(parent, name, **kwargs)

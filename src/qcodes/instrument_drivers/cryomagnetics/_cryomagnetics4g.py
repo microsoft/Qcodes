@@ -57,6 +57,7 @@ class CryomagneticsModel4G(VisaInstrument):
             are tuples containing the upper current limit and maximum rate for that range.
         coil_constant: The coil constant of the magnet in Tesla per Amp.
         **kwargs: Forwarded to base class.
+
     """
 
     KG_TO_TESLA: float = 0.1  # Constant for unit conversion
@@ -168,6 +169,7 @@ class CryomagneticsModel4G(VisaInstrument):
 
         Args:
             remote: If True, sets to remote mode, otherwise sets to local mode.
+
         """
         if remote:
             self.write("REMOTE")
@@ -211,6 +213,7 @@ class CryomagneticsModel4G(VisaInstrument):
 
         If the magnet is in a valid state for ramping, a CryomagneticsOperatingState object is returned, representing
         the current operating state of the magnet.
+
         """
         status_byte = int(self.ask("*STB?"))
 
@@ -249,6 +252,7 @@ class CryomagneticsModel4G(VisaInstrument):
 
         Raises:
             Cryo4GException: If the power supply is not in a state where it can start ramping.
+
         """
         # Convert field setpoint to kG for the instrument
         field_setpoint_kg = field_setpoint * 10

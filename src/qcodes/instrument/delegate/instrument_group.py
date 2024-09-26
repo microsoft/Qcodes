@@ -28,6 +28,7 @@ class InstrumentGroup(InstrumentBase):
             values to set on those parameters when loading this instrument.
         set_initial_values_on_load: Set default values on load. Defaults to
             False.
+
     """
 
     def __init__(

@@ -88,6 +88,7 @@ class RigolDS1074Z(VisaInstrument):
         address: VISA address of the instrument.
         timeout: Seconds to allow for responses.
         terminator: terminator for SCPI commands.
+
     """
 
     default_terminator = "\n"

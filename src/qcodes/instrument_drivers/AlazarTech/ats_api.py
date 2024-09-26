@@ -534,6 +534,7 @@ class AlazarATSAPI(WrappedDll):
 
         Returns:
             Tuple of bits per sample and maximum board memory in samples
+
         """
         bps = ctypes.c_uint8(0)  # bps bits per sample
         max_s = ctypes.c_uint32(0)  # max_s memory size in samples
@@ -553,6 +554,7 @@ class AlazarATSAPI(WrappedDll):
 
         Returns:
             Version string in the format "<major>.<minor>"
+
         """
         major = ctypes.c_uint8(0)
         minor = ctypes.c_uint8(0)
@@ -570,6 +572,7 @@ class AlazarATSAPI(WrappedDll):
 
         Returns:
             Version string in the format "<major>.<minor>.<revision>"
+
         """
         major = ctypes.c_uint8(0)
         minor = ctypes.c_uint8(0)
@@ -592,6 +595,7 @@ class AlazarATSAPI(WrappedDll):
 
         Returns:
             Version string in the format "<major>.<minor>.<revision>"
+
         """
         major = ctypes.c_uint8(0)
         minor = ctypes.c_uint8(0)
@@ -618,6 +622,7 @@ class AlazarATSAPI(WrappedDll):
 
         Returns:
             Value of the requested capability
+
         """
         value = ctypes.c_uint32(0)
         reserved = 0
@@ -637,6 +642,7 @@ class AlazarATSAPI(WrappedDll):
 
         Returns:
             The value read as an integer
+
         """
         output = ctypes.c_uint32(0)
         self.read_register(
@@ -655,5 +661,6 @@ class AlazarATSAPI(WrappedDll):
             handle: Handle of the board of interest
             offset: The offset in memory to write to
             value: The value to write
+
         """
         self.write_register(handle, offset, value, REGISTER_ACCESS_PASSWORD)

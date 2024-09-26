@@ -29,6 +29,7 @@ class MiniCircuitsRCSP4TChannel(InstrumentChannel):
             name: the name of the channel
             channel_letter: channel letter ['a', 'b'])
             **kwargs: Forwarded to base class.
+
         """
 
         super().__init__(parent, name, **kwargs)
@@ -85,6 +86,7 @@ class MiniCircuitsRCSP4T(IPInstrument):
         address: ip address ie "10.0.0.1"
         port: port to connect to default Telnet:23
         **kwargs: Forwarded to the baseclass
+
     """
 
     def __init__(

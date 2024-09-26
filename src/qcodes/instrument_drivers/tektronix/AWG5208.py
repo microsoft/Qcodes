@@ -26,6 +26,7 @@ class TektronixAWG5208(TektronixAWG70000Base):
             name: The name used internally by QCoDeS in the DataSet
             address: The VISA resource name of the instrument
             **kwargs: kwargs are forwarded to base class.
+
         """
 
         super().__init__(name, address, num_channels=8, **kwargs)

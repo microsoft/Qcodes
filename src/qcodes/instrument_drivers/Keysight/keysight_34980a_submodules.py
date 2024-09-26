@@ -18,6 +18,7 @@ class KeysightSubModule(InstrumentChannel):
         parent: the system which the module is installed on
         name: user defined name for the module
         slot: the slot the module is installed
+
     """
 
     def __init__(
@@ -48,6 +49,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
             name: user defined name for the module
             slot: the slot the module is installed
             **kwargs: Forwarded to base class.
+
         """
         super().__init__(parent, name, **kwargs)
 
@@ -61,6 +63,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         Args:
             row: row value
             column: column value
+
         """
         raise NotImplementedError("Please subclass this")
 
@@ -81,6 +84,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         Returns:
             in the format of '(@sxxx, sxxx, sxxx, sxxx)', where sxxx is a
             4-digit channel number
+
         """
         raise NotImplementedError("Please subclass this")
 
@@ -95,6 +99,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         Returns:
             True if the channel is open/disconnected
             False if it's closed/connected.
+
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -112,6 +117,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         Returns:
             True if the channel is closed/connected
             False if it's open/disconnected.
+
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -125,6 +131,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         Args:
             row: row number
             column: column number
+
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -137,6 +144,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
         Args:
             row: row number
             column: column number
+
         """
         self.validate_value(row, column)
         channel = self.to_channel_list([(row, column)])
@@ -148,6 +156,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
+
         """
         for row, column in paths:
             self.validate_value(row, column)
@@ -160,6 +169,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
         Args:
             paths: list of channels to connect [(r1, c1), (r2, c2), (r3, c3)]
+
         """
         for row, column in paths:
             self.validate_value(row, column)
@@ -177,6 +187,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
             a list of True and/or False
             True if the channel is closed/connected
             False if it's open/disconnected.
+
         """
         for row, column in paths:
             self.validate_value(row, column)
@@ -195,6 +206,7 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
             a list of True and/or False
             True if the channel is closed/connected
             False if it's open/disconnected.
+
         """
         for row, column in paths:
             self.validate_value(row, column)
