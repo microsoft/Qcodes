@@ -1264,7 +1264,7 @@ class KeysightInfiniium(VisaInstrument):
         time_fmt: str = "%Y-%m-%d_%H-%M-%S",
         divider: str = "_",
     ) -> np.ndarray | None:
-        """save screen to {path} with {image_type}: bmp, jpg, gif, tif, png
+        """Save screen to {path} with {image_type}: bmp, jpg, gif, tif, png
 
         return np.array if sucessfully saved, else return None
         """
