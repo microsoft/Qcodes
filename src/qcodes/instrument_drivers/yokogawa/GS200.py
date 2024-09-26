@@ -206,7 +206,10 @@ class GS200_Monitor(InstrumentChannel):
 
 
 class GS200Program(InstrumentChannel):
-    """ """
+    """
+    InstrumentModule that holds a Program for the YokoGawa GS200
+
+    """
 
     def __init__(
         self,
