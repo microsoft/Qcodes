@@ -77,6 +77,46 @@ devices:
         setter:
           q: "SOUR:PULM:SOUR {}"
 
+      pulsemod_delay:
+        default: 0
+        getter:
+          q: "SOUR:PULM:DEL?"
+          r: "{}"
+        setter:
+          q: "SOUR:PULM:DEL {}"
+
+      pulsemod_double_delay:
+        default: 1
+        getter:
+          q: "SOUR:PULM:DOUB:DEL?"
+          r: "{}"
+        setter:
+          q: "SOUR:PULM:DOUB:DEL {}"
+
+      pulsemod_double_width:
+        default: 1
+        getter:
+          q: "SOUR:PULM:DOUB:WIDT?"
+          r: "{}"
+        setter:
+          q: "SOUR:PULM:DOUB:WIDT {}"
+
+      pulsemod_period:
+        default: 1
+        getter:
+          q: "SOUR:PULM:PER?"
+          r: "{}"
+        setter:
+          q: "SOUR:PULM:PER {}"
+
+      pulsemod_width:
+        default: 1
+        getter:
+          q: "SOUR:PULM:WIDT?"
+          r: "{}"
+        setter:
+          q: "SOUR:PULM:WIDT {}"
+
       ref_osc_source:
         default: "INT"
         getter:
