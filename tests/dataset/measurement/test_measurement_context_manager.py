@@ -1709,7 +1709,7 @@ def test_datasaver_complex_array_parameters_array(
 
 
 @pytest.mark.parametrize("bg_writing", [True, False])
-def test_datasaver_multidim_array(experiment, bg_writing) -> None:  # noqa: F811
+def test_datasaver_multidim_array(experiment, bg_writing) -> None:
     """
     Test that inserting multidim parameters as arrays works as expected
     """
