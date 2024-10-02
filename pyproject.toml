@@ -129,7 +129,6 @@ log_exported_ds = "qcodes.extensions:log_dataset_export_info"
 omit = [
     "src/qcodes/__init__.py",
     "*/__init__.py",
-    "src/qcodes/tests/*",
 ]
 [tool.coverage.report]
 exclude_lines = [
@@ -171,7 +170,6 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = [
     "tests.*",
-    "qcodes.tests.*",
     "qcodes.instrument.mockers.ami430",
     "qcodes.instrument_drivers.Harvard.*",
     "qcodes.instrument_drivers.Keysight.keysightb1500.message_builder.*",
@@ -295,9 +293,7 @@ known-first-party = ["qcodes"]
 
 # TID253 these imports are fine at module level
 # in tests and examples
-# D417 no need to fix in deprecated module
 "docs/*" = ["TID253"]
-"src/qcodes/tests/*" = ["TID253", "D417"]
 "tests/*" = ["TID253"]
 
 [tool.ruff.lint.flake8-tidy-imports]
