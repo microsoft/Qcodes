@@ -48,6 +48,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
             name: The name of the channel
             channum: The number of the channel in question (1-2)
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(parent, name, **kwargs)
 
@@ -61,6 +62,7 @@ class Keysight33xxxOutputChannel(InstrumentChannel):
                 parser: Either int or float, what to return in finite
                     cases
                 inputstring: The raw return value
+
             """
 
             inputstring = inputstring.strip()
@@ -380,6 +382,7 @@ class Keysight33xxx(KeysightErrorQueueMixin, VisaInstrument):
             address: The VISA resource name.
             silent: If True, no connect message is printed.
             **kwargs: kwargs are forwarded to base class.
+
         """
 
         super().__init__(name, address, **kwargs)

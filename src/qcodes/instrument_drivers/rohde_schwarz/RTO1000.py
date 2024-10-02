@@ -165,6 +165,7 @@ class RohdeSchwarzRTO1000ScopeMeasurement(InstrumentChannel):
             meas_nr: The number of the measurement in question. Must match the
                 actual number as used by the instrument (1..8)
             **kwargs: Forwarded to base class.
+
         """
 
         if meas_nr not in range(1, 9):
@@ -472,6 +473,7 @@ class RohdeSchwarzRTO1000ScopeChannel(InstrumentChannel):
             channum: The number of the channel in question. Must match the
                 actual number as used by the instrument (1..4)
             **kwargs: Forwarded to base class.
+
         """
 
         if channum not in [1, 2, 3, 4]:
@@ -667,6 +669,7 @@ class RohdeSchwarzRTO1000(VisaInstrument):
             HD: Does the unit have the High Definition Option (allowing
                 16 bit vertical resolution)
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name=name, address=address, **kwargs)
 

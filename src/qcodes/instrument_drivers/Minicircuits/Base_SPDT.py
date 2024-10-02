@@ -40,6 +40,7 @@ class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel):
             name: the name of the channel
             channel_letter: channel letter ['a', 'b', 'c' or 'd'])
             **kwargs: Forwarded to base class.
+
         """
 
         super().__init__(parent, name, **kwargs)

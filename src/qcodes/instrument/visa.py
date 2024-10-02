@@ -255,6 +255,7 @@ class VisaInstrument(Instrument):
                 should be the actual address and just that. If you wish to
                 change the backend for VISA, use the self.visalib attribute
                 (and then call this function).
+
         """
         resource, visabackend, resource_manager = self._open_resource(
             address, self.visalib
@@ -294,6 +295,7 @@ class VisaInstrument(Instrument):
             terminator: Character(s) to look for at the end of a read and
                 to end each write command with.
                 eg. ``\r\n``. If None the terminator will not be set.
+
         """
         if terminator is not None:
             self.visa_handle.write_termination = terminator
@@ -362,6 +364,7 @@ class VisaInstrument(Instrument):
 
         Args:
             cmd: The command to send to the instrument.
+
         """
         with DelayedKeyboardInterrupt(
             context={"instrument": self.name, "reason": "Visa Instrument write"}
@@ -378,6 +381,7 @@ class VisaInstrument(Instrument):
 
         Returns:
             str: The instrument's response.
+
         """
         with DelayedKeyboardInterrupt(
             context={"instrument": self.name, "reason": "Visa Instrument ask"}
@@ -411,6 +415,7 @@ class VisaInstrument(Instrument):
 
         Returns:
             dict: base snapshot
+
         """
         snap = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update

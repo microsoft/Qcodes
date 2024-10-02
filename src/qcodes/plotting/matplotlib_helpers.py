@@ -39,6 +39,7 @@ def _set_colorbar_extend(
     Args:
         colorbar: the colorbar for which to set the extend
         extend: the desired extend ('neither', 'both', 'min' or 'max')
+
     """
     colorbar.extend = extend
     _slice_dict = {
@@ -84,6 +85,7 @@ def apply_color_scale_limits(
     Raise:
         RuntimeError: If not received mesh data. Or if you specified both
         `data_lim` and `data_array`.
+
     """
     import matplotlib.collections
 
@@ -160,6 +162,7 @@ def apply_auto_color_scale(
 
     Raises:
         RuntimeError: If not mesh data.
+
     """
     import matplotlib.collections
 
@@ -207,6 +210,7 @@ def auto_color_scale_from_config(
         color_under: Matplotlib color representing the datapoints clipped
             by the lower limit. Default value is read from
             ``config.plotting.auto_color_scale.color_under``.
+
     """
     import qcodes
 

@@ -104,6 +104,7 @@ def do1d(
 
     Returns:
         The QCoDeS dataset.
+
     """
     if do_plot is None:
         do_plot = cast(bool, config.dataset.dond_plot)

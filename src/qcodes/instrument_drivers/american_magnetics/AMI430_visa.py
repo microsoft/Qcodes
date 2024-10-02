@@ -234,6 +234,7 @@ class AMIModel430(VisaInstrument):
             reset: Should the reset method be called on the instrument at init time
             current_ramp_limit: A current ramp limit, in units of A/s
             **kwargs: Additional kwargs are passed to the base class
+
         """
         if "has_current_rating" in kwargs.keys():
             warnings.warn(
@@ -455,6 +456,7 @@ class AMIModel430(VisaInstrument):
             perform_safety_check: Whether to set the field via a parent
                 driver (if present), which might perform additional safety
                 checks.
+
         """
         # Check we aren't violating field limits
         field_lim = float(self.ask("COIL?")) * self.current_limit()
@@ -677,6 +679,7 @@ class AMIModel4303D(Instrument):
                 iterable of callable field limit functions that define
                 region(s) of allowed values in 3D magnetic field space
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
 
@@ -1080,6 +1083,7 @@ class AMIModel4303D(Instrument):
 
         Args:
             values: a tuple of cartesian coordinates (x, y, z).
+
         """
         self.log.debug("Checking whether fields can be set")
 

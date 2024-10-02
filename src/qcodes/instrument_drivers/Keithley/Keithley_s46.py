@@ -67,6 +67,7 @@ class S46Parameter(Parameter):
         instrument
         channel_number
         lock: Acquire the lock when closing and release when opening
+
     """
 
     def __init__(

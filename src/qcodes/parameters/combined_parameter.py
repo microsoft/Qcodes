@@ -42,6 +42,7 @@ def combine(
         units: Deprecated argument left for backwards compatibility. Do not use.
         aggregator: A function to aggregate
             the set values into one.
+
     """
     my_parameters = list(parameters)
     multi_par = CombinedParameter(my_parameters, name, label, unit, units, aggregator)
@@ -61,6 +62,7 @@ class CombinedParameter(Metadatable):
         unit: The unit of the combined parameter
         units: Deprecated argument left for backwards compatibility. Do not use.
         aggregator: A function to aggregate the set values into one
+
     """
 
     def __init__(
@@ -119,6 +121,7 @@ class CombinedParameter(Metadatable):
 
         Returns:
             list of values that where actually set
+
         """
         values = self.setpoints[index]
         for setFunction, value in zip(self.sets, values):
@@ -141,6 +144,7 @@ class CombinedParameter(Metadatable):
 
         Returns:
             combined parameter
+
         """
         # if it's a list of arrays, convert to one array
         if len(array) > 1:
@@ -200,6 +204,7 @@ class CombinedParameter(Metadatable):
 
         Returns:
             dict: Base snapshot.
+
         """
         meta_data: dict[str, Any] = collections.OrderedDict()
         meta_data["__class__"] = full_class(self)

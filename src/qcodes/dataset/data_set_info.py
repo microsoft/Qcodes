@@ -45,6 +45,7 @@ def get_run_attributes(conn: ConnectionPlus, guid: str) -> RunAttributesDict | N
 
     Returns:
         Dictionary of information about the dataset.
+
     """
     raw_attributes = get_raw_run_attributes(conn, guid)
 

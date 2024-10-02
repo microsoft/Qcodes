@@ -64,6 +64,7 @@ class USBHIDMixin(Instrument):
                 `enumerate_devices` method to query their IDs
             timeout: Specify a timeout for this instrument in seconds
             **kwargs: Forwarded to base class.
+
         """
         self._check_hid_import()
 
@@ -115,6 +116,7 @@ class USBHIDMixin(Instrument):
 
         Args:
            cmd: a command to send in a form of a string
+
         """
         data = self._pack_string(cmd)
 
@@ -136,6 +138,7 @@ class USBHIDMixin(Instrument):
 
         Args:
             cmd: a command to send in a form of a string
+
         """
         self.write_raw(cmd)
 
@@ -209,6 +212,7 @@ class MiniCircuitsHIDMixin(Instrument):
                 `enumerate_devices` to query their IDs
             timeout: Specify a timeout for this instrument in seconds
             **kwargs: Forwarded to base class.
+
         """
         self._check_hid_import()
 
@@ -260,6 +264,7 @@ class MiniCircuitsHIDMixin(Instrument):
 
         Args:
            cmd: a command to send in a form of a string
+
         """
         data = self._pack_string(cmd)
 
@@ -281,6 +286,7 @@ class MiniCircuitsHIDMixin(Instrument):
 
         Args:
             cmd: a command to send in a form of a string
+
         """
         self.write_raw(cmd)
 
@@ -321,6 +327,7 @@ class MiniCircuitsHIDMixin(Instrument):
 
         Args:
             cmd: a SCPI command to send
+
         """
         str_len = len(cmd)
 
@@ -350,6 +357,7 @@ class MiniCircuitsHIDMixin(Instrument):
 
         Args:
             response: a raw byte sequence response from the instrument
+
         """
         _, _, reply_data = struct.unpack(f"BB{self.packet_size - 1}s", bytes(response))
         span = reply_data.find(self._end_of_message)

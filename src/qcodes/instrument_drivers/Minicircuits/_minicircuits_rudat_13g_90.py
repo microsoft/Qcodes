@@ -19,6 +19,7 @@ class MiniCircuitsRudat13G90Base(Instrument):
         Args:
             name: Name of the instrument
             **kwargs: Forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
 

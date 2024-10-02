@@ -54,6 +54,7 @@ class Command(Generic[Output, ParsedOutput]):
         TypeError: If output_parser is not the expected type.
         TypeError: If exec_string is not the expected type.
         NoCommandError: If no cmd is found no_cmd_function is missing.
+
     """
 
     def __init__(

@@ -43,6 +43,7 @@ class AimTTiChannel(InstrumentChannel):
             name: The 'colloquial' name of the channel.
             channel: The name used by the AimTTi.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(parent, name, **kwargs)
 
@@ -259,6 +260,7 @@ class AimTTi(VisaInstrument):
             name: Name to use internally in QCoDeS.
             address: VISA resource address
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, address, **kwargs)
 

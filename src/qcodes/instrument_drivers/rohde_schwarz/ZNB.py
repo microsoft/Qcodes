@@ -114,6 +114,7 @@ class FixedFrequencyPointIQ(MultiParameter):
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
+
     """
 
     def __init__(
@@ -159,6 +160,7 @@ class FixedFrequencyPointMagPhase(MultiParameter):
     Args:
         name: parameter name
         instrument: instrument the parameter belongs to
+
     """
 
     def __init__(
@@ -396,6 +398,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                 If supplied try to bind to an existing trace with this name
                 rather than creating a new trace.
             **kwargs: Forwarded to base class.
+
         """
         n = channel
         self._instrument_channel = channel
@@ -1025,6 +1028,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
 
     Todo:
         - check initialisation settings and test functions
+
     """
 
     CHANNEL_CLASS = ZNBChannel

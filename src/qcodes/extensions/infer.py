@@ -54,6 +54,7 @@ def get_root_parameter(
     Raises:
         InferError: If the linking parameters do not end with a non-linking parameter
         InferError: If the chain of linking parameters loops on itself
+
     """
 
     parameter_chain = get_parameter_chain(param, alt_source_attrs)
@@ -89,6 +90,7 @@ def infer_instrument(
         InferError: If the linking parameters do not end with a non-linking parameter
         InferError: If the instrument of the root parameter is None
         InferError: If the instrument of the root parameter is not an instance of Instrument
+
     """
     root_param = get_root_parameter(param, alt_source_attrs=alt_source_attrs)
     instrument = get_instrument_from_param(root_param)
@@ -115,6 +117,7 @@ def infer_instrument_module(
         InferError: If the linking parameters do not end with a non-linking parameter
         InferError: If the instrument module of the root parameter is None
         InferError: If the instrument module of the root parameter is not an instance of InstrumentModule
+
     """
     root_param = get_root_parameter(param, alt_source_attrs=alt_source_attrs)
     channel = get_instrument_from_param(root_param)
@@ -144,6 +147,7 @@ def get_instrument_from_param(
 
     Raises:
         InferError: If the parameter does not have an instrument
+
     """
     if param.instrument is not None:
         return param.instrument
@@ -170,6 +174,7 @@ def get_parameter_chain(
         param_chain: The initial linking parameter or a List linking parameters
             from which to return the chain
         alt_source_attrs: The attribute names for custom linking parameters
+
     """
 
     alt_source_attrs_set = _merge_user_and_class_attrs(alt_source_attrs)

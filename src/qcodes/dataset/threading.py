@@ -173,6 +173,7 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
         max_workers: number of worker threads to create in the pool; if None,
             the number of worker threads will be equal to the number of
             unique "underlying instruments"
+
     """
 
     def __init__(self, *param_meas: ParamMeasT, max_workers: int | None = None):

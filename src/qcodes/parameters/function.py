@@ -129,6 +129,7 @@ class Function(MetadatableWithName):
 
         Args:
             *args: Variable length argument list, passed to the call_cmd
+
         """
         if self._instrument:
             func_name = (
@@ -159,6 +160,7 @@ class Function(MetadatableWithName):
 
         Args:
            *args: argument to pass to Command __call__ function
+
         """
         return self.__call__(*args)
 

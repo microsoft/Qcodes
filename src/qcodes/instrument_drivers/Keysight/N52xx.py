@@ -779,6 +779,7 @@ class KeysightPNABase(VisaInstrument):
 
         Returns:
             The trace number of the selected trace
+
         """
         self.write(f"CALC:PAR:SEL '{trace_name}'")
         return self.active_trace()

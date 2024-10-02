@@ -38,6 +38,7 @@ def chain(*functions: Callable[..., Any]) -> Callable[..., Any]:
         >>> def f():
         >>>   return "1.2"
         >>> chain(f, float)()  # return 1.2 as float
+
     """
 
     def make_iter(args: Any) -> Iterable[Any]:
@@ -74,6 +75,7 @@ class StahlChannel(InstrumentChannel):
             name: Name of the channel
             channel_number: The channel number
             **kwargs: kwargs to be passed to the base class
+
         """
         super().__init__(parent, name, **kwargs)
 
@@ -117,6 +119,7 @@ class StahlChannel(InstrumentChannel):
         """
         Args:
             voltage: The voltage to set.
+
         """
         # Normalize the voltage in the range 0 to 1, where 0 is maximum negative
         # voltage and 1 is maximum positive voltage
@@ -141,6 +144,7 @@ class StahlChannel(InstrumentChannel):
 
         Return:
             lock_status: True when locked
+
         """
         send_string = f"{self.parent.identifier} LOCK"
 
@@ -186,6 +190,7 @@ class Stahl(VisaInstrument):
             done
 
         In this case the VISA address would be: ``"TCPIP0::hostname::8088::SOCKET"``
+
         """
         super().__init__(name, address, **kwargs)
         if isinstance(self.visa_handle, TCPIPSocket):
@@ -239,6 +244,7 @@ class Stahl(VisaInstrument):
         Return:
              dict: The dict contains the following keys "model",
              "serial_number", "voltage_range","n_channels", "output_type"
+
         """
         result = re.search(r"(HV|BS)(\d{3}) (\d{3}) (\d{2}) ([buqsm])", idn_string)
 

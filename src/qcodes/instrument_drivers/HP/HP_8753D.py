@@ -34,6 +34,7 @@ def HPIntParser(value: str) -> int:
 
     Args:
         value: the VISA return string using exponential notation
+
     """
     return int(float(value))
 

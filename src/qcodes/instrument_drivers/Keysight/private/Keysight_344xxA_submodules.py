@@ -517,6 +517,7 @@ class TimeTrace(ParameterWithSetpoints):
         Raises:
             RuntimeError: If the present measurement settings prevent reaching
                 the specified dt.
+
         """
 
         minimum_time = self.instrument.sample.timer_minimum()
@@ -641,6 +642,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
             silent: If True, the connect_message of the instrument
                 is suppressed. Default: False
             **kwargs: kwargs are forwarded to base class.
+
         """
 
         super().__init__(name, address, **kwargs)
@@ -1165,6 +1167,7 @@ mode."""
 
         Returns:
             The float value of the parameter.
+
         """
         with self.sense_function.set_to(sense_function):
             with self.sample.count.set_to(1):
@@ -1189,6 +1192,7 @@ mode."""
         Returns:
             a 1D numpy array of all measured values that are currently in the
             reading memory
+
         """
         raw_vals: str = self.ask("FETCH?")
         return _raw_vals_to_array(raw_vals)
@@ -1203,6 +1207,7 @@ mode."""
 
         Returns:
             a 1D numpy array of all measured values
+
         """
         raw_vals: str = self.ask("READ?")
         return _raw_vals_to_array(raw_vals)
@@ -1358,6 +1363,7 @@ def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
 
     Returns:
         numpy 1D array of data
+
     """
     result_array = np.fromstring(raw_vals, dtype=float, sep=",")
     result_array[result_array >= 9.9e37] = np.inf

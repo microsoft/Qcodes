@@ -48,6 +48,7 @@ def make_sweep(
         [5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
         >>> make_sweep(15, 10.5, step=1.5)
         >[15.0, 13.5, 12.0, 10.5]
+
     """
     if step and num:
         raise AttributeError("Don't use `step` and `num` at the same time.")
@@ -124,6 +125,7 @@ class SweepValues(Metadatable):
 
     That allows things like adaptive sampling, where you don't know ahead of
     time what the values will be or even how many there are.
+
     """
 
     def __init__(self, parameter: ParameterBase, **kwargs: Any):
@@ -147,6 +149,7 @@ class SweepValues(Metadatable):
 
         Args:
             values: values to be validated.
+
         """
         if hasattr(self.parameter, "validate"):
             for value in values:
@@ -204,6 +207,7 @@ class SweepFixedValues(SweepValues):
     "for val in sv", so any class that implements these may be used in sweeps.
     That allows things like adaptive sampling, where you don't know ahead of
     time what the values will be or even how many there are.
+
     """
 
     def __init__(
@@ -286,6 +290,7 @@ class SweepFixedValues(SweepValues):
 
         Args:
             value: new value to append
+
         """
         self.validate((value,))
         self._values.append(value)
@@ -300,6 +305,7 @@ class SweepFixedValues(SweepValues):
 
         Raises:
             TypeError: if new_values is not Sequence, nor SweepFixedValues
+
         """
         if isinstance(new_values, SweepFixedValues):
             if new_values.parameter is not self.parameter:
@@ -322,6 +328,7 @@ class SweepFixedValues(SweepValues):
 
         Returns:
             SweepFixedValues of copied values
+
         """
         new_sv = SweepFixedValues(self.parameter, [])
         # skip validation by adding values and snapshot separately
@@ -352,6 +359,7 @@ class SweepFixedValues(SweepValues):
 
         Returns:
             dict: base snapshot
+
         """
         self._snapshot["parameter"] = self.parameter.snapshot(update=update)
         self._snapshot["values"] = self._value_snapshot

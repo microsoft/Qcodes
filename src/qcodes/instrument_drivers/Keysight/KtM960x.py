@@ -154,7 +154,7 @@ class KeysightM960x(Instrument):
             raise SystemError(f"connection to device failed! error: {status}")
 
     def get_idn(self) -> dict[str, str | None]:
-        """generates the ``*IDN`` dictionary for qcodes"""
+        """Generates the ``*IDN`` dictionary for qcodes"""
 
         id_dict: dict[str, str | None] = {
             "firmware": self._get_firmware_revision(),

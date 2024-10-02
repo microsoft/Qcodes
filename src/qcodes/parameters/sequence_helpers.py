@@ -39,6 +39,7 @@ def is_sequence_of(
 
     Returns:
         bool: ``True`` if every item in ``obj`` matches ``types``.
+
     """
     if not is_sequence(obj):
         return False

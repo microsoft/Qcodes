@@ -48,6 +48,7 @@ def extract_runs_into_db(
           not the newest, should it be upgraded?
         upgrade_target_db: If the target DB is found to be in a version that is
           not the newest, should it be upgraded?
+
     """
     # Check for versions
     (s_v, new_v) = get_db_version_and_newest_available_version(source_db_path)
@@ -143,6 +144,7 @@ def _extract_single_dataset_into_db(
         target_conn: connection to the DB. Must be atomically guarded
         target_exp_id: The ``exp_id`` of the (target DB) experiment in which to
           insert the run
+
     """
 
     if not dataset.completed:

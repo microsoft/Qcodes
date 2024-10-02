@@ -31,6 +31,7 @@ class CurrentParameter(MultiParameter):
 
         name: the name of the current output. Default 'curr'.
             Also used as the name of the whole parameter.
+
     """
 
     def __init__(

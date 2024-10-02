@@ -27,6 +27,7 @@ class CapabilityHelper:
     Args:
         api: Instance of Alazar ATS API class
         handle: Handle of a specific board (from ``AlazarGetBoardBySystemId``)
+
     """
 
     CAPABILITIES = Capability

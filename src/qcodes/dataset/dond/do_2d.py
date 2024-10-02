@@ -125,6 +125,7 @@ def do2d(
 
     Returns:
         The QCoDeS dataset.
+
     """
 
     if do_plot is None:

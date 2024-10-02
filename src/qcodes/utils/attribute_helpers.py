@@ -95,6 +95,7 @@ def strip_attrs(obj: object, whitelist: "Sequence[str]" = ()) -> None:
     Args:
         obj: Object to be stripped.
         whitelist: List of names that are not stripped from the object.
+
     """
     try:
         lst = set(list(obj.__dict__.keys())) - set(whitelist)
@@ -175,6 +176,7 @@ def attribute_set_to(
         attribute_name: The name of the attribute that is to be changed.
         new_value: The new value to which the attribute of the object is
                    to be changed.
+
     """
     old_value = getattr(object_, attribute_name)
     setattr(object_, attribute_name, new_value)

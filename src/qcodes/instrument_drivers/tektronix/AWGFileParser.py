@@ -322,6 +322,7 @@ def _unpacker(
 
     Returns:
         The waveform scaled to have values from -1 to 1, marker 1, marker 2.
+
     """
 
     wflength = len(binaryarray)
@@ -371,6 +372,7 @@ def _getendingnumber(string: str) -> tuple[int, str]:
     Returns:
         The number and the shortened string,
         e.g. 'SEQUENCE_JUMP_23' -> (23, 'SEQUENCE_JUMP_')
+
     """
 
     num = ""
@@ -403,6 +405,7 @@ def _parser1(
 
     Returns:
         Tuple of instrument settings (a dict), waveforms (list of lists), sequencer settings (list of lists)
+
     """
 
     instdict = {}
@@ -480,6 +483,7 @@ def _parser2(waveformlist: list[list[Any]]) -> dict[str, dict[str, np.ndarray]]:
     Returns:
         dict: A dictionary with keys waveform name and values for marker1,
             marker2, and the waveform as np.arrays
+
     """
 
     outdict = {}
@@ -570,6 +574,7 @@ def parse_awg_file(
         A tuple and a dict, where the tuple is
         (wfms, m1s, m2s, nreps, trigs, gotos, jumps, channels)
         and the dict contains all instrument settings from the file
+
     """
 
     instdict, waveformlist, sequencelist = _parser1(awgfilepath)

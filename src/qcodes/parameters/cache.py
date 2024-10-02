@@ -62,6 +62,7 @@ class _Cache:
             update the cached value. If it is ``None``, this behavior is
             disabled. ``max_val_age`` should not be used for a parameter
             that does not have a get function.
+
     """
 
     def __init__(self, parameter: ParameterBase, max_val_age: float | None = None):
@@ -129,6 +130,7 @@ class _Cache:
 
         Args:
             value: new value for the parameter
+
         """
         self._parameter.validate(value)
         raw_value = self._parameter._from_value_to_raw_value(value)
@@ -156,6 +158,7 @@ class _Cache:
             raw_value: new raw value of the parameter
             timestamp: new timestamp of the parameter; if ``None``,
                 then timestamp of "now" is used
+
         """
         self._value = value
         self._raw_value = raw_value
@@ -197,6 +200,7 @@ class _Cache:
                 example, due to ``max_val_age``, because the parameter has
                 never been captured, or because the parameter was marked
                 invalid)
+
         """
 
         gettable = self._parameter.gettable

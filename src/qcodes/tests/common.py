@@ -68,6 +68,7 @@ def retry_until_does_not_throw(
     Returns:
         A callable that runs the decorated function until it does not throw
         a given exception
+
     """
 
     def retry_until_passes_decorator(func: Callable[P, T]) -> Callable[P, T]:
@@ -121,6 +122,7 @@ def error_caused_by(excinfo: ExceptionInfo[Any], cause: str) -> bool:
     Args:
         excinfo: the output of with pytest.raises() as excinfo
         cause: the error message or a substring of it
+
     """
 
     exc_repr = excinfo.getrepr()

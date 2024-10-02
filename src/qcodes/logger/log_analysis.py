@@ -55,6 +55,7 @@ def log_to_dataframe(
 
     Returns:
         A :class:`pd.DataFrame` containing the log content.
+
     """
     import pandas as pd
 
@@ -99,6 +100,7 @@ def logfile_to_dataframe(
 
     Returns:
         A :class:`pd.DataFrame` containing the logfile content.
+
     """
     logfile = logfile or get_log_file_name()
     with open(logfile) as f:
@@ -123,6 +125,7 @@ def time_difference(
 
     Returns:
         A :class:`pd.Series`  with float values of the time difference (s)
+
     """
     import pandas as pd
 
@@ -171,6 +174,7 @@ def capture_dataframe(
         Tuple of handler that is used to capture the log messages and callback
         that returns the cumulative :class:`pd.DataFrame` at any given
         point (within the context)
+
     """
     # get root logger if none is specified.
     logger = logger or logging.getLogger()

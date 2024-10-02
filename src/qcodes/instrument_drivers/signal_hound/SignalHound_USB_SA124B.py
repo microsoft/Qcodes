@@ -201,6 +201,7 @@ class SignalHoundUSBSA124B(Instrument):
             dll_path: Path to ``sa_api.dll`` Defaults to the default dll within
                 Spike installation
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, **kwargs)
         self._parameters_synced = False
@@ -712,6 +713,7 @@ class SignalHoundUSBSA124B(Instrument):
 
         Returns:
             number of points in sweep, start frequency and step size
+
         """
 
         sweep_len = ct.c_int(0)
@@ -733,6 +735,7 @@ class SignalHoundUSBSA124B(Instrument):
 
         Returns:
             datamin numpy array
+
         """
         if not self._parameters_synced:
             self.sync_parameters()

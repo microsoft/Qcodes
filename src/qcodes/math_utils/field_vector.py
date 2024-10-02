@@ -55,6 +55,7 @@ class FieldVector:
                 of the vector on to the xy-plane
             phi: represents the angle of rho
                 with respect to the positive x-axis
+
         """
 
         self._x = float(x) if x is not None else None
@@ -198,6 +199,7 @@ class FieldVector:
             # generality (and not worth it), so the following will raise the
             # above-mentioned ValueError too.
             >>> f.set_vector(x=9, y=0, r=3)
+
         """
         names = sorted(list(new_values.keys()))
         groups = [["x", "y", "z"], ["phi", "r", "theta"], ["phi", "rho", "z"]]
@@ -227,6 +229,7 @@ class FieldVector:
         Args:
             new_values (dict): Keys representing parameter names and values the
                 values to be set.
+
         """
         if len(new_values) > 1:
             raise NotImplementedError("Cannot set multiple components at once")

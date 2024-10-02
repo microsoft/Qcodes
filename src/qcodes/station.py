@@ -208,6 +208,7 @@ class Station(Metadatable, DelegateAttributes):
 
         Returns:
             dict: Base snapshot.
+
         """
         snap: dict[str, Any] = {
             "instruments": {},
@@ -256,6 +257,7 @@ class Station(Metadatable, DelegateAttributes):
         Returns:
             str: The name assigned this component, which may have been changed
                 to make it unique among previously added components.
+
         """
         try:
             if not (isinstance(component, Parameter) and component.snapshot_exclude):
@@ -287,6 +289,7 @@ class Station(Metadatable, DelegateAttributes):
         Raises:
             KeyError: If a component with the given name is not part of this
                 station.
+
         """
         try:
             return self.components.pop(name)
@@ -312,6 +315,7 @@ class Station(Metadatable, DelegateAttributes):
         Raises:
             KeyError: If a component with the given name is not part of this
                 station.
+
         """
 
         def find_component(
@@ -546,6 +550,7 @@ class Station(Metadatable, DelegateAttributes):
                 of the instrument as it is added to the Station.
             **kwargs: Additional keyword arguments that get passed on to the
                 ``__init__``-method of the instrument to be added.
+
         """
         # try to revive the instrument
         if revive_instance and Instrument.exist(identifier):
@@ -764,6 +769,7 @@ class Station(Metadatable, DelegateAttributes):
 
         Returns:
             The names of the loaded instruments
+
         """
         config = self.config
         if config is None:
@@ -872,6 +878,7 @@ def _merge_yamls(*yamls: str | Path) -> str:
     Returns:
         Full yaml file stored in the memory. Returns an empty string
         if no files are given.
+
     """
     import ruamel.yaml  # lazy import
 

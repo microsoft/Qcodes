@@ -80,6 +80,7 @@ class Model_325(VisaInstrument):
              name: Name of the curve
              serial_number: Serial number of the curve
              data_dict: A dictionary containing the curve data
+
         """
         if index not in range(21, 36):
             raise ValueError("index value should be between 21 and 35")

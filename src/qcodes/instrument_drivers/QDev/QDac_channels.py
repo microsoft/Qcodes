@@ -53,6 +53,7 @@ class QDevQDacChannel(InstrumentChannel):
             name: The name of the channel
             channum: The number of the channel in question (1-48)
             **kwargs: Forwarded to base class.
+
         """
         super().__init__(parent, name, **kwargs)
 
@@ -236,6 +237,7 @@ class QDevQDac(VisaInstrument):
 
         Returns:
             QDac object
+
         """
         super().__init__(name, address, **kwargs)
         self._output_n_lines = 50
@@ -356,6 +358,7 @@ class QDevQDac(VisaInstrument):
 
         If a finite slope has been assigned, we assign a function generator to
         ramp the voltage.
+
         """
         channel = self.channels[chan - 1]
 
@@ -384,6 +387,7 @@ class QDevQDac(VisaInstrument):
 
         Args:
             chan: The 1-indexed channel number
+
         """
         self._update_cache(readcurrents=False)
         return self.channels[chan - 1].v.cache()
@@ -435,6 +439,7 @@ class QDevQDac(VisaInstrument):
 
         Args:
             chan: The 1-indexed channel number
+
         """
         self._update_cache(readcurrents=False)
         return self.channels[chan - 1].vrange.cache()
@@ -547,6 +552,7 @@ class QDevQDac(VisaInstrument):
         Args:
             chan (int): The channel number (1-48)
             sync (int): The associated sync output. 0 means 'unassign'
+
         """
 
         if chan not in range(1, 49):
@@ -596,6 +602,7 @@ class QDevQDac(VisaInstrument):
             chan: The channel number (1-48)
             slope: The slope in V/s. Write 'Inf' to allow
               arbitrary small rise times.
+
         """
         if chan not in range(1, 49):
             raise ValueError("Channel number must be 1-48.")
@@ -668,6 +675,7 @@ class QDevQDac(VisaInstrument):
             v_start: The starting voltage
             setvoltage: The voltage to ramp to
             ramptime: The ramp time in seconds.
+
         """
 
         # Crazy stuff happens if the period is too small, e.g. the channel

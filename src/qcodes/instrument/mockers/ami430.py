@@ -143,6 +143,7 @@ class MockAMI430:
             rval (string or None): If the type of message requests a
                 value (a get message) then this value is returned by this
                 function. A set message will return a None value.
+
         """
 
         # A "get" message ends with a "?" and will invoke the get

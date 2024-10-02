@@ -155,6 +155,7 @@ class DataSaver:
             ValueError: If multiple results are given for the same parameter.
             ParameterTypeError: If a parameter is given a value not matching
                 its type.
+
         """
 
         # we iterate through the input twice. First we find any array and
@@ -781,6 +782,7 @@ class Measurement:
         name: Name of the measurement. This will be passed down to the dataset
             produced by the measurement. If not given, a default value of
             'results' is used for the dataset.
+
     """
 
     def __init__(
@@ -837,6 +839,7 @@ class Measurement:
             setpoints: name(s) of the setpoint parameter(s)
             basis: name(s) of the parameter(s) that this parameter is
                 inferred from
+
         """
 
         idps = self._interdeps
@@ -879,6 +882,7 @@ class Measurement:
             parent: The parent dataset
             link_type: A name for the type of parent-child link
             description: A free-text description of the relationship
+
         """
         # we save the information in a way that is very compatible with the
         # Link object we will eventually make out of this information. We
@@ -915,6 +919,7 @@ class Measurement:
             paramtype: Type of the parameter, i.e. the SQL storage class,
                 If None the paramtype will be inferred from the parameter type
                 and the validator of the supplied parameter.
+
         """
         if not isinstance(parameter, ParameterBase):
             raise ValueError(
@@ -1004,6 +1009,7 @@ class Measurement:
             The inferred parameter type. If a not None parameter type is
             supplied this will be preferred over any inferred type.
             Returns None if a parameter type could not be inferred
+
         """
         if paramtype is not None:
             return paramtype
@@ -1262,6 +1268,7 @@ class Measurement:
                 of parameters already registered in the measurement that
                 are the setpoints of this parameter
             paramtype: Type of the parameter, i.e. the SQL storage class
+
         """
         return self._register_parameter(name, label, unit, setpoints, basis, paramtype)
 
@@ -1296,6 +1303,7 @@ class Measurement:
         Args:
             func: Function to be performed
             args: The arguments to said function
+
         """
         # some tentative cheap checking
         nargs = len(signature(func).parameters)
@@ -1316,6 +1324,7 @@ class Measurement:
         Args:
             func: Function to be performed
             args: The arguments to said function
+
         """
         # some tentative cheap checking
         nargs = len(signature(func).parameters)
@@ -1342,6 +1351,7 @@ class Measurement:
                 tuples of parameter values, an integer, a mutable variable
                 (list or dict) to hold state/writes updates to.
             state: The variable to hold the state.
+
         """
         self.subscribers.append((func, state))
 
@@ -1355,6 +1365,7 @@ class Measurement:
         Args:
             shapes: Dictionary from names of dependent parameters to a tuple
                 of integers describing the shape of the measurement.
+
         """
         self._shapes = shapes
 
@@ -1381,6 +1392,7 @@ class Measurement:
                 with.
             parent_span: An optional opentelemetry span that this should be registered a
                 a child of if using opentelemetry.
+
         """
         if write_in_background is None:
             write_in_background = cast(bool, qc.config.dataset.write_in_background)

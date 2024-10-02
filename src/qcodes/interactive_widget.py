@@ -135,6 +135,7 @@ def _nested_dict_browser(
         max_nrows: The maximum number of rows that can be displayed at once.
             Whenever the table has less than ``max_nrows`` rows, the table is
             displayed in 3 columns, otherwise it's 2 columns.
+
     """
 
     def _should_expand(x: Any) -> bool:
@@ -215,6 +216,7 @@ def _do_in_tab(
         tab: Instance of `ipywidgets.Tab`.
         ds: A qcodes.DataSet instance.
         which: Either "plot" or "snapshot".
+
     """
     from IPython.display import clear_output, display
 
@@ -504,6 +506,7 @@ def experiments_widget(
             argument has no effect.
         sort_by: Sort datasets in widget by either "timestamp" (newest first),
             "run_id" or None (no predefined sorting).
+
     """
     if data_sets is None:
         if db is not None:

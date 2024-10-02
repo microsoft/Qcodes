@@ -173,6 +173,7 @@ class KeysightB1500(VisaInstrument):
 
         Returns:
             A specific instance of :class:`.B1500Module`
+
         """
         if model == "B1511B":
             return KeysightB1511B(slot_nr=slot_nr, parent=parent, name=name)
@@ -253,6 +254,7 @@ class KeysightB1500(VisaInstrument):
                 averaging to get the measurement data. (For more info see
                 Table 4-21.).  Note that the integration time will not be
                 updated if a non-integer value is written to the B1500.
+
         """
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_SPEED,
@@ -275,6 +277,7 @@ class KeysightB1500(VisaInstrument):
                 (For more info see Table 4-21.).  Note that the integration
                 time will not be updated if a non-integer value is written
                 to the B1500.
+
         """
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_RESOLUTION,
@@ -295,6 +298,7 @@ class KeysightB1500(VisaInstrument):
                 setting is 1. (For more info see Table 4-21.)
                 Note that the integration time will not be updated
                 if a non-integer value is written to the B1500.
+
         """
         self._setup_integration_time(
             adc_type=constants.AIT.Type.HIGH_SPEED,
@@ -327,6 +331,7 @@ class KeysightB1500(VisaInstrument):
                 constants.SlotNr.ALL, MAINFRAME, SLOT01, SLOT02 ...SLOT10
                 If not specified, the calibration is performed for all the
                 modules and the mainframe.
+
         """
         msg = MessageBuilder().cal_query(slot=slot)
         with self.root_instrument.timeout.set_to(self.calibration_time_out):
@@ -351,6 +356,7 @@ class KeysightB1500(VisaInstrument):
             example, if the error 305 occurs on the slot 1, this method
             returns the following response. 305,"Excess current in HPSMU.;
             SLOT1" If no error occurred, this command returns 0,"No Error."
+
         """
 
         msg = MessageBuilder().errx_query(mode=mode)
@@ -383,6 +389,7 @@ class KeysightB1500(VisaInstrument):
 
         If chnum is not specified, this command clears the timer count
         immediately,
+
         """
         msg = MessageBuilder().tsr(chnum=chnum)
         self.write(msg.message)
@@ -405,6 +412,7 @@ class KeysightB1500(VisaInstrument):
                 modes
             channels: Measurement channel number. See `constants.ChannelList`
                 for all possible channels.
+
         """
         msg = MessageBuilder().mm(mode=mode, channels=channels).message
         self.write(msg)
@@ -466,6 +474,7 @@ class KeysightB1500(VisaInstrument):
             channels : SMU channel number. Specify channel from
                 `constants.ChNr` If you do not specify chnum,  the FL
                 command sets the same mode for all channels.
+
         """
         self.write(
             MessageBuilder().fl(enable_filter=enable_filter, channels=channels).message
@@ -480,6 +489,7 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
     Args:
         name: Name of the Parameter.
         instrument: Instrument to which this parameter communicates to.
+
     """
 
     def __init__(self, name: str, instrument: KeysightB1517A, **kwargs: Any):

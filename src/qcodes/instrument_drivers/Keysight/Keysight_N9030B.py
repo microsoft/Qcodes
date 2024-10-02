@@ -704,6 +704,7 @@ class KeysightN9030B(VisaInstrument):
     Args:
         name
         address
+
     """
 
     default_terminator = "\n"

@@ -61,6 +61,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             instrument's JSON snapshot.
         label: nicely formatted name of the instrument; if None, the
             ``name`` is used.
+
     """
 
     def __init__(
@@ -156,6 +157,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             ValueError: If there is an existing abstract parameter and the
                 unit of the new parameter is inconsistent with the existing
                 one.
+
         """
         if parameter_class is None:
             parameter_class = cast(type[TParameter], Parameter)
@@ -203,6 +205,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         Raises:
             KeyError: If the parameter does not exist on the instrument.
+
         """
         self.parameters.pop(name)
 
@@ -242,6 +245,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         Raises:
             KeyError: If this instrument already has a function with this
                 name.
+
         """
         if name in self.functions:
             raise KeyError(f"Duplicate function name {name}")
@@ -275,6 +279,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 name.
             TypeError: If the submodule that we are trying to add is
                 not an instance of an ``Metadatable`` object.
+
         """
         if name in self.submodules:
             raise KeyError(f"Duplicate submodule name {name}")
@@ -302,6 +307,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         Raises:
             KeyError: If the component does not exist.
+
         """
         name_parts = full_name.split("_")
         name_parts.reverse()
@@ -404,6 +410,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         Returns:
             dict: base snapshot
+
         """
 
         if params_to_skip_update is None:
@@ -465,6 +472,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             max_chars: the maximum number of characters per line. The
                 readable snapshot will be cropped if this value is exceeded.
                 Defaults to 80 to be consistent with default terminal width.
+
         """
         floating_types = (float, np.integer, np.floating)
         snapshot = self.snapshot(update=update)
@@ -682,6 +690,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         Args:
             param_name: The name of a parameter of this instrument.
             value: The new value to set.
+
         """
         self.parameters[param_name].set(value)
 
@@ -698,6 +707,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         Returns:
             The current value of the parameter.
+
         """
         return self.parameters[param_name].get()
 
@@ -715,6 +725,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         Returns:
             The return value of the function.
+
         """
         return self.functions[func_name].call(*args)
 

@@ -106,6 +106,7 @@ def get_instrument_logger(
     Returns:
         :class:`logging.LoggerAdapter` instance, that can be used for instrument
         specific logging.
+
     """
     logger_name = logger_name or ""
     return InstrumentLoggerAdapter(
@@ -135,6 +136,7 @@ def filter_instrument(
             messages from.
         level: Level to set the handlers to.
         handler: Single or sequence of handlers to change.
+
     """
     handlers: Sequence[logging.Handler]
     if handler is None:

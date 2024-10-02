@@ -278,6 +278,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
 
         Args:
             other: the dataset to compare self to
+
         """
         if not isinstance(other, DataSetProtocol):
             return False
@@ -329,6 +330,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         Raises:
             ValueError: If the export data type is not specified or unknown,
                 raise an error
+
         """
         if isinstance(path, str):
             path = Path(path)
@@ -384,6 +386,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
 
         Returns:
             str: Path file was saved to, returns None if no file was saved.
+
         """
         # Set defaults to values in config if the value was not set
         # (defaults to None)

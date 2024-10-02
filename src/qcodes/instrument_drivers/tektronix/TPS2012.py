@@ -130,6 +130,7 @@ class ScopeArray(ArrayParameter):
         Returns:
             The curve in units where the digitisation range
             is mapped to (-32768, 32767).
+
         """
         # TODO: Add support for data width = 1 mode?
         output = np.zeros(int(len(curve) / 2))  # data width 2
@@ -155,6 +156,7 @@ class ScopeArray(ArrayParameter):
               no_of_bytes, no_of_bits, encoding, binary_format,
               byte_order, no_of_points, waveform_ID, point_format,
               x_incr, x_zero, x_unit, y_multiplier, y_zero, y_offset, y_unit
+
         """
         response_list = response.split(";")
 
@@ -192,6 +194,7 @@ class ScopeArray(ArrayParameter):
             Two numpy arrays with the time axis in units
             of s and curve values in units of V; (time, voltages) and
             the number of points as an integer
+
         """
         fulldata = waveform.split(";")
         preamblestr = ";".join(fulldata[:16])
@@ -298,6 +301,7 @@ class TektronixTPS2012(VisaInstrument):
             name: Name of the instrument used by QCoDeS
             address: Instrument address as used by VISA
             **kwargs: kwargs are forwarded to base class.
+
         """
 
         super().__init__(name, address, **kwargs)
@@ -444,6 +448,7 @@ class TektronixTPS2012(VisaInstrument):
         Args:
             verbose: If True, the read messages are printed.
                 Default: False.
+
         """
         original_timeout = self.visa_handle.timeout
         self.visa_handle.timeout = 1000  # 1 second as VISA counts in ms

@@ -137,6 +137,7 @@ def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
         conn: object for connection to the database
         version: Which version to upgrade to. We count from 0. -1 means
           'newest version'
+
     """
     version = _latest_available_version() if version == -1 else version
 

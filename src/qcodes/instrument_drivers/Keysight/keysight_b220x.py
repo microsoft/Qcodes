@@ -252,6 +252,7 @@ class KeysightB220X(VisaInstrument):
         Args:
             input_ch: Input channel number 1-14
             output_ch: Output channel number 1-48
+
         """
         KeysightB220X._available_input_ports.validate(input_ch)
         KeysightB220X._available_output_ports.validate(output_ch)
@@ -275,6 +276,7 @@ class KeysightB220X(VisaInstrument):
         Args:
             input_ch: Input channel number 1-14
             output_ch: Output channel number 1-48
+
         """
         KeysightB220X._available_input_ports.validate(input_ch)
         KeysightB220X._available_output_ports.validate(output_ch)
@@ -315,6 +317,7 @@ class KeysightB220X(VisaInstrument):
 
         Args:
             output: int 1-48
+
         """
         KeysightB220X._available_output_ports.validate(output)
 
@@ -328,6 +331,7 @@ class KeysightB220X(VisaInstrument):
 
         Args:
             output: int 1-48
+
         """
         KeysightB220X._available_output_ports.validate(output)
 
@@ -341,6 +345,7 @@ class KeysightB220X(VisaInstrument):
 
         Args:
             output: int 1-48
+
         """
         KeysightB220X._available_output_ports.validate(output)
 
@@ -354,6 +359,7 @@ class KeysightB220X(VisaInstrument):
 
         Args:
             output: int 1-48
+
         """
         KeysightB220X._available_output_ports.validate(output)
 

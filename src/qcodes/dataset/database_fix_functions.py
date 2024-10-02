@@ -48,6 +48,7 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> dict[str, int]:
 
     Returns:
         A dict with the fix results ('runs_inspected', 'runs_fixed')
+
     """
 
     user_version = get_user_version(conn)
@@ -135,6 +136,7 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus, run_ids: Sequence[int]) -> 
     Args:
         conn: The connection to the database
         run_ids: The runs to (potentially) fix
+
     """
 
     user_version = get_user_version(conn)

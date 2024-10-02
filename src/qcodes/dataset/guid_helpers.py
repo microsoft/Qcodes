@@ -26,6 +26,7 @@ def guids_from_dbs(
     Returns:
         Tuple of Dictionary mapping paths to lists of guids as strings
         and Dictionary mapping guids to db paths.
+
     """
     dbdict = {}
     for p in db_paths:
@@ -57,6 +58,7 @@ def guids_from_dir(
     Returns:
         Tuple of Dictionary mapping paths to lists of guids as strings
         and Dictionary mapping guids to db paths.
+
     """
     return guids_from_dbs(Path(basepath).glob("**/*.db"))
 
@@ -83,6 +85,7 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
         will return
         ('07fd7195-c51e-44d6-a085-fa8274cf00d6',
         '070d7195-c51e-44d6-a085-fa8274cf00d6')
+
     """
     if s == "":
         return tuple()

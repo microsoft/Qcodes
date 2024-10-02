@@ -29,6 +29,7 @@ class TektronixAWG70002A(TektronixAWG70000Base):
             address: The VISA resource name of the instrument
             timeout: The VISA timeout time (in seconds).
             **kwargs: kwargs are forwarded to base class.
+
         """
 
         super().__init__(name, address, num_channels=2, **kwargs)

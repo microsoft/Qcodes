@@ -26,6 +26,7 @@ def partial_with_docstring(
         func: A function that its docstring will be accessed.
         docstring: The docstring of the corresponding function.
         **kwargs: Keyword arguments passed to the function.
+
     """
     ex = partial(func, **kwargs)
 

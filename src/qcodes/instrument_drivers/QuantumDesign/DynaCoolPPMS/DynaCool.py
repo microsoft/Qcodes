@@ -38,6 +38,7 @@ class DynaCool(VisaInstrument):
           E.g. 'TCPIP0::127.0.0.1::5000::SOCKET' with the appropriate IP
           address instead of 127.0.0.1. Note that the port number is
           hard-coded into the server.
+
     """
 
     # the ramp time resolution is in (s) and is used in the
@@ -281,6 +282,7 @@ class DynaCool(VisaInstrument):
                 "blocking" mode, this function does not return until the
                 target field has been reached. In "non-blocking" mode, this
                 function immediately returns.
+
         """
         if mode not in ["blocking", "non-blocking"]:
             raise ValueError(

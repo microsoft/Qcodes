@@ -479,6 +479,7 @@ class Keithley7510Sense(InstrumentChannel):
                 "resistance" is for two-wire measurement of resistance.
                 "Fresistance" is for Four-wire measurement of resistance.
             **kwargs: Forwarded to base class.
+
         """
         super().__init__(parent, name, **kwargs)
 
@@ -740,6 +741,7 @@ class Keithley7510(VisaInstrument):
             name: Name of the instrument instance
             address: Visa-resolvable instrument address
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, address, **kwargs)
 

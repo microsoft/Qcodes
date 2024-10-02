@@ -46,6 +46,7 @@ class KeysightE4980AMeasurementPair(MultiParameter):
         >>> data.set((1.2, 3.4))
         >>> data.get()
         (1.2, 3.4)
+
     """
 
     value: tuple[float, float] = (0.0, 0.0)
@@ -216,6 +217,7 @@ class KeysightE4980A(VisaInstrument):
             address: Visa-resolvable instrument address.
             terminator: Character to terminate messages with.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, address, **kwargs)
 

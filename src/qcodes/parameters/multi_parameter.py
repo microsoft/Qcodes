@@ -133,6 +133,7 @@ class MultiParameter(ParameterBase):
 
         metadata: Extra information to include with the
             JSON snapshot of the parameter.
+
     """
 
     def __init__(

@@ -35,6 +35,7 @@ def post_execution_status_poll(
 
     Args:
         func: function to wrap
+
     """
 
     @wraps(func)
@@ -72,6 +73,7 @@ class Keysight34980A(VisaInstrument):
             name: Name of the instrument instance
             address: Visa-resolvable instrument address.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, address, **kwargs)
 
@@ -87,6 +89,7 @@ class Keysight34980A(VisaInstrument):
 
         Returns:
             0 if there is no error
+
         """
         msg = super().ask("*ESR?")
         nums = list(map(int, re.findall(r"\d+", msg)))
@@ -98,6 +101,7 @@ class Keysight34980A(VisaInstrument):
 
         Returns:
             error message, or '+0,"No error"' if there is no error
+
         """
         msg = super().ask(":SYST:ERR?")
         return msg
@@ -164,6 +168,7 @@ class Keysight34980A(VisaInstrument):
         Returns:
             a dictionary, with slot numbers as the keys, and vendor/model/
             serial/firmware dictionaries as the values
+
         """
         slots_dict = {}
         keys = ["vendor", "model", "serial", "firmware"]
@@ -180,6 +185,7 @@ class Keysight34980A(VisaInstrument):
         Args:
             slot: slot number, between 1 and 8 (self._total_slot),
                     default value is None, which means all slots
+
         """
         cmd = "ROUT:OPEN:ALL"
         if slot is None:

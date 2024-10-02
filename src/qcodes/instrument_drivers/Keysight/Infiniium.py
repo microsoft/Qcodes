@@ -839,6 +839,7 @@ class KeysightInfiniium(VisaInstrument):
             channels: The number of channels on the scope.
             silence_pyvisapy_warning: Don't warn about pyvisa-py at startup
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, address, **kwargs)
         self.connect_message()
@@ -1263,7 +1264,7 @@ class KeysightInfiniium(VisaInstrument):
         time_fmt: str = "%Y-%m-%d_%H-%M-%S",
         divider: str = "_",
     ) -> np.ndarray | None:
-        """save screen to {path} with {image_type}: bmp, jpg, gif, tif, png
+        """Save screen to {path} with {image_type}: bmp, jpg, gif, tif, png
 
         return np.array if sucessfully saved, else return None
         """

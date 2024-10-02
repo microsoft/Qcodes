@@ -33,6 +33,7 @@ class SR86xBufferReadout(ArrayParameter):
     Args:
         name: Name of the parameter.
         instrument: The instrument to add this parameter to.
+
     """
 
     def __init__(self, name: str, instrument: SR86x, **kwargs: Any) -> None:
@@ -60,6 +61,7 @@ class SR86xBufferReadout(ArrayParameter):
 
         Args:
             capture_data: The data to capture.
+
         """
         self._capture_data = capture_data
 
@@ -215,6 +217,7 @@ class SR86xBuffer(InstrumentChannel):
 
         Returns:
             capture_length_in_kb
+
         """
         if capture_length_in_kb % 2:
             raise ValueError("The capture length should be an even number")
@@ -255,6 +258,7 @@ class SR86xBuffer(InstrumentChannel):
 
         Returns:
             n_round
+
         """
         max_rate = self.capture_rate_max()
         n = np.log2(max_rate / capture_rate_hz)
@@ -285,6 +289,7 @@ class SR86xBuffer(InstrumentChannel):
         Args:
             acquisition_mode: "ONE" | "CONT"
             trigger_mode: "IMM" | "TRIG" | "SAMP"
+
         """
 
         if acquisition_mode not in ["ONE", "CONT"]:
@@ -342,6 +347,7 @@ class SR86xBuffer(InstrumentChannel):
 
         Args:
             sample_count: Number of samples that the buffer has to fit
+
         """
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
         self.capture_length_in_kb(total_size_in_kb)
@@ -354,6 +360,7 @@ class SR86xBuffer(InstrumentChannel):
 
         Args:
             sample_count: Number of samples that needs to be captured
+
         """
         n_captured_bytes = 0
         n_variables = self._get_number_of_capture_variables()
@@ -374,6 +381,7 @@ class SR86xBuffer(InstrumentChannel):
             config was set as 'capture_config("X,Y")', then the keys will
             be "X" and "Y". The values in the dictionary are numpy arrays
             of numbers.
+
         """
         total_size_in_kb = self._calc_capture_size_in_kb(sample_count)
         capture_variables = self._get_list_of_capture_variable_names()
@@ -409,6 +417,7 @@ class SR86xBuffer(InstrumentChannel):
             A one-dimensional numpy array of the requested data. Note that the
             returned array contains data for all the variables that are
             mentioned in the capture config.
+
         """
         current_capture_length = self.capture_length_in_kb()
         if size_in_kb > current_capture_length:
@@ -468,6 +477,7 @@ class SR86xBuffer(InstrumentChannel):
             A one-dimensional numpy array of the requested data. Note that the
             returned array contains data for all the variables that are
             mentioned in the capture config.
+
         """
         if size_in_kb > self.max_size_per_reading_in_kb:
             raise ValueError(
@@ -528,6 +538,7 @@ class SR86xBuffer(InstrumentChannel):
             config was set as 'capture_config("X,Y")', then the keys will
             be "X" and "Y". The values in the dictionary are numpy arrays
             of numbers.
+
         """
         self.set_capture_length_to_fit_samples(trigger_count)
         self.start_capture("ONE", "SAMP")
@@ -554,6 +565,7 @@ class SR86xBuffer(InstrumentChannel):
             config was set as 'capture_config("X,Y")', then the keys will
             be "X" and "Y". The values in the dictionary are numpy arrays
             of numbers.
+
         """
         self.set_capture_length_to_fit_samples(sample_count)
         self.start_capture("ONE", "TRIG")
@@ -580,6 +592,7 @@ class SR86xBuffer(InstrumentChannel):
             config was set as 'capture_config("X,Y")', then the keys will
             be "X" and "Y". The values in the dictionary are numpy arrays
             of numbers.
+
         """
         self.set_capture_length_to_fit_samples(sample_count)
         self.start_capture("ONE", "IMM")
@@ -610,6 +623,7 @@ class SR86xDataChannel(InstrumentChannel):
         color: every data channel is also referred to by the color with which it
             is being plotted on the instrument's screen; added here only for
             reference
+
     """
 
     def __init__(
@@ -1227,6 +1241,7 @@ class SR86x(VisaInstrument):
 
         Returns:
             tuple of 4 values of the data channels
+
         """
         output = self.ask("SNAPD?")
         return tuple(float(val) for val in output.split(","))
@@ -1245,6 +1260,7 @@ class SR86x(VisaInstrument):
 
         Returns:
             a tuple of 4 strings of parameter names
+
         """
         if query_instrument:
             method_name = "get"
@@ -1273,6 +1289,7 @@ class SR86x(VisaInstrument):
         Returns:
             a dictionary where keys are names of parameters assigned to the
             data channels, and values are the values of those parameters
+
         """
         parameter_names = self.get_data_channels_parameters(requery_names)
         parameter_values = self.get_data_channels_values()

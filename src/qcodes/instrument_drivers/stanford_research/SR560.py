@@ -30,6 +30,7 @@ class VoltageParameter(MultiParameter):
 
         name: the name of the current output. Default 'volt'.
             Also used as the name of the whole parameter.
+
     """
 
     def __init__(

@@ -101,6 +101,7 @@ def is_run_id_in_database(conn: ConnectionPlus, *run_ids: int) -> dict[int, bool
     Returns:
         a dict with the run_ids as keys and bools as values. True means that
         the run_id DOES exist in the database
+
     """
     run_ids = tuple(np.unique(run_ids))
     placeholders = sql_placeholder_string(len(run_ids))
@@ -152,6 +153,7 @@ def get_parameter_data(
         end: end of range; if None, then ends at the bottom of the table
         callback: Function called during the data loading every
             config.dataset.callback_percent.
+
     """
     rundescriber = get_rundescriber_from_result_table_name(conn, table_name)
 
@@ -364,6 +366,7 @@ def get_parameter_db_row(conn: ConnectionPlus, table_name: str, param_name: str)
 
     Returns:
         The total number of not-null values
+
     """
     sql = f"""
            SELECT COUNT({param_name}) FROM "{table_name}"
@@ -384,6 +387,7 @@ def get_table_max_id(conn: ConnectionPlus, table_name: str) -> int:
 
     Returns:
         The max id of a table
+
     """
     sql = f"""
            SELECT MAX(id)
@@ -414,6 +418,7 @@ def _get_offset_limit_for_callback(
             config.dataset.callback_percent
         limit: SQL limit corresponding to a progress of
             config.dataset.callback_percent
+
     """
 
     # First, we get the number of row to be downloaded for the wanted
@@ -478,6 +483,7 @@ def get_parameter_tree_values(
     Returns:
         A list of list. The outer list index is row number, the inner list
         index is parameter value (first toplevel_param, then other_param_names)
+
     """
 
     cursor = conn.cursor()
@@ -549,6 +555,7 @@ def get_runid_from_expid_and_counter(
         conn: connection to the database
         exp_id: the exp_id of the experiment containing the run
         counter: the intra-experiment run counter of that run
+
     """
     sql = """
           SELECT run_id
@@ -572,6 +579,7 @@ def get_guid_from_expid_and_counter(
         conn: connection to the database
         exp_id: the exp_id of the experiment containing the run
         counter: the intra-experiment run counter of that run
+
     """
     sql = """
           SELECT guid
@@ -597,6 +605,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> int | None:
 
     Raises:
         RuntimeError if more than one run with the given GUID exists
+
     """
     query = """
             SELECT run_id
@@ -645,6 +654,7 @@ def _query_guids_from_run_spec(
 
     Returns:
         A list of the GUIDs matching the supplied specifications.
+
     """
     # first find all experiments that match the given sample
     # and experiment name
@@ -701,6 +711,7 @@ def _get_layout_id(
         conn: The database connection
         parameter: A ParamSpec or the name of the parameter
         run_id: The run_id of the run in question
+
     """
     # get the parameter layout id
     sql = """
@@ -747,6 +758,7 @@ def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[tuple[int, i
     Args:
         conn: connection to the database
         layout_id: the layout_id of the dependent variable
+
     """
     sql = """
     SELECT independent, axis_num FROM dependencies WHERE dependent=?
@@ -782,6 +794,7 @@ def new_experiment(
 
     Returns:
         id: row-id of the created experiment
+
     """
     query = """
             INSERT INTO experiments
@@ -846,6 +859,7 @@ def completed(conn: ConnectionPlus, run_id: int) -> bool:
     Args:
         conn: database connection
         run_id: id of the run to check
+
     """
     return bool(select_one_where(conn, "runs", "is_completed", "run_id", run_id))
 
@@ -865,6 +879,7 @@ def get_completed_timestamp_from_run_id(
 
     Returns:
         timestamp in seconds since the Epoch, or None
+
     """
     ts = select_one_where(conn, "runs", "completed_timestamp", "run_id", run_id)
     # sometimes it happens that the timestamp is written to DB as an int
@@ -884,6 +899,7 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str | None:
 
     Returns:
         The guid of the run_id.
+
     """
     try:
         guid = select_one_where(conn, "runs", "guid", "run_id", run_id)
@@ -906,6 +922,7 @@ def get_guids_from_multiple_run_ids(
 
     Returns:
         A list of guids for the supplied run_ids.
+
     """
 
     guids: list[str] = []
@@ -926,6 +943,7 @@ def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:
     Args:
         conn: database connection
         exp_id: the id of the experiment
+
     """
     query = """
     UPDATE experiments SET end_time=? WHERE exp_id=?;
@@ -962,6 +980,7 @@ def get_experiments(conn: ConnectionPlus) -> list[int]:
 
     Returns:
         list of rows
+
     """
     sql = "SELECT exp_id FROM experiments"
     c = atomic_transaction(conn, sql)
@@ -976,6 +995,7 @@ def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions: Any) -> list[
     Raises:
         ValueError if a match_condition that is not "name", "sample_name",
         "format_string", "run_counter", "start_time", or "end_time"
+
     """
     valid_conditions = [
         "name",
@@ -1026,6 +1046,7 @@ def get_exp_ids_from_run_ids(conn: ConnectionPlus, run_ids: Sequence[int]) -> li
 
     Returns:
         A list of exp_ids matching the run_ids
+
     """
     sql_placeholders = sql_placeholder_string(len(run_ids))
     exp_id_query = f"""
@@ -1061,6 +1082,7 @@ def get_runs(conn: ConnectionPlus, exp_id: int | None = None) -> list[int]:
 
     Returns:
         list of rows
+
     """
     with atomic(conn) as atomic_conn:
         if exp_id:
@@ -1088,6 +1110,7 @@ def get_last_run(conn: ConnectionPlus, exp_id: int | None = None) -> int | None:
     Returns:
         the integer id of the last run or None if there are not runs in the
         experiment
+
     """
     if exp_id is not None:
         query = """
@@ -1129,6 +1152,7 @@ def format_table_name(fmt_str: str, name: str, exp_id: int, run_counter: int) ->
         name: the run name
         exp_id: the experiment ID
         run_counter: the intra-experiment runnumber of this run
+
     """
     table_name = fmt_str.format(name, exp_id, run_counter)
     _validate_table_name(table_name)  # raises if table_name not valid
@@ -1320,6 +1344,7 @@ def _get_parameters(conn: ConnectionPlus, run_id: int) -> list[ParamSpec]:
 
     Returns:
         A list of param specs for this run
+
     """
 
     sql = """
@@ -1342,6 +1367,7 @@ def _get_paramspec(conn: ConnectionPlus, run_id: int, param_name: str) -> ParamS
         conn: Connection to the database
         run_id: The run id
         param_name: The name of the parameter
+
     """
 
     # get table name
@@ -1461,6 +1487,7 @@ def set_run_timestamp(
         run_id: id of the run to mark complete
         timestamp: time stamp for completion. If None the function will
             automatically get the current time.
+
     """
 
     query = """
@@ -1508,6 +1535,7 @@ def add_parameter(
         insert_into_results_table: Should the parameters be added as columns to the
            results table?
         parameter: the list of ParamSpecs for parameters to add
+
     """
     with atomic(conn) as atomic_conn:
         sql = "SELECT result_table_name FROM runs WHERE run_id=?"
@@ -1603,6 +1631,7 @@ def _create_run_table(
         formatted_name: the name of the table to create
         parameters: Parameters to insert in the table.
         values: Values for the parameters above.
+
     """
     _validate_table_name(formatted_name)
 
@@ -1685,6 +1714,7 @@ def create_run(
         run_counter: the id of the newly created run (not unique)
         run_id: the row id of the newly created run
         formatted_name: the name of the newly created table
+
     """
     formatted_name: str | None
 
@@ -1828,6 +1858,7 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
 
     Args:
         data: the metadata mapping (tags to values)
+
     """
     for tag, val in data.items():
         if not tag.isidentifier():
@@ -1854,6 +1885,7 @@ def insert_data_in_dynamic_columns(
         row_id: the row to add the metadata at
         table_name: the table to add to, defaults to runs
         data: A mapping from columns to data to add
+
     """
     validate_dynamic_column_data(data)
     for key in data.keys():
@@ -1872,6 +1904,7 @@ def update_columns(
         row_id: the row to add the metadata at
         table_name: the table to add to, defaults to runs
         data: the data to add
+
     """
     validate_dynamic_column_data(data)
     update_where(conn, table_name, "rowid", row_id, **data)
@@ -1893,6 +1926,7 @@ def add_data_to_dynamic_columns(
         row_id: the row to add the metadata at
         data: the data to add
         table_name: the table to add to, defaults to runs
+
     """
     try:
         insert_data_in_dynamic_columns(conn, row_id, table_name, data)
@@ -2029,6 +2063,7 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
     Args:
         conn: database connection object
         trigger_id: id of the trigger
+
     """
     transaction(conn, f"DROP TRIGGER IF EXISTS {trigger_id};")
 
@@ -2095,6 +2130,7 @@ def get_experiment_attributes_by_exp_id(
 
     Returns:
         A dictionary of the experiment attributes.
+
     """
     exp_attr_names = ["name", "sample_name", "start_time", "end_time", "format_string"]
 

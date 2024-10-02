@@ -24,6 +24,7 @@ def _parse_output_string(string_value: str) -> str:
 
     Returns:
         The cleaned-up output of the multimeter.
+
     """
     s = string_value.strip().lower()
     if (s[0] == s[-1]) and s.startswith(("'", '"')):
@@ -43,6 +44,7 @@ def _parse_output_bool(numeric_value: float | str) -> bool:
 
     Returns:
         The boolean representation of the numeric value.
+
     """
     return bool(numeric_value)
 
@@ -73,6 +75,7 @@ class Keithley6500(VisaInstrument):
             address: The VISA device address.
             reset_device: Reset the device on startup if true.
             **kwargs: kwargs are forwarded to base class.
+
         """
         super().__init__(name, address, **kwargs)
 
@@ -265,6 +268,7 @@ class Keithley6500(VisaInstrument):
 
         Returns:
             Any: the parsed ask command. The parser determines the return data-type.
+
         """
         mode = _parse_output_string(self._mode_map[self.mode()])
         cmd = f"{mode}:{parameter}?"
@@ -276,6 +280,7 @@ class Keithley6500(VisaInstrument):
         Args:
             parameter: The set parameter after getting the current mode.
             value: Value to set
+
         """
         if isinstance(value, bool):
             value = int(value)

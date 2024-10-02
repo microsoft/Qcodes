@@ -729,6 +729,7 @@ def dond(
         tuple(Matplotlib colorbar), in which each element of each sub-tuple
         belongs to one group, and the order of elements is the order of
         the supplied groups.
+
     """
     if do_plot is None:
         do_plot = cast(bool, config.dataset.dond_plot)

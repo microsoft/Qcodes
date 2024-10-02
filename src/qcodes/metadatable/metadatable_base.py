@@ -29,6 +29,7 @@ class Metadatable:
 
         Args:
             metadata: Metadata to load.
+
         """
         deep_update(self.metadata, metadata)
 
@@ -44,6 +45,7 @@ class Metadatable:
 
         Returns:
             Base snapshot.
+
         """
 
         snap = self.snapshot_base(update=update)

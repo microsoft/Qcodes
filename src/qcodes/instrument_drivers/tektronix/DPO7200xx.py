@@ -505,6 +505,7 @@ class TektronixDPOChannel(InstrumentChannel):
 
         Args:
             value: The requested number of samples in the trace
+
         """
         if self.root_instrument.horizontal.record_length() < value:
             raise ValueError(
@@ -520,6 +521,7 @@ class TektronixDPOChannel(InstrumentChannel):
         """
         Args:
             value: The time over which a trace is desired.
+
         """
         sample_rate = self.root_instrument.horizontal.sample_rate()
         required_sample_count = int(sample_rate * value)

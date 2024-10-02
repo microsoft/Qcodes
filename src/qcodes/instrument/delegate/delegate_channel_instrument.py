@@ -64,6 +64,7 @@ class DelegateChannelInstrument(DelegateInstrument):
             to None.
         set_initial_values_on_load: Flag to set defaults on load. Defaults
             to False.
+
     """
 
     def __init__(
