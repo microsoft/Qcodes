@@ -158,7 +158,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
     def to_xarray_dataarray_dict(
         self, *, use_multi_index: Literal["auto", "always", "never"] = "auto"
-    ) -> dict[str, xr.DataArray]:  # noqa: F821
+    ) -> dict[str, xr.DataArray]:
         """
         Returns the values stored in the :class:`.dataset.data_set.DataSet` as a dict of
         :py:class:`xr.DataArray` s

@@ -13,7 +13,7 @@ from .dataset_generators import dataset_with_outliers_generator
 # set matplotlib backend before importing pyplot
 matplotlib.use("Agg")
 
-from matplotlib import pyplot as plt  # noqa E402
+from matplotlib import pyplot as plt
 
 
 @fixture(scope="function")
