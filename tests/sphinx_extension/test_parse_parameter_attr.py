@@ -1,7 +1,8 @@
 import pytest
 from sphinx.util.inspect import safe_getattr
 
-from qcodes.instrument import InstrumentBase, VisaInstrument
+from qcodes.instrument import InstrumentBase
+from qcodes.parameters import Parameter
 from qcodes.sphinx_extensions.parse_parameter_attr import (
     ParameterProxy,
     qcodes_parameter_attr_getter,
@@ -23,8 +24,13 @@ class DummyTestClass(InstrumentBase):
         An instance attribute
         """
 
+        self.my_param = Parameter(
+            name="my_param", instrument=self, get_cmd=None, set_cmd=None
+        )
+        """A QCoDeS Parameter"""
 
-class DummyNoInitClass(InstrumentBase):
+
+class DummyNoInitClass(DummyTestClass):
     myattr: str = "ClassAttribute"
     """
     A class attribute
@@ -83,16 +89,13 @@ def test_extract_instance_attr() -> None:
     assert repr(b) == '"InstanceAttribute"'
 
 
-def test_instrument_base_get_attr() -> None:
-    parameters = qcodes_parameter_attr_getter(InstrumentBase, "parameters")
+def test_parameter_get_attr():
+    parameters = qcodes_parameter_attr_getter(DummyTestClass, "my_param")
     assert isinstance(parameters, ParameterProxy)
-    assert repr(parameters) == "{}"
-
-
-def test_visa_instr_get_attr() -> None:
-    parameters = qcodes_parameter_attr_getter(VisaInstrument, "parameters")
-    assert isinstance(parameters, ParameterProxy)
-    assert repr(parameters) == "{}"
+    assert (
+        repr(parameters)
+        == 'Parameter( name="my_param", instrument=self, get_cmd=None, set_cmd=None )'
+    )
 
 
 def test_decorated_init_func() -> None:
@@ -109,6 +112,6 @@ def test_decorated_class() -> None:
 
 def test_no_init() -> None:
     """Test that attribute can be found from a class without an init function."""
-    attr = qcodes_parameter_attr_getter(DummyNoInitClass, "parameters")
+    attr = qcodes_parameter_attr_getter(DummyNoInitClass, "other_attr")
     assert isinstance(attr, ParameterProxy)
-    assert repr(attr) == "{}"
+    assert repr(attr) == '"InstanceAttribute"'
