@@ -3,7 +3,7 @@
 import logging
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import pyvisa
 import pyvisa.constants
@@ -142,7 +142,7 @@ class QDevQDacChannel(InstrumentChannel):
     def snapshot_base(
         self,
         update: bool | None = False,
-        params_to_skip_update: Optional["Sequence[str]"] = None,
+        params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
         update_currents = self._parent._update_currents and update
         if update and not self._parent._get_status_performed:
@@ -327,7 +327,7 @@ class QDevQDac(VisaInstrument):
     def snapshot_base(
         self,
         update: bool | None = False,
-        params_to_skip_update: Optional["Sequence[str]"] = None,
+        params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
         update_currents = self._update_currents and update is True
         if update:

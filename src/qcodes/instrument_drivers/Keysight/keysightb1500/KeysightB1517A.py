@@ -1,6 +1,6 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import numpy as np
 from typing_extensions import NotRequired, TypedDict, Unpack
@@ -713,7 +713,7 @@ class _ParameterWithStatus(Parameter):
     def snapshot_base(
         self,
         update: bool | None = True,
-        params_to_skip_update: Optional["Sequence[str]"] = None,
+        params_to_skip_update: "Sequence[str] | None" = None,
     ) -> dict[Any, Any]:
         snapshot = super().snapshot_base(
             update=update, params_to_skip_update=params_to_skip_update

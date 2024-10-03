@@ -1,7 +1,7 @@
 import re
 import textwrap
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.parameters import MultiParameter, Parameter, create_on_off_val_mapping
@@ -516,9 +516,9 @@ class IVSweepMeasurement(MultiParameter, StatusMixin):
 
     def set_names_labels_and_units(
         self,
-        names: Optional["Sequence[str]"] = None,
-        labels: Optional["Sequence[str]"] = None,
-        units: Optional["Sequence[str]"] = None,
+        names: "Sequence[str] | None" = None,
+        labels: "Sequence[str] | None" = None,
+        units: "Sequence[str] | None" = None,
     ) -> None:
         """
         Set names, labels, and units of the measured parts of the MultiParameter.

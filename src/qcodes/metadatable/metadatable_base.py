@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, final
+from typing import TYPE_CHECKING, Any, final
 
 from qcodes.utils import deep_update
 
@@ -19,7 +19,7 @@ Snapshot = dict[str, Any]
 
 
 class Metadatable:
-    def __init__(self, metadata: Optional["Mapping[str, Any]"] = None):
+    def __init__(self, metadata: "Mapping[str, Any] | None" = None):
         self.metadata: dict[str, Any] = {}
         self.load_metadata(metadata or {})
 
@@ -58,7 +58,7 @@ class Metadatable:
     def snapshot_base(
         self,
         update: bool | None = False,
-        params_to_skip_update: Optional["Sequence[str]"] = None,
+        params_to_skip_update: "Sequence[str] | None" = None,
     ) -> Snapshot:
         """
         Override this with the primary information for a subclass.

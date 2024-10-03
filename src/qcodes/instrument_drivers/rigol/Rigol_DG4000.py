@@ -1,5 +1,5 @@
 from functools import partial
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 from qcodes.validators import Anything, Enum, Ints, MultiType, Numbers
@@ -745,7 +745,7 @@ class RigolDG4000(VisaInstrument):
 
         self.connect_message()
 
-    def _upload_data(self, data: Union["Sequence[float]", "np.ndarray"]) -> None:
+    def _upload_data(self, data: "Sequence[float] | np.ndarray") -> None:
         """
         Upload data to the AWG memory.
 
