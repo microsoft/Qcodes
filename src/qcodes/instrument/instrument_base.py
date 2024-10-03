@@ -75,6 +75,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         self._is_valid_identifier(self.full_name)
 
         self.label = name if label is None else label
+        self._label: str
 
         self._parameters: dict[str, ParameterBase] = {}
 
