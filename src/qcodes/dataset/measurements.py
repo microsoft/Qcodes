@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import collections
 import io
+import json
 import logging
 import traceback as tb_module
 import warnings
@@ -50,7 +51,7 @@ from qcodes.parameters import (
     expand_setpoints_helper,
 )
 from qcodes.station import Station
-from qcodes.utils import DelayedKeyboardInterrupt
+from qcodes.utils import DelayedKeyboardInterrupt, NumpyJSONEncoder
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -549,6 +550,7 @@ class Runner:
         in_memory_cache: bool | None = None,
         dataset_class: DataSetType = DataSetType.DataSet,
         parent_span: trace.Span | None = None,
+        registered_parameters: Sequence[ParameterBase] | None = None,
     ) -> None:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
@@ -577,6 +579,7 @@ class Runner:
         self._in_memory_cache = in_memory_cache
         self._parent_span = parent_span
         self.ds: DataSetProtocol
+        self._registered_parameters = registered_parameters
 
     @staticmethod
     def _calculate_write_period(
@@ -672,7 +675,14 @@ class Runner:
             shapes=self._shapes,
             parent_datasets=self._parent_datasets,
         )
-
+        if self._registered_parameters is not None:
+            parameter_snapshot = {
+                param.short_name: param.snapshot
+                for param in self._registered_parameters
+            }
+            self.ds.add_snapshot(
+                json.dumps({"parameters": parameter_snapshot}, cls=NumpyJSONEncoder)
+            )
         # register all subscribers
         if isinstance(self.ds, DataSet):
             for callble, state in self.subscribers:
@@ -803,6 +813,7 @@ class Measurement:
         self._shapes: Shapes | None = None
         self._parent_datasets: list[dict[str, str]] = []
         self._extra_log_info: str = ""
+        self._registered_parameters: list[ParameterBase] = []
 
     @property
     def parameters(self) -> dict[str, ParamSpecBase]:
@@ -926,7 +937,7 @@ class Measurement:
                 f"Can not register object of type {type(parameter)}. Can only "
                 "register a QCoDeS Parameter."
             )
-
+        self._registered_parameters.append(parameter)
         paramtype = self._infer_paramtype(parameter, paramtype)
         # default to numeric
         if paramtype is None:
@@ -1034,6 +1045,7 @@ class Measurement:
         setpoints: setpoints_type | None,
         basis: setpoints_type | None,
         paramtype: str,
+        metadata: dict[str, Any] | None = None,
     ) -> T:
         """
         Update the interdependencies object with a new group
@@ -1279,8 +1291,20 @@ class Measurement:
         """
         if isinstance(parameter, ParameterBase):
             param = str_or_register_name(parameter)
+            try:
+                self._registered_parameters.remove(parameter)
+            except ValueError:
+                return
         elif isinstance(parameter, str):
             param = parameter
+            parameter_to_remove = [
+                param_obj
+                for param_obj in self._registered_parameters
+                if parameter in (param_obj.name, param_obj.register_name)
+            ]
+            if len(parameter_to_remove) == 1:
+                self._registered_parameters.remove(parameter_to_remove[0])
+
         else:
             raise ValueError(
                 "Wrong input type. Must be a QCoDeS parameter or"
@@ -1412,6 +1436,7 @@ class Measurement:
             in_memory_cache=in_memory_cache,
             dataset_class=dataset_class,
             parent_span=parent_span,
+            registered_parameters=self._registered_parameters,
         )
 
 
