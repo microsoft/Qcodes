@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import collections
 import io
-import json
 import logging
 import traceback as tb_module
 import warnings
@@ -51,7 +50,7 @@ from qcodes.parameters import (
     expand_setpoints_helper,
 )
 from qcodes.station import Station
-from qcodes.utils import DelayedKeyboardInterrupt, NumpyJSONEncoder
+from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
     from types import TracebackType
