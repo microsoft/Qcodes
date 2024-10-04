@@ -664,9 +664,15 @@ class Runner:
             station = self.station
 
         if station is not None:
-            snapshot = station.snapshot()
+            snapshot = {"station": station.snapshot()}
         else:
             snapshot = {}
+        if self._registered_parameters is not None:
+            parameter_snapshot = {
+                param.short_name: param.snapshot()
+                for param in self._registered_parameters
+            }
+            snapshot["parameters"] = parameter_snapshot
 
         self.ds.prepare(
             snapshot=snapshot,
@@ -675,14 +681,7 @@ class Runner:
             shapes=self._shapes,
             parent_datasets=self._parent_datasets,
         )
-        if self._registered_parameters is not None:
-            parameter_snapshot = {
-                param.short_name: param.snapshot
-                for param in self._registered_parameters
-            }
-            self.ds.add_snapshot(
-                json.dumps({"parameters": parameter_snapshot}, cls=NumpyJSONEncoder)
-            )
+
         # register all subscribers
         if isinstance(self.ds, DataSet):
             for callble, state in self.subscribers:

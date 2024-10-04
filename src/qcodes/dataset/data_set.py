@@ -329,7 +329,7 @@ class DataSet(BaseDataSet):
         parent_datasets: Sequence[Mapping[Any, Any]] = (),
         write_in_background: bool = False,
     ) -> None:
-        self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
+        self.add_snapshot(json.dumps(snapshot, cls=NumpyJSONEncoder))
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")
