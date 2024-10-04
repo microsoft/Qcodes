@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypedDict, cast
+from typing import TYPE_CHECKING, Any, ClassVar, TypedDict, cast
 
 import numpy as np
 
@@ -36,7 +36,7 @@ class DataArray7510(MultiParameter):
         self,
         names: "Sequence[str]",
         shapes: "Sequence[Sequence[int]]",
-        setpoints: Optional["Sequence[Sequence[Any]]"],
+        setpoints: "Sequence[Sequence[Any]] | None",
         **kwargs: Any,
     ):
         super().__init__(
@@ -282,7 +282,7 @@ class Keithley7510Buffer(InstrumentChannel):
         self,
         exception_type: type[BaseException] | None,
         value: BaseException | None,
-        traceback: Optional["TracebackType"],
+        traceback: "TracebackType | None",
     ) -> None:
         self.delete()
 

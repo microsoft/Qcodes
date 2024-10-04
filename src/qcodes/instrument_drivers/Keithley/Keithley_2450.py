@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np
 from typing_extensions import TypedDict, Unpack
@@ -138,7 +138,7 @@ class Keithley2450Buffer(InstrumentChannel):
         self,
         exception_type: type[BaseException] | None,
         value: BaseException | None,
-        traceback: Optional["TracebackType"],
+        traceback: "TracebackType | None",
     ) -> None:
         self.delete()
 

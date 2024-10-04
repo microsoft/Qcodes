@@ -1,6 +1,6 @@
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 import numpy as np
 from pyvisa import VisaIOError
@@ -102,7 +102,7 @@ class DSOTraceParam(ParameterWithSetpoints):
     def __init__(
         self,
         name: str,
-        instrument: Union["KeysightInfiniiumChannel", "KeysightInfiniiumFunction"],
+        instrument: "KeysightInfiniiumChannel | KeysightInfiniiumFunction",
         channel: str,
         **kwargs: Any,
     ):
@@ -170,7 +170,7 @@ class DSOTraceParam(ParameterWithSetpoints):
         """
         return
 
-    def update_setpoints(self, preamble: Optional["Sequence[str]"] = None) -> None:
+    def update_setpoints(self, preamble: "Sequence[str] | None" = None) -> None:
         """
         Update waveform parameters. Must be called before data
         acquisition if instr.cache_setpoints is False
@@ -466,7 +466,7 @@ class AbstractMeasurementSubsystem(InstrumentModule):
 class KeysightInfiniiumBoundMeasurement(AbstractMeasurementSubsystem):
     def __init__(
         self,
-        parent: Union["KeysightInfiniiumChannel", "KeysightInfiniiumFunction"],
+        parent: "KeysightInfiniiumChannel | KeysightInfiniiumFunction",
         name: str,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",
     ):

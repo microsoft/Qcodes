@@ -9,7 +9,7 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import Any, Generic, Literal, TypeVar, Union, cast
+from typing import Any, Generic, Literal, TypeVar, cast
 
 import numpy as np
 
@@ -317,7 +317,7 @@ class Numbers(Validator[numbertypes]):
         return float(self._max_value)
 
 
-class Ints(Validator[Union[int, "np.integer[Any]", bool]]):
+class Ints(Validator[int | np.integer[Any] | bool]):
     """
     Requires an integer.
     Optional parameters min_value and max_value, enforce
@@ -428,7 +428,7 @@ class PermissiveInts(Ints):
         super().validate(castvalue, context=context)
 
 
-class ComplexNumbers(Validator[Union[complex, "np.complexfloating[Any,Any]"]]):
+class ComplexNumbers(Validator[complex | np.complexfloating[Any, Any]]):
     """
     A validator for complex numbers.
     """

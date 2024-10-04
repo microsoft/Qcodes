@@ -12,7 +12,6 @@ from typing import (
     Any,
     Literal,
     Protocol,
-    Union,
     runtime_checkable,
 )
 
@@ -56,8 +55,8 @@ scalar_res_types: TypeAlias = (
     str | complex | np.integer | np.floating | np.complexfloating
 )
 values_type: TypeAlias = scalar_res_types | np.ndarray | Sequence[scalar_res_types]
-res_type: TypeAlias = tuple[Union["ParameterBase", str], values_type]
-setpoints_type: TypeAlias = Sequence[Union[str, "ParameterBase"]]
+res_type: TypeAlias = "tuple[ParameterBase | str, values_type]"
+setpoints_type: TypeAlias = "Sequence[str | ParameterBase]"
 SPECS: TypeAlias = list[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove

@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from qcodes import validators
 
@@ -32,7 +32,7 @@ class Keysight34934A(Keysight34980ASwitchMatrixSubModule):
 
     def __init__(
         self,
-        parent: Union["VisaInstrument", "InstrumentChannel"],
+        parent: "VisaInstrument | InstrumentChannel",
         name: str,
         slot: int,
         **kwargs: "Unpack[InstrumentBaseKWArgs]",

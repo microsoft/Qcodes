@@ -15,7 +15,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from copy import copy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import deprecated
 
@@ -66,7 +66,7 @@ FORMAT_STRING_DICT = OrderedDict(
 # console hander.
 console_handler: logging.Handler | None = None
 file_handler: logging.Handler | None = None
-telemetry_handler: Optional["AzureLogHandler"] = None
+telemetry_handler: AzureLogHandler | None = None
 
 
 _opencensus_filter = logging.Filter(name="opencensus")
@@ -385,7 +385,7 @@ def conditionally_start_all_logging() -> None:
 
 @contextmanager
 def handler_level(
-    level: LevelType, handler: Union[logging.Handler, "Sequence[logging.Handler]"]
+    level: LevelType, handler: "logging.Handler | Sequence[logging.Handler]"
 ) -> "Iterator[None]":
     """
     Context manager to temporarily change the level of handlers.
@@ -469,7 +469,7 @@ class LogCapture:
         self,
         exception_type: type[BaseException] | None,
         exception_value: BaseException | None,
-        traceback: Optional["TracebackType"],
+        traceback: "TracebackType | None",
     ) -> None:
         self.logger.removeHandler(self.string_handler)
         self.value = self.log_capture.getvalue()
