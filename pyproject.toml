@@ -222,7 +222,8 @@ filterwarnings = [
     'ignore:pkg_resources is deprecated as an API:DeprecationWarning', # pyvisa-sim
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated and scheduled for removal in a future version:DeprecationWarning', # tqdm dateutil
-    'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning' # jupyter
+    'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
+    'ignore:Parsing dates involving a day of month without a year specified is ambiguious' # ipykernel 3.13+
 ]
 
 [tool.ruff]
