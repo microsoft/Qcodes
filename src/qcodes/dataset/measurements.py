@@ -1289,7 +1289,7 @@ class Measurement:
         """
         if isinstance(parameter, ParameterBase):
             param_name = str_or_register_name(parameter)
-            parameter_to_remove: ParameterBase = parameter
+            parameter_to_remove: ParameterBase | None = parameter
         elif isinstance(parameter, str):
             param_name = parameter
             parameters_to_remove: list[ParameterBase] = [
@@ -1298,14 +1298,9 @@ class Measurement:
                 if param_name in (param_obj.name, param_obj.register_name)
             ]
             if len(parameters_to_remove) == 0:
-                raise ValueError(
-                    f"No parameter matching {param_name} found in the list of registered parameters"
-                )
-            elif len(parameters_to_remove) > 1:
-                raise ValueError(
-                    f"Multiple parameters matching {param_name} found in the list of registered parameters"
-                )
-            parameter_to_remove = parameters_to_remove[0]
+                parameter_to_remove = None
+            else:
+                parameter_to_remove = parameters_to_remove[0]
         else:
             raise ValueError(
                 "Wrong input type. Must be a QCoDeS parameter or"
@@ -1320,10 +1315,11 @@ class Measurement:
         self._interdeps = self._interdeps.remove(paramspec)
 
         # Must follow interdeps removal, because interdeps removal may error
-        try:
-            self._registered_parameters.remove(parameter_to_remove)
-        except ValueError:
-            return
+        if parameter_to_remove is not None:
+            try:
+                self._registered_parameters.remove(parameter_to_remove)
+            except ValueError:
+                return
         log.info(f"Removed {param_name} from Measurement.")
 
     def add_before_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
