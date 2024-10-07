@@ -1289,7 +1289,7 @@ class Measurement:
         """
         if isinstance(parameter, ParameterBase):
             param_name = str_or_register_name(parameter)
-            parameter_to_remove = parameter
+            parameter_to_remove: ParameterBase = parameter
         elif isinstance(parameter, str):
             param_name = parameter
             parameters_to_remove: list[ParameterBase] = [
