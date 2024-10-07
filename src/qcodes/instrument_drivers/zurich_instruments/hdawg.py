@@ -5,7 +5,7 @@
 
 
 try:
-    from zhinst.qcodes import HDAWG
+    from zhinst.qcodes import HDAWG  # type: ignore[import-untyped]
 except ImportError:
     raise ImportError(
         """
