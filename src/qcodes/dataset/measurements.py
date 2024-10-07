@@ -1289,18 +1289,8 @@ class Measurement:
         """
         if isinstance(parameter, ParameterBase):
             param_name = str_or_register_name(parameter)
-            parameter_to_remove: ParameterBase | None = parameter
         elif isinstance(parameter, str):
             param_name = parameter
-            parameters_to_remove: list[ParameterBase] = [
-                param_obj
-                for param_obj in self._registered_parameters
-                if param_name in (param_obj.name, param_obj.register_name)
-            ]
-            if len(parameters_to_remove) == 0:
-                parameter_to_remove = None
-            else:
-                parameter_to_remove = parameters_to_remove[0]
         else:
             raise ValueError(
                 "Wrong input type. Must be a QCoDeS parameter or"
@@ -1315,11 +1305,19 @@ class Measurement:
         self._interdeps = self._interdeps.remove(paramspec)
 
         # Must follow interdeps removal, because interdeps removal may error
-        if parameter_to_remove is not None:
+        if isinstance(parameter, ParameterBase):
             try:
-                self._registered_parameters.remove(parameter_to_remove)
+                self._registered_parameters.remove(parameter)
             except ValueError:
                 return
+        elif isinstance(parameter, str):
+            with_parameters_removed = [
+                param
+                for param in self._registered_parameters
+                if parameter not in (param.name, param.register_name)
+            ]
+            self._registered_parameters = with_parameters_removed
+
         log.info(f"Removed {param_name} from Measurement.")
 
     def add_before_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
