@@ -1288,21 +1288,24 @@ class Measurement:
         running this measurement
         """
         if isinstance(parameter, ParameterBase):
-            param = str_or_register_name(parameter)
-            try:
-                self._registered_parameters.remove(parameter)
-            except ValueError:
-                return
+            param_name = str_or_register_name(parameter)
+            parameter_to_remove = parameter
         elif isinstance(parameter, str):
-            param = parameter
-            parameter_to_remove = [
+            param_name = parameter
+            parameters_to_remove: list[ParameterBase] = [
                 param_obj
                 for param_obj in self._registered_parameters
-                if parameter in (param_obj.name, param_obj.register_name)
+                if param_name in (param_obj.name, param_obj.register_name)
             ]
-            if len(parameter_to_remove) == 1:
-                self._registered_parameters.remove(parameter_to_remove[0])
-
+            if len(parameters_to_remove) == 0:
+                raise ValueError(
+                    f"No parameter matching {param_name} found in the list of registered parameters"
+                )
+            elif len(parameters_to_remove) > 1:
+                raise ValueError(
+                    f"Multiple parameters matching {param_name} found in the list of registered parameters"
+                )
+            parameter_to_remove = parameters_to_remove[0]
         else:
             raise ValueError(
                 "Wrong input type. Must be a QCoDeS parameter or"
@@ -1310,13 +1313,18 @@ class Measurement:
             )
 
         try:
-            paramspec: ParamSpecBase = self._interdeps[param]
+            paramspec: ParamSpecBase = self._interdeps[param_name]
         except KeyError:
             return
 
         self._interdeps = self._interdeps.remove(paramspec)
 
-        log.info(f"Removed {param} from Measurement.")
+        # Must follow interdeps removal, because interdeps removal may error
+        try:
+            self._registered_parameters.remove(parameter_to_remove)
+        except ValueError:
+            return
+        log.info(f"Removed {param_name} from Measurement.")
 
     def add_before_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
         """
