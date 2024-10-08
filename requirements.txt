@@ -177,7 +177,7 @@ lxml==5.3.0
     # via qcodes (pyproject.toml)
 lxml-stubs==0.5.1
     # via qcodes (pyproject.toml)
-markupsafe==2.1.5
+markupsafe==3.0.0
     # via
     #   jinja2
     #   nbconvert
