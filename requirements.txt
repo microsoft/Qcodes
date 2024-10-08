@@ -89,7 +89,7 @@ fsspec==2024.9.0
     # via dask
 furo==2024.8.6
     # via qcodes (pyproject.toml)
-h5netcdf==1.3.0
+h5netcdf==1.4.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -102,7 +102,7 @@ h5py==3.12.1
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.112.2
+hypothesis==6.112.4
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -177,7 +177,7 @@ lxml==5.3.0
     # via qcodes (pyproject.toml)
 lxml-stubs==0.5.1
     # via qcodes (pyproject.toml)
-markupsafe==2.1.5
+markupsafe==3.0.0
     # via
     #   jinja2
     #   nbconvert
@@ -210,7 +210,7 @@ nbsphinx==0.9.5
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-numpy==2.1.1
+numpy==2.1.2
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -326,7 +326,7 @@ pyvisa==1.14.1
     #   qcodes
 pyvisa-sim==0.6.0
     # via qcodes (pyproject.toml)
-pywin32==306; sys_platform == 'win32'
+pywin32==307; sys_platform == 'win32'
     # via jupyter-core
 pyyaml==6.0.2
     # via
@@ -418,7 +418,7 @@ tabulate==0.9.0
     #   qcodes
 tinycss2==1.3.0
     # via nbconvert
-toolz==0.12.1
+toolz==1.0.0
     # via
     #   dask
     #   partd
