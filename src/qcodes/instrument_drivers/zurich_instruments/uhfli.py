@@ -5,7 +5,7 @@
 
 
 try:
-    from zhinst.qcodes import UHFLI
+    from zhinst.qcodes import UHFLI  # type: ignore[import-not-found]
 except ImportError:
     raise ImportError(
         """
