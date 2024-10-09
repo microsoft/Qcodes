@@ -935,7 +935,6 @@ class Measurement:
                 f"Can not register object of type {type(parameter)}. Can only "
                 "register a QCoDeS Parameter."
             )
-        self._registered_parameters.append(parameter)
         paramtype = self._infer_paramtype(parameter, paramtype)
         # default to numeric
         if paramtype is None:
@@ -990,6 +989,7 @@ class Measurement:
             raise RuntimeError(
                 f"Does not know how to register a parameter of type {type(parameter)}"
             )
+        self._registered_parameters.append(parameter)
 
         return self
 
