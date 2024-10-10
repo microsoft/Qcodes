@@ -421,7 +421,7 @@ class DataSetInMem(BaseDataSet):
         if not self.pristine:
             raise RuntimeError("Cannot prepare a dataset that is not pristine.")
 
-        self.add_snapshot(json.dumps({"station": snapshot}, cls=NumpyJSONEncoder))
+        self.add_snapshot(json.dumps(snapshot, cls=NumpyJSONEncoder))
 
         if interdeps == InterDependencies_():
             raise RuntimeError("No parameters supplied")

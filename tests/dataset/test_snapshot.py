@@ -43,7 +43,9 @@ def test_station_snapshot_during_measurement(
 
     measurement.register_parameter(dac.ch1)
     measurement.register_parameter(dmm.v1, setpoints=[dac.ch1])
-
+    snapshot_of_parameters = {
+        parameter.short_name: parameter.snapshot() for parameter in (dac.ch1, dmm.v1)
+    }
     with measurement.run() as data_saver:
         data_saver.add_result((dac.ch1, 7), (dmm.v1, 5))
 
@@ -53,7 +55,10 @@ def test_station_snapshot_during_measurement(
     json_snapshot_from_dataset = data_saver.dataset.get_metadata("snapshot")  # type: ignore[attr-defined]
     snapshot_from_dataset = json.loads(json_snapshot_from_dataset)
 
-    expected_snapshot = {"station": snapshot_of_station}
+    expected_snapshot = {
+        "station": snapshot_of_station,
+        "parameters": snapshot_of_parameters,
+    }
     assert expected_snapshot == snapshot_from_dataset
 
     # 2. Test `snapshot_raw` property

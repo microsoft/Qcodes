@@ -1,0 +1,1 @@
+Parameters registered in a qcodes Measurement are now snapshotted and stored in the resulting dataset under `dataset.snapshot["parameters"]`
