@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, ClassVar
 
 import qcodes.validators as vals
-from qcodes.parameters import Group, GroupParameter
+from qcodes.parameters import Group, GroupParameter, Parameter
 
 from .lakeshore_base import (
     LakeshoreBase,
@@ -202,6 +202,59 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
             f"{{units}}",
             get_cmd=f"INTYPE? {self._channel}",
         )
+
+        """
+        Temperature claibration curve parameters (READ-ONLY)
+        """
+        self.input_curve_number: Parameter = self.add_parameter(
+            "sensor_curve_number",
+            get_cmd=f"INCRV? {self._channel}",
+            get_parser=int,
+            label="Temperature calibration curve number",
+        )
+        self.input_curve_name: GroupParameter = self.add_parameter(
+            "input_curve_name",
+            label="Temperature calibration curve name",
+            parameter_class=GroupParameter,
+        )
+        self.input_curve_sn: GroupParameter = self.add_parameter(
+            "input_curve_sn",
+            label="Temperature calibration curve SN",
+            parameter_class=GroupParameter,
+        )
+        self.input_curve_format: GroupParameter = self.add_parameter(
+            "input_curve_format",
+            label="Temperature calibration curve format",
+            get_parser=int,
+            val_mapping={"mV/K": 1, "V/K": 2, "Ohms/K": 3, "log Ohms/K": 4},
+            parameter_class=GroupParameter,
+        )
+        self.input_curve_limit: GroupParameter = self.add_parameter(
+            "input_curve_limit",
+            get_parser=float,
+            label="Temperature calibration curve limit value",
+            parameter_class=GroupParameter,
+        )
+        self.input_curve_coefficient: GroupParameter = self.add_parameter(
+            "input_curve_coefficient",
+            get_parser=int,
+            label="Temperature calibration curve coefficient",
+            val_mapping={"negative": 1, "positive": 2},
+            parameter_class=GroupParameter,
+        )
+        self.output_group = Group(
+            [
+                self.input_curve_name,
+                self.input_curve_sn,
+                self.input_curve_format,
+                self.input_curve_limit,
+                self.input_curve_coefficient,
+
+            ],
+            get_cmd=f"CRVHDR? {self.input_curve_number()}",
+        )
+
+
 
 
 class LakeshoreModel336(LakeshoreBase):
