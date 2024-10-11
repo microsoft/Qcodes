@@ -1754,6 +1754,12 @@ def create_run(
             )
         else:
             formatted_name = None
+    log.info(
+        "Created run with guid: %s in database %s",
+        guid,
+        conn.path_to_dbfile,
+        extra={"qcodes_guid": guid, "path_to_db": conn.path_to_dbfile},
+    )
     return run_counter, run_id, formatted_name
 
 

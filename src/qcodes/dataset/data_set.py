@@ -1713,7 +1713,9 @@ def load_by_id(run_id: int, conn: ConnectionPlus | None = None) -> DataSetProtoc
     try:
         guid = get_guid_from_run_id(internal_conn, run_id)
         if guid is None:
-            raise ValueError(f"Run with run_id {run_id} does not exist in the database")
+            raise ValueError(
+                f"Run with run_id {run_id} does not exist in the database: {internal_conn.path_to_dbfile}"
+            )
         d = _get_datasetprotocol_from_guid(guid, internal_conn)
     finally:
         # dataset takes ownership of the connection but DataSetInMem does not
@@ -1810,7 +1812,9 @@ def load_by_counter(
 def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetProtocol:
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
-        raise NameError("No run with GUID: %s found in database.", guid)
+        raise NameError(
+            "No run with GUID: %s found in database: %s", guid, conn.path_to_dbfile
+        )
 
     if qcodes.config.dataset.load_from_exported_file:
         export_info = _get_datasetprotocol_export_info(run_id=run_id, conn=conn)
