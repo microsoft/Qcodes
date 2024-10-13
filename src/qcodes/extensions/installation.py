@@ -2,14 +2,17 @@
 easier."""
 
 import json
+import logging
 import os
 import sys
 
 from qcodes.station import SCHEMA_PATH, STATION_YAML_EXT, update_config_schema
 
+_LOG = logging.getLogger(__name__)
+
 
 def register_station_schema_with_vscode() -> None:
-    """This function registeres the qcodes station schema with vscode.
+    """This function registers the qcodes station schema with vscode.
 
     Run this function to add the user generated station schema to the list of
     associated schemas for the Red Hat YAML schema extension for vscode.
@@ -47,7 +50,13 @@ def register_station_schema_with_vscode() -> None:
             "set the settings manually."
         )
     with open(config_path, "r+") as f:
-        data = json.load(f)
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError:
+            _LOG.warning(
+                "Could not parse VSCode settings file. Check that the file is valid JSON e.g. does not contain comments."
+            )
+            return
     data.setdefault("yaml.schemas", {})[
         r"file:\\" + os.path.splitdrive(SCHEMA_PATH)[1]
     ] = STATION_YAML_EXT
