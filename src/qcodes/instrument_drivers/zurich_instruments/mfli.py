@@ -5,7 +5,7 @@
 
 
 try:
-    from zhinst.qcodes import MFLI
+    from zhinst.qcodes import MFLI  # type: ignore[import-not-found]
 except ImportError:
     raise ImportError(
         """

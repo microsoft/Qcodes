@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
 ]
 license = {text = "MIT"}
@@ -32,7 +33,7 @@ dependencies = [
     "numpy>=1.22.4",
     "packaging>=20.0",
     "pandas>=1.4.0",
-    "pyarrow>=11.0.0", # will become a requirement of pandas. Installing explicitly silences a warning
+    # "pyarrow>=11.0.0", # will become a requirement of pandas. Installing explicitly silences a warning
     "pyvisa>=1.11.0, <1.15.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.9.0",
@@ -94,7 +95,7 @@ test = [
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
     "qcodes_loop>=0.1.1",
-    "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
+    # "zhinst.qcodes>=0.5", # typecheck zhinst driver alias
     "libcst>=1.2.0", # refactor tests
     "jinja2>=3.1.3", # transitive dependency pin due to cve in earlier version
 ]
@@ -222,7 +223,9 @@ filterwarnings = [
     'ignore:pkg_resources is deprecated as an API:DeprecationWarning', # pyvisa-sim
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated and scheduled for removal in a future version:DeprecationWarning', # tqdm dateutil
-    'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning' # jupyter
+    'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
+    'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
+    'ignore:unclosed database in:ResourceWarning' # internal should be fixed
 ]
 
 [tool.ruff]
