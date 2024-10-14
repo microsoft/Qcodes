@@ -312,7 +312,9 @@ class Group:
                 f"parameters - {parameter_names} since it "
                 f"has no `get_cmd` defined."
             )
-        get_command = self._get_cmd if isinstance(self._get_cmd, str) else self._get_cmd()
+        get_command = (
+            self._get_cmd if isinstance(self._get_cmd, str) else self._get_cmd()
+        )
         ret = self.get_parser(self.instrument.ask(get_command))
         for name, p in list(self.parameters.items()):
             p.cache._set_from_raw_value(ret[name])
