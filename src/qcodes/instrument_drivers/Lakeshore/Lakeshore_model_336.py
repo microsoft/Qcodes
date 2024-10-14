@@ -264,6 +264,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         Temperature calibration curve coefficient
         for the current curve as selected by ``input_curve_number``
         """
+        self.input_curve_parameters_group = Group(
             [
                 self.input_curve_name,
                 self.input_curve_sn,
