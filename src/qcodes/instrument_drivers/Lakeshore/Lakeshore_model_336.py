@@ -272,7 +272,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
                 self.curve_limit,
                 self.curve_coefficient,
             ],
-            get_cmd=f"CRVHDR? {self.curve_number()}",
+            get_cmd=lambda: f"CRVHDR? {self.curve_number()}",
         )
 
 
