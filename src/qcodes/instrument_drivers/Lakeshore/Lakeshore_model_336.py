@@ -207,6 +207,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         self.input_curve_number: Parameter = self.add_parameter(
             "sensor_curve_number",
             get_cmd=f"INCRV? {self._channel}",
+            set_cmd=False,
             get_parser=int,
             label="Temperature calibration curve number",
         )
