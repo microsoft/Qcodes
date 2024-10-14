@@ -53,6 +53,17 @@ devices:
         setter:
           q: "range A,\"{}\""
 
+      sensor_curve_number_A:
+        default: 42
+        getter:
+          q: "INCRV? A"
+          r: "{}"
+
+      curve_data_query_for_curve_42:
+        getter:
+          q: "CRVHDR? 42"
+          r: "DT-042,01110042,2,342.0,1"
+
 
       temperature_B:
         default: 100.0
@@ -96,7 +107,16 @@ devices:
         setter:
           q: "range A,\"{}\""
 
+      sensor_curve_number_B:
+        default: 41
+        getter:
+          q: "INCRV? B"
+          r: "{}"
 
+      curve_data_query_for_curve_41:
+        getter:
+          q: "CRVHDR? 41"
+          r: "DT-041,01110041,2,341.0,1"
 
       temperature_C:
         default: 100.0
@@ -140,7 +160,16 @@ devices:
         setter:
           q: "range A,\"{}\""
 
+      sensor_curve_number_C:
+        default: 40
+        getter:
+          q: "INCRV? C"
+          r: "{}"
 
+      curve_data_query_for_curve_40:
+        getter:
+          q: "CRVHDR? 40"
+          r: "DT-040,01110040,2,340.0,1"
 
       temperature_D:
         default: 100.0
@@ -183,6 +212,17 @@ devices:
           r: "{}"
         setter:
           q: "range A,\"{}\""
+
+      sensor_curve_number_D:
+        default: 39
+        getter:
+          q: "INCRV? D"
+          r: "{}"
+
+      curve_data_query_for_curve_39:
+        getter:
+          q: "CRVHDR? 39"
+          r: "DT-039,01110039,2,339.0,1"
 
 
 resources:
