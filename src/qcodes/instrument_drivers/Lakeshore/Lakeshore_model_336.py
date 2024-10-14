@@ -204,8 +204,8 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
 
         # Parameters related to temperature calibration curve (CRVHDR)
-        self.input_curve_number: Parameter = self.add_parameter(
-            "sensor_curve_number",
+        self.curve_number: Parameter = self.add_parameter(
+            "curve_number",
             get_cmd=f"INCRV? {self._channel}",
             set_cmd=False,
             get_parser=int,
@@ -214,8 +214,8 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         """
         Temperature calibration curve number that is selected now
         """
-        self.input_curve_name: GroupParameter = self.add_parameter(
-            "input_curve_name",
+        self.curve_name: GroupParameter = self.add_parameter(
+            "curve_name",
             label="Temperature calibration curve name",
             parameter_class=GroupParameter,
         )
@@ -223,8 +223,8 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         Temperature calibration curve name
         for the current curve as selected by ``input_curve_number``
         """
-        self.input_curve_sn: GroupParameter = self.add_parameter(
-            "input_curve_sn",
+        self.curve_sn: GroupParameter = self.add_parameter(
+            "curve_sn",
             label="Temperature calibration curve SN",
             parameter_class=GroupParameter,
         )
@@ -232,8 +232,8 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         Temperature calibration curve SN
         for the current curve as selected by ``input_curve_number``
         """
-        self.input_curve_format: GroupParameter = self.add_parameter(
-            "input_curve_format",
+        self.curve_format: GroupParameter = self.add_parameter(
+            "curve_format",
             label="Temperature calibration curve format",
             get_parser=int,
             val_mapping={"mV/K": 1, "V/K": 2, "Ohms/K": 3, "log Ohms/K": 4},
@@ -243,8 +243,8 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         Temperature calibration curve format
         for the current curve as selected by ``input_curve_number``
         """
-        self.input_curve_limit: GroupParameter = self.add_parameter(
-            "input_curve_limit",
+        self.curve_limit: GroupParameter = self.add_parameter(
+            "curve_limit",
             get_parser=float,
             label="Temperature calibration curve limit value",
             parameter_class=GroupParameter,
@@ -253,8 +253,8 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         Temperature calibration curve limit value
         for the current curve as selected by ``input_curve_number``
         """
-        self.input_curve_coefficient: GroupParameter = self.add_parameter(
-            "input_curve_coefficient",
+        self.curve_coefficient: GroupParameter = self.add_parameter(
+            "curve_coefficient",
             get_parser=int,
             label="Temperature calibration curve coefficient",
             val_mapping={"negative": 1, "positive": 2},
@@ -264,16 +264,16 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         Temperature calibration curve coefficient
         for the current curve as selected by ``input_curve_number``
         """
-        self.input_curve_parameters_group = Group(
+        self.curve_parameters_group = Group(
             [
-                self.input_curve_name,
-                self.input_curve_sn,
-                self.input_curve_format,
-                self.input_curve_limit,
-                self.input_curve_coefficient,
+                self.curve_name,
+                self.curve_sn,
+                self.curve_format,
+                self.curve_limit,
+                self.curve_coefficient,
 
             ],
-            get_cmd=f"CRVHDR? {self.input_curve_number()}",
+            get_cmd=f"CRVHDR? {self.curve_number()}",
         )
 
 
