@@ -277,8 +277,6 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
 
 
-
-
 class LakeshoreModel336(LakeshoreBase):
     """
     QCoDeS driver for Lakeshore Model 336 Temperature Controller.
