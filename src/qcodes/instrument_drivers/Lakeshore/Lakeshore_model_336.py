@@ -221,7 +221,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
         """
         Temperature calibration curve name
-        for the current curve as selected by ``input_curve_number``
+        for the current curve as selected by ``curve_number``
         """
         self.curve_sn: GroupParameter = self.add_parameter(
             "curve_sn",
@@ -230,7 +230,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
         """
         Temperature calibration curve SN
-        for the current curve as selected by ``input_curve_number``
+        for the current curve as selected by ``curve_number``
         """
         self.curve_format: GroupParameter = self.add_parameter(
             "curve_format",
@@ -241,7 +241,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
         """
         Temperature calibration curve format
-        for the current curve as selected by ``input_curve_number``
+        for the current curve as selected by ``curve_number``
         """
         self.curve_limit: GroupParameter = self.add_parameter(
             "curve_limit",
@@ -251,7 +251,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
         """
         Temperature calibration curve limit value
-        for the current curve as selected by ``input_curve_number``
+        for the current curve as selected by ``curve_number``
         """
         self.curve_coefficient: GroupParameter = self.add_parameter(
             "curve_coefficient",
@@ -262,7 +262,7 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
         )
         """
         Temperature calibration curve coefficient
-        for the current curve as selected by ``input_curve_number``
+        for the current curve as selected by ``curve_number``
         """
         self.curve_parameters_group = Group(
             [
@@ -271,7 +271,6 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
                 self.curve_format,
                 self.curve_limit,
                 self.curve_coefficient,
-
             ],
             get_cmd=f"CRVHDR? {self.curve_number()}",
         )
