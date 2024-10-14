@@ -89,7 +89,7 @@ class MockVisaInstrument:
             self.visa_log.debug(f"Response: {response}")
             return response
         else:
-            super().ask_raw(cmd)  # type: ignore[misc]
+            return super().ask_raw(cmd)  # type: ignore[misc]
 
 
 def query(name: str) -> Callable[[Callable[P, T]], Callable[P, T]]:
