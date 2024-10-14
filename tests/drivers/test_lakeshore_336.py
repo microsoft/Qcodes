@@ -80,8 +80,8 @@ class LakeshoreModel336Mock(MockVisaInstrument, LakeshoreModel336):
                 auto_range_enabled=0,  # 'off',
                 range=0,
                 compensation_enabled=0,  # False,
-                units=1,
-            )  # 'kelvin')
+                units=1,  # 'kelvin'
+            )
             for i in self.channel_name_command.keys()
         }
 
@@ -257,6 +257,19 @@ def test_setpoint(lakeshore_336) -> None:
     for h in outputs:  # a.k.a. heaters
         h.setpoint(setpoint)
         assert h.setpoint() == setpoint
+
+
+def test_curve_parameters(lakeshore_336) -> None:
+    # The curve numbers are assigned in the simulation pyvisa sim
+    # YAML file for each sensor/channel, and properties of the
+    # curves also include curve number in them to help testing
+    for ch, curve_number in zip(lakeshore_336.channels, (42, 41, 40, 39)):
+        assert ch.curve_number() == curve_number
+        assert ch.curve_name().endswith(str(curve_number))
+        assert ch.curve_sn().endswith(str(curve_number))
+        assert ch.curve_format() == "V/K"
+        assert str(int(ch.curve_limit())).endswith(str(curve_number))
+        assert ch.curve_coefficient() == "negative"
 
 
 def test_select_range_limits(lakeshore_336) -> None:

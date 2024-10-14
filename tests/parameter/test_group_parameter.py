@@ -1,11 +1,14 @@
 import re
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from qcodes.instrument import Instrument
 from qcodes.parameters import Group, GroupParameter
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +26,7 @@ class Dummy(Instrument):
         initial_a: int | None = None,
         initial_b: int | None = None,
         scale_a: float | None = None,
-        get_cmd: str | None = "CMD?",
+        get_cmd: "str | Callable[[], str] | None" = "CMD?",
     ) -> None:
         super().__init__(name)
 
@@ -60,7 +63,9 @@ class Dummy(Instrument):
         self._a, self._b = (int(i) for i in result.groups())
 
     def ask(self, cmd: str) -> str:
-        assert cmd == self._get_cmd
+        assert self._get_cmd is not None
+        get_cmd = self._get_cmd if isinstance(self._get_cmd, str) else self._get_cmd()
+        assert cmd == get_cmd
         return ",".join(str(i) for i in [self._a, self._b])
 
 
@@ -70,6 +75,23 @@ def test_sanity() -> None:
     to the same group.
     """
     dummy = Dummy("dummy")
+
+    assert dummy.a() == 0
+    assert dummy.b() == 0
+
+    dummy.a(3)
+    dummy.b(6)
+
+    assert dummy.a() == 3
+    assert dummy.b() == 6
+
+    dummy.b(10)
+    assert dummy.a() == 3
+    assert dummy.b() == 10
+
+
+def test_get_cmd_being_a_callable_that_returns_a_string_works() -> None:
+    dummy = Dummy("dummy", get_cmd=lambda: "CMD?")
 
     assert dummy.a() == 0
     assert dummy.b() == 0

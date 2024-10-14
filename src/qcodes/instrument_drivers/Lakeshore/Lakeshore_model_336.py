@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, ClassVar
 
 import qcodes.validators as vals
-from qcodes.parameters import Group, GroupParameter
+from qcodes.parameters import Group, GroupParameter, Parameter
 
 from .lakeshore_base import (
     LakeshoreBase,
@@ -201,6 +201,78 @@ class LakeshoreModel336Channel(LakeshoreBaseSensorChannel):
             f"{{compensation_enabled}}, "
             f"{{units}}",
             get_cmd=f"INTYPE? {self._channel}",
+        )
+
+        # Parameters related to temperature calibration curve (CRVHDR)
+        self.curve_number: Parameter = self.add_parameter(
+            "curve_number",
+            get_cmd=f"INCRV? {self._channel}",
+            set_cmd=False,
+            get_parser=int,
+            label="Temperature calibration curve number",
+        )
+        """
+        Temperature calibration curve number that is selected now
+        """
+        self.curve_name: GroupParameter = self.add_parameter(
+            "curve_name",
+            label="Temperature calibration curve name",
+            parameter_class=GroupParameter,
+        )
+        """
+        Temperature calibration curve name
+        for the current curve as selected by ``curve_number``
+        """
+        self.curve_sn: GroupParameter = self.add_parameter(
+            "curve_sn",
+            label="Temperature calibration curve SN",
+            parameter_class=GroupParameter,
+        )
+        """
+        Temperature calibration curve SN
+        for the current curve as selected by ``curve_number``
+        """
+        self.curve_format: GroupParameter = self.add_parameter(
+            "curve_format",
+            label="Temperature calibration curve format",
+            get_parser=int,
+            val_mapping={"mV/K": 1, "V/K": 2, "Ohms/K": 3, "log Ohms/K": 4},
+            parameter_class=GroupParameter,
+        )
+        """
+        Temperature calibration curve format
+        for the current curve as selected by ``curve_number``
+        """
+        self.curve_limit: GroupParameter = self.add_parameter(
+            "curve_limit",
+            get_parser=float,
+            label="Temperature calibration curve limit value",
+            parameter_class=GroupParameter,
+        )
+        """
+        Temperature calibration curve limit value
+        for the current curve as selected by ``curve_number``
+        """
+        self.curve_coefficient: GroupParameter = self.add_parameter(
+            "curve_coefficient",
+            get_parser=int,
+            label="Temperature calibration curve coefficient",
+            val_mapping={"negative": 1, "positive": 2},
+            parameter_class=GroupParameter,
+        )
+        """
+        Temperature calibration curve coefficient
+        for the current curve as selected by ``curve_number``
+        """
+        self.curve_parameters_group = Group(
+            [
+                self.curve_name,
+                self.curve_sn,
+                self.curve_format,
+                self.curve_limit,
+                self.curve_coefficient,
+            ],
+            get_cmd=lambda: f"CRVHDR? {self.curve_number()}",
         )
 
 
