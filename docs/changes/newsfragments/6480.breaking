@@ -1,2 +1,0 @@
-The deprecated `qcodes.tests` module has been removed. Mock instruments can be found in `qcodes.instrument_drivers.mock_instruments` and
-DriverTestCase as `qcodes.extensions.DriverTestCase`.
