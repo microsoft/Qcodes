@@ -1,0 +1,376 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "interracial-mistress",
+   "metadata": {},
+   "source": [
+    "# Qcodes example with InstrumentGroup driver\n",
+    "\n",
+    "This notebooks explains how to use the `InstrumentGroup` driver.\n",
+    "\n",
+    "## About\n",
+    "The goal of the `InstrumentGroup` driver is to combine several instruments as submodules into one instrument. Typically, this is meant to be used with the `DelegateInstrument` driver. An example usage of this is to create an abstraction for devices on a chip.\n",
+    "\n",
+    "## Usage\n",
+    "The way it's used is mainly by specifying an entry in the station YAML. For instance, to create a Chip that has one or more Devices on it that point to different source parameters. The example below shows three devices, each of which is initialised in one of the supported ways. Device1 has only DelegateParameters, while device2 and device3 have both DelegateParameters and channels added. Device3 adds its channels using a custom channel wrapper class. "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "sapphire-quebec",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Overwriting example.yaml\n"
+     ]
+    }
+   ],
+   "source": [
+    "%%writefile example.yaml\n",
+    "\n",
+    "instruments:\n",
+    "  dac:\n",
+    "    type: qcodes.instrument_drivers.mock_instruments.MockDAC\n",
+    "    init:\n",
+    "      num_channels: 3\n",
+    "\n",
+    "  lockin1:\n",
+    "    type: qcodes.instrument_drivers.mock_instruments.MockLockin\n",
+    "\n",
+    "  lockin2:\n",
+    "    type: qcodes.instrument_drivers.mock_instruments.MockLockin\n",
+    "\n",
+    "  MockChip_123:\n",
+    "    type: qcodes.instrument.delegate.InstrumentGroup\n",
+    "    init:\n",
+    "      submodules_type: qcodes.instrument.delegate.DelegateInstrument\n",
+    "      submodules:\n",
+    "        device1:\n",
+    "          parameters:\n",
+    "            gate:\n",
+    "              - dac.ch01.voltage\n",
+    "            source:\n",
+    "              - lockin1.frequency\n",
+    "              - lockin1.amplitude\n",
+    "              - lockin1.phase\n",
+    "              - lockin1.time_constant\n",
+    "            drain:\n",
+    "              - lockin1.X\n",
+    "              - lockin1.Y\n",
+    "        device2:\n",
+    "          parameters:\n",
+    "            readout:\n",
+    "              - lockin1.phase\n",
+    "          channels:\n",
+    "            gate_1: dac.ch01\n",
+    "        device3:\n",
+    "          parameters:\n",
+    "            readout:\n",
+    "              - lockin1.phase\n",
+    "          channels:\n",
+    "            type: qcodes.instrument_drivers.mock_instruments.MockCustomChannel\n",
+    "            gate_1:\n",
+    "              channel: dac.ch02\n",
+    "              current_valid_range: [-0.5, 0]\n",
+    "            gate_2:\n",
+    "              channel: dac.ch03\n",
+    "              current_valid_range: [-1, 0]\n",
+    "\n",
+    "      set_initial_values_on_load: true\n",
+    "      initial_values:\n",
+    "        device1:\n",
+    "          gate.step: 5e-4\n",
+    "          gate.inter_delay: 12.5e-4\n",
+    "        device2:\n",
+    "          gate_1.voltage.post_delay: 0.01\n",
+    "        device3:\n",
+    "          gate_2.voltage.post_delay: 0.03"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "younger-newspaper",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from qcodes.station import Station"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "muslim-briefs",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "station = Station(config_file=\"example.yaml\")\n",
+    "lockin1 = station.load_lockin1()\n",
+    "lockin2 = station.load_lockin2()\n",
+    "dac = station.load_dac()\n",
+    "chip = station.load_MockChip_123(station=station)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "continent-penalty",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.0"
+      ]
+     },
+     "execution_count": 4,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "chip.device1.gate()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "lyric-interstate",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.0"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dac.ch01.voltage()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "classical-proposal",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1.0"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "chip.device1.gate(1.0)\n",
+    "chip.device1.gate()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "compound-project",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "1.0"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "dac.ch01.voltage()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "noble-stewart",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "source(frequency=125.0, amplitude=0.0, phase=0.0, time_constant=0.001)"
+      ]
+     },
+     "execution_count": 8,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "chip.device1.source()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "photographic-shaft",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "drain(X=0.001, Y=1e-05)"
+      ]
+     },
+     "execution_count": 9,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "chip.device1.drain()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e7fb9133",
+   "metadata": {},
+   "source": [
+    "Device with channels/gates:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "personalized-dining",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "<MockDACChannel: dac_ch01 of MockDAC: dac>"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "chip.device2.gate_1"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "39b22784",
+   "metadata": {},
+   "source": [
+    "Setting voltages to a channel/gate of device2:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "11675880",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1.0\n",
+      "-0.74\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(chip.device2.gate_1.voltage())\n",
+    "chip.device2.gate_1.voltage(-0.74)\n",
+    "print(chip.device2.gate_1.voltage())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "6ca23e9f",
+   "metadata": {},
+   "source": [
+    "Check initial values of device3, from which only gate_2.voltage.post_delay was set."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "70139d56",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "chip.device3.gate_1.voltage.post_delay"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "07835544",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.03"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "chip.device3.gate_2.voltage.post_delay"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.8"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
