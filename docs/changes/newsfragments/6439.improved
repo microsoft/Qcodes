@@ -1,5 +1,0 @@
-The deprecated support for enabling OpenCensus based telemetry has been removed.
-QCoDeS will now warn if you try to enable OpenCensus based telemetry in the config.
-Users are encouraged to roll out their own telemetry solution if they need it based
-on OpenTelemetry. This also means that the `qcodes[opencensus]` install target has been removed.
-The unused method `filter_out_telemetry_log_records` has been deprecated and will be removed in a future release.
