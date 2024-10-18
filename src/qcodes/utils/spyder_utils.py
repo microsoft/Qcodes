@@ -1,5 +1,7 @@
 import logging
 import os
+from packaging.version import Version
+
 
 _LOG = logging.getLogger(__name__)
 
@@ -11,39 +13,39 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
     store global attributes such as default station, monitor and list of
     instruments. This "feature" can be disabled by the
     gui. Unfortunately this cannot be disabled in a natural way
-    programmatically so in this hack we replace the global ``__umr__`` instance
-    with a new one containing the module we want to exclude. This will do
+    programmatically so in this hack we retrieve the UMR instance
+    and add the module we want to exclude. This will do
     nothing if Spyder is not found.
     TODO is there a better way to detect if we are in spyder?
     """
     if any("SPYDER" in name for name in os.environ):
-        sitecustomize_found = False
         try:
-            from spyder.utils.site import (  # pyright: ignore[reportMissingImports]
-                sitecustomize,
-            )
-        except ImportError:
-            pass
-        else:
-            sitecustomize_found = True
-        if sitecustomize_found is False:
-            try:
-                from spyder_kernels.customize import spydercustomize  # pyright: ignore
+            import spyder_kernels  # pyright: ignore
 
-                sitecustomize = spydercustomize
-            except ImportError:
-                pass
+            if Version(spyder_kernels.__version__) < Version("3.0.0"):
+                # In Spyder 4 and 5 UMR is a variable in module spydercustomize
+                try:
+                    from spyder_kernels.customize import spydercustomize  # pyright: ignore
+                except ImportError:
+                    return
+                else:
+                    umr = spydercustomize.__umr__
             else:
-                sitecustomize_found = True
+                # In Spyder 6 UMR is an attribute of the SpyderCodeRunner object.
+                # This object can be found via the magics manager
+                from IPython import get_ipython  # pyright: ignore
+                ipython = get_ipython()
+                runfile_method = ipython.magics_manager.magics['line']['runfile']
+                spyder_code_runner = runfile_method.__self__
+                umr = spyder_code_runner.umr
 
-        if sitecustomize_found is False:
-            return
+            excludednamelist = os.environ.get("SPY_UMR_NAMELIST", "").split(",")
+            if modulename not in excludednamelist:
+                _LOG.info(f"adding {modulename} to excluded modules")
+                excludednamelist.append(modulename)
+                if modulename not in umr.namelist:
+                    umr.namelist.append(modulename)
+                os.environ["SPY_UMR_NAMELIST"] = ",".join(excludednamelist)
+        except Exception as ex:
+            _LOG.warning(f"Failed to add {modulename} to UMR exclude list. {type(ex)}: {ex}")
 
-        excludednamelist = os.environ.get("SPY_UMR_NAMELIST", "").split(",")
-        if modulename not in excludednamelist:
-            _LOG.info(f"adding {modulename} to excluded modules")
-            excludednamelist.append(modulename)
-            sitecustomize.__umr__ = sitecustomize.UserModuleReloader(  # pyright: ignore[reportPossiblyUnboundVariable]
-                namelist=excludednamelist
-            )
-            os.environ["SPY_UMR_NAMELIST"] = ",".join(excludednamelist)
