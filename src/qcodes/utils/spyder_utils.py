@@ -35,7 +35,14 @@ def add_to_spyder_UMR_excludelist(modulename: str) -> None:
                 # This object can be found via the magics manager
                 from IPython import get_ipython  # pyright: ignore
                 ipython = get_ipython()
-                runfile_method = ipython.magics_manager.magics['line']['runfile']
+                if ipython is None:
+                    # no ipython environment
+                    return
+                try:
+                    runfile_method = ipython.magics_manager.magics['line']['runfile']
+                except KeyError:
+                    # no runfile magic
+                    return
                 spyder_code_runner = runfile_method.__self__
                 umr = spyder_code_runner.umr
 
