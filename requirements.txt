@@ -193,7 +193,7 @@ matplotlib-inline==0.1.7
     #   ipython
 mistune==3.0.2
     # via nbconvert
-mypy==1.12.0
+mypy==1.13.0
     # via qcodes (pyproject.toml)
 mypy-extensions==1.0.0
     # via mypy
