@@ -1,6 +1,10 @@
+import logging
+from typing import TYPE_CHECKING, Any
+
 import pytest
 
 import qcodes.validators as vals
+from qcodes.instrument import Instrument
 from qcodes.parameters import Function, Parameter, ParameterBase, ParamRawDataType
 
 from .conftest import (
@@ -9,6 +13,27 @@ from .conftest import (
     blank_instruments,
     named_instrument,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+_LOG = logging.getLogger(__name__)
+
+
+class LoggingInstrument(Instrument):
+    def ask(self, cmd: str) -> Any:
+        _LOG.info(f"Received ask str {cmd}")
+        return 1
+
+    def write(self, cmd: str) -> None:
+        _LOG.info(f"Received write str {cmd}")
+
+
+@pytest.fixture(name="logging_instrument")
+def _make_logging_instrument() -> "Generator[LoggingInstrument, None, None]":
+    inst = LoggingInstrument("logging_instr")
+    yield inst
+    inst.close()
 
 
 def test_no_name() -> None:
@@ -265,3 +290,43 @@ def test_set_cmd_str_no_instrument_raises() -> None:
         TypeError, match="Cannot use a str set_cmd without binding to an instrument."
     ):
         Parameter(name="test", instrument=None, set_cmd="set_me")
+
+
+def test_str_get_set(
+    logging_instrument: LoggingInstrument, caplog: pytest.LogCaptureFixture
+) -> None:
+    logging_instrument.add_parameter(
+        "my_param", get_cmd="my_param?", set_cmd="my_param{}"
+    )
+
+    caplog.clear()
+
+    with caplog.at_level(logging.INFO):
+        logging_instrument.my_param.get()
+
+    assert caplog.records[0].message == "Received ask str my_param?"
+
+    caplog.clear()
+
+    with caplog.at_level(logging.INFO):
+        logging_instrument.my_param.set(100)
+
+    assert caplog.records[0].message == "Received write str my_param100"
+
+
+def test_str_set_multi_arg(
+    logging_instrument: LoggingInstrument, caplog: pytest.LogCaptureFixture
+) -> None:
+    logging_instrument.add_parameter("my_param", get_cmd="my_param?", set_cmd="{}{}")
+
+    with caplog.at_level(logging.INFO):
+        logging_instrument.my_param.get()
+
+    assert caplog.records[0].message == "Received ask str my_param?"
+
+    caplog.clear()
+
+    with caplog.at_level(logging.INFO):
+        logging_instrument.my_param.set("this_command", 2344)
+
+    assert caplog.records[0].message == "Received write str this_command2344"
