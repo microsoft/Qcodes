@@ -11,7 +11,7 @@ attrs==24.2.0
     #   hypothesis
     #   jsonschema
     #   referencing
-autodocsumm==0.2.13
+autodocsumm==0.2.14
     # via qcodes (pyproject.toml)
 babel==2.16.0
     # via sphinx
