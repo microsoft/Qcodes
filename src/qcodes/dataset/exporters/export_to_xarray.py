@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import logging
 import warnings
+from importlib.metadata import version
 from math import prod
 from typing import TYPE_CHECKING, Literal, cast
+
+from packaging import version as pversion
 
 from qcodes.dataset.linked_datasets.links import links_to_str
 
@@ -260,7 +263,16 @@ def xarray_to_h5netcdf_with_complex_numbers(
         internal_ds.data_vars[data_var].dtype.kind for data_var in internal_ds.data_vars
     ]
     coord_kinds = [internal_ds.coords[coord].dtype.kind for coord in internal_ds.coords]
-    allow_invalid_netcdf = "c" in data_var_kinds or "c" in coord_kinds
+    dataset_has_complex_vals = "c" in data_var_kinds or "c" in coord_kinds
+    # these are the versions of xarray / h5netcdf respectively required to support complex
+    # values without fallback to invalid features. Once these are the min versions supported
+    # we can drop the fallback code here including the warning suppression.
+    xarry_too_old = pversion.Version(version("xarray")) < pversion.Version("2024.10.0")
+    h5netcdf_too_old = pversion.Version(version("h5netcdf")) < pversion.Version("1.4.0")
+
+    allow_invalid_netcdf = dataset_has_complex_vals and (
+        xarry_too_old or h5netcdf_too_old
+    )
 
     with warnings.catch_warnings():
         # see http://xarray.pydata.org/en/stable/howdoi.html
