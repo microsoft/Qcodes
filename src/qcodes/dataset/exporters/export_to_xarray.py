@@ -256,37 +256,20 @@ def xarray_to_h5netcdf_with_complex_numbers(
     else:
         internal_ds = xarray_dataset
 
-    data_var_kinds = [
-        internal_ds.data_vars[data_var].dtype.kind for data_var in internal_ds.data_vars
-    ]
-    coord_kinds = [internal_ds.coords[coord].dtype.kind for coord in internal_ds.coords]
-    allow_invalid_netcdf = "c" in data_var_kinds or "c" in coord_kinds
+    maybe_write_job = internal_ds.to_netcdf(
+        path=file_path,
+        engine="h5netcdf",
+        compute=compute,
+    )
+    if not compute and maybe_write_job is not None:
+        # Dask and therefor tqdm.dask is slow to
+        # import and only used here so defer the import
+        # to when required.
+        from tqdm.dask import TqdmCallback
 
-    with warnings.catch_warnings():
-        # see http://xarray.pydata.org/en/stable/howdoi.html
-        # for how to export complex numbers
-        if allow_invalid_netcdf:
-            warnings.filterwarnings(
-                "ignore",
-                module="h5netcdf",
-                message="You are writing invalid netcdf features",
-                category=UserWarning,
+        with TqdmCallback(desc="Combining files"):
+            _LOG.info(
+                "Writing netcdf file using Dask delayed writer.",
+                extra={"file_name": file_path},
             )
-        maybe_write_job = internal_ds.to_netcdf(
-            path=file_path,
-            engine="h5netcdf",
-            invalid_netcdf=allow_invalid_netcdf,
-            compute=compute,
-        )
-        if not compute and maybe_write_job is not None:
-            # Dask and therefor tqdm.dask is slow to
-            # import and only used here so defer the import
-            # to when required.
-            from tqdm.dask import TqdmCallback
-
-            with TqdmCallback(desc="Combining files"):
-                _LOG.info(
-                    "Writing netcdf file using Dask delayed writer.",
-                    extra={"file_name": file_path},
-                )
-                maybe_write_job.compute()
+            maybe_write_job.compute()
