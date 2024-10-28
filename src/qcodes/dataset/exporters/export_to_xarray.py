@@ -299,6 +299,6 @@ def xarray_to_h5netcdf_with_complex_numbers(
             with TqdmCallback(desc="Combining files"):
                 _LOG.info(
                     "Writing netcdf file using Dask delayed writer.",
-                    extra={"file_name": file_path},
+                    extra={"file_name": str(file_path)},
                 )
                 maybe_write_job.compute()
