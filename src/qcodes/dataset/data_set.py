@@ -1395,13 +1395,13 @@ class DataSet(BaseDataSet):
                     res_list += new_res
             elif param.type == "numeric":
                 if value.shape:
-                    res_list += [{param.name: number} for number in value]
+                    res_list += [{param.name: number} for number in value.flatten()]
                 else:
                     new_res = [{param.name: float(value)}]
                     res_list += new_res
             elif param.type == "complex":
                 if value.shape:
-                    res_list += [{param.name: number} for number in value]
+                    res_list += [{param.name: number} for number in value.flatten()]
                 else:
                     new_res = [{param.name: complex(value)}]
                     res_list += new_res
