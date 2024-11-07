@@ -432,7 +432,7 @@ towncrier==23.11.0
     # via
     #   qcodes (pyproject.toml)
     #   sphinxcontrib-towncrier
-tqdm==4.66.6
+tqdm==4.67.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
