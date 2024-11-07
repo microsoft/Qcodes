@@ -9,12 +9,12 @@ from qcodes.extensions.infer import (
     InferAttrs,
     InferError,
     _merge_user_and_class_attrs,
+    get_chain_links_of_type,
     get_parameter_chain,
     get_root_parameter,
+    get_sole_chain_link_of_type,
     infer_channel,
     infer_instrument,
-    get_chain_links_of_type,
-    get_sole_chain_link_of_type,
 )
 from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
 from qcodes.parameters import DelegateParameter, ManualParameter, Parameter
