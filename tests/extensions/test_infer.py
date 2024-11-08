@@ -302,9 +302,15 @@ def test_sole_chain_link_of_type():
     user_link_2 = UserLinkingParameter("user_link_2", linked_parameter=delegate_link)
 
     InferAttrs.add("linked_parameter")
-    user_links = get_chain_links_of_type(UserLinkingParameter, delegate_link)
-    assert set(user_links) == set([user_link])
+    sole_user_link = get_sole_chain_link_of_type(UserLinkingParameter, delegate_link)
+    assert sole_user_link == user_link
 
     with pytest.raises(ValueError) as exc_info:
-        user_links = get_sole_chain_link_of_type(UserLinkingParameter, user_link_2)
+        _ = get_sole_chain_link_of_type(UserLinkingParameter, user_link_2)
     assert "Expected only a single chain link of type" in str(exc_info.value)
+
+    with pytest.raises(ValueError) as exc_info:
+        _ = get_sole_chain_link_of_type(
+            (UserLinkingParameter, DelegateParameter), user_link_2
+        )
+    assert "Expected only a single chain link of types" in str(exc_info.value)
