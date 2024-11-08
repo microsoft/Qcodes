@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, TypeVar, cast
 
 from qcodes.instrument import Instrument, InstrumentBase, InstrumentModule
-from qcodes.parameters import DelegateParameter, Parameter
+from qcodes.parameters import DelegateParameter, Parameter, ParameterBase
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
 DOES_NOT_EXIST = "Does not exist"
+
+C = TypeVar("C", bound=ParameterBase)
 
 
 class InferError(AttributeError): ...
@@ -220,3 +222,34 @@ def _merge_user_and_class_attrs(
         return set.union(set((alt_source_attrs,)), set(InferAttrs.known_attrs()))
     else:
         return set.union(set(alt_source_attrs), set(InferAttrs.known_attrs()))
+
+
+def get_chain_links_of_type(
+    link_param_type: type[C] | tuple[type[C], ...], parameter: Parameter
+) -> tuple[C, ...]:
+    """Gets all parameters in a chain of linked parameters that match a given type"""
+    chain_links: list[C] = [
+        cast(C, param)
+        for param in get_parameter_chain(parameter)
+        if isinstance(param, link_param_type)
+    ]
+    return tuple(chain_links)
+
+
+def get_sole_chain_link_of_type(
+    link_param_type: type[C] | tuple[type[C], ...], parameter: Parameter
+) -> C:
+    """Gets the one parameter in a chain of linked parameters that matches a given type"""
+
+    chain_links = get_chain_links_of_type(
+        link_param_type=link_param_type, parameter=parameter
+    )
+    if len(chain_links) != 1:
+        if isinstance(link_param_type, type):
+            error_msg_1 = f"Expected only a single chain link of type {link_param_type.__name__} but found {len(chain_links)}: \n"
+        elif isinstance(link_param_type, tuple):
+            type_strs = [link_type.__name__ for link_type in link_param_type]
+            error_msg_1 = f"Expected only a single chain link of types {type_strs} but found {len(chain_links)}: \n"
+
+        raise ValueError(error_msg_1 + f"{[link.name for link in chain_links]}")
+    return chain_links[0]

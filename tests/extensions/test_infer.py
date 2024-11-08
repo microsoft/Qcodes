@@ -9,8 +9,10 @@ from qcodes.extensions.infer import (
     InferAttrs,
     InferError,
     _merge_user_and_class_attrs,
+    get_chain_links_of_type,
     get_parameter_chain,
     get_root_parameter,
+    get_sole_chain_link_of_type,
     infer_channel,
     infer_instrument,
 )
@@ -280,3 +282,35 @@ def test_get_root_parameter_with_loops(good_inst_delegates):
     with pytest.raises(InferError) as exc_info:
         get_root_parameter(good_inst_del_2, "linked_parameter")
     assert "generated a loop of linking parameters" in str(exc_info.value)
+
+
+def test_chain_links_of_type():
+    root_param = ManualParameter("root", initial_value=0)
+    user_link = UserLinkingParameter("user_link", linked_parameter=root_param)
+    delegate_link = DelegateParameter("delegate_link", source=user_link)
+    user_link_2 = UserLinkingParameter("user_link_2", linked_parameter=delegate_link)
+
+    InferAttrs.add("linked_parameter")
+    user_links = get_chain_links_of_type(UserLinkingParameter, user_link_2)
+    assert set(user_links) == set([user_link, user_link_2])
+
+
+def test_sole_chain_link_of_type():
+    root_param = ManualParameter("root", initial_value=0)
+    user_link = UserLinkingParameter("user_link", linked_parameter=root_param)
+    delegate_link = DelegateParameter("delegate_link", source=user_link)
+    user_link_2 = UserLinkingParameter("user_link_2", linked_parameter=delegate_link)
+
+    InferAttrs.add("linked_parameter")
+    sole_user_link = get_sole_chain_link_of_type(UserLinkingParameter, delegate_link)
+    assert sole_user_link == user_link
+
+    with pytest.raises(ValueError) as exc_info:
+        _ = get_sole_chain_link_of_type(UserLinkingParameter, user_link_2)
+    assert "Expected only a single chain link of type" in str(exc_info.value)
+
+    with pytest.raises(ValueError) as exc_info:
+        _ = get_sole_chain_link_of_type(
+            (UserLinkingParameter, DelegateParameter), user_link_2
+        )
+    assert "Expected only a single chain link of types" in str(exc_info.value)
