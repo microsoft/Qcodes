@@ -265,7 +265,7 @@ def get_instrument_from_chain(
     param_chain = get_parameter_chain(parameter)
     return tuple(
         [
-            param.instrument
+            cast(TInstrument, param.instrument)
             for param in param_chain
             if isinstance(param.instrument, instrument_type)
         ]

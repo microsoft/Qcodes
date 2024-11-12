@@ -352,9 +352,7 @@ def test_get_instrument_from_chain(
     assert set(instruments) == set([inst, inst2])
 
 
-def test_get_sole_instrument_from_chain(
-    instrument_fixture2, multi_inst_chain
-):
+def test_get_sole_instrument_from_chain(instrument_fixture2, multi_inst_chain):
     inst2 = instrument_fixture2
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = multi_inst_chain
 
