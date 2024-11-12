@@ -108,9 +108,20 @@ def make_good_delegate_parameters(instrument_fixture):
 
 
 @pytest.fixture(name="multi_inst_chain")
-def make_multi_instrument_chain(instrument_fixture2, good_inst_delegates):
-    good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
-    good_inst_del_2.instrument = instrument_fixture2
+def make_multi_instrument_chain(instrument_fixture, instrument_fixture2):
+    inst = instrument_fixture
+    inst2 = instrument_fixture2
+    good_inst_del_1 = DelegateParameter(
+        "good_inst_del_1", source=inst.good_inst_parameter
+    )
+    good_inst_del_2 = DelegateParameter(
+        "good_inst_del_2",
+        source=good_inst_del_1,
+        instrument=inst2,
+    )
+    good_inst_del_3 = UserLinkingParameter(
+        "good_inst_del_3", linked_parameter=good_inst_del_2
+    )
     return good_inst_del_1, good_inst_del_2, good_inst_del_3
 
 
