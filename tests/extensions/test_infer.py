@@ -10,9 +10,11 @@ from qcodes.extensions.infer import (
     InferError,
     _merge_user_and_class_attrs,
     get_chain_links_of_type,
+    get_instrument_from_chain,
     get_parameter_chain,
     get_root_parameter,
     get_sole_chain_link_of_type,
+    get_sole_instrument_from_chain,
     infer_channel,
     infer_instrument,
 )
@@ -37,6 +39,11 @@ class DummyInstrument(Instrument):
         )
         self.bad_inst_parameter = ManualParameter("bad_inst_parameter")
         self.module = DummyModule(name="module", parent=self)
+
+
+class DummyInstrument2(DummyInstrument):
+    def __init__(self, name: str):
+        super().__init__(name=name)
 
 
 class DummyDelegateInstrument(InstrumentBase):
@@ -77,6 +84,16 @@ def make_instrument_fixture():
         inst.close()
 
 
+@pytest.fixture(name="instrument_fixture2")
+def make_instrument_fixture2():
+    inst = DummyInstrument2("dummy_instrument2")
+    InferAttrs.clear()
+    try:
+        yield inst
+    finally:
+        inst.close()
+
+
 @pytest.fixture(name="good_inst_delegates")
 def make_good_delegate_parameters(instrument_fixture):
     inst = instrument_fixture
@@ -87,6 +104,13 @@ def make_good_delegate_parameters(instrument_fixture):
     good_inst_del_3 = UserLinkingParameter(
         "good_inst_del_3", linked_parameter=good_inst_del_2
     )
+    return good_inst_del_1, good_inst_del_2, good_inst_del_3
+
+
+@pytest.fixture(name="multi_inst_chain")
+def make_multi_instrument_chain(instrument_fixture2, good_inst_delegates):
+    good_inst_del_1, good_inst_del_2, good_inst_del_3 = good_inst_delegates
+    good_inst_del_2.instrument = instrument_fixture2
     return good_inst_del_1, good_inst_del_2, good_inst_del_3
 
 
@@ -314,3 +338,36 @@ def test_sole_chain_link_of_type():
             (UserLinkingParameter, DelegateParameter), user_link_2
         )
     assert "Expected only a single chain link of types" in str(exc_info.value)
+
+
+def test_get_instrument_from_chain(
+    instrument_fixture, instrument_fixture2, multi_inst_chain
+):
+    inst = instrument_fixture
+    inst2 = instrument_fixture2
+    good_inst_del_1, good_inst_del_2, good_inst_del_3 = multi_inst_chain
+
+    InferAttrs.add("linked_parameter")
+    instruments = get_instrument_from_chain(DummyInstrument, good_inst_del_3)
+    assert set(instruments) == set([inst, inst2])
+
+
+def test_get_sole_instrument_from_chain(
+    instrument_fixture2, multi_inst_chain
+):
+    inst2 = instrument_fixture2
+    good_inst_del_1, good_inst_del_2, good_inst_del_3 = multi_inst_chain
+
+    InferAttrs.add("linked_parameter")
+    sole_instrument = get_sole_instrument_from_chain(DummyInstrument2, good_inst_del_3)
+    assert sole_instrument == inst2
+
+    with pytest.raises(ValueError) as exc_info:
+        _ = get_sole_instrument_from_chain(DummyInstrument, good_inst_del_3)
+    assert "Expected only a single instrument of type" in str(exc_info.value)
+
+    with pytest.raises(ValueError) as exc_info:
+        _ = get_sole_instrument_from_chain(
+            (DummyInstrument, DummyInstrument2), good_inst_del_3
+        )
+    assert "Expected only a single instrument of types" in str(exc_info.value)

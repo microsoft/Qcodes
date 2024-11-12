@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 DOES_NOT_EXIST = "Does not exist"
 
 C = TypeVar("C", bound=ParameterBase)
+TInstrument = TypeVar("TInstrument", bound=InstrumentBase)
 
 
 class InferError(AttributeError): ...
@@ -253,3 +254,38 @@ def get_sole_chain_link_of_type(
 
         raise ValueError(error_msg_1 + f"{[link.name for link in chain_links]}")
     return chain_links[0]
+
+
+def get_instrument_from_chain(
+    instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
+    parameter: Parameter,
+) -> tuple[TInstrument, ...]:
+    """Gets all instruments in a chain of linked parameters that match a given type"""
+
+    param_chain = get_parameter_chain(parameter)
+    return tuple(
+        [
+            param.instrument
+            for param in param_chain
+            if isinstance(param.instrument, instrument_type)
+        ]
+    )
+
+
+def get_sole_instrument_from_chain(
+    instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
+    parameter: Parameter,
+) -> TInstrument:
+    """Gets the one instruments in a chain of linked parameters that match a given type"""
+    instruments = get_instrument_from_chain(
+        instrument_type=instrument_type, parameter=parameter
+    )
+    if len(instruments) != 1:
+        if isinstance(instrument_type, type):
+            error_msg_1 = f"Expected only a single instrument of type {instrument_type.__name__} but found {len(instruments)}: \n"
+        elif isinstance(instrument_type, tuple):
+            type_strs = [instr_type.__name__ for instr_type in instrument_type]
+            error_msg_1 = f"Expected only a single instrument of types {type_strs} but found {len(instruments)}: \n"
+
+        raise ValueError(error_msg_1 + f"{[instr.name for instr in instruments]}")
+    return instruments[0]
