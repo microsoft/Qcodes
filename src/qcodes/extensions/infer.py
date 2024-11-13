@@ -287,5 +287,5 @@ def get_sole_instrument_from_chain(
             type_strs = [instr_type.__name__ for instr_type in instrument_type]
             error_msg_1 = f"Expected only a single instrument of types {type_strs} but found {len(instruments)}: \n"
 
-        raise ValueError(error_msg_1 + f"{[instr.name for instr in instruments]}")
+        raise ValueError(f"{error_msg_1} {[instr.name for instr in instruments]}")
     return instruments[0]
