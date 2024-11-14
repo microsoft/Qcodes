@@ -256,11 +256,11 @@ def get_sole_chain_link_of_type(
     return chain_links[0]
 
 
-def get_instrument_from_chain(
+def get_parent_instruments_from_chain_of_type(
     instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
     parameter: Parameter,
 ) -> tuple[TInstrument, ...]:
-    """Gets all instruments in a chain of linked parameters that match a given type"""
+    """Gets all parent instruments in a chain of linked parameters that match a given type"""
 
     param_chain = get_parameter_chain(parameter)
     return tuple(
@@ -272,12 +272,12 @@ def get_instrument_from_chain(
     )
 
 
-def get_sole_instrument_from_chain(
+def get_sole_parent_instrument_from_chain_of_type(
     instrument_type: type[TInstrument] | tuple[type[TInstrument], ...],
     parameter: Parameter,
 ) -> TInstrument:
-    """Gets the one instruments in a chain of linked parameters that match a given type"""
-    instruments = get_instrument_from_chain(
+    """Gets the one parent instruments in a chain of linked parameters that match a given type"""
+    instruments = get_parent_instruments_from_chain_of_type(
         instrument_type=instrument_type, parameter=parameter
     )
     if len(instruments) != 1:

@@ -10,11 +10,11 @@ from qcodes.extensions.infer import (
     InferError,
     _merge_user_and_class_attrs,
     get_chain_links_of_type,
-    get_instrument_from_chain,
     get_parameter_chain,
+    get_parent_instruments_from_chain_of_type,
     get_root_parameter,
     get_sole_chain_link_of_type,
-    get_sole_instrument_from_chain,
+    get_sole_parent_instrument_from_chain_of_type,
     infer_channel,
     infer_instrument,
 )
@@ -359,7 +359,9 @@ def test_get_instrument_from_chain(
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = multi_inst_chain
 
     InferAttrs.add("linked_parameter")
-    instruments = get_instrument_from_chain(DummyInstrument, good_inst_del_3)
+    instruments = get_parent_instruments_from_chain_of_type(
+        DummyInstrument, good_inst_del_3
+    )
     assert set(instruments) == set([inst, inst2])
 
 
@@ -368,15 +370,19 @@ def test_get_sole_instrument_from_chain(instrument_fixture2, multi_inst_chain):
     good_inst_del_1, good_inst_del_2, good_inst_del_3 = multi_inst_chain
 
     InferAttrs.add("linked_parameter")
-    sole_instrument = get_sole_instrument_from_chain(DummyInstrument2, good_inst_del_3)
+    sole_instrument = get_sole_parent_instrument_from_chain_of_type(
+        DummyInstrument2, good_inst_del_3
+    )
     assert sole_instrument == inst2
 
     with pytest.raises(ValueError) as exc_info:
-        _ = get_sole_instrument_from_chain(DummyInstrument, good_inst_del_3)
+        _ = get_sole_parent_instrument_from_chain_of_type(
+            DummyInstrument, good_inst_del_3
+        )
     assert "Expected only a single instrument of type" in str(exc_info.value)
 
     with pytest.raises(ValueError) as exc_info:
-        _ = get_sole_instrument_from_chain(
+        _ = get_sole_parent_instrument_from_chain_of_type(
             (DummyInstrument, DummyInstrument2), good_inst_del_3
         )
     assert "Expected only a single instrument of types" in str(exc_info.value)
