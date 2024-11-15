@@ -63,10 +63,10 @@ file = "README.rst"
 content-type = "text/x-rst"
 
 [project.urls]
-Homepage = "https://github.com/QCoDeS/Qcodes"
+Homepage = "https://github.com/microsoft/Qcodes"
 Documentation = "https://microsoft.github.io/Qcodes/"
-Source = "https://github.com/qcodes/qcodes"
-Tracker = "https://github.com/QCoDeS/Qcodes/issues"
+Source = "https://github.com/microsoft/qcodes"
+Tracker = "https://github.com/microsoft/Qcodes/issues"
 Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
