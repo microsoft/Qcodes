@@ -70,7 +70,7 @@ deepdiff==8.0.1
     # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
-deprecated==1.2.14
+deprecated==1.2.15
     # via opentelemetry-api
 docutils==0.21.2
     # via
