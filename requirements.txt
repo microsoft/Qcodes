@@ -50,15 +50,15 @@ comm==0.2.2
     # via
     #   ipykernel
     #   ipywidgets
-contourpy==1.3.0
+contourpy==1.3.1
     # via matplotlib
-coverage==7.6.4
+coverage==7.6.7
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2024.11.1
+dask==2024.11.2
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -70,7 +70,7 @@ deepdiff==8.0.1
     # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
-deprecated==1.2.14
+deprecated==1.2.15
     # via opentelemetry-api
 docutils==0.21.2
     # via
@@ -83,13 +83,13 @@ executing==2.1.0
     # via stack-data
 fastjsonschema==2.20.0
     # via nbformat
-fonttools==4.54.1
+fonttools==4.55.0
     # via matplotlib
 fsspec==2024.10.0
     # via dask
 furo==2024.8.6
     # via qcodes (pyproject.toml)
-h5netcdf==1.4.0
+h5netcdf==1.4.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -102,7 +102,7 @@ h5py==3.12.1
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.118.7
+hypothesis==6.119.3
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -363,7 +363,7 @@ schema==0.7.7
     # via broadbean
 scipy==1.14.1
     # via qcodes (pyproject.toml)
-setuptools==75.4.0
+setuptools==75.5.0
     # via incremental
 six==1.16.0
     # via
@@ -457,7 +457,7 @@ types-pywin32==308.0.0.20241029
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20241016
     # via qcodes (pyproject.toml)
-types-setuptools==75.3.0.20241112
+types-setuptools==75.5.0.20241116
     # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20240106
     # via qcodes (pyproject.toml)
@@ -496,7 +496,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websockets==14.0
+websockets==14.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -517,7 +517,7 @@ zhinst-core==24.10.64896
     # via
     #   zhinst-toolkit
     #   zhinst-utils
-zhinst-qcodes==0.5.4
+zhinst-qcodes==0.5.5
     # via qcodes (pyproject.toml)
 zhinst-timing-models==24.10.64896
     # via zhinst-utils
