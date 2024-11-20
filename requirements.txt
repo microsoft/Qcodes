@@ -230,7 +230,7 @@ numpy==2.1.3
     #   zhinst-timing-models
     #   zhinst-toolkit
     #   zhinst-utils
-opentelemetry-api==1.28.1
+opentelemetry-api==1.28.2
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
