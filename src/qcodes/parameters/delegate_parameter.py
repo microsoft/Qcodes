@@ -214,12 +214,8 @@ class DelegateParameter(Parameter):
 
     def _set_properties_from_source(self, source: Parameter | None) -> None:
         if source is None:
-            self._gettable = False
-            self._settable = False
             self._snapshot_value = False
         else:
-            self._gettable = source.gettable
-            self._settable = source.settable
             self._snapshot_value = source._snapshot_value
 
         for attr, attr_props in self._attr_inherit.items():
@@ -228,6 +224,18 @@ class DelegateParameter(Parameter):
                     source, attr, attr_props["value_when_without_source"]
                 )
                 setattr(self, attr, attr_val)
+
+    @property
+    def gettable(self) -> bool:
+        if self.source is None:
+            return False
+        return self.source.gettable
+
+    @property
+    def settable(self) -> bool:
+        if self.source is None:
+            return False
+        return self.source.settable
 
     def get_raw(self) -> Any:
         if self.source is None:
