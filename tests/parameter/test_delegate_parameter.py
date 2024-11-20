@@ -624,3 +624,36 @@ def test_value_validation_with_offset_and_scale() -> None:
         delegate_param.validate(1)  # raw_value = 100
     with pytest.raises(ValueError):
         delegate_param.set(1)
+
+
+def test_delegate_of_delegate_updates_settable_gettable():
+    gettable_settable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+    not_gettable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=False, vals=vals.Numbers(-5, 5)
+    )
+    not_settable_source_param = Parameter(
+        "source", set_cmd=False, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+    delegate_param_inner = DelegateParameter(
+        "delegate_inner", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer = DelegateParameter(
+        "delegate_outer", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer.source = delegate_param_inner
+    delegate_param_inner.source = gettable_settable_source_param
+
+    assert delegate_param_outer.gettable
+    assert delegate_param_outer.settable
+
+    delegate_param_inner.source = not_gettable_source_param
+
+    assert not delegate_param_outer.gettable
+    assert delegate_param_outer.settable
+
+    delegate_param_inner.source = not_settable_source_param
+
+    assert delegate_param_outer.gettable
+    assert not delegate_param_outer.settable
