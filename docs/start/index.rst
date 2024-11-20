@@ -248,6 +248,16 @@ or jupyter lab:
 
     jupyter lab
 
+
+Note that Spyder ships with functionality to automatically reload modules that are installed
+editable. This functionality called
+`User Module Reloader <https://docs.spyder-ide.org/current/panes/ipythonconsole.html#reload-changed-modules>`__
+is known to not work well with QCoDeS. If you install QCoDeS editable (with -e flag)
+we strongly recommend users to exclude QCoDeS from UMR. QCoDeS used to attempt to automatically
+disable this feature. However, as `Spyder does not provide a public API for doing this <https://github.com/spyder-ide/spyder/issues/2451>`__
+this relied on a private API in Spyder and broke with the last Spyder release.
+If at some point this becomes possible to do with a public API QCoDeS may again disable this automatically.
+
 For other options from the terminal you can activate the QCoDeS in that terminal
 then start any other application, such as *IPython* or
 just plain old *Python*.
