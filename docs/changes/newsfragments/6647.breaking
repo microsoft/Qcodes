@@ -1,0 +1,5 @@
+QCoDeS no longer attempts to automatically disable Sypders User module reloader (UMR).
+The code was no longer working correctly with the latest version of Spyder and is not
+maintainable since Spyder does not have a public api to disable UMR. If you use
+QCoDeS from an editable install it is strongly recommended to disable UMR for QCoDeS.
+See :ref:`gettingstarted` for more details.
