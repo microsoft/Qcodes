@@ -188,6 +188,12 @@ class DelegateParameter(Parameter):
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
         super().__init__(name, *args, **kwargs)
+
+        # Hack While we inherit the settable status from the parent parameter
+        # we do allow param.set_to to temporary override _settable in a
+        # context. Here _settable should always be true except when set_to
+        # i.e. _SetParamContext overrides it
+        self._settable = True
         # explicitly set the source properties as
         # init will overwrite the ones set when assigning source
         self._set_properties_from_source(source)
@@ -233,7 +239,7 @@ class DelegateParameter(Parameter):
 
     @property
     def settable(self) -> bool:
-        if self.source is None:
+        if self._settable is False or self.source is None:
             return False
         return self.source.settable
 

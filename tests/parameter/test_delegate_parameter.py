@@ -657,3 +657,31 @@ def test_delegate_of_delegate_updates_settable_gettable():
 
     assert delegate_param_outer.gettable
     assert not delegate_param_outer.settable
+
+
+def test_delegate_parameter_context() -> None:
+    gettable_settable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+
+    delegate_param = DelegateParameter(
+        "delegate_outer", source=None, vals=vals.Numbers(-10, 10)
+    )
+
+    delegate_param.source = gettable_settable_source_param
+
+    delegate_param(2)
+    assert delegate_param() == 2
+
+    with delegate_param.set_to(3):
+        assert delegate_param() == 3
+        with pytest.raises(NotImplementedError):
+            delegate_param(4)
+        assert delegate_param() == 3
+    assert delegate_param() == 2
+
+    with delegate_param.set_to(3, allow_changes=True):
+        assert delegate_param() == 3
+        delegate_param(4)
+        assert delegate_param() == 4
+    assert delegate_param() == 2
