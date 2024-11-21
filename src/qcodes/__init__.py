@@ -16,7 +16,6 @@ import qcodes._version
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
 from qcodes.utils import QCoDeSDeprecationWarning
-from qcodes.utils.spyder_utils import add_to_spyder_UMR_excludelist
 
 __version__ = qcodes._version.__version__
 
@@ -24,11 +23,6 @@ __version__ = qcodes._version.__version__
 config: qcconfig.Config = qcconfig.Config()
 
 conditionally_start_all_logging()
-
-# we dont want spyder to reload qcodes as this will overwrite the default station
-# instrument list and running monitor
-add_to_spyder_UMR_excludelist("qcodes")
-
 
 import atexit
 

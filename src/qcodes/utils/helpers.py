@@ -32,7 +32,9 @@ from .function_helpers import is_function
 from .json_utils import NumpyJSONEncoder
 from .partial_utils import partial_with_docstring
 from .path_helpers import QCODES_USER_PATH_ENV, get_qcodes_path, get_qcodes_user_path
-from .spyder_utils import add_to_spyder_UMR_excludelist
+from .spyder_utils import (
+    add_to_spyder_UMR_excludelist,  # pyright: ignore[reportDeprecated]
+)
 
 
 # on longer in used but left for backwards compatibility until

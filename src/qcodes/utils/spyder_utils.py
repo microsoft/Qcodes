@@ -1,9 +1,17 @@
 import logging
 import os
 
+from typing_extensions import deprecated
+
+from qcodes.utils.deprecate import QCoDeSDeprecationWarning
+
 _LOG = logging.getLogger(__name__)
 
 
+@deprecated(
+    "Known to not work with latest Spyder and unused in QCoDeS",
+    category=QCoDeSDeprecationWarning,
+)
 def add_to_spyder_UMR_excludelist(modulename: str) -> None:
     """
     Spyder tries to reload any user module. This does not work well for
