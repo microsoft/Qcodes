@@ -204,18 +204,6 @@ class DelegateParameter(Parameter):
         self._source: Parameter | None = source
 
     @property
-    def gettable(self) -> bool:
-        if self.source is None:
-            return False
-        return self.source.gettable
-
-    @property
-    def settable(self) -> bool:
-        if self._settable is False or self.source is None:
-            return False
-        return self.source.settable
-
-    @property
     def snapshot_value(self) -> bool:
         if self.source is None:
             return False
