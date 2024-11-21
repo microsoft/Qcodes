@@ -426,7 +426,7 @@ def test_gettable_settable_snapshotget_delegate_parameter(
     delegate_param = DelegateParameter("delegate", source=source_param)
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
-    assert delegate_param._snapshot_value is snapshot_value
+    assert delegate_param.snapshot_value is snapshot_value
 
 
 @pytest.mark.parametrize("snapshot_value", [True, False])
@@ -450,7 +450,7 @@ def test_gettable_settable_snapshotget_delegate_parameter_2(
     delegate_param.source = source_param
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
-    assert delegate_param._snapshot_value is snapshot_value
+    assert delegate_param.snapshot_value is snapshot_value
 
 
 def test_initial_value_and_none_source_raises() -> None:
