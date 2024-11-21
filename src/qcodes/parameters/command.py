@@ -144,7 +144,7 @@ class Command(Generic[Output, ParsedOutput]):
 
         else:
             raise TypeError(
-                f"cmd must be a string or function with arg_count={arg_count} args"
+                f"cmd must be a string or function with arg_count={arg_count} args not {cmd} of type {type(cmd)}"
             )
 
     # Wrappers that may or may not be used in constructing call
