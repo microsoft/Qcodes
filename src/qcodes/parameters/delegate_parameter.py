@@ -156,19 +156,6 @@ class DelegateParameter(Parameter):
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = False
 
-        self._attr_inherit = {
-            "label": {"fixed": False, "value_when_without_source": name},
-            "unit": {"fixed": False, "value_when_without_source": ""},
-        }
-
-        for attr, attr_props in self._attr_inherit.items():
-            if attr in kwargs:
-                attr_props["fixed"] = True
-            else:
-                attr_props["fixed"] = False
-            source_attr = getattr(source, attr, attr_props["value_when_without_source"])
-            kwargs[attr] = kwargs.get(attr, source_attr)
-
         for cmd in ("set_cmd", "get_cmd"):
             if cmd in kwargs:
                 raise KeyError(
@@ -188,15 +175,14 @@ class DelegateParameter(Parameter):
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
         super().__init__(name, *args, **kwargs)
+        self.label = kwargs.get("label", None)
+        self.unit = kwargs.get("unit", None)
 
         # Hack While we inherit the settable status from the parent parameter
         # we do allow param.set_to to temporary override _settable in a
         # context. Here _settable should always be true except when set_to
         # i.e. _SetParamContext overrides it
         self._settable = True
-        # explicitly set the source properties as
-        # init will overwrite the ones set when assigning source
-        self._set_properties_from_source(source)
 
         self.cache = self._DelegateCache(self)
         if initial_cache_value is not None:
@@ -215,16 +201,7 @@ class DelegateParameter(Parameter):
 
     @source.setter
     def source(self, source: Parameter | None) -> None:
-        self._set_properties_from_source(source)
         self._source: Parameter | None = source
-
-    def _set_properties_from_source(self, source: Parameter | None) -> None:
-        for attr, attr_props in self._attr_inherit.items():
-            if not attr_props["fixed"]:
-                attr_val = getattr(
-                    source, attr, attr_props["value_when_without_source"]
-                )
-                setattr(self, attr, attr_val)
 
     @property
     def gettable(self) -> bool:
@@ -243,6 +220,41 @@ class DelegateParameter(Parameter):
         if self.source is None:
             return False
         return self.source.snapshot_value
+
+    @property
+    def unit(self) -> str:
+        """
+        The unit of measure. Read from source if not explicitly overwritten.
+        Set to None to disable overwrite.
+        """
+        if self._unit_override is not None:
+            return self._unit_override
+        elif self.source is not None:
+            return self.source.unit
+        else:
+            return ""
+
+    @unit.setter
+    def unit(self, unit: str | None) -> None:
+        self._unit_override = unit
+
+    @property
+    def label(self) -> str:
+        """
+        Label of the data used for plots etc.
+        Read from source if not explicitly overwritten.
+        Set to None to disable overwrite.
+        """
+        if self._label_override is not None:
+            return self._label_override
+        elif self.source is not None:
+            return self.source.label
+        else:
+            return self.name
+
+    @label.setter
+    def label(self, label: str | None) -> None:
+        self._label_override = label
 
     def get_raw(self) -> Any:
         if self.source is None:
