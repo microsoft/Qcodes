@@ -28,8 +28,8 @@ from .Lakeshore_model_372 import (
 )
 
 __all__ = [
-    "LakeshoreBaseOutput",
     "LakeshoreBase",
+    "LakeshoreBaseOutput",
     "LakeshoreBaseSensorChannel",
     "LakeshoreModel325",
     "LakeshoreModel325Curve",

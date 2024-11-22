@@ -113,8 +113,8 @@ __all__ = [
     "ScaledParameter",
     "SweepFixedValues",
     "SweepValues",
-    "create_on_off_val_mapping",
     "combine",
+    "create_on_off_val_mapping",
     "expand_setpoints_helper",
     "invert_val_mapping",
 ]
