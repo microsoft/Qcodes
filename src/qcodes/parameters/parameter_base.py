@@ -537,7 +537,7 @@ class ParameterBase(MetadatableWithName):
 
         state: dict[str, Any] = {"__class__": full_class(self), "full_name": str(self)}
 
-        if self._snapshot_value:
+        if self.snapshot_value:
             has_get = self.gettable
             allowed_to_call_get_when_snapshotting = (
                 self._snapshot_get and update is not False
