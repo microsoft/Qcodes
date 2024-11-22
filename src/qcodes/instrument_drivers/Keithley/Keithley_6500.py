@@ -201,20 +201,20 @@ class Keithley6500(VisaInstrument):
 
         for trigger in range(1, 5):
             self.add_parameter(
-                "trigger%i_delay" % trigger,
-                docstring="Set and read trigger delay for timer %i." % trigger,
+                f"trigger{trigger}_delay",
+                docstring=f"Set and read trigger delay for timer {trigger}.",
                 get_parser=float,
-                get_cmd="TRIG:TIM%i:DEL?" % trigger,
-                set_cmd="TRIG:TIM%i:DEL {}" % trigger,
+                get_cmd=f"TRIG:TIM{trigger}:DEL?",
+                set_cmd=f"TRIG:TIM{trigger}:DEL {{}}",
                 unit="s",
                 vals=Numbers(min_value=0, max_value=999999.999),
             )
 
             self.add_parameter(
-                "trigger%i_source" % trigger,
-                docstring="Set the trigger source for timer %i." % trigger,
-                get_cmd="TRIG:TIM%i:STAR:STIM?" % trigger,
-                set_cmd="TRIG:TIM%i:STAR:STIM {}" % trigger,
+                f"trigger{trigger}_source",
+                docstring=f"Set the trigger source for timer {trigger}.",
+                get_cmd=f"TRIG:TIM{trigger}:STAR:STIM?",
+                set_cmd=f"TRIG:TIM{trigger}:STAR:STIM {{}}",
                 val_mapping={
                     "immediate": "NONE",
                     "timer1": "TIM1",

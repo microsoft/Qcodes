@@ -85,8 +85,8 @@ def _get_metadata(
 
     # Create list of parameters, grouped by instrument
     parameters_out = []
-    for instrument in metas:
-        temp = {"instrument": instrument, "parameters": metas[instrument]}
+    for instrument, instrument_meta in metas.items():
+        temp = {"instrument": instrument, "parameters": instrument_meta}
         parameters_out.append(temp)
 
     state = {"ts": metadata_timestamp, "parameters": parameters_out}
