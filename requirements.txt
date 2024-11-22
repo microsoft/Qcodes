@@ -422,7 +422,7 @@ toolz==1.0.0
     # via
     #   dask
     #   partd
-tornado==6.4.1
+tornado==6.4.2
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
