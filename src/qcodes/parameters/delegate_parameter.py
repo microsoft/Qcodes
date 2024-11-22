@@ -244,6 +244,20 @@ class DelegateParameter(Parameter):
     def label(self, label: str | None) -> None:
         self._label_override = label
 
+    @property
+    def gettable(self) -> bool:
+        if self.source is None:
+            return False
+        return self.source.gettable
+
+    @property
+    def settable(self) -> bool:
+        if self._settable is False:
+            return False
+        if self.source is None:
+            return False
+        return self.source.settable
+
     def get_raw(self) -> Any:
         if self.source is None:
             raise TypeError(
