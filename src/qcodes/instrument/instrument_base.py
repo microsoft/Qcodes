@@ -701,7 +701,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
 
         Note:
-            This is deprecated call set directly on the parameter.
+            This is deprecated. Call set directly on the parameter.
 
         """
         self.parameters[param_name].set(value)
@@ -721,7 +721,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             The current value of the parameter.
 
         Note:
-            This is deprecated call get directly on the parameter.
+            This is deprecated. Call get directly on the parameter.
 
         """
         return self.parameters[param_name].get()
@@ -742,7 +742,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             The return value of the function.
 
         Note:
-            This is deprecated call the function directly.
+            This is deprecated. Call the function directly.
 
         """
         return self.functions[func_name].call(*args)
