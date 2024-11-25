@@ -57,16 +57,16 @@ Type alias for all Keithley 26xx SMUs supported by QCoDeS.
 """
 
 __all__ = [
+    "Keithley26xx",
     "Keithley2000",
     "Keithley2400",
     "Keithley2450",
     "Keithley2450Buffer",
     "Keithley2450Sense",
     "Keithley2450Source",
-    "Keithley2600MeasurementStatus",
     "Keithley2600",
-    "Keithley26xx",
     "Keithley2600Channel",
+    "Keithley2600MeasurementStatus",
     "Keithley2601B",
     "Keithley2602A",
     "Keithley2602B",

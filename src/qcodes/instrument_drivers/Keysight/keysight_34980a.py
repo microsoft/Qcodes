@@ -134,10 +134,10 @@ class Keysight34980A(VisaInstrument):
         """
         for slot in self.system_slots_info.keys():
             model_string = self.system_slots_info[slot]["model"]
-            for model in KEYSIGHT_MODELS:
+            for model, model_class in KEYSIGHT_MODELS.items():
                 if model in model_string:
                     sub_module_name = f"slot_{slot}_{model}"
-                    sub_module = KEYSIGHT_MODELS[model](self, sub_module_name, slot)
+                    sub_module = model_class(self, sub_module_name, slot)
                     self.module[slot] = sub_module
                     self.add_submodule(sub_module_name, sub_module)
                     break

@@ -1069,8 +1069,8 @@ def _assert_parameter_data_is_identical(
     # when serializing float types
     approx_kinds = ("f", "c")
 
-    for outer_key in expected.keys():
-        expected_inner = expected[outer_key]
+    for outer_key, outer_val in expected.items():
+        expected_inner = outer_val
         actual_inner = actual[outer_key]
         assert expected_inner.keys() == actual_inner.keys()
         for inner_key in expected_inner.keys():

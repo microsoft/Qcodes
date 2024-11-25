@@ -13,8 +13,8 @@ __all__ = [
     "RohdeSchwarzRTO1000ScopeChannel",
     "RohdeSchwarzRTO1000ScopeMeasurement",
     "RohdeSchwarzSGS100A",
-    "RohdeSchwarzZNB20",
     "RohdeSchwarzZNB8",
+    "RohdeSchwarzZNB20",
     "RohdeSchwarzZNBBase",
     "RohdeSchwarzZNBChannel",
 ]
