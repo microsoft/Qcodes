@@ -1,2 +1,0 @@
-DelegateParameter now reads delegated properties from source rather than setting them at source change.
-This resolves an issue when delegating from another delegate parameter may result in incorrect attributes.
