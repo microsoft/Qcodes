@@ -10,8 +10,6 @@
 import warnings
 from typing import Any
 
-from typing_extensions import deprecated
-
 import qcodes._version
 import qcodes.configuration as qcconfig
 from qcodes.logger.logger import conditionally_start_all_logging
@@ -84,19 +82,3 @@ if config.core.import_legacy_api:
         "Please avoid setting this in your `qcodesrc.json` config file.",
         QCoDeSDeprecationWarning,
     )
-
-
-@deprecated(
-    "tests are no longer shipped as part of QCoDeS. Clone git repo to matching tag and run `pytest tests` from the root of the repo.",
-    category=QCoDeSDeprecationWarning,
-)
-def test(**kwargs: Any) -> int:
-    """
-    Deprecated
-    """
-    return 0
-
-
-del deprecated
-
-test.__test__ = False  # type: ignore[attr-defined] # Don't try to run this method as a test
