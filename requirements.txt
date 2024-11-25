@@ -507,7 +507,7 @@ wrapt==1.17.0
     #   qcodes (pyproject.toml)
     #   deprecated
     #   qcodes
-xarray==2024.10.0
+xarray==2024.11.0
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
