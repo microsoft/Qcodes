@@ -259,6 +259,12 @@ class DelegateParameter(Parameter):
         return self.source.settable
 
     def get_raw(self) -> Any:
+        logger = self._get_logger()
+        logger.debug(
+            "Calling get on DelegateParameter %s with source %s",
+            self.full_name,
+            self.source,
+        )
         if self.source is None:
             raise TypeError(
                 "Cannot get the value of a DelegateParameter "
@@ -267,6 +273,12 @@ class DelegateParameter(Parameter):
         return self.source.get()
 
     def set_raw(self, value: Any) -> None:
+        logger = self._get_logger()
+        logger.debug(
+            "Calling set on DelegateParameter %s with source %s",
+            self.full_name,
+            self.source,
+        )
         if self.source is None:
             raise TypeError(
                 "Cannot set the value of a DelegateParameter "

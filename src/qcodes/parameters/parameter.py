@@ -201,12 +201,7 @@ class Parameter(ParameterBase):
         def _set_manual_parameter(
             self: Parameter, x: ParamRawDataType
         ) -> ParamRawDataType:
-            if self.root_instrument is not None:
-                mylogger: InstrumentLoggerAdapter | logging.Logger = (
-                    self.root_instrument.log
-                )
-            else:
-                mylogger = log
+            mylogger = self._get_logger()
             mylogger.debug(
                 "Setting raw value of parameter: %s to %s", self.full_name, x
             )

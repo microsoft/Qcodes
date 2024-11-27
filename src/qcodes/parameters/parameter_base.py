@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from qcodes.instrument.base import InstrumentBase
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 LOG = logging.getLogger(__name__)
 
@@ -354,6 +355,16 @@ class ParameterBase(MetadatableWithName):
             self.set_raw, "__qcodes_is_abstract_method__", False
         )
         return implements_set_raw
+
+    def _get_logger(self) -> InstrumentLoggerAdapter | logging.Logger:
+        if self.root_instrument is not None:
+            mylogger: InstrumentLoggerAdapter | logging.Logger = (
+                self.root_instrument.log
+            )
+        else:
+            mylogger = LOG
+
+        return mylogger
 
     def _build__doc__(self) -> str | None:
         return self.__doc__
