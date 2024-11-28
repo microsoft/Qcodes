@@ -1,0 +1,2 @@
+Fix a regression introduced in 0.50.0 where a DelegateParameter initialized with a None source
+would not correctly call get/set on the source parameter when this has been set.
