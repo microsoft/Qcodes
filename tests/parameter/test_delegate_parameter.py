@@ -271,14 +271,12 @@ def test_delegate_cache_pristine_if_not_set() -> None:
     assert gotten_delegate_cache is None
 
 
-def test_delegate_get_instrument_val(
-    make_observable_parameter: Callable[..., ObservableParam], numeric_val: int
-) -> None:
+def test_delegate_get_instrument_val(numeric_val: int) -> None:
     """
     Delegate should call its source to get value rather than just reading source cache
     """
     initial_value = numeric_val
-    t = make_observable_parameter("observable_parameter", initial_value=initial_value)
+    t = ObservableParam("observable_parameter", initial_value=initial_value)
     # delegate has no source initially to make sure it's not gettable on initialization
     d = DelegateParameter("delegate", source=None)
     d.source = t
