@@ -263,11 +263,8 @@ class ParameterBase(MetadatableWithName):
         self.get_latest = GetLatest(self)
 
         self.get: Callable[..., ParamDataType]
-        implements_get_raw = hasattr(self, "get_raw") and not getattr(
-            self.get_raw, "__qcodes_is_abstract_method__", False
-        )
         self._gettable = False
-        if implements_get_raw:
+        if self._implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
             self._gettable = True
         elif hasattr(self, "get"):
@@ -278,11 +275,8 @@ class ParameterBase(MetadatableWithName):
             )
 
         self.set: Callable[..., None]
-        implements_set_raw = hasattr(self, "set_raw") and not getattr(
-            self.set_raw, "__qcodes_is_abstract_method__", False
-        )
         self._settable: bool = False
-        if implements_set_raw:
+        if self._implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
             self._settable = True
         elif hasattr(self, "set"):
@@ -346,6 +340,20 @@ class ParameterBase(MetadatableWithName):
                         )
 
             instrument.parameters[name] = self
+
+    @property
+    def _implements_get_raw(self) -> bool:
+        implements_get_raw = hasattr(self, "get_raw") and not getattr(
+            self.get_raw, "__qcodes_is_abstract_method__", False
+        )
+        return implements_get_raw
+
+    @property
+    def _implements_set_raw(self) -> bool:
+        implements_set_raw = hasattr(self, "set_raw") and not getattr(
+            self.set_raw, "__qcodes_is_abstract_method__", False
+        )
+        return implements_set_raw
 
     def _build__doc__(self) -> str | None:
         return self.__doc__
