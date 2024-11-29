@@ -112,6 +112,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         self._meta_attrs = ["name", "label"]
 
         self.log: InstrumentLoggerAdapter = get_instrument_logger(self, __name__)
+        self.log.debug("Created instrument: %s", self.full_name)
 
     @property
     def label(self) -> str:

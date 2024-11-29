@@ -143,6 +143,7 @@ def test_remove_parameter_from_class_attr_works(request, caplog):
     # does not alter the class attribute
     assert hasattr(a, "frequency")
     assert a.frequency is None
+    caplog.clear()
     with caplog.at_level(logging.WARNING):
         a.remove_parameter("frequency")
     assert (
