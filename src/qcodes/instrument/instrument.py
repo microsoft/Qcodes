@@ -389,8 +389,10 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
         try:
             self.write_raw(cmd)
         except Exception as e:
-            inst = repr(self)
-            e.args = e.args + ("writing " + repr(cmd) + " to " + inst,)
+            e.args = (
+                *e.args,
+                f"writing {cmd!r} to {self!r}",
+            )
             raise e
 
     def write_raw(self, cmd: str) -> None:
@@ -434,8 +436,7 @@ class Instrument(InstrumentBase, metaclass=instrument_meta_class):
             return answer
 
         except Exception as e:
-            inst = repr(self)
-            e.args = e.args + ("asking " + repr(cmd) + " to " + inst,)
+            e.args = (*e.args, f"asking {cmd!r} to {self!r}")
             raise e
 
     def ask_raw(self, cmd: str) -> str:

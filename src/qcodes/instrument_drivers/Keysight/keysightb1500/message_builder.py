@@ -887,7 +887,7 @@ class MessageBuilder:
             3. The source channel forces the Stop-D/2 value (or Stop+D/2 if
             Start>Stop), and the monitor channel executes a measurement. If
             the search stop condition is not satisfied, the measured data is
-            used to decide the direction (+ or –) of the next output change.
+            used to decide the direction (+ or -) of the next output change.
             The value of the change is always half of the previous change.
 
             4. Repeats the output change and measurement until the search
@@ -902,7 +902,7 @@ class MessageBuilder:
             2. The source channel forces the Start+D/2 value (or Start-D/2 if
             Start>Stop), and the monitor channel executes a measurement. If
             the search stop condition is not satisfied, the measured data is
-            used to decide the direction (+ or –) of the next output change.
+            used to decide the direction (+ or -) of the next output change.
             The value of the change is always half of the previous change.
 
             3. Repeats the output change and measurement until the search

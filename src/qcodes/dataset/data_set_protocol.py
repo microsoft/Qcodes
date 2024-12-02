@@ -497,7 +497,7 @@ class BaseDataSet(DataSetProtocol, Protocol):
         """
         param_data = np.atleast_1d(param_data)
         if param.type == "array":
-            new_data = np.reshape(param_data, (1,) + param_data.shape)
+            new_data = np.reshape(param_data, (1, *param_data.shape))
         else:
             new_data = param_data.ravel()
         return new_data

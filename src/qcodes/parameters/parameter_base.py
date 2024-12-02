@@ -724,7 +724,7 @@ class ParameterBase(MetadatableWithName):
                 return value
 
             except Exception as e:
-                e.args = e.args + (f"getting {self}",)
+                e.args = (*e.args, f"getting {self}")
                 raise e
 
         return get_wrapper
@@ -777,7 +777,7 @@ class ParameterBase(MetadatableWithName):
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
             except Exception as e:
-                e.args = e.args + (f"setting {self} to {value}",)
+                e.args = (*e.args, f"setting {self} to {value}")
                 raise e
 
         return set_wrapper

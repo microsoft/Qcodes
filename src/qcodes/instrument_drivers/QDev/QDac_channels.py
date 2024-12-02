@@ -364,7 +364,7 @@ class QDevQDac(VisaInstrument):
 
         slopechans = [sl[0] for sl in self._slopes]
         if chan in slopechans:
-            slope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
+            slope = next(sl[1] for sl in self._slopes if sl[0] == chan)
             # find and assign fg
             fg = min(self._fgs.difference(set(self._assigned_fgs.values())))
             self._assigned_fgs[chan] = fg
@@ -562,7 +562,7 @@ class QDevQDac(VisaInstrument):
             # try to remove the sync from internal bookkeeping
             try:
                 sc = self._syncoutputs
-                to_remove = [sc.index(syn) for syn in sc if syn[0] == chan][0]
+                to_remove = next(sc.index(syn) for syn in sc if syn[0] == chan)
                 self._syncoutputs.remove(sc[to_remove])
             except IndexError:
                 pass
@@ -573,11 +573,11 @@ class QDevQDac(VisaInstrument):
             return
 
         if sync in [syn[1] for syn in self._syncoutputs]:
-            oldchan = [syn[0] for syn in self._syncoutputs if syn[1] == sync][0]
+            oldchan = next(syn[0] for syn in self._syncoutputs if syn[1] == sync)
             self._syncoutputs.remove((oldchan, sync))
 
         if chan in [syn[0] for syn in self._syncoutputs]:
-            oldsyn = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
+            oldsyn = next(syn[1] for syn in self._syncoutputs if syn[0] == chan)
             self._syncoutputs[self._syncoutputs.index((chan, oldsyn))] = (chan, sync)
             return
 
@@ -589,7 +589,7 @@ class QDevQDac(VisaInstrument):
         get_cmd of the chXX_sync parameter
         """
         if chan in [syn[0] for syn in self._syncoutputs]:
-            sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
+            sync = next(syn[1] for syn in self._syncoutputs if syn[0] == chan)
             return sync
         else:
             return 0
@@ -621,7 +621,7 @@ class QDevQDac(VisaInstrument):
                 self.channels[chan - 1].sync.set(0)
             try:
                 sls = self._slopes
-                to_remove = [sls.index(sl) for sl in sls if sl[0] == chan][0]
+                to_remove = next(sls.index(sl) for sl in sls if sl[0] == chan)
                 self._slopes.remove(sls[to_remove])
                 return
             # If the value was already 'Inf', the channel was not
@@ -630,7 +630,7 @@ class QDevQDac(VisaInstrument):
                 return
 
         if chan in [sl[0] for sl in self._slopes]:
-            oldslope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
+            oldslope = next(sl[1] for sl in self._slopes if sl[0] == chan)
             self._slopes[self._slopes.index((chan, oldslope))] = (chan, slope)
             return
 
@@ -650,7 +650,7 @@ class QDevQDac(VisaInstrument):
         get_cmd of the chXX_slope parameter
         """
         if chan in [sl[0] for sl in self._slopes]:
-            slope = [sl[1] for sl in self._slopes if sl[0] == chan][0]
+            slope = next(sl[1] for sl in self._slopes if sl[0] == chan)
             return slope
         else:
             return "Inf"
@@ -696,7 +696,7 @@ class QDevQDac(VisaInstrument):
         chanmssg = f"wav {chan} {fg} {amplitude} {offset}"
 
         if chan in [syn[0] for syn in self._syncoutputs]:
-            sync = [syn[1] for syn in self._syncoutputs if syn[0] == chan][0]
+            sync = next(syn[1] for syn in self._syncoutputs if syn[0] == chan)
             sync_duration = 1000 * self.channels[chan - 1].sync_duration.get()
             sync_delay = 1000 * self.channels[chan - 1].sync_delay.get()
             self.write(f"syn {sync} {fg} {sync_delay} {sync_duration}")
