@@ -221,6 +221,7 @@ filterwarnings = [
     'error',
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
+    'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
     'ignore:unclosed database in:ResourceWarning' # internal should be fixed
 ]
 
