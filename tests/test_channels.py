@@ -258,7 +258,7 @@ def test_insert_channel_wrong_type_raises(dci_with_list) -> None:
 
 def test_add_none_channel_tuple_to_channel_tuple_raises(dci) -> None:
     with pytest.raises(TypeError, match="Can't add objects of type"):
-        _ = [*dci.channels, 1]
+        _ = dci.channels + [1]  # noqa: RUF005  # this is meant to test this form
 
 
 def test_add_channel_tuples_of_different_types_raises(dci) -> None:
