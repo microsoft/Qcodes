@@ -118,7 +118,7 @@ ipykernel==6.29.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==8.29.0
+ipython==8.30.0
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
