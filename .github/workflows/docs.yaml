@@ -126,7 +126,7 @@ jobs:
         path: build_docs
 
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@62fec3add6773ec5dbbf18d2ee4260911aa35cf4 # v4.6.9
+      uses: JamesIves/github-pages-deploy-action@dc18a3c6b46d56484cb63f291becd7ed4f0269b9 # v4.7.1
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/build_docs/
