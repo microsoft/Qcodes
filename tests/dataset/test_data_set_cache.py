@@ -717,7 +717,7 @@ def test_cache_complex_array_param_in_1d(
             n_rows_written = i + 1
 
             if array_used:
-                expected_shape = (n_rows_written,) + param.shape
+                expected_shape = (n_rows_written, *param.shape)
             else:
                 expected_shape = n_rows_written * np.prod(param.shape)
             assert data[param.full_name][param.full_name].shape == expected_shape

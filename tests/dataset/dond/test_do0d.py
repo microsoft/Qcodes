@@ -29,7 +29,7 @@ def test_do0d_with_real_parameter(period, plot, plot_config) -> None:
 
     output = do0d(arrayparam, write_period=period, do_plot=plot)
     assert len(output[1]) == 1
-    if plot is True or plot is None and plot_config is True:
+    if plot is True or (plot is None and plot_config is True):
         assert isinstance(output[1][0], matplotlib.axes.Axes)
     else:
         assert output[1][0] is None

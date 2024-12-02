@@ -89,7 +89,7 @@ def test_valid(c0) -> None:
     c0_sv3.extend([2.3])
     # as can addition
     c0_sv3 += [2.4]
-    c0_sv4 = c0_sv3 + [2.5, 2.6]
+    c0_sv4 = [*c0_sv3, 2.5, 2.6]
     assert list(c0_sv3) == [2, 2.1, 2.2, 2.3, 2.4]
     assert list(c0_sv4) == [2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6]
 
