@@ -966,8 +966,8 @@ class AMI430_3D(Instrument):
                 f"{ramp_rate_units_of_instruments}"
             )
 
-        common_field_units = tuple(field_units_of_instruments.keys())[0]
-        common_ramp_rate_units = tuple(ramp_rate_units_of_instruments.keys())[0]
+        common_field_units = next(iter(field_units_of_instruments.keys()))
+        common_ramp_rate_units = next(iter(ramp_rate_units_of_instruments.keys()))
 
         return common_field_units, common_ramp_rate_units
 

@@ -852,7 +852,7 @@ def update_config_schema(
 
     additional_instrument_modules = additional_instrument_modules or []
     instrument_modules: set[ModuleType] = set(
-        [qcodes.instrument_drivers] + additional_instrument_modules
+        [qcodes.instrument_drivers, *additional_instrument_modules]
     )
 
     instrument_names = tuple(

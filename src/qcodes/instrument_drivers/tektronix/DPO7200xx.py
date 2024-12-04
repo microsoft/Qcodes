@@ -920,7 +920,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 f"source{src}",
                 get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
                 set_cmd=partial(self._set_source, src),
-                vals=Enum(*(TektronixDPOWaveform.valid_identifiers + ["HISTogram"])),
+                vals=Enum(*([*TektronixDPOWaveform.valid_identifiers, "HISTogram"])),
             )
 
     @property

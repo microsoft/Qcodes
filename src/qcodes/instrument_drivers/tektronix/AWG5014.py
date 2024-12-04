@@ -236,7 +236,7 @@ class TektronixAWG5014(VisaInstrument):
                                action cannot be undone so exercise
                                necessary caution. Also note that
                                passing a value less than the
-                               sequence’s current length will cause
+                               sequence's current length will cause
                                some sequence elements to be deleted at
                                the end of the sequence. For example if
                                self.get_sq_length returns 200 and you
@@ -256,7 +256,7 @@ class TektronixAWG5014(VisaInstrument):
                                action cannot be undone so exercise
                                necessary caution. Also note that
                                passing a value less than the
-                               sequence’s current length will cause
+                               sequence's current length will cause
                                some sequence elements to be deleted at
                                the end of the sequence. For example if
                                self.get_sq_length returns 200 and you
@@ -694,7 +694,7 @@ class TektronixAWG5014(VisaInstrument):
     def set_sqel_event_target_index(self, element_no: int, index: int) -> None:
         """
         This command sets the target index for
-        the sequencer’s event jump operation. Note that this will take
+        the sequencer's event jump operation. Note that this will take
         effect only when the event jump target type is set to
         INDEX.
 

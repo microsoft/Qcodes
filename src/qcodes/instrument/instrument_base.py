@@ -555,7 +555,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         until the root instrument is reached.
         """
         if self.parent is not None:
-            return (self,) + self.parent.ancestors
+            return (self, *self.parent.ancestors)
         else:
             return (self,)
 

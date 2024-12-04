@@ -566,7 +566,7 @@ def test_subscribers_called_at_exiting_context_if_queue_is_not_empty(
         # we exit the "run()" context.
         ds = datasaver.dataset
         assert isinstance(ds, DataSet)
-        subscriber = list(ds.subscribers.values())[0]
+        subscriber = next(iter(ds.subscribers.values()))
         subscriber.min_queue_length = int(len(given_x_vals) + 1)
 
         for x in given_x_vals:

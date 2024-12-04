@@ -141,14 +141,15 @@ def do2d(
     all_setpoint_params = (
         param_set1,
         param_set2,
-    ) + tuple(s for s in additional_setpoints)
+        *tuple(s for s in additional_setpoints),
+    )
 
     measured_parameters = tuple(
         param for param in param_meas if isinstance(param, ParameterBase)
     )
 
     try:
-        loop_shape = (num_points1, num_points2) + tuple(1 for _ in additional_setpoints)
+        loop_shape = (num_points1, num_points2, *tuple(1 for _ in additional_setpoints))
         shapes: Shapes | None = detect_shape_of_measurement(
             measured_parameters, loop_shape
         )

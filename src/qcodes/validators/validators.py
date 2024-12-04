@@ -486,7 +486,8 @@ class Enum(Validator[Hashable]):
                 raise ValueError(f"{value!r} is not in {self._values!r}; {context}")
 
         except TypeError as e:  # in case of unhashable (mutable) type
-            e.args = e.args + (
+            e.args = (
+                *e.args,
                 f"error looking for {value!r} in {self._values!r}; {context}",
             )
             raise
@@ -815,7 +816,7 @@ class Arrays(Validator[np.ndarray]):
     """
 
     __real_types = (np.integer, np.floating)
-    __supported_types = __real_types + (np.complexfloating,)
+    __supported_types = (*__real_types, np.complexfloating)
 
     def __init__(
         self,
