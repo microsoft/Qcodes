@@ -189,6 +189,11 @@ class ParameterBase(MetadatableWithName):
         register_name: Specifies if the parameter should be registered in datasets
             using a different name than the parameter's full_name
 
+        on_value_change: Optional callable that will be called when the parameter's value changes.
+            The callable will be invoked with the following named parameters:
+            - `old_value` (ParamDataType | None): The previous value of the parameter.
+            - `new_value` (ParamDataType | None): The new value of the parameter.
+            - `source` (str): A string indicating the source of the change, either `'get'` or `'set'`.
     """
 
     def __init__(
@@ -212,6 +217,8 @@ class ParameterBase(MetadatableWithName):
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
+        on_value_change: Callable[..., None] | None = None,
+
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -286,6 +293,8 @@ class ParameterBase(MetadatableWithName):
                 f"ParameterBase: "
                 f"{self.full_name} is not allowed."
             )
+
+        self.on_value_change = on_value_change
 
         # subclasses should extend this list with extra attributes they
         # want automatically included in the snapshot
@@ -719,6 +728,11 @@ class ParameterBase(MetadatableWithName):
                 if self._validate_on_get:
                     self.validate(value)
 
+                if callable(self.on_value_change):
+                    old_value = self.cache.get(get_if_invalid=False)
+                    if old_value != value:
+                        self.on_value_change(old_value=old_value, new_value=value, source='get')
+
                 self.cache._update_with(value=value, raw_value=raw_value)
 
                 return value
@@ -752,6 +766,11 @@ class ParameterBase(MetadatableWithName):
                     self.validate(val_step)
 
                     raw_val_step = self._from_value_to_raw_value(val_step)
+
+                    if callable(self.on_value_change):
+                        old_value = self.cache.get(get_if_invalid=False)
+                        if old_value != value:
+                            self.on_value_change(old_value=old_value, new_value=value, source='set')
 
                     # Check if delay between set operations is required
                     t_elapsed = time.perf_counter() - self._t_last_set
@@ -1121,6 +1140,16 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
+
+    @property
+    def on_value_change(self) -> Callable[..., None] | None:
+        return self._on_value_change
+    
+    @on_value_change.setter
+    def on_value_change(self, value: Callable[..., None] | None) -> None:
+        if value is not None and not callable(value):
+            raise TypeError("on_value_change must be a callable or None")
+        self._on_value_change = value
 
 
 class GetLatest(DelegateAttributes):

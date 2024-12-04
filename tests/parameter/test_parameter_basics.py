@@ -265,3 +265,81 @@ def test_set_cmd_str_no_instrument_raises() -> None:
         TypeError, match="Cannot use a str set_cmd without binding to an instrument."
     ):
         Parameter(name="test", instrument=None, set_cmd="set_me")
+
+def test_parameter_on_value_change() -> None:
+    """
+    Test that the on_value_change callback is called appropriately when the parameter's value changes.
+    """
+
+    # List to track callback invocations and arguments
+    callback_calls = []
+
+    get_cmd_val = None
+
+    def callback(old_value, new_value, source):
+        callback_calls.append((old_value, new_value, source))
+
+    # Create a parameter with the on_value_change callback
+    p = Parameter(
+        name="p",
+        set_cmd=None,
+        get_cmd=lambda: get_cmd_val,
+        vals=vals.Anything(), 
+        on_value_change=callback,
+    )
+
+    # Callback should not be called when parameter instance is created.
+    assert callback_calls == []
+
+    # Initial state: value is None
+    assert p.get() is None
+
+    # Set a new value (from None to 10)
+    p.set(10)
+    assert callback_calls == [(None, 10, 'set')]
+
+    # Reset callback_calls
+    callback_calls.clear()
+
+    # Set the same value again; callback should not be called
+    p.set(10)
+    assert callback_calls == []
+
+    # Set a different value (from 10 to 20)
+    p.set(20)
+    assert callback_calls == [(10, 20, 'set')]
+
+    # Reset callback_calls
+    callback_calls.clear()
+
+    # Set the value back to None (from 20 to None)
+    p.set(None)
+    assert callback_calls == [(20, None, 'set')]
+
+    # Reset callback_calls
+    callback_calls.clear()
+
+    # Set to the same None value again; callback should not be called
+    p.set(None)
+    assert callback_calls == []
+
+    # Simulate a get that changes the value (from None to 30)
+    get_cmd_val = 30
+    p.get()
+    assert callback_calls == [(None, 30, 'get')]
+
+    # Reset callback_calls
+    callback_calls.clear()
+
+    # Simulate a get that changes the value to None (from 30 to None)
+    get_cmd_val = None    
+    p.get()
+    assert callback_calls == [(30, None, 'get')]
+
+    # Reset callback_calls
+    callback_calls.clear()
+
+    # Test that the callback is not called when on_value_change is None
+    p.on_value_change = None
+    p.set(40)
+    assert callback_calls == []
