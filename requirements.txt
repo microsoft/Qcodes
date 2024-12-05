@@ -365,7 +365,7 @@ scipy==1.14.1
     # via qcodes (pyproject.toml)
 setuptools==75.6.0
     # via incremental
-six==1.16.0
+six==1.17.0
     # via
     #   asttokens
     #   bleach
