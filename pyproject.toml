@@ -337,7 +337,7 @@ name = "Improved Drivers:"
 name = "Under the hood:"
 
 [tool.versioningit]
-default-version = "0.3.0"
+default-version = "0.0"
 
 [tool.versioningit.format]
 distance = "{next_version}.dev{distance}+{branch}.{vcs}{rev}"
