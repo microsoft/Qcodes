@@ -166,6 +166,8 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = True
 
+        bind_to_instrument = kwargs["bind_to_instrument"]
+
         try:
             param = parameter_class(name=name, instrument=self, **kwargs)
         except TypeError:
@@ -180,7 +182,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             param = parameter_class(name=name, instrument=self, **kwargs)
 
         existing_parameter = self.parameters.get(name, None)
-        if not existing_parameter:
+        if not existing_parameter and bind_to_instrument:
             warnings.warn(
                 f"Parameter {name} did not correctly register itself on instrument"
                 f" {self.name}. Please check that `instrument` argument is passed "
