@@ -137,6 +137,7 @@ class AMI430SwitchHeater(InstrumentChannel):
     @deprecated(
         "Use enabled parameter to enable/disable the switch heater.",
         category=QCoDeSDeprecationWarning,
+        stacklevel=2,
     )
     def disable(self) -> None:
         self._disable()
@@ -144,6 +145,7 @@ class AMI430SwitchHeater(InstrumentChannel):
     @deprecated(
         "Use enabled parameter to enable/disable the switch heater.",
         category=QCoDeSDeprecationWarning,
+        stacklevel=2,
     )
     def enable(self) -> None:
         self._enable()
@@ -154,6 +156,7 @@ class AMI430SwitchHeater(InstrumentChannel):
     @deprecated(
         "Use enabled parameter to inspect switch heater status.",
         category=QCoDeSDeprecationWarning,
+        stacklevel=2,
     )
     def check_enabled(self) -> bool:
         return self._check_enabled()
@@ -167,6 +170,7 @@ class AMI430SwitchHeater(InstrumentChannel):
     @deprecated(
         "Use state parameter to turn on the switch heater.",
         category=QCoDeSDeprecationWarning,
+        stacklevel=2,
     )
     def on(self) -> None:
         self._on()
@@ -180,6 +184,7 @@ class AMI430SwitchHeater(InstrumentChannel):
     @deprecated(
         "Use state parameter to turn off the switch heater.",
         category=QCoDeSDeprecationWarning,
+        stacklevel=2,
     )
     def off(self) -> None:
         self._off()
@@ -192,6 +197,7 @@ class AMI430SwitchHeater(InstrumentChannel):
     @deprecated(
         "Use state parameter to inspect if switch heater is on.",
         category=QCoDeSDeprecationWarning,
+        stacklevel=2,
     )
     def check_state(self) -> bool:
         return self._check_state()
@@ -644,6 +650,7 @@ class AMIModel430(VisaInstrument):
 @deprecated(
     "Use qcodes.instrument_drivers.american_magnetics.AMIModel430 instead.",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AMI430(AMIModel430):
     pass
@@ -1316,6 +1323,7 @@ class AMIModel4303D(Instrument):
 @deprecated(
     "Use qcodes.instrument_drivers.american_magnetics.AMIModel4303D instead.",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AMI430_3D(AMIModel4303D):
     pass

@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 @deprecated(
     "USBHIDMixin is deprecated. This is unused in QCoDeS",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class USBHIDMixin(Instrument):
     # The following class attributes should be set by subclasses

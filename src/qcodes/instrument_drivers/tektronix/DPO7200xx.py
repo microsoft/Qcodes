@@ -362,6 +362,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 @deprecated(
     "TekronixDPOWaveform is deprecated use TektronixDPOWaveform",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class TekronixDPOWaveform(TektronixDPOWaveform):
     """
@@ -756,6 +757,7 @@ class TektronixDPOTrigger(InstrumentChannel):
 @deprecated(
     "TekronixDPOTrigger is deprecated use TektronixDPOTrigger",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class TekronixDPOTrigger(TektronixDPOTrigger):
     """
