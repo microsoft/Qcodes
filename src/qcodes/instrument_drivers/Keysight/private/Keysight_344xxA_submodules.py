@@ -26,7 +26,7 @@ from qcodes.utils import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Sequence, Callable
 
     from typing_extensions import Unpack
 
@@ -748,7 +748,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         self.NPLC: Parameter = self.add_parameter(
             "NPLC",
-            get_cmd="SENSe:VOLTage:DC:NPLC?",
+            get_cmd=partial(self._ask_with_sense_function, cmd="NPLC"),
             get_parser=float,
             set_cmd=self._set_NPLC,
             vals=vals.Enum(*self.NPLC_list),
@@ -836,8 +836,8 @@ the resolution values."""
         self.autorange: Parameter = self.add_parameter(
             "autorange",
             label="Autorange",
-            set_cmd="SENSe:VOLTage:DC:RANGe:AUTO {}",
-            get_cmd="SENSe:VOLTage:DC:RANGe:AUTO?",
+            set_cmd=self._set_with_sense_function("RANGe:AUTO"),
+            get_cmd=self._get_with_sense_function("RANGe:AUTO"),
             val_mapping={"ON": 1, "OFF": 0},
             vals=vals.Enum("ON", "OFF"),
         )
@@ -846,8 +846,8 @@ the resolution values."""
         self.autozero: Parameter = self.add_parameter(
             "autozero",
             label="Autozero",
-            set_cmd="SENSe:VOLTage:DC:ZERO:AUTO {}",
-            get_cmd="SENSe:VOLTage:DC:ZERO:AUTO?",
+            set_cmd=self._set_with_sense_function("ZERO:AUTO"),
+            get_cmd=self._get_with_sense_function("ZERO:AUTO"),
             val_mapping={"ON": 1, "OFF": 0, "ONCE": "ONCE"},
             vals=vals.Enum("ON", "OFF", "ONCE"),
             docstring=textwrap.dedent(
@@ -932,8 +932,8 @@ the resolution values."""
             self.aperture_mode: Parameter = self.add_parameter(
                 "aperture_mode",
                 label="Aperture mode",
-                set_cmd="SENSe:VOLTage:DC:APERture:ENABled {}",
-                get_cmd="SENSe:VOLTage:DC:APERture:ENABled?",
+                set_cmd=self._set_with_sense_function("APERture:ENABled"),
+                get_cmd=self._get_with_sense_function("APERture:ENABled"),
                 val_mapping={"ON": 1, "OFF": 0},
                 vals=vals.Enum("ON", "OFF"),
                 docstring=textwrap.dedent(
@@ -953,7 +953,7 @@ mode is disabled (default), the integration time is set in PLC
                 "aperture_time",
                 label="Aperture time",
                 set_cmd=self._set_apt_time,
-                get_cmd="SENSe:VOLTage:DC:APERture?",
+                get_cmd=self._get_with_sense_function("APERture"),
                 get_parser=float,
                 vals=vals.Numbers(*apt_times[self.model]),
                 docstring=textwrap.dedent(
@@ -1212,14 +1212,32 @@ mode."""
         raw_vals: str = self.ask("READ?")
         return _raw_vals_to_array(raw_vals)
 
+    def _ask_with_sense_function(self, cmd: str) -> str:
+        function = self.sense_function.get_latest.get_raw().strip("\"")
+        return self.ask(f"SENSe:{function}:{cmd}?")
+
+    def _write_with_sense_function(self, cmd: str, value: str) -> None:
+        function = self.sense_function.get_latest.get_raw().strip("\"")
+        self.write(f"SENSe:{function}:{cmd} {value}")
+
+    def _get_with_sense_function(self, cmd: str) -> "Callable[[], str]":
+        def func() -> str:
+            return self._ask_with_sense_function(cmd)
+        return func
+
+    def _set_with_sense_function(self, cmd: str) -> "Callable[[str], None]":
+        def func(value: str) -> None:
+            self._write_with_sense_function(cmd, value)
+        return func
+
     def _set_apt_time(self, value: float) -> None:
-        self.write(f"SENSe:VOLTage:DC:APERture {value:f}")
+        self._write_with_sense_function("APERture", f"{value:f}")
 
         # setting aperture time switches aperture mode ON
         self.aperture_mode.get()
 
     def _set_NPLC(self, value: float) -> None:
-        self.write(f"SENSe:VOLTage:DC:NPLC {value:f}")
+        self._write_with_sense_function("NPLC", f"{value:f}")
 
         # resolution settings change with NPLC
         self.resolution.get()
