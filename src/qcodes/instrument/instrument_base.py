@@ -168,6 +168,14 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         bind_to_instrument = kwargs["bind_to_instrument"]
 
+        if bind_to_instrument is False:
+            warnings.warn(
+                f"Parameter {name} passed to `add_parameter` "
+                "on instrument {self.full_name} with `bind_to_instrument=False`. "
+                "This is not recommended as it results in inconsistent behavior. "
+                "To disable snapshotting of the parameter set `snapshot_exclude=True`."
+            )
+
         try:
             param = parameter_class(name=name, instrument=self, **kwargs)
         except TypeError:

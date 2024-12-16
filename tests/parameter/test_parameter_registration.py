@@ -93,10 +93,11 @@ def test_parameter_registration_with_non_kwargs_passing_parameter(
 def test_parameter_registration_bind_to_instrument_false(
     dummy_attr_instr: DummyAttrInstrument,
 ) -> None:
-    dummy_attr_instr.add_parameter(
-        name="non_binding_parameter",
-        set_cmd=None,
-        get_cmd=None,
-        bind_to_instrument=False,
-    )
+    with pytest.warns(UserWarning, match="passed to `add_parameter`"):
+        dummy_attr_instr.add_parameter(
+            name="non_binding_parameter",
+            set_cmd=None,
+            get_cmd=None,
+            bind_to_instrument=False,
+        )
     assert "non_binding_parameter" not in dummy_attr_instr.parameters.keys()
