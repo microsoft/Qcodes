@@ -35,6 +35,7 @@ T = TypeVar("T")
 @deprecated(
     "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMI430Exception from qcodes.instrument_drivers.american_magnetics",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AMI430Exception(Exception):
     pass
@@ -43,6 +44,7 @@ class AMI430Exception(Exception):
 @deprecated(
     "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMI430Warning from qcodes.instrument_drivers.american_magnetics",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AMI430Warning(UserWarning):
     pass
@@ -51,6 +53,7 @@ class AMI430Warning(UserWarning):
 @deprecated(
     "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMI430SwitchHeater from qcodes.instrument_drivers.american_magnetics",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AMI430SwitchHeater(InstrumentChannel):
     class _Decorators:
@@ -158,6 +161,7 @@ class AMI430SwitchHeater(InstrumentChannel):
 @deprecated(
     "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMIModel430 from qcodes.instrument_drivers.american_magnetics",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AMI430(IPInstrument):
     """
@@ -556,6 +560,7 @@ class AMI430(IPInstrument):
 @deprecated(
     "qcodes.instrument_drivers.american_magnetics.AMI430 module is deprecated use AMIModel4303D from qcodes.instrument_drivers.american_magnetics",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AMI430_3D(Instrument):
     def __init__(

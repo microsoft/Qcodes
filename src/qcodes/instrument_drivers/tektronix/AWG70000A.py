@@ -1595,7 +1595,9 @@ class TektronixAWG70000Base(VisaInstrument):
 
 
 @deprecated(
-    "Base class renamed TektronixAWG70000Base", category=QCoDeSDeprecationWarning
+    "Base class renamed TektronixAWG70000Base",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class AWG70000A(TektronixAWG70000Base):
     pass
