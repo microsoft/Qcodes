@@ -748,7 +748,7 @@ class Keysight344xxA(KeysightErrorQueueMixin, VisaInstrument):
 
         self.NPLC: Parameter = self.add_parameter(
             "NPLC",
-            get_cmd=self._set_with_sense_function("NPLC"),
+            get_cmd=self._get_with_sense_function("NPLC"),
             get_parser=float,
             set_cmd=self._set_NPLC,
             vals=vals.Enum(*self.NPLC_list),
