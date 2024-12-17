@@ -15,11 +15,11 @@ class KeysightP5004B(N52xx.KeysightPNAxBase):
         super().__init__(
             name,
             address,
-            min_freq=9e3, #Min 1 KHz
-            max_freq=20e9, #Max 20 GHz
-            min_power=-80, #Min power
-            max_power=10, #Max power
-            nports=2, #Number of ports
+            min_freq=9e3,
+            max_freq=20e9,
+            min_power=-80,
+            max_power=10,
+            nports=2,
             **kwargs,
         )
 
