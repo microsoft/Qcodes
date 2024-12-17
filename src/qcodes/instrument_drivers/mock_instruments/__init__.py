@@ -939,8 +939,8 @@ class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
 
 
 def setpoint_generator(
-    *sp_bases: Sequence[float] | np.ndarray,
-) -> tuple[np.ndarray | Sequence[float], ...]:
+    *sp_bases: Sequence[float | np.floating] | np.ndarray,
+) -> tuple[np.ndarray, ...]:
     """
     Helper function to generate setpoints in the format that ArrayParameter
     (and MultiParameter) expects
@@ -952,14 +952,14 @@ def setpoint_generator(
         tuple of setpoints in the expected format.
 
     """
-    setpoints: list[np.ndarray | Sequence[float]] = []
+    setpoints: list[np.ndarray] = []
     for i, sp_base in enumerate(sp_bases):
         if i == 0:
-            setpoints.append(sp_base)
+            setpoints.append(np.array(sp_base))
         else:
             repeats = [len(sp) for sp in sp_bases[:i]]
             repeats.append(1)
-            setpoints.append(np.tile(sp_base, repeats))
+            setpoints.append(np.tile(np.array(sp_base), repeats))
 
     return tuple(setpoints)
 

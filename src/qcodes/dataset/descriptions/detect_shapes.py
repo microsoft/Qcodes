@@ -59,8 +59,8 @@ def detect_shape_of_measurement(
 
     shapes: dict[str, tuple[int, ...]] = {}
 
-    for param_name in array_shapes.keys():
-        total_shape = tuple(loop_shape) + array_shapes[param_name]
+    for param_name, param_shape in array_shapes.items():
+        total_shape = tuple(loop_shape) + param_shape
         if total_shape == ():
             total_shape = (1,)
         shapes[param_name] = total_shape

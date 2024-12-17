@@ -12,15 +12,15 @@ from .Base_SPDT import MiniCircuitsSPDTBase, MiniCircuitsSPDTSwitchChannelBase
 from .USBHIDMixin import MiniCircuitsHIDMixin
 
 __all__ = [
+    "MiniCircuitsHIDMixin",
     "MiniCircuitsRCSP4T",
     "MiniCircuitsRCSP4TChannel",
     "MiniCircuitsRCSPDT",
     "MiniCircuitsRCSPDTChannel",
-    "MiniCircuitsRudat13G90Usb",
     "MiniCircuitsRudat13G90Base",
-    "MiniCircuitsHIDMixin",
-    "MiniCircuitsUsbSPDT",
+    "MiniCircuitsRudat13G90Usb",
     "MiniCircuitsSPDTBase",
-    "MiniCircuitsUsbSPDTSwitchChannel",
     "MiniCircuitsSPDTSwitchChannelBase",
+    "MiniCircuitsUsbSPDT",
+    "MiniCircuitsUsbSPDTSwitchChannel",
 ]

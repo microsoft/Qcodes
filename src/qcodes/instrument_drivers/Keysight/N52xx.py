@@ -830,11 +830,11 @@ class KeysightPNAxBase(KeysightPNABase):
         """Parameter aux_frequency"""
 
 
-@deprecated("Use KeysightPNABase", category=QCoDeSDeprecationWarning)
+@deprecated("Use KeysightPNABase", category=QCoDeSDeprecationWarning, stacklevel=2)
 class PNABase(KeysightPNABase):
     pass
 
 
-@deprecated("Use KeysightPNAxBase", category=QCoDeSDeprecationWarning)
+@deprecated("Use KeysightPNAxBase", category=QCoDeSDeprecationWarning, stacklevel=2)
 class PNAxBase(KeysightPNAxBase):
     pass

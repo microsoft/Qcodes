@@ -28,7 +28,7 @@ def create_on_off_val_mapping(
     # due to `hash(True) == hash(1)`/`hash(False) == hash(0)`,
     # hence there is no need for adding 1/0 values explicitly to
     # the list of `ons` and `offs` values.
-    ons = ons_ + (True,)
-    offs = offs_ + (False,)
+    ons = (*ons_, True)
+    offs = (*offs_, False)
     all_vals_tuples = [(on, on_val) for on in ons] + [(off, off_val) for off in offs]
     return OrderedDict(all_vals_tuples)

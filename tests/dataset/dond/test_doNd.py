@@ -391,7 +391,7 @@ def test_dond_0d_with_real_parameter(period, plot, plot_config) -> None:
 
     output = dond(arrayparam, write_period=period, do_plot=plot)
     assert len(output[1]) == 1
-    if plot is True or plot is None and plot_config is True:
+    if plot is True or (plot is None and plot_config is True):
         assert isinstance(output[1][0], matplotlib.axes.Axes)
     else:
         assert output[1][0] is None
@@ -481,8 +481,8 @@ def test_dond_1d_verify_shape(
     )
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = (num_points,) + tuple(multiparam.shapes[i])
-    expected_shapes["arrayparam"] = (num_points,) + tuple(arrayparam.shape)
+        expected_shapes[name] = (num_points, *tuple(multiparam.shapes[i]))
+    expected_shapes["arrayparam"] = (num_points, *tuple(arrayparam.shape))
     expected_shapes["simple_parameter"] = (num_points,)
     expected_shapes["simple_complex_parameter"] = (num_points,)
     expected_shapes[paramwsetpoints.full_name] = (num_points, n_points_pws)
@@ -562,7 +562,7 @@ def test_dond_1d_plot(_param_set, _param, plot, plot_config) -> None:
 
     output = dond(sweep, _param, do_plot=plot)
     assert len(output[1]) == 1
-    if plot is True or plot is None and plot_config is True:
+    if plot is True or (plot is None and plot_config is True):
         assert isinstance(output[1][0], matplotlib.axes.Axes)
     else:
         assert output[1][0] is None
@@ -657,11 +657,15 @@ def test_dond_2d_verify_shape(
     )
     expected_shapes = {}
     for i, name in enumerate(multiparam.full_names):
-        expected_shapes[name] = (num_points_p1, num_points_p2) + tuple(
-            multiparam.shapes[i]
+        expected_shapes[name] = (
+            num_points_p1,
+            num_points_p2,
+            *tuple(multiparam.shapes[i]),
         )
-    expected_shapes["arrayparam"] = (num_points_p1, num_points_p2) + tuple(
-        arrayparam.shape
+    expected_shapes["arrayparam"] = (
+        num_points_p1,
+        num_points_p2,
+        *tuple(arrayparam.shape),
     )
     expected_shapes["simple_parameter"] = (num_points_p1, num_points_p2)
     expected_shapes["simple_complex_parameter"] = (num_points_p1, num_points_p2)
@@ -782,7 +786,7 @@ def test_dond_2d_plot(_param_set, _param_set_2, _param, plot, plot_config) -> No
     output = dond(sweep_1, sweep_2, _param, do_plot=plot)
 
     assert len(output[1]) == 1
-    if plot is True or plot is None and plot_config is True:
+    if plot is True or (plot is None and plot_config is True):
         assert isinstance(output[1][0], matplotlib.axes.Axes)
     else:
         assert output[1][0] is None
@@ -920,7 +924,7 @@ def test_dond_2d_multiple_datasets_plot(
     assert len(axes[0]) == 1
     assert isinstance(axes[1], tuple)
     assert len(axes[1]) == 1
-    if plot is True or plot is None and plot_config is True:
+    if plot is True or (plot is None and plot_config is True):
         assert isinstance(axes[0][0], matplotlib.axes.Axes)
         assert isinstance(axes[1][0], matplotlib.axes.Axes)
     else:

@@ -154,11 +154,11 @@ def test_default_types() -> None:
     types should validate by default"""
     a = Arrays()
 
-    integer_types = (int,) + numpy_non_concrete_ints_instantiable + numpy_concrete_ints
+    integer_types = (int, *numpy_non_concrete_ints_instantiable, *numpy_concrete_ints)
     for mytype in integer_types:
         a.validate(np.arange(10, dtype=mytype))
 
-    float_types = (float,) + numpy_floats
+    float_types = (float, *numpy_floats)
     for mytype in float_types:
         a.validate(np.arange(10, dtype=mytype))
 

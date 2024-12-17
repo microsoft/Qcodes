@@ -29,19 +29,21 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
         exclude:
           - os: windows-latest
             python-version: 3.10
           - os: windows-latest
             python-version: 3.11
+          - os: windows-latest
+            python-version: 3.13
     env:
       OS: ${{ matrix.os }}
       SPHINX_WARNINGS_AS_ERROR: true
       SPHINX_OPTS: "-v -j 2"
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+      uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
       with:
         egress-policy: audit
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -61,7 +63,7 @@ jobs:
         sudo apt install pandoc
       if: runner.os == 'Linux'
     - name: Install pandoc on windows
-      uses: Wandalen/wretry.action@8ceaefd717b7cdae4f2637f9a433242ade421a0a # v3.7.2
+      uses: Wandalen/wretry.action@ffdd254f4eaf1562b8a2c66aeaa37f1ff2231179 # v3.7.3
       with:
         action: crazy-max/ghaction-chocolatey@v1.6.0
         with: |
@@ -111,7 +113,7 @@ jobs:
     steps:
 
     - name: Harden Runner
-      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+      uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
       with:
         egress-policy: audit
 
@@ -124,7 +126,7 @@ jobs:
         path: build_docs
 
     - name: Deploy to gh pages
-      uses: JamesIves/github-pages-deploy-action@62fec3add6773ec5dbbf18d2ee4260911aa35cf4 # v4.6.9
+      uses: JamesIves/github-pages-deploy-action@15de0f09300eea763baee31dff6c6184995c5f6a # v4.7.2
       with:
         branch: gh-pages
         folder: ${{ github.workspace }}/build_docs/

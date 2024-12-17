@@ -47,7 +47,7 @@ def test_set_multi_channel_instrument_parameter(
             channel_parameter.set(getval[:-1])
 
         with pytest.raises(TypeError, match=assert_raises_match):
-            channel_parameter.set(getval + (getval[-1],))
+            channel_parameter.set((*getval, getval[-1]))
 
         with pytest.raises(TypeError):
             channel_parameter.set(object())

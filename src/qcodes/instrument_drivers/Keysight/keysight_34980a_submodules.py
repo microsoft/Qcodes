@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from typing_extensions import Unpack
 
 
-@deprecated("Unused module", category=QCoDeSDeprecationWarning)
+@deprecated("Unused module", category=QCoDeSDeprecationWarning, stacklevel=2)
 class KeysightSubModule(InstrumentChannel):
     """
     A base class for submodules for the 34980A systems.
@@ -216,7 +216,9 @@ class Keysight34980ASwitchMatrixSubModule(InstrumentChannel):
 
 
 @deprecated(
-    "Use Keysight34980ASwitchMatrixSubModule", category=QCoDeSDeprecationWarning
+    "Use Keysight34980ASwitchMatrixSubModule",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class KeysightSwitchMatrixSubModule(Keysight34980ASwitchMatrixSubModule):
     pass

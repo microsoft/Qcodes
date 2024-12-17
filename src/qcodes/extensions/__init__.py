@@ -22,19 +22,19 @@ from .infer import (
 from .installation import register_station_schema_with_vscode
 
 __all__ = [
-    "register_station_schema_with_vscode",
-    "log_dataset_export_info",
     "DriverTestCase",
     "InferAttrs",
     "InferError",
     "get_chain_links_of_type",
     "get_instrument_from_param",
     "get_parameter_chain",
+    "get_parent_instruments_from_chain_of_type",
     "get_root_parameter",
     "get_sole_chain_link_of_type",
-    "get_parent_instruments_from_chain_of_type",
     "get_sole_parent_instrument_from_chain_of_type",
     "infer_channel",
     "infer_instrument",
     "infer_instrument_module",
+    "log_dataset_export_info",
+    "register_station_schema_with_vscode",
 ]

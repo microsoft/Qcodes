@@ -271,6 +271,23 @@ def test_delegate_cache_pristine_if_not_set() -> None:
     assert gotten_delegate_cache is None
 
 
+def test_delegate_get_instrument_val(numeric_val: int) -> None:
+    """
+    Delegate should call its source to get value rather than just reading source cache
+    """
+    initial_value = numeric_val
+    t = ObservableParam("observable_parameter", initial_value=initial_value)
+    # delegate has no source initially to make sure it's not gettable on initialization
+    d = DelegateParameter("delegate", source=None)
+    d.source = t
+
+    new_instr_value = 3
+    # Update instrument value without changing parameter cache
+    t.instr_val = new_instr_value
+    # This check fails if delegate only reads source cache
+    assert d() == new_instr_value
+
+
 def test_delegate_get_updates_cache(
     make_observable_parameter: Callable[..., ObservableParam], numeric_val: int
 ) -> None:
@@ -426,7 +443,7 @@ def test_gettable_settable_snapshotget_delegate_parameter(
     delegate_param = DelegateParameter("delegate", source=source_param)
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
-    assert delegate_param._snapshot_value is snapshot_value
+    assert delegate_param.snapshot_value is snapshot_value
 
 
 @pytest.mark.parametrize("snapshot_value", [True, False])
@@ -450,7 +467,7 @@ def test_gettable_settable_snapshotget_delegate_parameter_2(
     delegate_param.source = source_param
     assert delegate_param.gettable is gettable
     assert delegate_param.settable is settable
-    assert delegate_param._snapshot_value is snapshot_value
+    assert delegate_param.snapshot_value is snapshot_value
 
 
 def test_initial_value_and_none_source_raises() -> None:
@@ -624,3 +641,64 @@ def test_value_validation_with_offset_and_scale() -> None:
         delegate_param.validate(1)  # raw_value = 100
     with pytest.raises(ValueError):
         delegate_param.set(1)
+
+
+def test_delegate_of_delegate_updates_settable_gettable():
+    gettable_settable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+    not_gettable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=False, vals=vals.Numbers(-5, 5)
+    )
+    not_settable_source_param = Parameter(
+        "source", set_cmd=False, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+    delegate_param_inner = DelegateParameter(
+        "delegate_inner", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer = DelegateParameter(
+        "delegate_outer", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer.source = delegate_param_inner
+    delegate_param_inner.source = gettable_settable_source_param
+
+    assert delegate_param_outer.gettable
+    assert delegate_param_outer.settable
+
+    delegate_param_inner.source = not_gettable_source_param
+
+    assert not delegate_param_outer.gettable
+    assert delegate_param_outer.settable
+
+    delegate_param_inner.source = not_settable_source_param
+
+    assert delegate_param_outer.gettable
+    assert not delegate_param_outer.settable
+
+
+def test_delegate_parameter_context() -> None:
+    gettable_settable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+
+    delegate_param = DelegateParameter(
+        "delegate_outer", source=None, vals=vals.Numbers(-10, 10)
+    )
+
+    delegate_param.source = gettable_settable_source_param
+
+    delegate_param(2)
+    assert delegate_param() == 2
+
+    with delegate_param.set_to(3):
+        assert delegate_param() == 3
+        with pytest.raises(NotImplementedError):
+            delegate_param(4)
+        assert delegate_param() == 3
+    assert delegate_param() == 2
+
+    with delegate_param.set_to(3, allow_changes=True):
+        assert delegate_param() == 3
+        delegate_param(4)
+        assert delegate_param() == 4
+    assert delegate_param() == 2
