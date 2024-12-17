@@ -341,7 +341,7 @@ def _get_data_for_one_param_tree(
 
     dependency_params = list(interdeps.dependencies.get(output_param_spec, ()))
     dependency_names = [param.name for param in dependency_params]
-    paramspecs = [output_param_spec] + dependency_params
+    paramspecs = [output_param_spec, *dependency_params]
     res = get_parameter_tree_values(
         conn,
         table_name,
@@ -506,7 +506,7 @@ def get_parameter_tree_values(
         )
 
     # Create the base sql query
-    columns = [toplevel_param_name] + list(other_param_names)
+    columns = [toplevel_param_name, *list(other_param_names)]
     sql = f"""
            SELECT "{'","'.join(columns)}" FROM "{result_table_name}"
            WHERE {toplevel_param_name} IS NOT NULL
@@ -1555,7 +1555,7 @@ def add_parameter(
             c = transaction(atomic_conn_1, sql, run_id)
         old_parameters = one(c, "parameters")
         if old_parameters:
-            new_parameters = ",".join([old_parameters] + p_names)
+            new_parameters = ",".join([old_parameters, *p_names])
         else:
             new_parameters = ",".join(p_names)
         sql = "UPDATE runs SET parameters=? WHERE run_id=?"

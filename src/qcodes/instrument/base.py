@@ -11,10 +11,10 @@ from .instrument_base import InstrumentBase
 from .instrument_meta import InstrumentMeta
 
 __all__ = [
+    "Instrument",
     "InstrumentBase",
     "InstrumentMeta",
     "InstrumentProtocol",
-    "Instrument",
     "Parameter",
     "find_or_create_instrument",
 ]

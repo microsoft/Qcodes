@@ -1,0 +1,26 @@
+QCoDeS 0.50.0 (2024-11-22)
+==========================
+
+Breaking Changes:
+-----------------
+
+- QCoDeS no longer attempts to automatically disable Sypders User module reloader (UMR).
+  The code was no longer working correctly with the latest version of Spyder and is not
+  maintainable since Spyder does not have a public api to disable UMR. If you use
+  QCoDeS from an editable install it is strongly recommended to disable UMR for QCoDeS.
+  See :ref:`gettingstarted` for more details. (:pr:`6647`)
+
+
+Improved:
+---------
+
+- Improves the DataSetDefinition class to allow users to specify metadata to be added to the resulting dataset (:pr:`6643`)
+- DelegateParameter now reads delegated properties from source rather than setting them at source change.
+  This resolves an issue when delegating from another delegate parameter may result in incorrect attributes. (:pr:`6648`)
+
+
+New:
+----
+
+- Added a new feature to find links in a parameter chain by parameter type (:pr:`6599`)
+- Added new methods to find instruments in a parameter chain by parameter type (:pr:`6616`)

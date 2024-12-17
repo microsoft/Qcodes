@@ -98,8 +98,17 @@ def default_database_and_experiment_(tmp_path):
 def test_context(default_params, default_database_and_experiment):
     _ = default_database_and_experiment
     set1, set2, set3, meas1, meas2, meas3 = default_params
+    metadata_dict = {  # Nesting dictionaries does NOT work here
+        "test_metadata": "test_meta_value_1",
+        "test_metadata_2": "test_meta_value_2",
+    }
     dataset_definition = [
-        DataSetDefinition(name="dataset_1", independent=[set1], dependent=[meas1]),
+        DataSetDefinition(
+            name="dataset_1",
+            independent=[set1],
+            dependent=[meas1],
+            metadata=metadata_dict,
+        ),
         DataSetDefinition(
             name="dataset_2", independent=[set1, set2, set3], dependent=[meas2, meas3]
         ),
@@ -133,6 +142,8 @@ def test_context(default_params, default_database_and_experiment):
         },
         data_vars=(meas1.name,),
     )
+    assert datasets[0].metadata == metadata_dict
+
     assert_dataset_as_expected(
         datasets[1],
         dims_dict={
@@ -142,6 +153,7 @@ def test_context(default_params, default_database_and_experiment):
         },
         data_vars=(meas2.name, meas3.name),
     )
+    assert datasets[1].metadata == {}
 
 
 def test_dond_into(default_params, default_database_and_experiment):

@@ -28,14 +28,12 @@ from .Tektronix_MSO70000 import TektronixMSO70000
 from .TPS2012 import TektronixTPS2012, TektronixTPS2012Channel
 
 __all__ = [
-    "TekronixDPOWaveform",
     "TekronixDPOTrigger",
-    "TektronixDPOTrigger",
-    "TektronixDPOWaveform",
-    "TektronixAWG70000Base",
+    "TekronixDPOWaveform",
     "Tektronix70000AWGChannel",
     "TektronixAWG5014",
     "TektronixAWG5208",
+    "TektronixAWG70000Base",
     "TektronixAWG70001A",
     "TektronixAWG70001B",
     "TektronixAWG70002A",
@@ -50,6 +48,8 @@ __all__ = [
     "TektronixDPOMeasurementParameter",
     "TektronixDPOMeasurementStatistics",
     "TektronixDPOModeError",
+    "TektronixDPOTrigger",
+    "TektronixDPOWaveform",
     "TektronixDPOWaveformFormat",
     "TektronixDSA70000",
     "TektronixMSO5000",

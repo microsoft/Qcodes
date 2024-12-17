@@ -27,7 +27,7 @@ class Keysight34461A(Keysight344xxA):
         super().__init__(name, address, silent, **kwargs)
 
 
-@deprecated("Use Keysight34461A", category=QCoDeSDeprecationWarning)
+@deprecated("Use Keysight34461A", category=QCoDeSDeprecationWarning, stacklevel=2)
 class Keysight_34461A(Keysight344xxA):
     """
     Alias for backwards compatibility.

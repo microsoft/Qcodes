@@ -129,6 +129,10 @@ class KeysightN51x1(VisaInstrument):
         return IDN
 
 
-@deprecated("Base class is renamed KeysightN51x1", category=QCoDeSDeprecationWarning)
+@deprecated(
+    "Base class is renamed KeysightN51x1",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
+)
 class N51x1(KeysightN51x1):
     pass

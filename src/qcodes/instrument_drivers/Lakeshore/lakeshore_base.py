@@ -506,7 +506,9 @@ class LakeshoreBaseOutput(InstrumentChannel):
 
 
 @deprecated(
-    "Base class renamed to LakeshoreBaseOutput", category=QCoDeSDeprecationWarning
+    "Base class renamed to LakeshoreBaseOutput",
+    category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class BaseOutput(LakeshoreBaseOutput):
     pass
@@ -669,6 +671,7 @@ class LakeshoreBaseSensorChannel(InstrumentChannel):
 @deprecated(
     "Base class renamed to LakeshoreBaseSensorChannel",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class BaseSensorChannel(LakeshoreBaseSensorChannel):
     pass

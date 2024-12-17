@@ -26,7 +26,7 @@ _channel_name_to_command_map: dict[str, str] = {"A": "A", "B": "B", "C": "C", "D
 _channel_name_to_outmode_command_map: dict[str, int] = {
     ch_name: num_for_cmd
     for num_for_cmd, ch_name in enumerate(
-        ["None"] + list(_channel_name_to_command_map.keys())
+        ["None", *list(_channel_name_to_command_map.keys())]
     )
 }
 

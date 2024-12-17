@@ -162,7 +162,7 @@ def connect(name: str | Path, debug: bool = False, version: int = -1) -> Connect
 
     sqlite3.register_converter("numeric", _convert_numeric)
 
-    for numpy_float in (float,) + numpy_floats:
+    for numpy_float in (float, *numpy_floats):
         sqlite3.register_adapter(numpy_float, _adapt_float)
 
     for complex_type in complex_types:

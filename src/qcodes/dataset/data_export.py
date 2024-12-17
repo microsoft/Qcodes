@@ -44,7 +44,7 @@ def _get_data_from_ds(ds: DataSetProtocol) -> list[list[DSPlotData]]:
         dependent = ds.description.interdeps[dep_name]
         dependencies = ds.description.interdeps.dependencies[dependent]
 
-        for param_spec_base in dependencies + (dependent,):
+        for param_spec_base in (*dependencies, dependent):
             my_data_dict: DSPlotData = {
                 "name": param_spec_base.name,
                 "unit": param_spec_base.unit,

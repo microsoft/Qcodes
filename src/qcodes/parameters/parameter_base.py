@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from qcodes.instrument.base import InstrumentBase
+    from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
 LOG = logging.getLogger(__name__)
 
@@ -263,11 +264,8 @@ class ParameterBase(MetadatableWithName):
         self.get_latest = GetLatest(self)
 
         self.get: Callable[..., ParamDataType]
-        implements_get_raw = hasattr(self, "get_raw") and not getattr(
-            self.get_raw, "__qcodes_is_abstract_method__", False
-        )
         self._gettable = False
-        if implements_get_raw:
+        if self._implements_get_raw:
             self.get = self._wrap_get(self.get_raw)
             self._gettable = True
         elif hasattr(self, "get"):
@@ -278,11 +276,8 @@ class ParameterBase(MetadatableWithName):
             )
 
         self.set: Callable[..., None]
-        implements_set_raw = hasattr(self, "set_raw") and not getattr(
-            self.set_raw, "__qcodes_is_abstract_method__", False
-        )
         self._settable: bool = False
-        if implements_set_raw:
+        if self._implements_set_raw:
             self.set = self._wrap_set(self.set_raw)
             self._settable = True
         elif hasattr(self, "set"):
@@ -346,6 +341,30 @@ class ParameterBase(MetadatableWithName):
                         )
 
             instrument.parameters[name] = self
+
+    @property
+    def _implements_get_raw(self) -> bool:
+        implements_get_raw = hasattr(self, "get_raw") and not getattr(
+            self.get_raw, "__qcodes_is_abstract_method__", False
+        )
+        return implements_get_raw
+
+    @property
+    def _implements_set_raw(self) -> bool:
+        implements_set_raw = hasattr(self, "set_raw") and not getattr(
+            self.set_raw, "__qcodes_is_abstract_method__", False
+        )
+        return implements_set_raw
+
+    def _get_logger(self) -> InstrumentLoggerAdapter | logging.Logger:
+        if self.root_instrument is not None:
+            mylogger: InstrumentLoggerAdapter | logging.Logger = (
+                self.root_instrument.log
+            )
+        else:
+            mylogger = LOG
+
+        return mylogger
 
     def _build__doc__(self) -> str | None:
         return self.__doc__
@@ -537,7 +556,7 @@ class ParameterBase(MetadatableWithName):
 
         state: dict[str, Any] = {"__class__": full_class(self), "full_name": str(self)}
 
-        if self._snapshot_value:
+        if self.snapshot_value:
             has_get = self.gettable
             allowed_to_call_get_when_snapshotting = (
                 self._snapshot_get and update is not False
@@ -705,7 +724,7 @@ class ParameterBase(MetadatableWithName):
                 return value
 
             except Exception as e:
-                e.args = e.args + (f"getting {self}",)
+                e.args = (*e.args, f"getting {self}")
                 raise e
 
         return get_wrapper
@@ -758,7 +777,7 @@ class ParameterBase(MetadatableWithName):
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
             except Exception as e:
-                e.args = e.args + (f"setting {self} to {value}",)
+                e.args = (*e.args, f"setting {self} to {value}")
                 raise e
 
         return set_wrapper

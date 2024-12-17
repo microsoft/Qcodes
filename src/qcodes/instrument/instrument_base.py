@@ -112,6 +112,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         self._meta_attrs = ["name", "label"]
 
         self.log: InstrumentLoggerAdapter = get_instrument_logger(self, __name__)
+        self.log.debug("Created instrument: %s", self.full_name)
 
     @property
     def label(self) -> str:
@@ -554,7 +555,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         until the root instrument is reached.
         """
         if self.parent is not None:
-            return (self,) + self.parent.ancestors
+            return (self, *self.parent.ancestors)
         else:
             return (self,)
 
@@ -673,7 +674,14 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         category=QCoDeSDeprecationWarning,
     )
     def __getitem__(self, key: str) -> Callable[..., Any] | Parameter:
-        """Delegate instrument['name'] to parameter or function 'name'."""
+        """
+        Delegate instrument['name'] to parameter or function 'name'.
+
+        Note:
+            This is deprecated. Use attributes directly or if dynamic attribute required look up via
+            .parameters or .functions dictionaries
+
+        """
         try:
             return self.parameters[key]
         except KeyError:
@@ -690,6 +698,10 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         Args:
             param_name: The name of a parameter of this instrument.
             value: The new value to set.
+
+
+        Note:
+            This is deprecated. Call set directly on the parameter.
 
         """
         self.parameters[param_name].set(value)
@@ -708,6 +720,9 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         Returns:
             The current value of the parameter.
 
+        Note:
+            This is deprecated. Call get directly on the parameter.
+
         """
         return self.parameters[param_name].get()
 
@@ -725,6 +740,9 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         Returns:
             The return value of the function.
+
+        Note:
+            This is deprecated. Call the function directly.
 
         """
         return self.functions[func_name].call(*args)

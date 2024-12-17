@@ -173,7 +173,11 @@ class CombinedParameter(Metadatable):
             # this means the array is 1d
             raise ValueError(_error_msg.format(self.dimensionality, 1))
 
-        new.setpoints = nparray.tolist()
+        # type safety. Since the dtype is not specified in this method
+        # anything can be the dtype of the array which is not allowed
+        # the user is responsible for calling this method with a
+        # dtype that makes sense
+        new.setpoints = nparray.tolist()  # type: ignore[assignment]
         return new
 
     def _aggregate(self, *vals: Any) -> Any:

@@ -362,7 +362,7 @@ class KeysightB1500Module(InstrumentChannel):
         self.root_instrument.clear_timer_count(chnum=self.channels)
 
 
-@deprecated("Use KeysightB1500Module", category=QCoDeSDeprecationWarning)
+@deprecated("Use KeysightB1500Module", category=QCoDeSDeprecationWarning, stacklevel=2)
 class B1500Module(KeysightB1500Module):
     pass
 

@@ -1062,10 +1062,13 @@ def _parametrization_kwargs() -> PDict:
 
     for type_constructor, type_name in zip(
         (
-            (int, float)
-            + numpy_concrete_ints
-            + numpy_non_concrete_ints_instantiable
-            + numpy_floats
+            (
+                int,
+                float,
+                *numpy_concrete_ints,
+                *numpy_non_concrete_ints_instantiable,
+                *numpy_floats,
+            )
         ),
         (
             ["int", "float"]

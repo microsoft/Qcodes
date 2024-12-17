@@ -1322,6 +1322,7 @@ mode."""
 @deprecated(
     "Base class for Keysight 344xxA renamed Keysight344xxA",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class _Keysight_344xxA(Keysight344xxA):
     pass
@@ -1330,6 +1331,7 @@ class _Keysight_344xxA(Keysight344xxA):
 @deprecated(
     "Trigger class for Keysight 344xxA renamed Keysight344xxATrigger",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class Trigger(Keysight344xxATrigger):
     pass
@@ -1338,6 +1340,7 @@ class Trigger(Keysight344xxATrigger):
 @deprecated(
     "Sample class for Keysight 344xxA renamed Keysight344xxASample",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class Sample(Keysight344xxASample):
     pass
@@ -1346,6 +1349,7 @@ class Sample(Keysight344xxASample):
 @deprecated(
     "Display class for Keysight 344xxA renamed Keysight344xxADisplay",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class Display(Keysight344xxADisplay):
     pass

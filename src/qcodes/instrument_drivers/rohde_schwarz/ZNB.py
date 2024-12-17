@@ -1210,6 +1210,7 @@ class RohdeSchwarzZNBBase(VisaInstrument):
 @deprecated(
     "The ZNB base class has been renamed RohdeSchwarzZNBBase",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class ZNB(RohdeSchwarzZNBBase):
     pass

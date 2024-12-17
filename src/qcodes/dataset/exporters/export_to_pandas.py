@@ -45,7 +45,7 @@ def _data_to_dataframe(
 
     if len(data) == 0:
         return pd.DataFrame()
-    dependent_col_name = list(data.keys())[0]
+    dependent_col_name = next(iter(data.keys()))
     dependent_data = data[dependent_col_name]
     if dependent_data.dtype == np.dtype("O"):
         # ravel will not fully unpack a numpy array of arrays

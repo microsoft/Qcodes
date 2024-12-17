@@ -63,10 +63,10 @@ file = "README.rst"
 content-type = "text/x-rst"
 
 [project.urls]
-Homepage = "https://github.com/QCoDeS/Qcodes"
+Homepage = "https://github.com/microsoft/Qcodes"
 Documentation = "https://microsoft.github.io/Qcodes/"
-Source = "https://github.com/qcodes/qcodes"
-Tracker = "https://github.com/QCoDeS/Qcodes/issues"
+Source = "https://github.com/microsoft/qcodes"
+Tracker = "https://github.com/microsoft/Qcodes/issues"
 Changelog = "https://microsoft.github.io/Qcodes/changes/index.html"
 
 [project.optional-dependencies]
@@ -219,10 +219,7 @@ markers = "serial"
 # and error on all other warnings
 filterwarnings = [
     'error',
-    'ignore:Deprecated call to `pkg_resources\.declare_namespace:DeprecationWarning',  # google, sphinxcontrib
-    'ignore:pkg_resources is deprecated as an API:DeprecationWarning', # pyvisa-sim
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
-    'ignore:datetime.datetime.utcfromtimestamp\(\) is deprecated and scheduled for removal in a future version:DeprecationWarning', # tqdm dateutil
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
     'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
     'ignore:unclosed database in:ResourceWarning' # internal should be fixed
@@ -244,7 +241,12 @@ extend-exclude = ["typings"]
 # TID253 banned-module-level-imports
 # W pydocstyle
 # PLx pylint
-select = ["E", "F", "PT025", "UP","RUF008", "RUF010", "RUF012", "RUF100", "RUF101", "RUF200", "I", "G", "ISC", "TID253", "NPY", "PLE", "PLR", "PLC", "PLW", "W","D214", "D300", "D402", "D403", "D405", "D410", "D411", "D412", "D413", "D414", "D416", "D417", "D418", "D419", "TCH"]
+select = [
+    "E", "F", "PT025", "UP", "RUF",
+    "I", "G", "ISC", "TID253", "NPY", "PLE",
+    "PLR", "PLC", "PLW", "W",
+    "D214", "D300", "D402", "D403", "D405", "D410", "D411", "D412", "D413", "D414", "D416", "D417", "D418", "D419",
+    "TC"]
 # G004 We have a lot of use of f strings in log messages
 # so disable that lint for now
 # NPY002 We have a lot of use of the legacy

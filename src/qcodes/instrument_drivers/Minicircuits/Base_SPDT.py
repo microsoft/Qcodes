@@ -76,6 +76,7 @@ class MiniCircuitsSPDTSwitchChannelBase(InstrumentChannel):
 @deprecated(
     "Deprecated alias, use MiniCircuitsSPDTSwitchChannelBase.",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class SwitchChannelBase(MiniCircuitsSPDTSwitchChannelBase):
     pass
@@ -142,6 +143,7 @@ class MiniCircuitsSPDTBase(Instrument):
 @deprecated(
     "Deprecated alias, use MiniCircuitsSPDTBase.",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class SPDT_Base(MiniCircuitsSPDTBase):
     pass

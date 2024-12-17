@@ -52,7 +52,7 @@ jobs:
     steps:
 
     - name: Harden Runner
-      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+      uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
       with:
         egress-policy: audit
 
@@ -108,9 +108,9 @@ jobs:
       run: |
         pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT tests
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@968872560f81e7bdde9272853e65f2507c0eca7c # v5.0.0
+      uses: codecov/codecov-action@7f8b4b4bde536c465e797be725718b88c5d95e0e # v5.1.1
       with:
-        file: ./coverage.xml
+        files: ./coverage.xml
         env_vars: OS,PYTHON
         token: ${{ secrets.CODECOV_TOKEN }}
       if: ${{ github.event_name != 'merge_group' }}

@@ -192,9 +192,9 @@ class Keithley3706A(VisaInstrument):
         for channel in val_specifiers:
             if self._is_backplane_channel(channel):
                 slot = channel[0]
-                interlock_state = [
+                interlock_state = next(
                     state for state in states if state["slot_no"] == slot
-                ][0]
+                )
                 if (
                     interlock_state["state"]
                     == "Interlocks 1 and 2 are disengaged on the card"

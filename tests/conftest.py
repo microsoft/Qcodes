@@ -175,7 +175,7 @@ def _make_standalone_parameters_dataset(
         f"param_{n_params}", "numeric", label=f"param_{n_params}", unit="Ohm"
     )
 
-    params_all = params_indep + [param_dep]
+    params_all = [*params_indep, param_dep]
 
     idps = InterDependencies_(
         dependencies={param_dep: tuple(params_indep[0:1])},

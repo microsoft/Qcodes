@@ -76,14 +76,14 @@ VERSIONS = tuple(range(LATEST_VERSION + 1))
 LATEST_VERSION_ARG = -1
 
 
-@pytest.mark.parametrize("ver", VERSIONS + (LATEST_VERSION_ARG,))
+@pytest.mark.parametrize("ver", (*VERSIONS, LATEST_VERSION_ARG))
 def test_connect_upgrades_user_version(ver) -> None:
     expected_version = ver if ver != LATEST_VERSION_ARG else LATEST_VERSION
     conn = connect(":memory:", version=ver)
     assert expected_version == get_user_version(conn)
 
 
-@pytest.mark.parametrize("version", VERSIONS + (LATEST_VERSION_ARG,))
+@pytest.mark.parametrize("version", (*VERSIONS, LATEST_VERSION_ARG))
 def test_tables_exist(empty_temp_db, version) -> None:
     conn = connect(
         qc.config["core"]["db_location"], qc.config["core"]["db_debug"], version=version
@@ -266,7 +266,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
         # tests/dataset/legacy_DB_generation/generate_version_2.py
         # are recovered
 
-        p0 = [p for p in idp.paramspecs if p.name == "p0"][0]
+        p0 = next(p for p in idp.paramspecs if p.name == "p0")
         assert p0.depends_on == ""
         assert p0.depends_on_ == []
         assert p0.inferred_from == ""
@@ -274,7 +274,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
-        p1 = [p for p in idp.paramspecs if p.name == "p1"][0]
+        p1 = next(p for p in idp.paramspecs if p.name == "p1")
         assert p1.depends_on == ""
         assert p1.depends_on_ == []
         assert p1.inferred_from == ""
@@ -282,7 +282,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
         assert p1.label == "Parameter 1"
         assert p1.unit == "unit 1"
 
-        p2 = [p for p in idp.paramspecs if p.name == "p2"][0]
+        p2 = next(p for p in idp.paramspecs if p.name == "p2")
         assert p2.depends_on == ""
         assert p2.depends_on_ == []
         assert p2.inferred_from == "p0"
@@ -290,7 +290,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
         assert p2.label == "Parameter 2"
         assert p2.unit == "unit 2"
 
-        p3 = [p for p in idp.paramspecs if p.name == "p3"][0]
+        p3 = next(p for p in idp.paramspecs if p.name == "p3")
         assert p3.depends_on == ""
         assert p3.depends_on_ == []
         assert p3.inferred_from == "p1, p0"
@@ -298,7 +298,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
         assert p3.label == "Parameter 3"
         assert p3.unit == "unit 3"
 
-        p4 = [p for p in idp.paramspecs if p.name == "p4"][0]
+        p4 = next(p for p in idp.paramspecs if p.name == "p4")
         assert p4.depends_on == "p2, p3"
         assert p4.depends_on_ == ["p2", "p3"]
         assert p4.inferred_from == ""
@@ -306,7 +306,7 @@ def test_perform_actual_upgrade_2_to_3_some_runs() -> None:
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
-        p5 = [p for p in idp.paramspecs if p.name == "p5"][0]
+        p5 = next(p for p in idp.paramspecs if p.name == "p5")
         assert p5.depends_on == ""
         assert p5.depends_on_ == []
         assert p5.inferred_from == "p0"
@@ -343,7 +343,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
 
         assert isinstance(idp, InterDependencies)
 
-        p0 = [p for p in idp.paramspecs if p.name == "p0"][0]
+        p0 = next(p for p in idp.paramspecs if p.name == "p0")
         assert p0.depends_on == ""
         assert p0.depends_on_ == []
         assert p0.inferred_from == ""
@@ -351,7 +351,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
-        p1 = [p for p in idp.paramspecs if p.name == "p1"][0]
+        p1 = next(p for p in idp.paramspecs if p.name == "p1")
         assert p1.depends_on == ""
         assert p1.depends_on_ == []
         assert p1.inferred_from == ""
@@ -359,7 +359,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p1.label == "Parameter 1"
         assert p1.unit == "unit 1"
 
-        p2 = [p for p in idp.paramspecs if p.name == "p2"][0]
+        p2 = next(p for p in idp.paramspecs if p.name == "p2")
         assert p2.depends_on == ""
         assert p2.depends_on_ == []
         # the 2 lines below are wrong due to the incorrect upgrade from
@@ -369,7 +369,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p2.label == "Parameter 2"
         assert p2.unit == "unit 2"
 
-        p3 = [p for p in idp.paramspecs if p.name == "p3"][0]
+        p3 = next(p for p in idp.paramspecs if p.name == "p3")
         assert p3.depends_on == ""
         assert p3.depends_on_ == []
         # the 2 lines below are wrong due to the incorrect upgrade from
@@ -379,7 +379,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p3.label == "Parameter 3"
         assert p3.unit == "unit 3"
 
-        p4 = [p for p in idp.paramspecs if p.name == "p4"][0]
+        p4 = next(p for p in idp.paramspecs if p.name == "p4")
         assert p4.depends_on == "p2, p3"
         assert p4.depends_on_ == ["p2", "p3"]
         assert p4.inferred_from == ""
@@ -387,7 +387,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
-        p5 = [p for p in idp.paramspecs if p.name == "p5"][0]
+        p5 = next(p for p in idp.paramspecs if p.name == "p5")
         assert p5.depends_on == ""
         assert p5.depends_on_ == []
         # the 2 lines below are wrong due to the incorrect upgrade from
@@ -407,7 +407,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
 
         assert isinstance(idp, InterDependencies)
 
-        p0 = [p for p in idp.paramspecs if p.name == "p0"][0]
+        p0 = next(p for p in idp.paramspecs if p.name == "p0")
         assert p0.depends_on == ""
         assert p0.depends_on_ == []
         assert p0.inferred_from == ""
@@ -415,7 +415,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
-        p1 = [p for p in idp.paramspecs if p.name == "p1"][0]
+        p1 = next(p for p in idp.paramspecs if p.name == "p1")
         assert p1.depends_on == ""
         assert p1.depends_on_ == []
         assert p1.inferred_from == ""
@@ -423,7 +423,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p1.label == "Parameter 1"
         assert p1.unit == "unit 1"
 
-        p2 = [p for p in idp.paramspecs if p.name == "p2"][0]
+        p2 = next(p for p in idp.paramspecs if p.name == "p2")
         assert p2.depends_on == ""
         assert p2.depends_on_ == []
         assert p2.inferred_from == "p0"
@@ -431,7 +431,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p2.label == "Parameter 2"
         assert p2.unit == "unit 2"
 
-        p3 = [p for p in idp.paramspecs if p.name == "p3"][0]
+        p3 = next(p for p in idp.paramspecs if p.name == "p3")
         assert p3.depends_on == ""
         assert p3.depends_on_ == []
         assert p3.inferred_from == "p1, p0"
@@ -439,7 +439,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p3.label == "Parameter 3"
         assert p3.unit == "unit 3"
 
-        p4 = [p for p in idp.paramspecs if p.name == "p4"][0]
+        p4 = next(p for p in idp.paramspecs if p.name == "p4")
         assert p4.depends_on == "p2, p3"
         assert p4.depends_on_ == ["p2", "p3"]
         assert p4.inferred_from == ""
@@ -447,7 +447,7 @@ def test_perform_upgrade_v2_v3_to_v4_fixes() -> None:
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
-        p5 = [p for p in idp.paramspecs if p.name == "p5"][0]
+        p5 = next(p for p in idp.paramspecs if p.name == "p5")
         assert p5.depends_on == ""
         assert p5.depends_on_ == []
         assert p5.inferred_from == "p0"
@@ -486,7 +486,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
 
         assert isinstance(idp, InterDependencies)
 
-        p0 = [p for p in idp.paramspecs if p.name == "p0"][0]
+        p0 = next(p for p in idp.paramspecs if p.name == "p0")
         assert p0.depends_on == ""
         assert p0.depends_on_ == []
         assert p0.inferred_from == ""
@@ -494,7 +494,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
         assert p0.label == "Parameter 0"
         assert p0.unit == "unit 0"
 
-        p1 = [p for p in idp.paramspecs if p.name == "p1"][0]
+        p1 = next(p for p in idp.paramspecs if p.name == "p1")
         assert p1.depends_on == ""
         assert p1.depends_on_ == []
         assert p1.inferred_from == ""
@@ -502,7 +502,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
         assert p1.label == "Parameter 1"
         assert p1.unit == "unit 1"
 
-        p2 = [p for p in idp.paramspecs if p.name == "p2"][0]
+        p2 = next(p for p in idp.paramspecs if p.name == "p2")
         assert p2.depends_on == ""
         assert p2.depends_on_ == []
         assert p2.inferred_from == "p0"
@@ -510,7 +510,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
         assert p2.label == "Parameter 2"
         assert p2.unit == "unit 2"
 
-        p3 = [p for p in idp.paramspecs if p.name == "p3"][0]
+        p3 = next(p for p in idp.paramspecs if p.name == "p3")
         assert p3.depends_on == ""
         assert p3.depends_on_ == []
         assert p3.inferred_from == "p1, p0"
@@ -518,7 +518,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
         assert p3.label == "Parameter 3"
         assert p3.unit == "unit 3"
 
-        p4 = [p for p in idp.paramspecs if p.name == "p4"][0]
+        p4 = next(p for p in idp.paramspecs if p.name == "p4")
         assert p4.depends_on == "p2, p3"
         assert p4.depends_on_ == ["p2", "p3"]
         assert p4.inferred_from == ""
@@ -526,7 +526,7 @@ def test_perform_upgrade_v3_to_v4() -> None:
         assert p4.label == "Parameter 4"
         assert p4.unit == "unit 4"
 
-        p5 = [p for p in idp.paramspecs if p.name == "p5"][0]
+        p5 = next(p for p in idp.paramspecs if p.name == "p5")
         assert p5.depends_on == ""
         assert p5.depends_on_ == []
         assert p5.inferred_from == "p0"

@@ -1041,8 +1041,8 @@ def test_get_multi_parameter_data(multi_dataset) -> None:
     ]
 
     expected_names = {}
-    expected_names["this"] = ["this"] + sp_names
-    expected_names["that"] = ["that"] + sp_names
+    expected_names["this"] = ["this", *sp_names]
+    expected_names["that"] = ["that", *sp_names]
     expected_shapes: dict[str, list[tuple[int, ...]]] = {}
     expected_values = {}
     shape_1 = 5

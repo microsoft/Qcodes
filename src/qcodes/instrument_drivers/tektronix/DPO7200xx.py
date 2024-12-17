@@ -362,6 +362,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 @deprecated(
     "TekronixDPOWaveform is deprecated use TektronixDPOWaveform",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class TekronixDPOWaveform(TektronixDPOWaveform):
     """
@@ -756,6 +757,7 @@ class TektronixDPOTrigger(InstrumentChannel):
 @deprecated(
     "TekronixDPOTrigger is deprecated use TektronixDPOTrigger",
     category=QCoDeSDeprecationWarning,
+    stacklevel=2,
 )
 class TekronixDPOTrigger(TektronixDPOTrigger):
     """
@@ -920,7 +922,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
                 f"source{src}",
                 get_cmd=f"MEASUrement:MEAS{self._measurement_number}:SOUrce{src}?",
                 set_cmd=partial(self._set_source, src),
-                vals=Enum(*(TektronixDPOWaveform.valid_identifiers + ["HISTogram"])),
+                vals=Enum(*([*TektronixDPOWaveform.valid_identifiers, "HISTogram"])),
             )
 
     @property
