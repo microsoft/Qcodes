@@ -461,7 +461,7 @@ types-setuptools==75.6.0.20241126
     # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20241207
     # via qcodes (pyproject.toml)
-types-tqdm==4.67.0.20241119
+types-tqdm==4.67.0.20241220
     # via qcodes (pyproject.toml)
 typing-extensions==4.12.2
     # via
