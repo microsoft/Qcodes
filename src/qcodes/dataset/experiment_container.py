@@ -183,7 +183,7 @@ class Experiment(Sized):
         run_id = get_last_run(self.conn, self.exp_id)
         if run_id is None:
             raise ValueError("There are no runs in this experiment")
-        return load_by_id(run_id)
+        return load_by_id(run_id, conn=self.conn)
 
     def finish(self) -> None:
         """
