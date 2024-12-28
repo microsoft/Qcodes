@@ -192,7 +192,7 @@ class GalilDMC4133VectorMode(InstrumentChannel):
     @staticmethod
     def _parse_coordinate_system_active(val: str) -> str:
         """
-        parses the current active coordinate system
+        Parses the current active coordinate system
         """
         if int(float(val)):
             return "T"
@@ -201,13 +201,13 @@ class GalilDMC4133VectorMode(InstrumentChannel):
 
     def activate(self) -> None:
         """
-        activate plane of motion
+        Activate plane of motion
         """
         self.write(f"VM {self._plane}")
 
     def vector_position(self, first_coord: int, second_coord: int) -> None:
         """
-        sets the final vector position for the motion considering current
+        Sets the final vector position for the motion considering current
         position as the origin
         """
         self._vector_position_validator.validate(first_coord)
@@ -217,26 +217,26 @@ class GalilDMC4133VectorMode(InstrumentChannel):
 
     def vector_seq_end(self) -> None:
         """
-        indicates to the controller that the end of the vector is coming up.
+        Indicates to the controller that the end of the vector is coming up.
         is required to exit the vector mode gracefully
         """
         self.write("VE")
 
     def begin_seq(self) -> None:
         """
-        begins motion of the motor
+        Begins motion of the motor
         """
         self.write("BG S")
 
     def after_seq_motion(self) -> None:
         """
-        wait till motion ends
+        Wait till motion ends
         """
         self.write("AM S")
 
     def clear_sequence(self, coord_sys: str) -> None:
         """
-        clears vectors specified in the given coordinate system
+        Clears vectors specified in the given coordinate system
         """
         if coord_sys not in ["S", "T"]:
             raise RuntimeError(
@@ -387,43 +387,43 @@ class GalilDMC4133Motor(InstrumentChannel):
 
     def _set_off_when_error_occurs(self, val: int) -> None:
         """
-        sets the motor to turn off automatically when the error occurs
+        Sets the motor to turn off automatically when the error occurs
         """
         self.write(f"OE{self._axis}={val}")
 
     def _set_deceleration(self, val: str) -> None:
         """
-        set deceleration for the motor's motion
+        Set deceleration for the motor's motion
         """
         self.write(f"DC{self._axis}={val}")
 
     def _set_acceleration(self, val: str) -> None:
         """
-        set acceleration for the motor's motion
+        Set acceleration for the motor's motion
         """
         self.write(f"AC{self._axis}={val}")
 
     def _set_speed(self, val: str) -> None:
         """
-        sets speed for motor's motion
+        Sets speed for motor's motion
         """
         self.write(f"SP{self._axis}={val}")
 
     def _set_relative_position(self, val: str) -> None:
         """
-        sets relative position
+        Sets relative position
         """
         self.write(f"PR{self._axis}={val}")
 
     def off(self) -> None:
         """
-        turns motor off
+        Turns motor off
         """
         self.write(f"MO {self._axis}")
 
     def on_off_status(self) -> str:
         """
-        tells motor on off status
+        Tells motor on off status
         """
         val = self.ask(f"MG _MO{self._axis}")
         if val[0] == "1":
@@ -433,26 +433,26 @@ class GalilDMC4133Motor(InstrumentChannel):
 
     def servo_here(self) -> None:
         """
-        servo at the motor
+        Servo at the motor
         """
         self.write(f"SH {self._axis}")
 
     def begin(self) -> None:
         """
-        begins motion of the motor (returns immediately)
+        Begins motion of the motor (returns immediately)
         """
         self.write(f"BG {self._axis}")
 
     def is_in_motion(self) -> int:
         """
-        checks if the motor is in motion or not. return 1, if motor is in
+        Checks if the motor is in motion or not. return 1, if motor is in
         motion otherwise 0
         """
         return int(float(self.ask(f"MG _BG{self._axis}")))
 
     def wait_till_motor_motion_complete(self) -> None:
         """
-        wait for motion on the motor to complete
+        Wait for motion on the motor to complete
         """
         try:
             while self.is_in_motion():
@@ -463,7 +463,7 @@ class GalilDMC4133Motor(InstrumentChannel):
 
     def error_magnitude(self) -> float:
         """
-        gives the magnitude of error, in quadrature counts, for this motor
+        Gives the magnitude of error, in quadrature counts, for this motor
         a count is directly proportional to the micro-stepping
         resolution of the stepper drive.
         """
@@ -535,7 +535,7 @@ class GalilDMC4133Controller(GalilMotionController):
 
     def _set_default_update_time(self) -> None:
         """
-        sets sampling period to default value of 1000. sampling period affects
+        Sets sampling period to default value of 1000. sampling period affects
         the AC, AS, AT, DC, FA, FV, HV, JG, KP, NB, NF, NZ, PL, SD, SP, VA,
         VD, VS, WT commands.
         """
@@ -543,7 +543,7 @@ class GalilDMC4133Controller(GalilMotionController):
 
     def _get_absolute_position(self) -> dict[str, int]:
         """
-        gets absolution position of the motors from the defined origin
+        Gets absolution position of the motors from the defined origin
         """
         result = dict()
         data = self.ask("PA ?,?,?").split(" ")
@@ -555,49 +555,49 @@ class GalilDMC4133Controller(GalilMotionController):
 
     def end_program(self) -> None:
         """
-        ends the program
+        Ends the program
         """
         self.write("EN")
 
     def define_position_as_origin(self) -> None:
         """
-        defines current motors position as origin
+        Defines current motors position as origin
         """
         self.write("DP 0,0,0")
 
     def tell_error(self) -> str:
         """
-        reads error
+        Reads error
         """
         return self.ask("TC1")
 
     def stop(self) -> None:
         """
-        stop the motion of all motors
+        Stop the motion of all motors
         """
         self.write("ST")
 
     def abort(self) -> None:
         """
-        aborts motion and the program operation
+        Aborts motion and the program operation
         """
         self.write("AB")
 
     def motors_off(self) -> None:
         """
-        turn all motors off
+        Turn all motors off
         """
         self.write("MO")
 
     def begin_motors(self) -> None:
         """
-        begin motion of all motors simultaneously
+        Begin motion of all motors simultaneously
         """
         self.write("BG")
 
     def wait_till_motion_complete(self) -> None:
         """
-        this method waits for the motion on all motors to complete
+        This method waits for the motion on all motors to complete
         """
         try:
             while (
@@ -722,7 +722,7 @@ class GalilDMC4133Arm:
         self, speed: int = 100, acceleration: int = 2048, deceleration: int = 2048
     ) -> None:
         """
-        sets the arm kinematics values for speed, acceleration and
+        Sets the arm kinematics values for speed, acceleration and
         deceleration in micro meters/sec and micro meters/sec^2 respectively
         """
 
@@ -738,7 +738,7 @@ class GalilDMC4133Arm:
 
     def set_pick_up_distance(self, distance: float = 3000) -> None:
         """
-        sets pick up distance in micrometers for the arm
+        Sets pick up distance in micrometers for the arm
         """
 
         self._arm_pick_up_distance = _convert_micro_meter_to_quadrature_counts(distance)
@@ -844,7 +844,7 @@ class GalilDMC4133Arm:
 
     def _setup_motion(self, rel_vec: np.ndarray, d: float, speed: float) -> None:
         """
-        sets up motion parameters. all arguments have units in quadrature counts
+        Sets up motion parameters. all arguments have units in quadrature counts
         """
 
         pos = self.controller.absolute_position()

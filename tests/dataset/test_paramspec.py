@@ -355,7 +355,7 @@ def test_base_version(paramspecs) -> None:
 
 def test_not_eq_for_list_attr() -> None:
     """
-    test that two paramspecs that differ only
+    Test that two paramspecs that differ only
     in list attrs are different
     """
 
@@ -366,7 +366,7 @@ def test_not_eq_for_list_attr() -> None:
 
 def test_not_eq_for_str_attr() -> None:
     """
-    test that two paramspecs that differ only
+    Test that two paramspecs that differ only
     in str attrs are different
     """
 
@@ -381,7 +381,7 @@ def test_not_eq_for_str_attr() -> None:
 
 def test_not_eq_non_paramspec() -> None:
     """
-    test that two paramspecs that differ only
+    Test that two paramspecs that differ only
     in str attrs are different
     """
 

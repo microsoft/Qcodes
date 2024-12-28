@@ -61,7 +61,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
 
     def do_acquisition(self) -> float:
         """
-        this method performs an acquisition, which is the get_cmd for the
+        This method performs an acquisition, which is the get_cmd for the
         acquisiion parameter of this instrument
         :return:
         """
@@ -147,7 +147,7 @@ class DemodulationAcquisitionController(AcquisitionController[float]):
 
     def fit(self, buf: np.ndarray) -> tuple[float, float]:
         """
-        the DFT is implemented in this method
+        The DFT is implemented in this method
         :param buf: buffer to perform the transform on
         :return: return amplitude and phase of the resulted transform
         """

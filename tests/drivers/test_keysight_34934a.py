@@ -22,14 +22,14 @@ def switch_driver():
 
 def test_protection_mode(switch_driver) -> None:
     """
-    to check the protection mode (34934A module only)
+    To check the protection mode (34934A module only)
     """
     assert switch_driver.module[1].protection_mode() == "AUTO100"
 
 
 def test_connection(switch_driver) -> None:
     """
-    to check if a channel is closed or open
+    To check if a channel is closed or open
     """
     assert not switch_driver.module[1].is_closed(2, 3)
     assert switch_driver.module[1].is_open(2, 3)

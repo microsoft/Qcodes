@@ -286,7 +286,7 @@ class KeysightB220X(VisaInstrument):
     @post_execution_status_poll
     def disconnect_all(self) -> None:
         """
-        opens all connections.
+        Opens all connections.
 
         If ground or bias mode is enabled it will connect all outputs to the
         GND or Bias Port

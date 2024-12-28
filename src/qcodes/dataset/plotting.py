@@ -745,7 +745,7 @@ def _clip_nan_from_shaped_data(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     def _on_rectilinear_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
         """
-        check that data is on a rectilinear grid. e.g. all points are the same as the  first
+        Check that data is on a rectilinear grid. e.g. all points are the same as the first
         row and column with the exception of nans. Those represent points not yet measured.
         """
         x_row = x_data[:, 0:1]
