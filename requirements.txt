@@ -457,7 +457,7 @@ types-pywin32==308.0.0.20241221
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20241016
     # via qcodes (pyproject.toml)
-types-setuptools==75.6.0.20241126
+types-setuptools==75.6.0.20241223
     # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20241207
     # via qcodes (pyproject.toml)
