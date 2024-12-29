@@ -453,7 +453,7 @@ types-jsonschema==4.23.0.20241208
     # via qcodes (pyproject.toml)
 types-pytz==2024.2.0.20241003
     # via pandas-stubs
-types-pywin32==308.0.0.20241128
+types-pywin32==308.0.0.20241221
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20241016
     # via qcodes (pyproject.toml)
