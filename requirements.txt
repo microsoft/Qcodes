@@ -276,7 +276,7 @@ pluggy==1.5.0
     # via pytest
 prompt-toolkit==3.0.48
     # via ipython
-psutil==6.1.0
+psutil==6.1.1
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
