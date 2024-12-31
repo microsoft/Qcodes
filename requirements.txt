@@ -353,7 +353,7 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-ruamel-yaml==0.18.6
+ruamel-yaml==0.18.7
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
