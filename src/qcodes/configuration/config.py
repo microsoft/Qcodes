@@ -27,7 +27,7 @@ BASE_SCHEMA = {
 }
 
 # https://github.com/python/mypy/issues/4182
-_PARENT_MODULE = ".".join(__loader__.name.split(".")[:-1])  # type: ignore[name-defined]
+_PARENT_MODULE = "qcodes.configuration"
 
 
 class Config:
