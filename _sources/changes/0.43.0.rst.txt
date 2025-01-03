@@ -1,0 +1,31 @@
+QCoDeS 0.43.0 (2024-01-04)
+==========================
+
+Improved:
+---------
+
+- qcodes.Monitor now runs as a daemon thread, resolving issues with closing python or ipython with a running qcodes.Monitor. (:pr:`5565`)
+- The use of multi index when exporting to xarray (and netcdf files) has been made smarter
+  such that any dataset with a known shape (such as those measured by doNd etc) will
+  never be automatically exported using multi index even in the case of incomplete datasets (i.e. due to an interrupted measurement).
+  Furthermore `to_xarray_dataset` and `to_xarray_dataarray_dict` have gained a key word argument `use_multi_index` to allow the user
+  to control the use of multi indexes. (:pr:`5589`)
+- The feature of exporting large DataSets to netcdf by writing individual small files and combining them, introduced in QCoDeS 0.41.0 has been made configurable
+  and turned off by default due to a number of corner cases where the export did not work correctly. The
+  feature can be enabled when required by setting the config variable `qcodes.config.dataset.export_chunked_export_of_large_files_enabled`
+  to True and the threshold controlled using `qcodes.config.dataset.export_chunked_threshold` (:pr:`5618`)
+
+
+Improved Drivers:
+-----------------
+
+- Keithley 2450s by default don't block when setting their output level, differing in behavior from the keithley 2400.
+  I added a manual boolian parameter 'block_during_ramp' which forces a check that the ramp command has been completed when True. (:pr:`5547`)
+- Previously, the keithley 2450 driver had an initial value for the output. This is particularly dangerous when reinitializing/recovering from a kernal crash.
+  Initializing the instrument should leave all parameters unchanged. This PR removes the initial value for the output. (:pr:`5572`)
+
+
+Under the hood:
+---------------
+
+- Fix typo: instrument_drivers.mock_instruments.DummyInstrument::get_idn() now returns dict containing key "serial" instead of "seral" (:pr:`5579`)
