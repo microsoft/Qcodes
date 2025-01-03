@@ -356,7 +356,7 @@ class FrequencySweep(ArrayParameter):
 
     def set_sweep(self, start: float, stop: float, npts: int) -> None:
         """
-        sets the shapes and setpoint arrays of the parameter to
+        Sets the shapes and setpoint arrays of the parameter to
         correspond with the sweep
 
         Args:

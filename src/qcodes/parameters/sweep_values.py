@@ -157,7 +157,7 @@ class SweepValues(Metadatable):
 
     def __iter__(self) -> Iterator[Any]:
         """
-        must be overridden (along with __next__ if this returns self)
+        Must be overridden (along with __next__ if this returns self)
         by a subclass to tell how to iterate over these values
         """
         raise NotImplementedError

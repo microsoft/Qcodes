@@ -1019,7 +1019,7 @@ class Keithley2600(VisaInstrument):
     @staticmethod
     def _scriptwrapper(program: list[str], debug: bool = False) -> str:
         """
-        wraps a program so that the output can be put into
+        Wraps a program so that the output can be put into
         visa_handle.write and run.
         The script will run immediately as an anonymous script.
 

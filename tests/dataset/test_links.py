@@ -24,7 +24,7 @@ def generate_some_links(N: int) -> list[Link]:
 
     def _timestamp() -> int:
         """
-        return a random timestamp that is approximately
+        Return a random timestamp that is approximately
         one day in the past.
         """
         timestamp = datetime.now() - timedelta(days=1, seconds=random.randint(1, 1000))

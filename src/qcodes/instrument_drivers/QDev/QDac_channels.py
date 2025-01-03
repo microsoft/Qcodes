@@ -446,7 +446,7 @@ class QDevQDac(VisaInstrument):
 
     def _num_verbose(self, s: str) -> float:
         """
-        turn a return value from the QDac into a number.
+        Turn a return value from the QDac into a number.
         If the QDac is in verbose mode, this involves stripping off the
         value descriptor.
         """
@@ -456,7 +456,7 @@ class QDevQDac(VisaInstrument):
 
     def _current_parser(self, s: str) -> float:
         """
-        parser for chXX_i parameter
+        Parser for chXX_i parameter
         """
         return 1e-6 * self._num_verbose(s)
 

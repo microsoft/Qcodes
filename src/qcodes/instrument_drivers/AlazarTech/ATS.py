@@ -329,7 +329,7 @@ class AlazarTechATS(Instrument):
         acquisition_controller: AcquisitionController[OutputType] | None = None,
     ) -> OutputType:
         """
-        perform a single acquisition with the Alazar board, and set certain
+        Perform a single acquisition with the Alazar board, and set certain
         parameters to the appropriate values
         for the parameters, see the ATS-SDK programmer's guide
 
@@ -653,7 +653,7 @@ class AlazarTechATS(Instrument):
 
     def signal_to_volt(self, channel: int, signal: float) -> float:
         """
-        convert a value from a buffer to an actual value in volts based on the
+        Convert a value from a buffer to an actual value in volts based on the
         ranges of the channel
 
         Args:
@@ -805,7 +805,7 @@ class Buffer:
 
     def free_mem(self) -> None:
         """
-        uncommit memory allocated with this buffer object
+        Uncommit memory allocated with this buffer object
         """
         self._allocated = False
         if sys.platform == "win32":
@@ -938,7 +938,7 @@ class AcquisitionController(Instrument, AcquisitionInterface[Any], Generic[Outpu
 
     def _get_alazar(self) -> AlazarTechATS:
         """
-        returns a reference to the alazar instrument. A call to self._alazar is
+        Returns a reference to the alazar instrument. A call to self._alazar is
         quicker, so use that if in need for speed
         :return: reference to the Alazar instrument
         """

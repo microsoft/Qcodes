@@ -82,7 +82,7 @@ _azure_monitor_opentelemetry_exporter_filter = logging.Filter(
 )
 def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
     """
-    here we filter any message that is likely to be thrown from
+    Here we filter any message that is likely to be thrown from
     opencensus/opentelemetry so it is not shown in the user console
     """
     return (
