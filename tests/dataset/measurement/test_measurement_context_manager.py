@@ -965,7 +965,7 @@ def test_datasaver_arrayparams(
     SpectrumAnalyzer, DAC, N, M, param_type, storage_type, seed, bg_writing
 ) -> None:
     """
-    test that data is stored correctly for array parameters that
+    Test that data is stored correctly for array parameters that
     return numpy arrays, lists and tuples. Stored both as arrays and
     numeric
     """

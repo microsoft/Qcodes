@@ -55,7 +55,7 @@ class AbstractSweep(ABC, Generic[T]):
     @abstractmethod
     def post_actions(self) -> ActionsT:
         """
-        actions to be performed after setting param to its setpoint.
+        Actions to be performed after setting param to its setpoint.
         """
         pass
 
