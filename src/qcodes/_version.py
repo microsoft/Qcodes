@@ -4,10 +4,7 @@ def _get_version() -> str:
 
     import versioningit
 
-    # https://github.com/python/mypy/issues/4182
-    root_module = __loader__.name.split(".")[0]  # type: ignore[name-defined]
-
-    module_path = files(root_module)
+    module_path = files("qcodes")
     if isinstance(module_path, Path):
         return versioningit.get_version(project_dir=Path(module_path).parent.parent)
     else:
