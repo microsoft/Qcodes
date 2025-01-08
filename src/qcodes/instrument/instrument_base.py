@@ -166,6 +166,16 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = True
 
+        bind_to_instrument = kwargs["bind_to_instrument"]
+
+        if bind_to_instrument is False:
+            warnings.warn(
+                f"Parameter {name} passed to `add_parameter` "
+                "on instrument {self.full_name} with `bind_to_instrument=False`. "
+                "This is not recommended as it results in inconsistent behavior. "
+                "To disable snapshotting of the parameter set `snapshot_exclude=True`."
+            )
+
         try:
             param = parameter_class(name=name, instrument=self, **kwargs)
         except TypeError:
@@ -180,7 +190,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             param = parameter_class(name=name, instrument=self, **kwargs)
 
         existing_parameter = self.parameters.get(name, None)
-        if not existing_parameter:
+        if not existing_parameter and bind_to_instrument:
             warnings.warn(
                 f"Parameter {name} did not correctly register itself on instrument"
                 f" {self.name}. Please check that `instrument` argument is passed "
