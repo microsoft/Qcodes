@@ -363,7 +363,7 @@ schema==0.7.7
     # via broadbean
 scipy==1.15.0
     # via qcodes (pyproject.toml)
-setuptools==75.7.0
+setuptools==75.8.0
     # via incremental
 six==1.17.0
     # via
