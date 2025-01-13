@@ -139,8 +139,7 @@ ERROR_CODES: dict[ReturnCode, str] = {
         600: "ApiNotEnoughNptFooters",
         601: "ApiInvalidNptFooter",
         602: (
-            "ApiOCTIgnoreBadClockNotSupported: OCT ignore bad clock is not "
-            "supported."
+            "ApiOCTIgnoreBadClockNotSupported: OCT ignore bad clock is not supported."
         ),
         603: (
             "ApiError: The requested number of records in a single-port "

@@ -44,8 +44,7 @@ class Link:
             validate_guid_format(node_guid)
         except ValueError:
             raise ValueError(
-                f"The guid given for {node} is not a valid guid. Received "
-                f"{node_guid}."
+                f"The guid given for {node} is not a valid guid. Received {node_guid}."
             )
 
     def __post_init__(self) -> None:

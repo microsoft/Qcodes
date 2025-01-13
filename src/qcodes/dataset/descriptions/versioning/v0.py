@@ -27,7 +27,7 @@ class InterDependencies:
     def __repr__(self) -> str:
         output = self.__class__.__name__
         tojoin = (str(paramspec) for paramspec in self.paramspecs)
-        output += f'({", ".join(tojoin)})'
+        output += f"({', '.join(tojoin)})"
         return output
 
     def __eq__(self, other: Any) -> bool:

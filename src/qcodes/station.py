@@ -910,7 +910,7 @@ def _merge_yamls(*yamls: str | Path) -> str:
             else:
                 raise KeyError(
                     f"duplicate key `{entry}` detected among files:"
-                    f"{ ','.join(map(str, yamls))}"
+                    f"{','.join(map(str, yamls))}"
                 )
         deq.popleft()
     assert data1 is not None

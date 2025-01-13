@@ -1094,7 +1094,7 @@ class TektronixAWG70000Base(VisaInstrument):
         if set(channel_mapping.values()) != set(range(1, 1 + len(chan_list))):
             raise ValueError(
                 "Invalid channel_mapping. Must map onto "
-                f"{list(range(1, 1+len(chan_list)))}"
+                f"{list(range(1, 1 + len(chan_list)))}"
             )
 
         ##########
@@ -1453,8 +1453,7 @@ class TektronixAWG70000Base(VisaInstrument):
 
         if lstlens[0] != len(elem_names):
             raise ValueError(
-                "Mismatch between number of waveforms and"
-                " number of sequencing steps."
+                "Mismatch between number of waveforms and number of sequencing steps."
             )
 
         N = lstlens[0]
@@ -1524,7 +1523,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 repcount.text = "1"
             else:
                 rep.text = "RepeatCount"
-                repcount.text = f"{nreps[n-1]:d}"
+                repcount.text = f"{nreps[n - 1]:d}"
             # trigger wait
             temp_elem = ET.SubElement(step, "WaitInput")
             temp_elem.text = waitinputs[trig_waits[n - 1]]
@@ -1538,7 +1537,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 jumpstep.text = "1"
             else:
                 jumpto.text = "StepIndex"
-                jumpstep.text = f"{event_jump_to[n-1]:d}"
+                jumpstep.text = f"{event_jump_to[n - 1]:d}"
             # Go to
             goto = ET.SubElement(step, "GoTo")
             gotostep = ET.SubElement(step, "GoToStep")
@@ -1547,7 +1546,7 @@ class TektronixAWG70000Base(VisaInstrument):
                 gotostep.text = "1"
             else:
                 goto.text = "StepIndex"
-                gotostep.text = f"{go_to[n-1]:d}"
+                gotostep.text = f"{go_to[n - 1]:d}"
 
             assets = ET.SubElement(step, "Assets")
             for assetname in elem_names[n - 1]:

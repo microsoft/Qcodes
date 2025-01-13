@@ -55,9 +55,7 @@ def test_load_by_id() -> None:
     non_existing_run_id = run_id + 1
     with pytest.raises(
         ValueError,
-        match=f"Run with run_id "
-        f"{non_existing_run_id} does not "
-        f"exist in the database",
+        match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
         _ = load_by_id(non_existing_run_id)
 

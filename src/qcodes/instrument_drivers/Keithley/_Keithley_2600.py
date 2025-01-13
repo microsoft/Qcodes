@@ -139,8 +139,8 @@ class TimeTrace(ParameterWithSetpoints):
         plc = 1 / linefreq
         if nplc * plc > dt:
             warnings.warn(
-                f"Integration time of {nplc*plc*1000:.1f} "
-                f"ms is longer than {dt*1000:.1f} ms set "
+                f"Integration time of {nplc * plc * 1000:.1f} "
+                f"ms is longer than {dt * 1000:.1f} ms set "
                 "as measurement interval. Consider lowering "
                 "NPLC or increasing interval.",
                 UserWarning,
@@ -304,8 +304,7 @@ class _MeasurementCurrentParameter(_ParameterWithStatus):
         channel = self.instrument.channel
 
         data = smu.ask(
-            f"{channel}.measure.i(), "
-            f"status.measurement.instrument.{channel}.condition"
+            f"{channel}.measure.i(), status.measurement.instrument.{channel}.condition"
         )
         value, status = self._parse_response(data)
 
@@ -334,8 +333,7 @@ class _MeasurementVoltageParameter(_ParameterWithStatus):
         channel = self.instrument.channel
 
         data = smu.ask(
-            f"{channel}.measure.v(), "
-            f"status.measurement.instrument.{channel}.condition"
+            f"{channel}.measure.v(), status.measurement.instrument.{channel}.condition"
         )
         value, status = self._parse_response(data)
 
