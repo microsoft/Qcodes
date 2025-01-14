@@ -96,8 +96,7 @@ class ScopeArray(ArrayParameter):
         assert isinstance(self.root_instrument, TektronixTPS2012)
         if not self.root_instrument.trace_ready:
             raise TraceNotReady(
-                "Please run prepare_curvedata to prepare "
-                "the scope for giving a trace."
+                "Please run prepare_curvedata to prepare the scope for giving a trace."
             )
         message = self._curveasker(self.channel)
         _, ydata, _ = self._curveparameterparser(message)

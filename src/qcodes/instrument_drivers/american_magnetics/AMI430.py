@@ -199,8 +199,7 @@ class AMI430(IPInstrument):
     ):
         if "has_current_rating" in kwargs.keys():
             warnings.warn(
-                "'has_current_rating' kwarg to AMI430 "
-                "is deprecated and has no effect",
+                "'has_current_rating' kwarg to AMI430 is deprecated and has no effect",
                 category=QCoDeSDeprecationWarning,
             )
             kwargs.pop("has_current_rating")

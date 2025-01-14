@@ -862,8 +862,7 @@ class Measurement:
                     depends_on.append(sp_psb)
                 except KeyError:
                     raise ValueError(
-                        f"Unknown setpoint: {sp}."
-                        " Please register that parameter first."
+                        f"Unknown setpoint: {sp}. Please register that parameter first."
                     )
 
         # now handle inferred parameters
@@ -1001,8 +1000,7 @@ class Measurement:
             or any(not isinstance(a, (str, ParameterBase)) for a in arg)
         ):
             raise TypeError(
-                f"{name} should be a sequence of str or ParameterBase, not "
-                f"{type(arg)}"
+                f"{name} should be a sequence of str or ParameterBase, not {type(arg)}"
             )
 
     @staticmethod
@@ -1160,9 +1158,7 @@ class Measurement:
         for sp in parameter.setpoints:
             if not isinstance(sp, Parameter):
                 raise RuntimeError(
-                    "The setpoints of a "
-                    "ParameterWithSetpoints "
-                    "must be a Parameter"
+                    "The setpoints of a ParameterWithSetpoints must be a Parameter"
                 )
             spname = sp.register_name
             splabel = sp.label
@@ -1333,8 +1329,7 @@ class Measurement:
         nargs = len(signature(func).parameters)
         if len(args) != nargs:
             raise ValueError(
-                "Mismatch between function call signature and "
-                "the provided arguments."
+                "Mismatch between function call signature and the provided arguments."
             )
 
         self.enteractions.append((func, args))
@@ -1354,8 +1349,7 @@ class Measurement:
         nargs = len(signature(func).parameters)
         if len(args) != nargs:
             raise ValueError(
-                "Mismatch between function call signature and "
-                "the provided arguments."
+                "Mismatch between function call signature and the provided arguments."
             )
 
         self.exitactions.append((func, args))

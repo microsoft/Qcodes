@@ -106,8 +106,7 @@ def test_get_interlock_state(driver) -> None:
         {
             "slot_no": "1",
             "state": (
-                "No card is installed or the installed card does "
-                "not support interlocks"
+                "No card is installed or the installed card does not support interlocks"
             ),
         },
         {"slot_no": "2", "state": "Interlocks 1 and 2 are disengaged on the card"},

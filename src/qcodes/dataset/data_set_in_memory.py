@@ -702,8 +702,7 @@ class DataSetInMem(BaseDataSet):
         """
         if not self.pristine:
             raise RuntimeError(
-                "Can not set parent dataset links on a dataset "
-                "that has been started."
+                "Can not set parent dataset links on a dataset that has been started."
             )
 
         if not all(isinstance(link, Link) for link in links):

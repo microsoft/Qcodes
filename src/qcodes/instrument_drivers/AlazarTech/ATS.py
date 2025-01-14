@@ -431,9 +431,9 @@ class AlazarTechATS(Instrument):
         if internal_buffer_size_requested > max_buffer_size:
             raise RuntimeError(
                 f"Requested a buffer of size: "
-                f"{internal_buffer_size_requested / 1024 ** 2}"
+                f"{internal_buffer_size_requested / 1024**2}"
                 f" MB. The maximum supported size is "
-                f"{max_buffer_size / 1024 ** 2} MB "
+                f"{max_buffer_size / 1024**2} MB "
                 f"(recommended is <8MB)."
             )
 

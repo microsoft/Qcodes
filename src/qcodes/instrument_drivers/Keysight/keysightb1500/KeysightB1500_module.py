@@ -375,7 +375,7 @@ class StatusMixin:
         return_dict: dict[str, str] = {}
 
         for name_index, name in enumerate(self.names):
-            param_data: _FMTResponse = getattr(self, f"param{name_index+1}")
+            param_data: _FMTResponse = getattr(self, f"param{name_index + 1}")
 
             status_array = param_data.status
             if status_array is None:

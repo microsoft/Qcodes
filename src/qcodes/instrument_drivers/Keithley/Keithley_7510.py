@@ -555,8 +555,7 @@ class Keithley7510Sense(InstrumentChannel):
             set_cmd=self._set_user_delay,
             vals=Numbers(0, 1e4),
             unit="second",
-            docstring="Set a user-defined delay that you can use in the "
-            "trigger model.",
+            docstring="Set a user-defined delay that you can use in the trigger model.",
         )
         """Set a user-defined delay that you can use in the trigger model."""
 
@@ -862,8 +861,7 @@ class Keithley7510(VisaInstrument):
         """
         if self.digi_sense_function() == "None":
             raise AttributeError(
-                "Please use 'digi_sense_function()' to select"
-                " a digitize function first"
+                "Please use 'digi_sense_function()' to select a digitize function first"
             )
         sense_function = (
             self.digi_sense_function.get_latest() or self.digi_sense_function()

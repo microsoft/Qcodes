@@ -82,8 +82,7 @@ class ScopeArray(ArrayParameter):
         assert isinstance(self.root_instrument, RigolDS4000)
         if not self.trace_ready:
             raise RigolDS4000TraceNotReady(
-                "Please run prepare_curvedata to prepare "
-                "the scope for giving a trace."
+                "Please run prepare_curvedata to prepare the scope for giving a trace."
             )
         else:
             self.trace_ready = False

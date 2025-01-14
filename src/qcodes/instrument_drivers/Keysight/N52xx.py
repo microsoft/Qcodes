@@ -343,8 +343,7 @@ class KeysightPNATrace(InstrumentChannel):
                 )
             elif source == "EXT":
                 msg += (
-                    "The trigger source is external. Is the trigger "
-                    "source functional?"
+                    "The trigger source is external. Is the trigger source functional?"
                 )
             self.log.warning(msg)
             raise

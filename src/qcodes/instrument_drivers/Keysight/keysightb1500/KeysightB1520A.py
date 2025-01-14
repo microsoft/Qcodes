@@ -352,12 +352,7 @@ class KeysightB1500CVSweeper(InstrumentChannel):
                 self.sweep_end,
                 self.sweep_steps,
             ],
-            set_cmd="WDCV "
-            "{_chan},"
-            "{sweep_mode},"
-            "{sweep_start},"
-            "{sweep_end},"
-            "{sweep_steps}",
+            set_cmd="WDCV {_chan},{sweep_mode},{sweep_start},{sweep_end},{sweep_steps}",
             get_cmd=self._get_sweep_steps(),
             get_parser=self._get_sweep_steps_parser,
         )
@@ -1401,8 +1396,7 @@ class KeysightB1500Correction(InstrumentChannel):
 
         is_enabled = self.is_enabled(corr=corr)
         response_out = (
-            f"Correction status {correction_status.name} and "
-            f"Enable {is_enabled.name}"
+            f"Correction status {correction_status.name} and Enable {is_enabled.name}"
         )
         return response_out
 

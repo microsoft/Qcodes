@@ -246,8 +246,7 @@ def set_journal_mode(conn: ConnectionPlus, journal_mode: JournalMode) -> None:
     valid_journal_modes = ["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
     if journal_mode not in valid_journal_modes:
         raise RuntimeError(
-            f"Invalid journal_mode {journal_mode} "
-            f"Valid modes are {valid_journal_modes}"
+            f"Invalid journal_mode {journal_mode} Valid modes are {valid_journal_modes}"
         )
     query = f"PRAGMA journal_mode={journal_mode};"
     cursor = conn.cursor()
@@ -311,8 +310,7 @@ def conn_from_dbpath_or_conn(
 
     if path_to_db is not None and conn is not None:
         raise ValueError(
-            "Received BOTH conn and path_to_db. Please "
-            "provide only one or the other."
+            "Received BOTH conn and path_to_db. Please provide only one or the other."
         )
     if conn is None and path_to_db is None:
         path_to_db = get_DB_location()

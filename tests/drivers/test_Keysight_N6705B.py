@@ -26,4 +26,4 @@ def test_channels(driver) -> None:
     assert len(driver.channels) == 4
     for i, ch in enumerate(driver.channels):
         assert ch.channel == i + 1
-        assert ch.ch_name == f"ch{i+1}"
+        assert ch.ch_name == f"ch{i + 1}"

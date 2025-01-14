@@ -234,7 +234,7 @@ class HarvardDecadacChannel(InstrumentChannel, DacReader):
             set_cmd=self._set_dac,
             set_parser=self._dac_v_to_code,
             vals=self._volt_val,
-            label=f"channel {channel+self._slot*4}",
+            label=f"channel {channel + self._slot * 4}",
             unit="V",
         )
         """Parameter volt"""

@@ -442,7 +442,7 @@ def _parser1(
                 assert file_format is not None
                 value = _unwrap(rawvalue, file_format)
                 (number, barename) = _getendingnumber(name)
-                fieldname = barename + f"{number-20}"
+                fieldname = barename + f"{number - 20}"
                 waveformlist[0].append(fieldname)
                 waveformlist[1].append(value)
 
