@@ -37,7 +37,7 @@ click==8.1.8
     # via
     #   dask
     #   towncrier
-cloudpickle==3.1.0
+cloudpickle==3.1.1
     # via dask
 colorama==0.4.6
     # via
@@ -102,7 +102,7 @@ h5py==3.12.1
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.123.7
+hypothesis==6.123.17
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -169,7 +169,7 @@ kiwisolver==1.4.8
     # via matplotlib
 lazy-loader==0.4
     # via qcodes-loop
-libcst==1.5.1
+libcst==1.6.0
     # via qcodes (pyproject.toml)
 locket==1.0.0
     # via partd
@@ -302,7 +302,7 @@ pytest==8.3.4
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.25.1
+pytest-asyncio==0.25.2
     # via qcodes (pyproject.toml)
 pytest-cov==6.0.0
     # via qcodes (pyproject.toml)
@@ -361,9 +361,9 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 schema==0.7.7
     # via broadbean
-scipy==1.15.0
+scipy==1.15.1
     # via qcodes (pyproject.toml)
-setuptools==75.7.0
+setuptools==75.8.0
     # via incremental
 six==1.17.0
     # via
@@ -457,7 +457,7 @@ types-pywin32==308.0.0.20241221
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20241016
     # via qcodes (pyproject.toml)
-types-setuptools==75.6.0.20241223
+types-setuptools==75.8.0.20250110
     # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20241207
     # via qcodes (pyproject.toml)
@@ -502,12 +502,12 @@ websockets==14.1
     #   qcodes
 widgetsnbextension==4.0.13
     # via ipywidgets
-wrapt==1.17.0
+wrapt==1.17.2
     # via
     #   qcodes (pyproject.toml)
     #   deprecated
     #   qcodes
-xarray==2025.1.0
+xarray==2025.1.1
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
