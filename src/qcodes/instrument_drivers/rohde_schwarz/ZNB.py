@@ -1027,10 +1027,10 @@ ZNBChannel = RohdeSchwarzZNBChannel
 
 class RohdeSchwarzZNBBase(VisaInstrument):
     """
-    Base class for QCoDeS driver for the Rohde & Schwarz ZNB8 and ZNB20
-    virtual network analyser. It can probably be extended to ZNB4 and 40
-    without too much work. This class should not be instantiated directly
-    the RohdeSchwarzZNB8 and RohdeSchwarzZNB20 should be used instead.
+    Base class for QCoDeS driver for the Rohde & Schwarz
+    ZNB4, ZNB8, ZNB20, ZNB40, ZNLE3, ZNLE4, ZNLE6, ZNLE14 and ZNLE18.
+    This class should not be instantiated directly
+    the ZNB and ZNLE should be used instead.
 
     Requires FrequencySweep parameter for taking a trace
 
