@@ -442,11 +442,29 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             "ZNB8": -80,
             "ZNB20": -60,
             "ZNB40": -60,
+            "ZNLE3": -10,
+            "ZNLE4": -10,
+            "ZNLE6": -10,
+            "ZNLE14": -10,
+            "ZNLE18": -10,
+        }
+        self._model_max_source_power = {
+            "ZNB4": 25,
+            "ZNB8": 25,
+            "ZNB20": 25,
+            "ZNB40": 25,
+            "ZNLE3": 0,
+            "ZNLE4": 0,
+            "ZNLE6": 0,
+            "ZNLE14": 0,
+            "ZNLE18": 0,
         }
         if model not in self._model_min_source_power.keys():
             raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
         self._min_source_power = self._model_min_source_power[model]
+        self._max_source_power: float
+        self._max_source_power = self._model_max_source_power[model]
 
         self.vna_parameter: Parameter = self.add_parameter(
             name="vna_parameter",
@@ -462,7 +480,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             get_cmd=f"SOUR{n}:POW?",
             set_cmd=f"SOUR{n}:POW {{:.4f}}",
             get_parser=float,
-            vals=vals.Numbers(self._min_source_power, 25),
+            vals=vals.Numbers(self._min_source_power, self._max_source_power),
         )
         """Parameter power"""
         self.bandwidth: Parameter = self.add_parameter(
@@ -1059,6 +1077,11 @@ class RohdeSchwarzZNBBase(VisaInstrument):
             "ZNB8": (9e3, 8.5e9),
             "ZNB20": (100e3, 20e9),
             "ZNB40": (10e6, 40e9),
+            "ZNLE3": (1e6, 3e9),
+            "ZNLE4": (1e6, 4e9),
+            "ZNLE6": (1e6, 6e9),
+            "ZNLE14": (1e6, 14e9),
+            "ZNLE18": (1e6, 18e9),
         }
         if model not in m_frequency.keys():
             raise RuntimeError(f"Unsupported ZNB model {model}")
