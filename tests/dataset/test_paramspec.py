@@ -155,8 +155,7 @@ def test_repr(name) -> None:
         if name.isidentifier():
             ps = ParamSpec(name, okt)
             expected_repr = (
-                f"ParamSpec('{name}', '{okt}', '', '', "
-                "inferred_from=[], depends_on=[])"
+                f"ParamSpec('{name}', '{okt}', '', '', inferred_from=[], depends_on=[])"
             )
             assert ps.__repr__() == expected_repr
         else:

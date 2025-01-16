@@ -1219,7 +1219,7 @@ class MessageBuilder:
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f"CL { as_csv(channels)}"
+            cmd = f"CL {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -2752,8 +2752,7 @@ class MessageBuilder:
         self, enable_data_output: bool, enable_leakage_current_compensation: bool
     ) -> "MessageBuilder":
         cmd = (
-            f"QSL {int(enable_data_output)},"
-            f"{int(enable_leakage_current_compensation)}"
+            f"QSL {int(enable_data_output)},{int(enable_leakage_current_compensation)}"
         )
 
         self._msg.append(cmd)

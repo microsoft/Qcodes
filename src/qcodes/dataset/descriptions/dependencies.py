@@ -186,10 +186,7 @@ class InterDependencies_:
                 if not isinstance(value, ParamSpecBase):
                     return (
                         TypeError,
-                        (
-                            "ParamSpecTree can only have tuples of "
-                            "ParamSpecs as values"
-                        ),
+                        ("ParamSpecTree can only have tuples of ParamSpecs as values"),
                     )
 
         # check for cycles

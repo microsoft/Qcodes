@@ -1219,8 +1219,7 @@ class SR86x(VisaInstrument):
         """
         if not 2 <= len(parameter_names) <= 3:
             raise KeyError(
-                "It is only possible to request values of 2 or 3 parameters "
-                "at a time."
+                "It is only possible to request values of 2 or 3 parameters at a time."
             )
 
         for name in parameter_names:
@@ -1232,7 +1231,7 @@ class SR86x(VisaInstrument):
                 )
 
         p_ids = [self.PARAMETER_NAMES[name] for name in parameter_names]
-        output = self.ask(f'SNAP? {",".join(p_ids)}')
+        output = self.ask(f"SNAP? {','.join(p_ids)}")
         return tuple(float(val) for val in output.split(","))
 
     def get_data_channels_values(self) -> tuple[float, ...]:

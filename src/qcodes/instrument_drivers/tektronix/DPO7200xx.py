@@ -936,8 +936,7 @@ class TektronixDPOMeasurement(InstrumentChannel):
     def _set_source(self, source_number: int, value: str) -> None:
         self._adjustment_time = time.perf_counter()
         self.write(
-            f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} "
-            f"{value}"
+            f"MEASUrement:MEAS{self._measurement_number}:SOUrce{source_number} {value}"
         )
 
     def wait_adjustment_time(self) -> None:

@@ -372,8 +372,7 @@ class OxfordMercuryiPS(VisaInstrument):
                     name=f"{coord}_simulramp",
                     label=f"{coord.upper()} ramp field",
                     unit=unit,
-                    docstring="A simultaneous blocking ramp for"
-                    " a combined coordinate",
+                    docstring="A simultaneous blocking ramp for a combined coordinate",
                     get_cmd=partial(self._get_component, coord),
                     set_cmd=partial(self._set_target_and_ramp, coord, "simul_block"),
                 )

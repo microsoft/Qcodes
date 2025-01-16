@@ -198,8 +198,7 @@ def plot_dataset(
     experiment_name = dataset.exp_name
     sample_name = dataset.sample_name
     title = (
-        f"Run #{dataset.captured_run_id}, "
-        f"Experiment {experiment_name} ({sample_name})"
+        f"Run #{dataset.captured_run_id}, Experiment {experiment_name} ({sample_name})"
     )
 
     alldata: NamedData = _get_data_from_ds(dataset)
@@ -317,8 +316,8 @@ def plot_dataset(
         else:
             log.warning(
                 "Multi-dimensional data encountered. "
-                f'parameter {data[-1]["name"]} depends on '
-                f"{len(data)-1} parameters, cannot plot "
+                f"parameter {data[-1]['name']} depends on "
+                f"{len(data) - 1} parameters, cannot plot "
                 f"that."
             )
             new_colorbars.append(None)
@@ -788,7 +787,7 @@ def _scale_formatter(tick_value: float, pos: int, factor: float) -> str:
     Function for matplotlib.ticker.FuncFormatter that scales the tick values
     according to the given `scale` value.
     """
-    return f"{tick_value*factor:g}"
+    return f"{tick_value * factor:g}"
 
 
 def _make_rescaled_ticks_and_units(

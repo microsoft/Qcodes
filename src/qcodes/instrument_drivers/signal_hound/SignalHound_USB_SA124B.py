@@ -389,8 +389,7 @@ class SignalHoundUSBSA124B(Instrument):
             initial_value=0.1,
             get_cmd=None,
             set_cmd=None,
-            docstring="Time to sleep before and after "
-            "getting data from the instrument",
+            docstring="Time to sleep before and after getting data from the instrument",
             vals=vals.Numbers(0),
         )
         """Time to sleep before and after getting data from the instrument"""
@@ -798,8 +797,7 @@ class SignalHoundUSBSA124B(Instrument):
                 log.warning(msg)
             else:
                 msg = (
-                    f"During call of {source} the following Error: "
-                    f"{err_str} was raised"
+                    f"During call of {source} the following Error: {err_str} was raised"
                 )
                 if extrainfo is not None:
                     msg = msg + f"\n Extra info: {extrainfo}"

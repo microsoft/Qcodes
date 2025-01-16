@@ -582,8 +582,7 @@ class Keithley2450Source(InstrumentChannel):
 
     def _set_user_delay(self, value: float) -> None:
         set_cmd = (
-            f":SOURce:{self._proper_function}:DELay:USER"
-            f"{self.user_number()} {value}"
+            f":SOURce:{self._proper_function}:DELay:USER{self.user_number()} {value}"
         )
         self.write(set_cmd)
 
@@ -704,8 +703,7 @@ class Keithley2450(VisaInstrument):
         sense = self.submodules[f"_sense_{sense_function}"]
         if not isinstance(sense, Keithley2450Sense):
             raise RuntimeError(
-                f"Expect Sense Module to be of type "
-                f"Keithley2450Sense got {type(sense)}"
+                f"Expect Sense Module to be of type Keithley2450Sense got {type(sense)}"
             )
         sense.sweep.setpoints = (self.source.sweep_axis,)
 
