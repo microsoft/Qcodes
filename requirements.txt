@@ -220,7 +220,6 @@ numpy==2.2.1
     #   matplotlib
     #   pandas
     #   pandas-stubs
-    #   pyarrow
     #   qcodes
     #   qcodes-loop
     #   scipy
@@ -234,7 +233,7 @@ opentelemetry-api==1.29.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ordered-set==4.1.0
+orderly-set==5.2.3
     # via deepdiff
 packaging==24.2
     # via
@@ -334,6 +333,7 @@ pyyaml==6.0.2
     #   libcst
     #   pyvisa-sim
     #   sphinx-jsonschema
+    #   zhinst-timing-models
 pyzmq==26.2.0
     # via
     #   ipykernel
@@ -357,8 +357,6 @@ ruamel-yaml==0.18.10
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ruamel-yaml-clib==0.2.12
-    # via ruamel-yaml
 schema==0.7.7
     # via broadbean
 scipy==1.15.1
@@ -366,10 +364,7 @@ scipy==1.15.1
 setuptools==75.8.0
     # via incremental
 six==1.17.0
-    # via
-    #   asttokens
-    #   bleach
-    #   python-dateutil
+    # via python-dateutil
 snowballstemmer==2.2.0
     # via sphinx
 sortedcontainers==2.4.0
@@ -417,7 +412,7 @@ tabulate==0.9.0
     #   qcodes (pyproject.toml)
     #   qcodes
 tinycss2==1.4.0
-    # via nbconvert
+    # via bleach
 toolz==1.0.0
     # via
     #   dask
@@ -456,7 +451,9 @@ types-pytz==2024.2.0.20241221
 types-pywin32==308.0.0.20241221
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20241016
-    # via qcodes (pyproject.toml)
+    # via
+    #   qcodes (pyproject.toml)
+    #   types-tqdm
 types-setuptools==75.8.0.20250110
     # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20241207
