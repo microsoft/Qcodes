@@ -38,8 +38,7 @@ def generate_guid(timeint: int | None = None, sampleint: int | None = None) -> s
         guid_comp = cfg["GUID_components"]
     except KeyError as err:
         raise RuntimeError(
-            "Invalid QCoDeS config file! No GUID_components "
-            "specified. Can not proceed."
+            "Invalid QCoDeS config file! No GUID_components specified. Can not proceed."
         ) from err
     try:
         guid_type = guid_comp["GUID_type"]
@@ -126,14 +125,14 @@ def build_guid_from_components(components: dict[str, int]) -> str:
         A valid guid string
 
     """
-    work_station_hex = f'{components["work_station"]:06x}'
+    work_station_hex = f"{components['work_station']:06x}"
 
     guid = (
-        f'{components["sample"]:08x}-'
-        f'{components["location"]:02x}'
+        f"{components['sample']:08x}-"
+        f"{components['location']:02x}"
         f"{work_station_hex[:2]}-"
         f"{work_station_hex[2:]}-"
-        f'{components["time"]:016x}'
+        f"{components['time']:016x}"
     )
 
     return guid

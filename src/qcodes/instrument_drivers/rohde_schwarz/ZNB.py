@@ -919,12 +919,10 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                     for _ in range(self.avg()):
                         self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
                     self.write(
-                        f"CALC{self._instrument_channel}:PAR:SEL "
-                        f"'{self._tracename}'"
+                        f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'"
                     )
                     data_str = self.ask(
-                        f"CALC{self._instrument_channel}:DATA?"
-                        f" {data_format_command}"
+                        f"CALC{self._instrument_channel}:DATA? {data_format_command}"
                     )
                 data = np.array(data_str.rstrip().split(",")).astype("float64")
                 if self.format() in ["Polar", "Complex", "Smith", "Inverse Smith"]:

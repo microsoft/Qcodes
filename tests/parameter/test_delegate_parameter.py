@@ -473,16 +473,12 @@ def test_gettable_settable_snapshotget_delegate_parameter_2(
 def test_initial_value_and_none_source_raises() -> None:
     with pytest.raises(
         KeyError,
-        match="It is not allowed to supply"
-        " 'initial_value' or"
-        " 'initial_cache_value'",
+        match="It is not allowed to supply 'initial_value' or 'initial_cache_value'",
     ):
         DelegateParameter("delegate", source=None, initial_value=1)
     with pytest.raises(
         KeyError,
-        match="It is not allowed to supply"
-        " 'initial_value' or "
-        "'initial_cache_value'",
+        match="It is not allowed to supply 'initial_value' or 'initial_cache_value'",
     ):
         DelegateParameter("delegate", source=None, initial_cache_value=1)
 

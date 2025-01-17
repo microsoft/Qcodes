@@ -273,8 +273,7 @@ class KeysightE4980A(VisaInstrument):
             set_cmd=self._set_voltage_level,
             unit="V",
             vals=self._v_level_range,
-            docstring="Gets and sets the AC bias voltage level for measurement "
-            "signal.",
+            docstring="Gets and sets the AC bias voltage level for measurement signal.",
         )
         """Gets and sets the AC bias voltage level for measurement signal."""
 

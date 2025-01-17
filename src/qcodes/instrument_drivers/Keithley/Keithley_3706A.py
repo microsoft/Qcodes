@@ -201,7 +201,7 @@ class Keithley3706A(VisaInstrument):
                 ):
                     warnings.warn(
                         f"The hardware interlocks in Slot "
-                        f'{interlock_state["slot_no"]} are disengaged. '
+                        f"{interlock_state['slot_no']} are disengaged. "
                         f"The analog backplane relay {channel} "
                         "cannot be energized.",
                         UserWarning,
@@ -382,8 +382,7 @@ class Keithley3706A(VisaInstrument):
         for element in specifiers:
             if element in backplanes:
                 raise Keithley3706AInvalidValue(
-                    "Additional delay times cannot be set for "
-                    "analog backplane relays."
+                    "Additional delay times cannot be set for analog backplane relays."
                 )
         if not self._validator(val):
             raise Keithley3706AInvalidValue(
@@ -407,8 +406,7 @@ class Keithley3706A(VisaInstrument):
         for element in specifiers:
             if element in backplanes:
                 raise Keithley3706AInvalidValue(
-                    "Additional delay times cannot be set for "
-                    "analog backplane relays."
+                    "Additional delay times cannot be set for analog backplane relays."
                 )
         if not self._validator(val):
             raise Keithley3706AInvalidValue(
@@ -440,7 +438,7 @@ class Keithley3706A(VisaInstrument):
             if element["state"] == "Interlocks 1 and 2 are disengaged on the card":
                 warnings.warn(
                     f"The hardware interlocks in Slot "
-                    f'{element["slot_no"]} are disengaged. '
+                    f"{element['slot_no']} are disengaged. "
                     "The corresponding analog backplane relays "
                     "cannot be energized.",
                     UserWarning,
@@ -633,15 +631,13 @@ class Keithley3706A(VisaInstrument):
         """
         if action not in ["connect", "disconnect"]:
             raise ValueError(
-                "The action should be identified as either "
-                "'connect' or 'disconnect'."
+                "The action should be identified as either 'connect' or 'disconnect'."
             )
         slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
             raise Keithley3706AUnknownOrEmptySlot(
-                "Please provide a valid slot identifier. "
-                f"Available slots are {slots}."
+                f"Please provide a valid slot identifier. Available slots are {slots}."
             )
         row = str(row_id)
         columns_list = []
@@ -669,15 +665,13 @@ class Keithley3706A(VisaInstrument):
         """
         if action not in ["connect", "disconnect"]:
             raise ValueError(
-                "The action should be identified as either "
-                "'connect' or 'disconnect'."
+                "The action should be identified as either 'connect' or 'disconnect'."
             )
         slots = self._get_slot_ids()
         slot = str(slot_id)
         if slot not in slots:
             raise Keithley3706AUnknownOrEmptySlot(
-                "Please provide a valid slot identifier. "
-                f"Available slots are {slots}."
+                f"Please provide a valid slot identifier. Available slots are {slots}."
             )
         column = []
         if column_id < 10:
@@ -843,8 +837,7 @@ class Keithley3706A(VisaInstrument):
         slot_id = self._get_slot_ids()
         interlock_status = {
             None: (
-                "No card is installed or the installed card does "
-                "not support interlocks"
+                "No card is installed or the installed card does not support interlocks"
             ),
             0: "Interlocks 1 and 2 are disengaged on the card",
             1: "Interlock 1 is engaged, interlock 2 (if it exists) is disengaged",

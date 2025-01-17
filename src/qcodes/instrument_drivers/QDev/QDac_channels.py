@@ -786,7 +786,7 @@ class QDevQDac(VisaInstrument):
 
         # Print the channels
         for ii in range(self.num_chans):
-            line = f"Channel {ii+1} \n"
+            line = f"Channel {ii + 1} \n"
             line += "    "
             for pp in paramstoget[0]:
                 param = getattr(self.channels[ii], pp)
