@@ -978,7 +978,7 @@ class AMI430_3D(Instrument):
     def _verify_safe_setpoint(
         self, setpoint_values: tuple[float, float, float]
     ) -> bool:
-        if isinstance(self._field_limit, (int, float)):
+        if isinstance(self._field_limit, numbers.Real):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any(

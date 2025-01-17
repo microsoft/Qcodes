@@ -5,6 +5,7 @@ coordinate systems.
 
 from __future__ import annotations
 
+import numbers
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import numpy as np
@@ -292,7 +293,7 @@ class FieldVector:
         self.set_component(**{component: value})
 
     def __mul__(self, other: Any) -> FieldVector:
-        if not isinstance(other, (float, int)):
+        if not isinstance(other, numbers.Real):
             return NotImplemented
 
         return FieldVector(
@@ -300,13 +301,13 @@ class FieldVector:
         )
 
     def __rmul__(self, other: Any) -> FieldVector:
-        if not isinstance(other, (int, float)):
+        if not isinstance(other, numbers.Real):
             return NotImplemented
 
         return self * other
 
     def __truediv__(self, other: Any) -> FieldVector:
-        if not isinstance(other, (int, float)):
+        if not isinstance(other, numbers.Real):
             return NotImplemented
 
         return self * (1.0 / other)
