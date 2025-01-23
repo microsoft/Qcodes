@@ -176,6 +176,7 @@ class DelegateParameter(Parameter):
         super().__init__(name, *args, **kwargs)
         self.label = kwargs.get("label", None)
         self.unit = kwargs.get("unit", None)
+        self.vals = kwargs.get("vals", None)
 
         # Hack While we inherit the settable status from the parent parameter
         # we do allow param.set_to to temporary override _settable in a
