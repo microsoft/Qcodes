@@ -173,6 +173,7 @@ class DelegateParameter(Parameter):
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
+        self._vals_override = None
         super().__init__(name, *args, **kwargs)
         self.label = kwargs.get("label", None)
         self.unit = kwargs.get("unit", None)
@@ -334,3 +335,5 @@ class DelegateParameter(Parameter):
         super().validate(value)
         if self.source is not None:
             self.source.validate(self._from_value_to_raw_value(value))
+            if self.vals is not None:
+                self.vals.validate(value)
