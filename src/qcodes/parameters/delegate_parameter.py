@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from qcodes.validators import Validator
+
     from .parameter_base import ParamDataType, ParamRawDataType
 
 
@@ -222,6 +224,23 @@ class DelegateParameter(Parameter):
     @unit.setter
     def unit(self, unit: str | None) -> None:
         self._unit_override = unit
+
+    @property
+    def vals(self) -> Validator | None:
+        """
+        The validator of the parameter. Read from source if not explicitly overwritten.
+        Set to None to disable overwrite.
+        """
+        if self._vals_override is not None:
+            return self._vals_override
+        elif self.source is not None:
+            return self.source.vals
+        else:
+            return None
+
+    @vals.setter
+    def vals(self, vals: Validator | None) -> None:
+        self._vals_override = vals
 
     @property
     def label(self) -> str:
