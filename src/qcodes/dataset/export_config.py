@@ -97,7 +97,8 @@ def _expand_export_path(export_path: str) -> str:
     expanded_export_folder = db_location.parent / "_".join(
         (db_location.stem, db_location.suffix.replace(".", ""))
     )
-    return export_path.replace("{db_location}", str(expanded_export_folder))
+    # we ignore the rule here since this is actually a manual expansion of the f string
+    return export_path.replace("{db_location}", str(expanded_export_folder))  # noqa: RUF027
 
 
 def get_data_export_path() -> Path:
