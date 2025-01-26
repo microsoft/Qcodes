@@ -546,7 +546,7 @@ class InterDependencies_:
         )
         return rep
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         def sorter(inp: Iterable[ParamSpecBase]) -> list[ParamSpecBase]:
             return sorted(inp, key=lambda ps: ps.name)
 

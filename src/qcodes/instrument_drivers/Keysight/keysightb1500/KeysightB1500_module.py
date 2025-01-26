@@ -1,6 +1,5 @@
 import re
-from collections import namedtuple
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import numpy as np
 from typing_extensions import TypedDict, Unpack, deprecated
@@ -13,10 +12,20 @@ from .constants import ChannelName, ChNr, MeasurementStatus, ModuleKind, SlotNr
 from .message_builder import MessageBuilder
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     import qcodes.instrument_drivers.Keysight.keysightb1500
 
 
-_FMTResponse = namedtuple("_FMTResponse", "value status channel type")
+# the use of _FMTResponse in the code is inconsistent
+# so adding the expected types results in a large number
+# of type checking issues. The expected types are left
+# here as a comment in case anyone fixes this in the future
+class _FMTResponse(NamedTuple):
+    value: Any  # the type probably should be list[float] | None
+    status: Any  # the type probably should be list[str] | None
+    channel: Any  # the type probably should be list[str] | None
+    type: Any  # the type probably should be list[str] | None
 
 
 class MeasurementNotTaken(Exception):
@@ -37,10 +46,10 @@ def fmt_response_base_parser(raw_data_val: str) -> _FMTResponse:
     """
 
     values_separator = ","
-    data_val = []
-    data_status = []
-    data_channel = []
-    data_datatype = []
+    data_val: list[float] = []
+    data_status: list[str] = []
+    data_channel: list[str] = []
+    data_datatype: list[str] = []
 
     for str_value in raw_data_val.split(values_separator):
         status = str_value[0]
@@ -151,7 +160,13 @@ def parse_spot_measurement_response(response: str) -> SpotResponse:
     return d
 
 
-_DCORRResponse = namedtuple("_DCORRResponse", "mode primary secondary")
+class _DCORRResponse(NamedTuple):
+    mode: constants.DCORR.Mode
+    primary: float
+    secondary: float
+
+
+# _DCORRResponse: type[_DCORRResponse] = namedtuple("_DCORRResponse", "mode primary secondary")
 
 
 def parse_dcorr_query_response(response: str) -> _DCORRResponse:
@@ -235,7 +250,7 @@ def get_name_label_unit_of_impedance_model(
 #   it might make more sense to generate one for each **channel**
 
 
-def get_measurement_summary(status_array: np.ndarray) -> str:
+def get_measurement_summary(status_array: "np.ndarray | Sequence[str]") -> str:
     unique_error_statuses = np.unique(status_array[status_array != "N"])
     if len(unique_error_statuses) > 0:
         summary = " ".join(

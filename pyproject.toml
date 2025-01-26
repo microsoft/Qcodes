@@ -250,7 +250,7 @@ select = [
     "I", "G", "ISC", "TID253", "NPY", "PLE",
     "PLR", "PLC", "PLW", "W",
     "D214", "D300", "D402", "D403", "D405", "D410", "D411", "D412", "D413", "D414", "D416", "D417", "D418", "D419",
-    "TC",
+    "TC", "PYI",
     "RUF027"]
 # G004 We have a lot of use of f strings in log messages
 # so disable that lint for now
@@ -260,7 +260,8 @@ select = [
 # PLxxxx are pylint lints that generate a fair amount of warnings
 # it may be worth fixing some or these in the future
 # UP038 this can result in slower code so we ignore it
-ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "UP038"]
+# PYI036 disable until https://github.com/astral-sh/ruff/issues/9794 is fixed
+ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "UP038", "PYI036"]
 
 # we want to explicitly use the micro symbol
 # not the greek letter

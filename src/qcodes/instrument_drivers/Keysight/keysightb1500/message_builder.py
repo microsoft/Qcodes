@@ -335,7 +335,7 @@ class MessageBuilder:
         self,
         adc_type: constants.AIT.Type | int,
         mode: constants.AIT.Mode | int,
-        coeff: int | float | None = None,
+        coeff: float | None = None,
     ) -> "MessageBuilder":
         """
         This command is used to set the operation mode and the setup
@@ -659,7 +659,7 @@ class MessageBuilder:
         self,
         chnum: constants.ChNr | int,
         searchmode: constants.BinarySearchMode | int,
-        stop_condition: float | int,
+        stop_condition: float,
         i_range: constants.IMeasRange | int,
         target: float,
     ) -> "MessageBuilder":
@@ -732,7 +732,7 @@ class MessageBuilder:
         self,
         chnum: constants.ChNr | int,
         searchmode: constants.BinarySearchMode | int,
-        stop_condition: float | int,
+        stop_condition: float,
         v_range: constants.VMeasRange | int,
         target: float,
     ) -> "MessageBuilder":
@@ -3532,7 +3532,7 @@ class MessageBuilder:
         return self
 
     def var(
-        self, variable_type: constants.VAR.Type | int, n: int, value: int | float
+        self, variable_type: constants.VAR.Type | int, n: int, value: float
     ) -> "MessageBuilder":
         cmd = f"VAR {variable_type},{n},{value}"
 

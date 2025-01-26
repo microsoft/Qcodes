@@ -4,8 +4,7 @@ import logging
 import re
 import time
 import warnings
-from collections import namedtuple
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 from packaging import version
@@ -71,9 +70,11 @@ class ScopeArray(ArrayParameter):
         p = self.preamble
 
         # Generate time axis data
-        xdata = np.linspace(p.xorigin, p.xorigin + p.xincrement * p.points, p.points)
+        xdata = np.linspace(
+            p.xorigin, p.xorigin + p.xincrement * p.points, int(p.points)
+        )
         self.setpoints = (tuple(xdata),)
-        self.shape = (p.points,)
+        self.shape = (int(p.points),)
 
         self.trace_ready = True
 
@@ -176,28 +177,27 @@ class ScopeArray(ArrayParameter):
 
     def get_preamble(self) -> None:
         assert isinstance(self.instrument, RigolDS4000Channel)
-        preamble_nt = namedtuple(
-            "preamble_nt",
-            [
-                "format",
-                "mode",
-                "points",
-                "count",
-                "xincrement",
-                "xorigin",
-                "xreference",
-                "yincrement",
-                "yorigin",
-                "yreference",
-            ],
-        )
+
+        # count unfortunately overrides a method on tuple
+        # we leave it as is for backwards compatibility
+        class PreambleNT(NamedTuple):
+            format: float
+            mode: float
+            points: float
+            count: float  # type: ignore[assignment]
+            xincrement: float
+            xorigin: float
+            xreference: float
+            yincrement: float
+            yorigin: float
+            yreference: float
 
         def conv(x: str) -> float:
             return int(x) if x.isdigit() else float(x)
 
         preamble_raw = self.instrument.ask(":WAVeform:PREamble?")
         preamble_num = [conv(x) for x in preamble_raw.strip().split(",")]
-        self.preamble = preamble_nt(*preamble_num)
+        self.preamble = PreambleNT(*preamble_num)
 
 
 class RigolDS4000Channel(InstrumentChannel):

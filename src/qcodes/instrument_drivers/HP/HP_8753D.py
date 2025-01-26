@@ -285,7 +285,7 @@ class HP8753D(VisaInstrument):
 
             self.ask(f"OPC?;NUMG{N}")
 
-    def invalidate_trace(self, cmd: str, value: float | int | str) -> None:
+    def invalidate_trace(self, cmd: str, value: float | str) -> None:
         """
         Wrapper for set_cmds that make the trace not ready
         """

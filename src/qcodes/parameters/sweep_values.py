@@ -14,6 +14,8 @@ from .sequence_helpers import is_sequence
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
 
+    from typing_extensions import Self
+
     from qcodes.parameters import ParameterBase
 
 
@@ -322,7 +324,7 @@ class SweepFixedValues(SweepValues):
         else:
             raise TypeError(f"cannot extend SweepFixedValues with {new_values}")
 
-    def copy(self) -> SweepFixedValues:
+    def copy(self) -> Self:
         """
         Copy this SweepFixedValues.
 
@@ -330,7 +332,7 @@ class SweepFixedValues(SweepValues):
             SweepFixedValues of copied values
 
         """
-        new_sv = SweepFixedValues(self.parameter, [])
+        new_sv = self.__class__(self.parameter, [])
         # skip validation by adding values and snapshot separately
         # instead of on init
         new_sv._values = self._values[:]
@@ -374,19 +376,19 @@ class SweepFixedValues(SweepValues):
     def __len__(self) -> int:
         return len(self._values)
 
-    def __add__(self, other: Sequence[Any] | SweepFixedValues) -> SweepFixedValues:
+    def __add__(self, other: Sequence[Any] | SweepFixedValues) -> Self:
         new_sv = self.copy()
         new_sv.extend(other)
         return new_sv
 
-    def __iadd__(self, values: Sequence[Any] | SweepFixedValues) -> SweepFixedValues:
+    def __iadd__(self, values: Sequence[Any] | SweepFixedValues) -> Self:
         self.extend(values)
         return self
 
     def __contains__(self, value: float) -> bool:
         return value in self._values
 
-    def __reversed__(self) -> SweepFixedValues:
+    def __reversed__(self) -> Self:
         new_sv = self.copy()
         new_sv.reverse()
         return new_sv

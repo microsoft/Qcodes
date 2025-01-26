@@ -7,7 +7,8 @@ if TYPE_CHECKING:
     from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
 
 
-class _CacheProtocol(Protocol):
+# The protocol is private to qcodes but used elsewhere in the codebase
+class _CacheProtocol(Protocol):  # noqa: PYI046
     """
     This protocol defines the interface that a Parameter Cache implementation
     must implement. This is currently used for 2 implementations, one in

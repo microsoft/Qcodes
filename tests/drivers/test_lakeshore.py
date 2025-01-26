@@ -346,11 +346,7 @@ class Model_372_Mock(MockVisaInstrument, Model_372):
 
 
 def instrument_fixture(
-    scope: Literal["session"]
-    | Literal["package"]
-    | Literal["module"]
-    | Literal["class"]
-    | Literal["function"] = "function",
+    scope: Literal["session", "package", "module", "class", "function"] = "function",
     name=None,
 ):
     def wrapper(func):

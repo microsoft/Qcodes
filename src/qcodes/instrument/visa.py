@@ -137,7 +137,7 @@ class VisaInstrument(Instrument):
         name: str,
         address: str,
         timeout: float | None | Literal["Unset"] = "Unset",
-        terminator: str | None | Literal["Unset"] = "Unset",
+        terminator: str | None = "Unset",
         device_clear: bool = True,
         visalib: str | None = None,
         pyvisa_sim_file: str | None = None,

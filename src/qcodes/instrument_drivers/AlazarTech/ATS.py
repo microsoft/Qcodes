@@ -417,7 +417,7 @@ class AlazarTechATS(Instrument):
             transfer_record_size * records_per_buffer * number_of_channels
         )
 
-        sample_type: type[ctypes.c_uint16] | type[ctypes.c_uint8] = (
+        sample_type: type[ctypes.c_uint16 | ctypes.c_uint8] = (
             ctypes.c_uint16 if whole_bytes_per_sample > 1 else ctypes.c_uint8
         )
         internal_buffer_size_requested = (

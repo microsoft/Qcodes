@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections import namedtuple
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar
 
 import pytest
 
@@ -32,7 +31,7 @@ def snapshot_value(request: pytest.FixtureRequest) -> bool | Literal["NOT_PASSED
 @pytest.fixture(params=(None, False, NOT_PASSED))
 def get_cmd(
     request: pytest.FixtureRequest,
-) -> None | Literal[False] | Literal["NOT_PASSED"]:
+) -> Literal[False, "NOT_PASSED"] | None:
     return request.param
 
 
@@ -189,12 +188,21 @@ class VirtualParameter(Parameter):
         return self._param.get()
 
 
+class NoName(NamedTuple): ...
+
+
+class WithName(NamedTuple):
+    name: str
+
+
 blank_instruments = (
     None,  # no instrument at all
-    namedtuple("noname", "")(),  # no .name
-    namedtuple("blank", "name")(""),  # blank .name
+    NoName(),  # no .name
+    WithName(""),  # blank .name
 )
-named_instrument = namedtuple("yesname", "name")("astro")
+
+
+named_instrument = WithName("astro")
 
 
 class ParameterMemory:
