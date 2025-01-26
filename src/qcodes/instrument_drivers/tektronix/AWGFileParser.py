@@ -518,7 +518,7 @@ def _parser3(sequencelist: list[list[Any]], wfmdict: dict[Any, Any]) -> _parser3
     }
 
     for fieldname, fieldvalue in zip(sequencelist[0], sequencelist[1]):
-        seqnum, name = _getendingnumber(fieldname)
+        _, name = _getendingnumber(fieldname)
 
         if "WAVEFORM" not in name:
             sequencedict[name[:-1]].append(fieldvalue)

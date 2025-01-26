@@ -121,7 +121,7 @@ async def test_instrument_update(inst_and_monitor) -> None:
     """
     Test instrument updates
     """
-    instr, my_monitor, monitor_parameters, param = inst_and_monitor
+    instr, _my_monitor, monitor_parameters, param = inst_and_monitor
     async with websockets.connect(
         f"ws://localhost:{monitor.WEBSOCKET_PORT}"
     ) as websocket:

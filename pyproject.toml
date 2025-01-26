@@ -231,6 +231,10 @@ extend-include = ["*.ipynb"]
 extend-exclude = ["typings"]
 
 [tool.ruff.lint]
+
+preview = true
+explicit-preview-rules = true
+
 # Enable Pyflakes `E` and `F` codes by default.
 # UP pyupgrade
 # PT025 invalid use of pytest fixtures in other fixtures
@@ -256,6 +260,10 @@ select = [
 # it may be worth fixing some or these in the future
 # UP038 this can result in slower code so we ignore it
 ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", "PLR0915", "PLW0602", "PLW0603", "PLW2901", "UP038"]
+
+# we want to explicitly use the micro symbol
+# not the greek letter
+allowed-confusables = ["µ"]
 
 [tool.ruff.lint.isort]
 

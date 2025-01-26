@@ -171,7 +171,7 @@ def test_handler_level() -> None:
 def test_filter_instrument(
     AMI430_3D: tuple[AMIModel4303D, AMIModel430, AMIModel430, AMIModel430],
 ) -> None:
-    driver, mag_x, mag_y, mag_z = AMI430_3D
+    driver, mag_x, mag_y, _mag_z = AMI430_3D
 
     logger.start_logger()
 
@@ -210,7 +210,7 @@ def test_filter_instrument(
 def test_filter_without_started_logger_raises(
     AMI430_3D: tuple[AMIModel4303D, AMIModel430, AMIModel430, AMIModel430],
 ) -> None:
-    driver, mag_x, mag_y, mag_z = AMI430_3D
+    driver, mag_x, _mag_y, _mag_z = AMI430_3D
 
     # filter one instrument
     driver.cartesian((0, 0, 0))
