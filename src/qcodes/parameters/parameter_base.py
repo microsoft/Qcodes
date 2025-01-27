@@ -784,8 +784,8 @@ class ParameterBase(MetadatableWithName):
         return set_wrapper
 
     def get_ramp_values(
-        self, value: float | Sized, step: float | None = None
-    ) -> Sequence[float | Sized]:
+        self, value: NumberType | Sized, step: NumberType | None = None
+    ) -> Sequence[NumberType | Sized]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -859,7 +859,7 @@ class ParameterBase(MetadatableWithName):
                 validator.validate(value, self._validate_context)
 
     @property
-    def step(self) -> float | None:
+    def step(self) -> NumberType | None:
         """
         Stepsize that this Parameter uses during set operation.
         Stepsize must be a positive number or None.
@@ -883,9 +883,9 @@ class ParameterBase(MetadatableWithName):
         return self._step
 
     @step.setter
-    def step(self, step: float | None) -> None:
+    def step(self, step: NumberType | None) -> None:
         if step is None:
-            self._step: float | None = step
+            self._step: NumberType | None = step
         elif not all(getattr(vals, "is_numeric", True) for vals in self._vals):
             raise TypeError("you can only step numeric parameters")
         elif not isinstance(step, NumberType):
