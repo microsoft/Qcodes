@@ -383,9 +383,10 @@ class ParameterBase(MetadatableWithName):
             RuntimeError: If removing the first validator when more than one validator is set.
 
         """
+        validators = self.validators
 
-        if len(self._vals):
-            return self._vals[0]
+        if len(validators):
+            return validators[0]
         else:
             return None
 
