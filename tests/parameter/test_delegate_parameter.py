@@ -627,6 +627,19 @@ def test_value_validation() -> None:
         delegate_param.validate(11)
 
 
+def test_validator_delegates_as_expected() -> None:
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+    some_validator = vals.Numbers(-10, 10)
+    source_param.vals = some_validator
+    delegate_param.vals = None
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+    assert delegate_param.validators == (some_validator,)
+    assert delegate_param.vals == some_validator
+
+
 def test_value_validation_with_offset_and_scale() -> None:
     source_param = Parameter(
         "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
