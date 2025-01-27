@@ -4,6 +4,8 @@ Useful collections of types used around QCoDeS
 
 from __future__ import annotations
 
+from typing import TypeAlias
+
 import numpy as np
 
 complex_type_union = np.complex64 | np.complex128 | np.complexfloating | complex
@@ -82,3 +84,5 @@ All numpy complex types
 
 concrete_complex_types = (*numpy_concrete_complex, complex)
 complex_types = (*numpy_concrete_complex, complex)
+
+NumberType: TypeAlias = int | float | np.integer | np.floating

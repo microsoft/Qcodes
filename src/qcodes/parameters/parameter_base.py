@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import collections.abc
 import logging
-import numbers
 import time
 import warnings
 from contextlib import contextmanager
@@ -14,6 +13,7 @@ from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
 from qcodes.validators import Enum, Ints, Validator
 
+from ..utils.types import NumberType
 from .cache import _Cache, _CacheProtocol
 from .named_repr import named_repr
 from .permissive_range import permissive_range
@@ -810,8 +810,7 @@ class ParameterBase(MetadatableWithName):
                 self.get()
             start_value = self.get_latest()
             if not (
-                isinstance(start_value, numbers.Real)
-                and isinstance(value, numbers.Real)
+                isinstance(start_value, NumberType) and isinstance(value, NumberType)
             ):
                 # parameter is numeric but either one of the endpoints
                 # is not or the starting point is unknown. The later
@@ -889,7 +888,7 @@ class ParameterBase(MetadatableWithName):
             self._step: float | None = step
         elif not all(getattr(vals, "is_numeric", True) for vals in self._vals):
             raise TypeError("you can only step numeric parameters")
-        elif not isinstance(step, numbers.Real):
+        elif not isinstance(step, NumberType):
             raise TypeError("step must be a number")
         elif step == 0:
             self._step = None
@@ -929,7 +928,7 @@ class ParameterBase(MetadatableWithName):
 
     @post_delay.setter
     def post_delay(self, post_delay: float) -> None:
-        if not isinstance(post_delay, numbers.Real):
+        if not isinstance(post_delay, NumberType):
             raise TypeError(f"post_delay ({post_delay}) must be a number")
         if post_delay < 0:
             raise ValueError(f"post_delay ({post_delay}) must not be negative")
@@ -958,7 +957,7 @@ class ParameterBase(MetadatableWithName):
 
     @inter_delay.setter
     def inter_delay(self, inter_delay: float) -> None:
-        if not isinstance(inter_delay, numbers.Real):
+        if not isinstance(inter_delay, NumberType):
             raise TypeError(f"inter_delay ({inter_delay}) must be a number")
         if inter_delay < 0:
             raise ValueError(f"inter_delay ({inter_delay}) must not be negative")
