@@ -246,7 +246,7 @@ explicit-preview-rules = true
 # W pydocstyle
 # PLx pylint
 select = [
-    "E", "F", "PT025", "UP", "RUF",
+    "E", "F", "PT025", "UP", "RUF", "YTT", "INP",
     "I", "G", "ISC", "TID253", "NPY", "PLE",
     "PLR", "PLC", "PLW", "W",
     "D214", "D300", "D402", "D403", "D405", "D410", "D411", "D412", "D413", "D414", "D416", "D417", "D418", "D419",
@@ -309,8 +309,9 @@ known-first-party = ["qcodes"]
 
 # TID253 these imports are fine at module level
 # in tests and examples
+# tests is not a package so don't require __init__.py files
 "docs/*" = ["TID253"]
-"tests/*" = ["TID253"]
+"tests/*" = ["TID253", "INP"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 # There modules are relatively slow to import
