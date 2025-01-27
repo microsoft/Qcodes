@@ -298,7 +298,7 @@ class FieldVector:
             return NotImplemented
 
         return FieldVector(
-            **{component: self[component] * other for component in "xyz"}
+            **{component: self[component] * float(other) for component in "xyz"}
         )
 
     def __rmul__(self, other: Any) -> FieldVector:
