@@ -574,18 +574,23 @@ def test_value_validation() -> None:
     source_param = Parameter("source", set_cmd=None, get_cmd=None)
     delegate_param = DelegateParameter("delegate", source=source_param)
 
+    # Test case where source parameter validator is None and delegate parameter validator is
+    # specified.
     delegate_param.vals = vals.Numbers(-10, 10)
     source_param.vals = None
     delegate_param.validate(1)
     with pytest.raises(ValueError):
         delegate_param.validate(11)
 
+    # Test where delegate parameter validator is None and source parameter validator is
+    # specified.
     delegate_param.vals = None
     source_param.vals = vals.Numbers(-5, 5)
     delegate_param.validate(1)
     with pytest.raises(ValueError):
         delegate_param.validate(6)
 
+    # Test case where source parameter validator is more restricted than delegate parameter.
     delegate_param.vals = vals.Numbers(-10, 10)
     source_param.vals = vals.Numbers(-5, 5)
     delegate_param.validate(1)
@@ -593,6 +598,46 @@ def test_value_validation() -> None:
         delegate_param.validate(6)
     with pytest.raises(ValueError):
         delegate_param.validate(11)
+
+    # Test case that the order of setting validator on source and delegate parameters does not matter.
+    source_param.vals = vals.Numbers(-5, 5)
+    delegate_param.vals = vals.Numbers(-10, 10)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+    # Test case where delegate parameter validator is more restricted than source parameter.
+    delegate_param.vals = vals.Numbers(-5, 5)
+    source_param.vals = vals.Numbers(-10, 10)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+    # Test case that the order of setting validator on source and delegate parameters does not matter.
+    source_param.vals = vals.Numbers(-10, 10)
+    delegate_param.vals = vals.Numbers(-5, 5)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+
+def test_validator_delegates_as_expected() -> None:
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+    some_validator = vals.Numbers(-10, 10)
+    source_param.vals = some_validator
+    delegate_param.vals = None
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+    assert delegate_param.validators == (some_validator,)
+    assert delegate_param.vals == some_validator
 
 
 def test_value_validation_with_offset_and_scale() -> None:
