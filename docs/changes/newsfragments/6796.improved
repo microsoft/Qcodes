@@ -1,0 +1,1 @@
+Add vals property and @vals.setter to qcodes.parameters.delegate_parameter.DelegateParameter to propagate the Validator from source to DelegateParameter.

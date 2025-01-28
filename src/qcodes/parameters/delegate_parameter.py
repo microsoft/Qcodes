@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from qcodes.validators import Validator
+
     from .parameter_base import ParamDataType, ParamRawDataType
 
 
@@ -171,9 +173,11 @@ class DelegateParameter(Parameter):
 
         initial_cache_value = kwargs.pop("initial_cache_value", None)
         self.source = source
+        self._vals_override: Validator | None = None
         super().__init__(name, *args, **kwargs)
         self.label = kwargs.get("label", None)
         self.unit = kwargs.get("unit", None)
+        self.vals = kwargs.get("vals", None)
 
         # Hack While we inherit the settable status from the parent parameter
         # we do allow param.set_to to temporary override _settable in a
@@ -222,6 +226,23 @@ class DelegateParameter(Parameter):
     @unit.setter
     def unit(self, unit: str | None) -> None:
         self._unit_override = unit
+
+    @property
+    def vals(self) -> Validator | None:
+        """
+        The validator of the parameter. Read from source if not explicitly overwritten.
+        Set to None to disable overwrite.
+        """
+        if self._vals_override is not None:
+            return self._vals_override
+        elif self.source is not None:
+            return self.source.vals
+        else:
+            return None
+
+    @vals.setter
+    def vals(self, vals: Validator | None) -> None:
+        self._vals_override = vals
 
     @property
     def label(self) -> str:
@@ -314,3 +335,5 @@ class DelegateParameter(Parameter):
         super().validate(value)
         if self.source is not None:
             self.source.validate(self._from_value_to_raw_value(value))
+            if self.vals is not None:
+                self.vals.validate(value)
