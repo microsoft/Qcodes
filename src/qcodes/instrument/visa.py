@@ -137,7 +137,8 @@ class VisaInstrument(Instrument):
         name: str,
         address: str,
         timeout: float | None | Literal["Unset"] = "Unset",
-        terminator: str | None = "Unset",
+        terminator: str | Literal["Unset"] | None = "Unset",  # noqa: PYI051
+        # while unset is redundant here we add it to communicate to the user that unset has special meaning
         device_clear: bool = True,
         visalib: str | None = None,
         pyvisa_sim_file: str | None = None,

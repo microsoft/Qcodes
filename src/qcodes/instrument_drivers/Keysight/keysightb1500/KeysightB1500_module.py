@@ -166,9 +166,6 @@ class _DCORRResponse(NamedTuple):
     secondary: float
 
 
-# _DCORRResponse: type[_DCORRResponse] = namedtuple("_DCORRResponse", "mode primary secondary")
-
-
 def parse_dcorr_query_response(response: str) -> _DCORRResponse:
     """
     Parse string response of ``DCORR?`` `command into a named tuple of
