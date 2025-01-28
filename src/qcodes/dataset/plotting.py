@@ -218,7 +218,7 @@ def plot_dataset(
     if axeslist is None:
         axeslist = []
         for i in range(nplots):
-            fig, ax = plt.subplots(1, 1, **subplots_kwargs)
+            _, ax = plt.subplots(1, 1, **subplots_kwargs)
             axeslist.append(ax)
     else:
         if len(subplots_kwargs) != 0:

@@ -343,7 +343,7 @@ class RigolDG1062Channel(InstrumentChannel):
 
         return self._set_waveform_params(**params_dict)
 
-    def _set_waveform_params(self, **params_dict: int | float) -> None:
+    def _set_waveform_params(self, **params_dict: float) -> None:
         """
         Apply a waveform with values given in a dictionary.
         """

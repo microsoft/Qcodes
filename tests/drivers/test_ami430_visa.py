@@ -281,7 +281,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
 def test_instantiation_from_name_of_existing_non_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
-    mag_x, mag_y, mag_z = magnet_axes_instances
+    mag_x, _mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(Instrument.close_all)
 
     non_ami_existing_instrument = Instrument("foo")
@@ -306,7 +306,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
 def test_instantiation_from_badly_typed_argument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
-    mag_x, mag_y, mag_z = magnet_axes_instances
+    mag_x, mag_y, _mag_z = magnet_axes_instances
     request.addfinalizer(Instrument.close_all)
 
     badly_typed_instrument_z_argument = 123

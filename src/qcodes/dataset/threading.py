@@ -18,11 +18,13 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from types import TracebackType
 
-    from qcodes.dataset.data_set_protocol import values_type
+    from typing_extensions import Self
+
+    from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.parameters import ParamDataType, ParameterBase
 
 ParamMeasT: TypeAlias = "ParameterBase | Callable[[], None]"
-OutType: TypeAlias = "list[tuple[ParameterBase, values_type]]"
+OutType: TypeAlias = "list[tuple[ParameterBase, ValuesType]]"
 
 T = TypeVar("T")
 
@@ -210,7 +212,7 @@ class ThreadPoolParamsCaller(_ParamsCallerProtocol):
 
         return output
 
-    def __enter__(self) -> ThreadPoolParamsCaller:
+    def __enter__(self) -> Self:
         self._thread_pool.__enter__()
         return self
 

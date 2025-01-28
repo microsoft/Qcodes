@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 AllCoordsType = tuple[float, float, float, float, float, float, float]
-NormOrder = None | float | Literal["fro"] | Literal["nuc"]
+NormOrder = Literal["fro", "nuc"] | None | float
 T = TypeVar("T", bound="FieldVector")
 
 

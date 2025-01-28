@@ -803,7 +803,7 @@ class SignalHoundUSBSA124B(Instrument):
                     msg = msg + f"\n Extra info: {extrainfo}"
                 raise OSError(msg)
         else:
-            msg = "Call to {source} was successful"
+            msg = f"Call to {source} was successful"
             if extrainfo is not None:
                 msg = msg + f"\n Extra info: {extrainfo}"
             log.info(msg)

@@ -56,7 +56,7 @@ def fix_version_4a_run_description_bug(conn: ConnectionPlus) -> dict[str, int]:
     if not user_version == 4:
         raise RuntimeError(
             "Database of wrong version. Will not apply fix. "
-            "Expected version 4, found version {user_version}"
+            f"Expected version 4, found version {user_version}"
         )
 
     no_of_runs_query = "SELECT max(run_id) FROM runs"
@@ -144,7 +144,7 @@ def fix_wrong_run_descriptions(conn: ConnectionPlus, run_ids: Sequence[int]) -> 
     if not user_version == 3:
         raise RuntimeError(
             "Database of wrong version. Will not apply fix. "
-            "Expected version 3, found version {user_version}"
+            f"Expected version 3, found version {user_version}"
         )
 
     log.info("[*] Fixing run descriptions...")

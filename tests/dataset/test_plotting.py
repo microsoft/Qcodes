@@ -191,7 +191,7 @@ def test_plot_dataset_2d_shaped(
         except TerminateLoopException:
             pass
 
-    axes, cbs = plot_dataset(datasaver.dataset)
+    axes, _cbs = plot_dataset(datasaver.dataset)
     xlims = axes[0].get_xlim()
     ylims = axes[0].get_ylim()
 

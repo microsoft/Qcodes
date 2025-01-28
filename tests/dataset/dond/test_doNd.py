@@ -1198,7 +1198,7 @@ def test_dond_together_sweep_sweeper_mixed_splitting() -> None:
         sweepB = LinSweep(b, 5, 7, 10)
         sweepC = LinSweep(c, 8, 12, 10)
 
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             [d],
@@ -1267,7 +1267,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names_inconsistent() -> No
             "('ds1', 'ds2', 'ds4') but dataset_dependencies contains ('ds1', 'ds2', 'ds3')."
         ),
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1301,7 +1301,7 @@ def test_dond_together_sweep_sweeper_combined_explict_names_and_single_name() ->
             "Creating multiple datasets but only one measurement name given."
         ),
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1414,7 +1414,7 @@ def test_dond_together_sweep_sweeper_combined_missing_in_dataset_dependencies() 
         ValueError,
         match="Parameter f is measured but not added to any dataset",
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1441,7 +1441,7 @@ def test_dond_together_sweep_sweeper_wrong_sp_in_dataset_dependencies() -> None:
     sweepC = LinSweep(c, 8, 12, 10)
 
     with pytest.raises(ValueError, match="not among the expected groups of setpoints"):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,
@@ -1469,7 +1469,7 @@ def test_dond_together_sweep_sweeper_wrong_mp_in_dataset_dependencies() -> None:
         ValueError,
         match="which is not among the expected groups of setpoints",
     ):
-        datasets, _, _ = dond(
+        _datasets, _, _ = dond(
             TogetherSweep(sweepA, sweepB),
             sweepC,
             d,

@@ -23,7 +23,7 @@ from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
     ParameterData,
     SpecsOrInterDeps,
-    values_type,
+    ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -1292,7 +1292,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_array(
-        result_dict: Mapping[ParamSpecBase, values_type], all_params: set[ParamSpecBase]
+        result_dict: Mapping[ParamSpecBase, ValuesType], all_params: set[ParamSpecBase]
     ) -> list[dict[str, VALUE]]:
         """
         Make a list of res_dicts out of the results for a 'array' type

@@ -356,7 +356,7 @@ def test_get_instrument_from_chain(
 ):
     inst = instrument_fixture
     inst2 = instrument_fixture2
-    good_inst_del_1, good_inst_del_2, good_inst_del_3 = multi_inst_chain
+    _good_inst_del_1, _good_inst_del_2, good_inst_del_3 = multi_inst_chain
 
     InferAttrs.add("linked_parameter")
     instruments = get_parent_instruments_from_chain_of_type(
@@ -367,7 +367,7 @@ def test_get_instrument_from_chain(
 
 def test_get_sole_instrument_from_chain(instrument_fixture2, multi_inst_chain):
     inst2 = instrument_fixture2
-    good_inst_del_1, good_inst_del_2, good_inst_del_3 = multi_inst_chain
+    _good_inst_del_1, _good_inst_del_2, good_inst_del_3 = multi_inst_chain
 
     InferAttrs.add("linked_parameter")
     sole_instrument = get_sole_parent_instrument_from_chain_of_type(

@@ -50,13 +50,21 @@ if TYPE_CHECKING:
 # twice here convert to set to ensure no duplication.
 _EXPORT_CALLBACKS = set(entry_points(group="qcodes.dataset.on_export"))
 
-array_like_types = (tuple, list, np.ndarray)
-scalar_res_types: TypeAlias = (
+ScalarResTypes: TypeAlias = (
     str | complex | np.integer | np.floating | np.complexfloating
 )
-values_type: TypeAlias = scalar_res_types | np.ndarray | Sequence[scalar_res_types]
-res_type: TypeAlias = "tuple[ParameterBase | str, values_type]"
-setpoints_type: TypeAlias = "Sequence[str | ParameterBase]"
+ValuesType: TypeAlias = ScalarResTypes | np.ndarray | Sequence[ScalarResTypes]
+ResType: TypeAlias = "tuple[ParameterBase | str, ValuesType]"
+SetpointsType: TypeAlias = "Sequence[str | ParameterBase]"
+
+# deprecated alias left for backwards compatibility
+array_like_types = (tuple, list, np.ndarray)
+scalar_res_types: TypeAlias = ScalarResTypes  # noqa PYI042
+values_type: TypeAlias = ValuesType  # noqa PYI042
+res_type: TypeAlias = ResType  # noqa PYI042
+setpoints_type: TypeAlias = SetpointsType  # noqa PYI042
+
+
 SPECS: TypeAlias = list[ParamSpec]
 # Transition period type: SpecsOrInterDeps. We will allow both as input to
 # the DataSet constructor for a while, then deprecate SPECS and finally remove
