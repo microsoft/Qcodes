@@ -127,6 +127,7 @@ qcodes-dynacool-server = "qcodes.instrument_drivers.QuantumDesign.DynaCoolPPMS.p
 log_exported_ds = "qcodes.extensions:log_dataset_export_info"
 
 [tool.coverage.run]
+source_pkgs = ["qcodes"]
 omit = [
     "src/qcodes/__init__.py",
     "*/__init__.py",
@@ -210,7 +211,7 @@ typeCheckingMode = "standard"
 minversion = "7.2"
 junit_family = "legacy"
 testpaths = "tests"
-addopts = "-n auto --dist=loadfile"
+addopts = "-n auto --dist=loadfile --cov-config=pyproject.toml"
 asyncio_default_fixture_loop_scope = "function"
 markers = "serial"
 
