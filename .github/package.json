@@ -1,6 +1,6 @@
 {
 "devDependencies": {
-	"pyright": "1.1.392"
+	"pyright": "1.1.393"
 },
 "packageManager": "npm@11"
 }
