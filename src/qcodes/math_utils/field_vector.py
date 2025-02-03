@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 import numpy as np
 
+from qcodes.utils.types import NumberType
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -292,21 +294,21 @@ class FieldVector:
         self.set_component(**{component: value})
 
     def __mul__(self, other: Any) -> FieldVector:
-        if not isinstance(other, (float, int)):
+        if not isinstance(other, NumberType):
             return NotImplemented
 
         return FieldVector(
-            **{component: self[component] * other for component in "xyz"}
+            **{component: self[component] * float(other) for component in "xyz"}
         )
 
     def __rmul__(self, other: Any) -> FieldVector:
-        if not isinstance(other, (int, float)):
+        if not isinstance(other, NumberType):
             return NotImplemented
 
         return self * other
 
     def __truediv__(self, other: Any) -> FieldVector:
-        if not isinstance(other, (int, float)):
+        if not isinstance(other, NumberType):
             return NotImplemented
 
         return self * (1.0 / other)

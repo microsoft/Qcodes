@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import numbers
 import time
 import warnings
 from collections import defaultdict
@@ -24,6 +23,7 @@ from qcodes.instrument import (
 from qcodes.math_utils import FieldVector
 from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.types import NumberType
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -730,7 +730,7 @@ class AMIModel4303D(Instrument):
         self._field_limit: float | Iterable[CartesianFieldLimitFunction]
         if isinstance(field_limit, Iterable):
             self._field_limit = field_limit
-        elif isinstance(field_limit, numbers.Real):
+        elif isinstance(field_limit, NumberType):
             # Conversion to float makes related driver logic simpler
             self._field_limit = float(field_limit)
         else:
@@ -1073,7 +1073,7 @@ class AMIModel4303D(Instrument):
     def _verify_safe_setpoint(
         self, setpoint_values: tuple[float, float, float]
     ) -> bool:
-        if isinstance(self._field_limit, (int, float)):
+        if isinstance(self._field_limit, NumberType):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any(
@@ -1240,9 +1240,7 @@ class AMIModel4303D(Instrument):
         ):
             axis_instrument.pause()
 
-    def _request_field_change(
-        self, instrument: AMIModel430, value: numbers.Real
-    ) -> None:
+    def _request_field_change(self, instrument: AMIModel430, value: NumberType) -> None:
         """
         This method is called by the child x/y/z magnets if they are set
         individually. It results in additional safety checks being
