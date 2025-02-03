@@ -224,6 +224,26 @@ def test_register_delegate_parameters():
     assert meas.parameters["x"].type == "numeric"
 
 
+def test_register_delegate_parameters_with_late_source():
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_param = DelegateParameter("delegate", source=None)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+
+    delegate_param.source = complex_param
+
+    meas.register_parameter(delegate_param, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
+
+
 def test_unregister_parameter(DAC, DMM) -> None:
     """
     Test the unregistering of parameters.
