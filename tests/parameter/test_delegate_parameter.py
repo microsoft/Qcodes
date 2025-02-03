@@ -704,7 +704,7 @@ def test_value_validation_with_offset_and_scale() -> None:
         delegate_param.set(1)
 
 
-def test_delegate_of_delegate_updates_settable_gettable():
+def test_delegate_of_delegate_updates_settable_gettable() -> None:
     gettable_settable_source_param = Parameter(
         "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
     )
@@ -735,6 +735,28 @@ def test_delegate_of_delegate_updates_settable_gettable():
 
     assert delegate_param_outer.gettable
     assert not delegate_param_outer.settable
+
+
+def test_delegate_of_delegate_root_source() -> None:
+    gettable_settable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+
+    delegate_param_inner = DelegateParameter(
+        "delegate_inner", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer = DelegateParameter(
+        "delegate_outer", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer.source = delegate_param_inner
+    delegate_param_inner.source = gettable_settable_source_param
+
+    assert delegate_param_outer.root_source == gettable_settable_source_param
+    assert delegate_param_outer.source is not None
+    assert delegate_param_outer.source.source == gettable_settable_source_param
+
+    assert delegate_param_inner.root_source == gettable_settable_source_param
+    assert delegate_param_inner.source == gettable_settable_source_param
 
 
 def test_delegate_parameter_context() -> None:
