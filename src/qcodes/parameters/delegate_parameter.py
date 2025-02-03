@@ -212,7 +212,7 @@ class DelegateParameter(Parameter):
         this behaves the same as ``self.source``
 
         :getter: Returns the current source.
-        :setter: Sets the source of the first parameter in the tree that has a None source or non-DelegateParameter source
+        :setter: Sets the source of the first parameter in the tree that has a non-DelegateParameter source.
         """
         if isinstance(self.source, DelegateParameter):
             return self.source.root_source
@@ -228,6 +228,7 @@ class DelegateParameter(Parameter):
         """
         If this parameter is part of a chain of DelegateParameters return
         the first Parameter in the chain that has a non DelegateParameter source
+        else return self.
         """
 
         if not isinstance(self.source, DelegateParameter):
