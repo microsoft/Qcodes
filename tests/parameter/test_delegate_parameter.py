@@ -754,9 +754,74 @@ def test_delegate_of_delegate_root_source() -> None:
     assert delegate_param_outer.root_source == gettable_settable_source_param
     assert delegate_param_outer.source is not None
     assert delegate_param_outer.source.source == gettable_settable_source_param
+    assert delegate_param_outer.root_delegate == delegate_param_inner
 
     assert delegate_param_inner.root_source == gettable_settable_source_param
     assert delegate_param_inner.source == gettable_settable_source_param
+    assert delegate_param_inner.root_delegate == delegate_param_inner
+
+    delegate_param_outer.root_source = None
+
+    assert delegate_param_outer.root_source is None
+    assert delegate_param_outer.source is not None
+    assert delegate_param_outer.source.source is None
+    assert delegate_param_outer.root_delegate == delegate_param_inner
+
+    assert delegate_param_inner.root_source is None
+    assert delegate_param_inner.source is None
+    assert delegate_param_inner.root_delegate == delegate_param_inner
+
+
+def test_delegate_chain_root_source() -> None:
+    gettable_settable_source_param = Parameter(
+        "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
+    )
+
+    delegate_param_inner = DelegateParameter(
+        "delegate_inner", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_middle = DelegateParameter(
+        "delegate_inner", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer = DelegateParameter(
+        "delegate_outer", source=None, vals=vals.Numbers(-10, 10)
+    )
+    delegate_param_outer.source = delegate_param_middle
+    delegate_param_middle.source = delegate_param_inner
+    delegate_param_inner.source = gettable_settable_source_param
+
+    assert delegate_param_outer.root_source == gettable_settable_source_param
+    assert delegate_param_outer.source is not None
+    assert delegate_param_outer.source.source == delegate_param_inner
+    assert isinstance(delegate_param_outer.source.source, DelegateParameter)
+    assert delegate_param_outer.source.source.source == gettable_settable_source_param
+    assert delegate_param_outer.root_delegate == delegate_param_inner
+
+    assert delegate_param_middle.root_source == gettable_settable_source_param
+    assert delegate_param_middle.source == delegate_param_inner
+    assert delegate_param_middle.source.source == gettable_settable_source_param
+    assert delegate_param_middle.root_delegate == delegate_param_inner
+
+    assert delegate_param_inner.root_source == gettable_settable_source_param
+    assert delegate_param_inner.source == gettable_settable_source_param
+    assert delegate_param_inner.root_delegate == delegate_param_inner
+
+    delegate_param_outer.root_source = None
+
+    assert delegate_param_outer.root_source is None
+    assert delegate_param_outer.source is not None
+    assert delegate_param_outer.source.source is not None
+    assert delegate_param_outer.source.source.source is None
+    assert delegate_param_outer.root_delegate == delegate_param_inner
+
+    assert delegate_param_middle.root_source is None
+    assert delegate_param_middle.source is not None
+    assert delegate_param_middle.source.source is None
+    assert delegate_param_outer.root_delegate == delegate_param_inner
+
+    assert delegate_param_inner.root_source is None
+    assert delegate_param_inner.source is None
+    assert delegate_param_inner.root_delegate == delegate_param_inner
 
 
 def test_delegate_parameter_context() -> None:
