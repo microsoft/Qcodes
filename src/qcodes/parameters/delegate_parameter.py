@@ -330,4 +330,4 @@ class DelegateParameter(Parameter):
             self.source.validators if self.source is not None else ()
         )
 
-        return source_validators + tuple(self._vals)
+        return tuple(self._vals) + source_validators
