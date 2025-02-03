@@ -203,6 +203,23 @@ class DelegateParameter(Parameter):
         self._source: Parameter | None = source
 
     @property
+    def root_source(self) -> Parameter | None:
+        """
+        The root source parameter that this :class:`DelegateParameter` is bound to
+        or ``None`` if this  :class:`DelegateParameter` is unbound. If
+        the source is it self a DelegateParameter it will recursively return that Parameter's
+        source until a non DelegateParameter is found. For a non DelegateParameter source
+        this behaves the same as ``self.source``
+
+        :getter: Returns the current source.
+        :setter: Sets the source.
+        """
+        if isinstance(self.source, DelegateParameter):
+            return self.source.root_source
+        else:
+            return self.source
+
+    @property
     def snapshot_value(self) -> bool:
         if self.source is None:
             return False
