@@ -8,7 +8,9 @@ import os
 from types import MethodType
 from typing import TYPE_CHECKING, Any, Literal
 
-from qcodes.utils import deprecate
+from typing_extensions import deprecated
+
+from qcodes.utils import QCoDeSDeprecationWarning
 
 from .command import Command
 from .parameter_base import ParamDataType, ParameterBase, ParamRawDataType
@@ -392,9 +394,12 @@ class Parameter(ParameterBase):
     def label(self, label: str) -> None:
         self._label = label
 
-    @deprecate(
-        "the ability to sweep a parameter using [start:step:stop] will be removed",
-        alternative="Parameter.sweep for qcodes_loop support",
+    @deprecated(
+        (
+            "The ability to sweep a parameter using [start:step:stop] is deprecated and will be removed. "
+            "This is only used in qcodes_loop. See qcodes_loop for an alternative."
+        ),
+        category=QCoDeSDeprecationWarning,
     )
     def __getitem__(self, keys: Any) -> SweepFixedValues:
         """
@@ -412,6 +417,13 @@ class Parameter(ParameterBase):
         """
         self.set(self.get() + value)
 
+    @deprecated(
+        (
+            "The sweep method on Parameter is deprecated and will be removed. "
+            "This is only used in qcodes_loop. See qcodes_loop for an alternative."
+        ),
+        category=QCoDeSDeprecationWarning,
+    )
     def sweep(
         self,
         start: float,
