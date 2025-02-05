@@ -207,7 +207,7 @@ def test_register_custom_parameter(DAC) -> None:
         )
 
 
-def test_register_delegate_parameters():
+def test_register_delegate_parameters() -> None:
     x_param = Parameter("x", set_cmd=None, get_cmd=None)
 
     complex_param = Parameter(
@@ -224,7 +224,7 @@ def test_register_delegate_parameters():
     assert meas.parameters["x"].type == "numeric"
 
 
-def test_register_delegate_parameters_with_late_source():
+def test_register_delegate_parameters_with_late_source() -> None:
     x_param = Parameter("x", set_cmd=None, get_cmd=None)
 
     complex_param = Parameter(
@@ -241,6 +241,28 @@ def test_register_delegate_parameters_with_late_source():
     meas.register_parameter(delegate_param, setpoints=(x_param,))
     assert len(meas.parameters) == 2
     assert meas.parameters["delegate"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
+
+
+def test_register_delegate_parameters_with_late_source_chain():
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_inner = DelegateParameter("delegate_inner", source=None)
+    delegate_outer = DelegateParameter("delegate_outer", source=None)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+
+    delegate_outer.source = delegate_inner
+    delegate_inner.source = complex_param
+
+    meas.register_parameter(delegate_outer, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate_outer"].type == "complex"
     assert meas.parameters["x"].type == "numeric"
 
 

@@ -660,6 +660,55 @@ def test_validator_delegates_and_source() -> None:
     assert delegate_param.vals == some_other_validator
 
 
+def test_validator_delegates_and_source_chain() -> None:
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_inner = DelegateParameter("delegate_inner", source=source_param)
+    delegate_outer = DelegateParameter("delegate_outer", source=delegate_inner)
+    source_validator = vals.Numbers(-10, 10)
+    delegate_inner_validator = vals.Numbers(-7, 7)
+    delegate_outer_validator = vals.Numbers(-5, 5)
+
+    source_param.vals = source_validator
+    delegate_inner.vals = delegate_inner_validator
+    delegate_outer.vals = delegate_outer_validator
+
+    delegate_outer.validate(1)
+    with pytest.raises(ValueError):
+        delegate_outer.validate(6)
+
+    delegate_inner.validate(6)
+    source_param.validate(6)
+
+    assert delegate_outer.validators == (
+        delegate_outer_validator,
+        delegate_inner_validator,
+        source_validator,
+    )
+    assert delegate_outer.vals == delegate_outer_validator
+
+    assert delegate_inner.validators == (
+        delegate_inner_validator,
+        source_validator,
+    )
+    assert delegate_inner.vals == delegate_inner_validator
+
+    assert delegate_outer.source is not None
+    delegate_outer.source.vals = None
+
+    assert delegate_outer.validators == (
+        delegate_outer_validator,
+        source_validator,
+    )
+    assert delegate_outer.vals == delegate_outer_validator
+
+    assert isinstance(delegate_outer.source, DelegateParameter)
+    assert delegate_outer.source.source is not None
+    delegate_outer.source.source.vals = None
+
+    assert delegate_outer.validators == (delegate_outer_validator,)
+    assert delegate_outer.vals == delegate_outer_validator
+
+
 def test_value_validation_with_offset_and_scale() -> None:
     source_param = Parameter(
         "source", set_cmd=None, get_cmd=None, vals=vals.Numbers(-5, 5)
