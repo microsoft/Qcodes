@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from qcodes.validators.validators import Validator
+
     from .parameter_base import ParamDataType, ParamRawDataType
 
 
@@ -201,6 +203,40 @@ class DelegateParameter(Parameter):
         self._source: Parameter | None = source
 
     @property
+    def root_source(self) -> Parameter | None:
+        """
+        The root source parameter that this :class:`DelegateParameter` is bound to
+        or ``None`` if this  :class:`DelegateParameter` is unbound. If
+        the source is it self a DelegateParameter it will recursively return that Parameter's
+        source until a non DelegateParameter is found. For a non DelegateParameter source
+        this behaves the same as ``self.source``
+
+        :getter: Returns the current source.
+        :setter: Sets the source of the first parameter in the tree that has a non-DelegateParameter source.
+        """
+        if isinstance(self.source, DelegateParameter):
+            return self.source.root_source
+        else:
+            return self.source
+
+    @root_source.setter
+    def root_source(self, source: Parameter | None) -> None:
+        self.root_delegate.source = source
+
+    @property
+    def root_delegate(self) -> DelegateParameter:
+        """
+        If this parameter is part of a chain of DelegateParameters return
+        the first Parameter in the chain that has a non DelegateParameter source
+        else return self.
+        """
+
+        if not isinstance(self.source, DelegateParameter):
+            return self
+        else:
+            return self.source.root_delegate
+
+    @property
     def snapshot_value(self) -> bool:
         if self.source is None:
             return False
@@ -314,3 +350,18 @@ class DelegateParameter(Parameter):
         super().validate(value)
         if self.source is not None:
             self.source.validate(self._from_value_to_raw_value(value))
+
+    @property
+    def validators(self) -> tuple[Validator, ...]:
+        """
+        Tuple of all validators associated with the parameter. Note that this
+        includes validators of the source parameter if source parameter is set
+        and has any validators.
+
+        :getter: All validators associated with the parameter.
+        """
+        source_validators: tuple[Validator, ...] = (
+            self.source.validators if self.source is not None else ()
+        )
+
+        return tuple(self._vals) + source_validators

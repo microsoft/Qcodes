@@ -1,0 +1,4 @@
+``DelegateParameter`` now includes validators of its source Parameter into its validators. This ensures that a ``DelegateParameter``
+with a non numeric source parameter is registered correctly in a measurement when the ``DelegateParameter`` it self does not
+set a validator. Furthermore `DelegateParameter`` has gained ``root_source`` and ``root_delegate`` attributes that makes it easier to get the
+root source or ``DelegateParameter`` of a ``DelegateParameter`` that delegates to another ``DelegateParameter`` in a chain.
