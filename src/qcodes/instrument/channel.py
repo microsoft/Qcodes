@@ -535,10 +535,9 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             chan.invalidate_cache()
 
 
-# we ignore a mypy error here since the __getitem__ signature above
-# taking a tuple is not compatible with MutableSequence
-# for some reason this does not happen with Sequence
-class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  # type: ignore[misc]
+# in index method the parameter obj should be called value but that would
+# be an incompatible change
+class ChannelList(ChannelTuple, MutableSequence[InstrumentModuleType]):  #  pyright: ignore[reportIncompatibleMethodOverride]
     """
     Mutable Container for channelized parameters that allows for sweeps over
     all channels, as well as addressing of individual channels.
