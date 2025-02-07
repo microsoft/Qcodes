@@ -8,6 +8,8 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
     from datetime import datetime
 
+    from qcodes.validators.validators import Validator
+
     from .parameter_base import ParamDataType, ParamRawDataType
 
 
@@ -314,3 +316,18 @@ class DelegateParameter(Parameter):
         super().validate(value)
         if self.source is not None:
             self.source.validate(self._from_value_to_raw_value(value))
+
+    @property
+    def validators(self) -> tuple[Validator, ...]:
+        """
+        Tuple of all validators associated with the parameter. Note that this
+        includes validators of the source parameter if source parameter is set
+        and has any validators.
+
+        :getter: All validators associated with the parameter.
+        """
+        source_validators: tuple[Validator, ...] = (
+            self.source.validators if self.source is not None else ()
+        )
+
+        return tuple(self._vals) + source_validators
