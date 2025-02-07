@@ -20,7 +20,7 @@ from qcodes.validators import Validator
 from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
-    from typing_extensions import Unpack
+    from typing_extensions import Self, Unpack
 
     from .instrument import Instrument
     from .instrument_base import InstrumentBaseKWArgs
@@ -192,11 +192,11 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
     def __getitem__(self, i: int) -> InstrumentModuleType: ...
 
     @overload
-    def __getitem__(self: T, i: slice | tuple[int, ...]) -> T: ...
+    def __getitem__(self: Self, i: slice | tuple[int, ...]) -> Self: ...
 
     def __getitem__(
-        self: T, i: int | slice | tuple[int, ...]
-    ) -> InstrumentModuleType | T:
+        self: Self, i: int | slice | tuple[int, ...]
+    ) -> InstrumentModuleType | Self:
         """
         Return either a single channel, or a new :class:`ChannelTuple`
         containing only the specified channels
@@ -244,7 +244,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
             f"{self._chan_type.__name__}, {self._channels!r})"
         )
 
-    def __add__(self: T, other: ChannelTuple) -> T:
+    def __add__(self: Self, other: ChannelTuple) -> Self:
         """
         Return a new ChannelTuple containing the channels from both
         :class:`ChannelTuple` self and r.
@@ -336,7 +336,7 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
         """
         return self._channels.count(obj)
 
-    def get_channel_by_name(self: T, *names: str) -> InstrumentModuleType | T:
+    def get_channel_by_name(self: Self, *names: str) -> InstrumentModuleType | Self:
         """
         Get a channel by name, or a ChannelTuple if multiple names are given.
 
