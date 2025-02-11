@@ -55,6 +55,8 @@ from qcodes.utils import DelayedKeyboardInterrupt
 if TYPE_CHECKING:
     from types import TracebackType
 
+    from typing_extensions import Self
+
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.experiment_container import Experiment
     from qcodes.dataset.sqlite.connection import ConnectionPlus
@@ -881,8 +883,8 @@ class Measurement:
         return tuple(depends_on), tuple(inf_from)
 
     def register_parent(
-        self: T, parent: DataSetProtocol, link_type: str, description: str = ""
-    ) -> T:
+        self: Self, parent: DataSetProtocol, link_type: str, description: str = ""
+    ) -> Self:
         """
         Register a parent for the outcome of this measurement
 
@@ -906,12 +908,12 @@ class Measurement:
         return self
 
     def register_parameter(
-        self: T,
+        self: Self,
         parameter: ParameterBase,
         setpoints: SetpointsType | None = None,
         basis: SetpointsType | None = None,
         paramtype: str | None = None,
-    ) -> T:
+    ) -> Self:
         """
         Add QCoDeS Parameter to the dataset produced by running this
         measurement.
@@ -1034,7 +1036,7 @@ class Measurement:
         return paramtype
 
     def _register_parameter(
-        self: T,
+        self: Self,
         name: str,
         label: str | None,
         unit: str | None,
@@ -1042,7 +1044,7 @@ class Measurement:
         basis: SetpointsType | None,
         paramtype: str,
         metadata: dict[str, Any] | None = None,
-    ) -> T:
+    ) -> Self:
         """
         Update the interdependencies object with a new group
         """
@@ -1250,14 +1252,14 @@ class Measurement:
             )
 
     def register_custom_parameter(
-        self: T,
+        self: Self,
         name: str,
         label: str | None = None,
         unit: str | None = None,
         basis: SetpointsType | None = None,
         setpoints: SetpointsType | None = None,
         paramtype: str = "numeric",
-    ) -> T:
+    ) -> Self:
         """
         Register a custom parameter with this measurement
 
@@ -1316,7 +1318,9 @@ class Measurement:
 
         log.info(f"Removed {param_name} from Measurement.")
 
-    def add_before_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
+    def add_before_run(
+        self: Self, func: Callable[..., Any], args: Sequence[Any]
+    ) -> Self:
         """
         Add an action to be performed before the measurement.
 
@@ -1336,7 +1340,9 @@ class Measurement:
 
         return self
 
-    def add_after_run(self: T, func: Callable[..., Any], args: Sequence[Any]) -> T:
+    def add_after_run(
+        self: Self, func: Callable[..., Any], args: Sequence[Any]
+    ) -> Self:
         """
         Add an action to be performed after the measurement.
 
@@ -1357,10 +1363,10 @@ class Measurement:
         return self
 
     def add_subscriber(
-        self: T,
+        self: Self,
         func: Callable[..., Any],
         state: MutableSequence[Any] | MutableMapping[Any, Any],
-    ) -> T:
+    ) -> Self:
         """
         Add a subscriber to the dataset of the measurement.
 

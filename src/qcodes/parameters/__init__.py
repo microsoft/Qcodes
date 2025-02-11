@@ -100,7 +100,6 @@ __all__ = [
     "Group",
     "GroupParameter",
     "GroupedParameter",
-    "GroupedParameter",
     "InstrumentRefParameter",
     "ManualParameter",
     "MultiChannelInstrumentParameter",

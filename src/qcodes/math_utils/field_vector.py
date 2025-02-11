@@ -14,6 +14,8 @@ from qcodes.utils.types import NumberType
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from typing_extensions import Self
+
 AllCoordsType = tuple[float, float, float, float, float, float, float]
 NormOrder = Literal["fro", "nuc"] | None | float
 T = TypeVar("T", bound="FieldVector")
@@ -179,7 +181,7 @@ class FieldVector:
                 self._set_attribute_values(FieldVector.attributes, new_values)
                 break
 
-    def copy(self: T, other: T) -> None:
+    def copy(self: Self, other: Self) -> None:
         """Copy the properties of other vector to yourself."""
         for att in FieldVector.attributes:
             value = getattr(other, "_" + att)
@@ -409,7 +411,7 @@ class FieldVector:
         return np.array([self.x, self.y, self.z, 1])
 
     @classmethod
-    def from_homogeneous(cls: type[T], hvec: np.ndarray) -> T:
+    def from_homogeneous(cls: type[Self], hvec: np.ndarray) -> Self:
         # Homogeneous coordinates define an equivalence relation
         #     [x / s, y / s, z / s, 1] == [x, y, z, s].
         # More generally,
