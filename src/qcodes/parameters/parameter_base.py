@@ -191,6 +191,7 @@ class ParameterBase(MetadatableWithName):
             using a different name than the parameter's full_name
 
     """
+    _database_callback: Callable[[ParameterBase, Any], None] | None = None
 
     def __init__(
         self,
@@ -777,6 +778,14 @@ class ParameterBase(MetadatableWithName):
                         time.sleep(self.post_delay - t_elapsed)
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
+
+                    if ParameterBase._database_callback is not None:
+                        try:
+                            ParameterBase._database_callback(self, value)
+                        except Exception as e:
+                            LOG.exception(
+                                f"Exception while running parameter callback: {e}"
+                            )
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
