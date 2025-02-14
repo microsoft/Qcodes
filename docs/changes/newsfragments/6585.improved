@@ -1,3 +1,0 @@
-``DelegateParameter`` now includes validators of its source Parameter into its validators. This ensures that a ``DelegateParameter``
-with a non numeric source parameter is registered correctly in a measurement when the ``DelegateParameter`` it self does not
-set a validator.

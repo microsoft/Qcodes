@@ -1,3 +1,0 @@
-When passing ``bind_to_instrument=False`` to ``InstrumentBase.add_parameter`` a warning that
-recommends not doing this is now raised suggesting a better alternative.
-This replaces an existing inconsistent warning which was misleading.
