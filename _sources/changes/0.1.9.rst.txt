@@ -1,0 +1,48 @@
+Changelog for QCoDeS 0.1.9
+==========================
+
+This release changes the API of Parameters in QCoDeS, reducing the amount of Parameter classes. It also introduces tests for VisaInstrument drivers via the PyVISA-sim backend.
+
+Note: This is the last QCoDeS release before the new dataset and as such it will be the last QCoDeS release to support python 3.5.
+
+
+New & Improved
+______________
+
+- New and Improved drivers:
+
+  - New driver for HP8753D Spectrum Analyzer (:pr:`843`)
+  - Fixes to Decadac driver (:pr:`756`, :pr:`838`, :pr:`857`, :pr:`876`)
+  - Unification of existing Keysight waveform generator drivers (:pr:`758`)
+  - New driver for Keysight Infiniium MSOS104A oscilloscope (:pr:`766`)
+  - New driver for Keysight N51x1 RF source (:pr:`796`)
+  - New driver for Keysight E8267D (:pr:`892`)
+  - New driver for Mini-Circuits RF switch USB-4SPDT-A18 (:pr:`891`)
+  - New driver for Mini-Circuits RF switch RC-xSP4T (:pr:`814`)
+  - New driver for Mini-Circuits RF switch RC-1SP4T (:pr:`814`)
+  - New driver for Mini-Circuits RF switch USB-4SPDT (:pr:`814`)
+  - New driver for Spirack module (:pr:`847`)
+  - Fixes to IVVI (:pr:`919`)
+  - Features added to ZI UHF-LI driver (:pr:`883`, :pr:`879`, :pr:`870`, :pr:`685`)
+  - New driver for Cryogenic SMS120c (:pr:`819`)
+  - New driver for Rohde & Schwarz RTO 1000 oscilloscope (:pr:`679`, :pr:`907`)
+  - New drivers for Stanford Research Instruments lock-in amplifiers SR860 and SR865
+  - New driver for Tektronix AWG70000A series (:pr:`761`, :pr:`911`)
+  - New fast sweep feature for and channelisation of Tektronix Keithley 2600 (:pr:`747`)
+  - New driver for Yokogawa GS200
+
+- New features:
+
+  - Simulated instruments using PyVISA-sim for driver testing (:pr:`859`)
+  - New Parameter API (:pr:`651`)
+
+ - Documentation improvements:
+
+   - MatPlot Guide (:pr:`762`)
+   - Obsolete examples removed (:pr:`918`)
+   - New and easier installation instructions (:pr:`841`)
+
+Breaking Changes
+________________
+
+- The Parameter API changed. There are no longer StandardParameters and ManualParameters can be avoided.
