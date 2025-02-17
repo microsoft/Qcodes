@@ -359,7 +359,7 @@ ruamel-yaml==0.18.10
     #   qcodes
 schema==0.7.7
     # via broadbean
-scipy==1.15.1
+scipy==1.15.2
     # via qcodes (pyproject.toml)
 setuptools==75.8.0
     # via incremental
