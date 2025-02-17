@@ -19,13 +19,11 @@ class KeysightP5004B(N52xx.KeysightPNAxBase):
             max_freq=20e9,
             min_power=-80,
             max_power=10,
-            nports=2,
+            nports=2,    
             **kwargs,
         )
 
-        attenuators_options = {"219", "419"}
-        options = set(self.get_options())
-        if attenuators_options.intersection(options):
-            self._set_power_limits(min_power=-100, max_power=10) #-80 dBm - 20 dBm power attenuator.
-        if "080" in options:
-            self._enable_fom()
+
+
+
+     
