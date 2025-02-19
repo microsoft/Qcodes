@@ -64,6 +64,16 @@ def _signal_parser(our_scaling: float, response: str) -> float:
 
     return float(digits) * their_scaling * our_scaling
 
+def _temp_parser(response: str):
+    """
+    Parse a response string into a correct SI temperature value.
+
+    Args:
+        response: What comes back from instrument.ask
+
+    """
+    return float(response.split(":")[-1][:-1])
+
 
 class OxfordMercuryWorkerPS(InstrumentChannel):
     """
@@ -347,6 +357,38 @@ class OxfordMercuryiPS(VisaInstrument):
         self._target_vector = FieldVector(
             x=self.GRPX.field(), y=self.GRPY.field(), z=self.GRPZ.field()
         )
+
+        self.magnet_temp_addr = 'DEV:MB1.T1:TEMP'
+        self.pt1_temp_addr = 'DEV:DB8.T1:TEMP'
+        self.pt2_temp_addr = 'DEV:DB7.T1:TEMP'
+
+        self.magnet_temp: Parameter = self.add_parameter(
+                           name='magnet_temp',
+                           label='Magnet Temperature',
+                           unit='K',
+                           docstring='Temperature of the magnet sensor',
+                           get_cmd="READ:" + self.magnet_temp_addr + ":SIG:TEMP?",
+                           get_parser=_temp_parser
+                           )
+
+        self.pt1_temp: Parameter = self.add_parameter(
+                           name='pt1_temp',
+                           label='pt1 Temperature',
+                           unit='K',
+                           docstring='Temperature of the pt1',
+                           get_cmd="READ:" + self.pt1_temp_addr + ":SIG:TEMP?",
+                           get_parser=_temp_parser
+                           )
+
+        self.pt2_temp: Parameter = self.add_parameter(
+            name='pt2_temp',
+            label='pt2 Temperature',
+            unit='K',
+            docstring='Temperature of the pt2',
+            get_cmd="READ:" + self.pt2_temp_addr + ":SIG:TEMP?",
+            get_parser=_temp_parser
+        )
+
 
         for coord, unit in zip(
             ["x", "y", "z", "r", "theta", "phi", "rho"],
