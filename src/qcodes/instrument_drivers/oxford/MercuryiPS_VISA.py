@@ -102,6 +102,15 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
         else:
             self.psu_string = "PSU"
 
+        self.heater_switch: Parameter = self.add_parameter(
+            'heater_switch',
+            label='Heater switch status/set',
+            get_cmd=partial(self._param_getter, "SIG:SWHT"),
+            set_cmd=partial(self._param_setter, "SIG:SWHT"),
+            get_parser=_response_preparser,
+        )
+        """Parameter heater switch"""
+
         self.voltage: Parameter = self.add_parameter(
             "voltage",
             label="Output voltage",
