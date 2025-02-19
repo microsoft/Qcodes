@@ -370,6 +370,7 @@ class OxfordMercuryiPS(VisaInstrument):
                            get_cmd="READ:" + self.magnet_temp_addr + ":SIG:TEMP?",
                            get_parser=_temp_parser
                            )
+        """Parameter magnet temperature"""
 
         self.pt1_temp: Parameter = self.add_parameter(
                            name='pt1_temp',
@@ -379,6 +380,7 @@ class OxfordMercuryiPS(VisaInstrument):
                            get_cmd="READ:" + self.pt1_temp_addr + ":SIG:TEMP?",
                            get_parser=_temp_parser
                            )
+        """Parameter pt1 temperature"""
 
         self.pt2_temp: Parameter = self.add_parameter(
             name='pt2_temp',
@@ -388,7 +390,7 @@ class OxfordMercuryiPS(VisaInstrument):
             get_cmd="READ:" + self.pt2_temp_addr + ":SIG:TEMP?",
             get_parser=_temp_parser
         )
-
+        """Parameter pt2 temperature"""
 
         for coord, unit in zip(
             ["x", "y", "z", "r", "theta", "phi", "rho"],
