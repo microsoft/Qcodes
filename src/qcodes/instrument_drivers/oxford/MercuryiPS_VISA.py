@@ -64,7 +64,7 @@ def _signal_parser(our_scaling: float, response: str) -> float:
 
     return float(digits) * their_scaling * our_scaling
 
-def _temp_parser(response: str):
+def _temp_parser(response: str) -> float:
     """
     Parse a response string into a correct SI temperature value.
 
