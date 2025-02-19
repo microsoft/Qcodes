@@ -358,16 +358,16 @@ class OxfordMercuryiPS(VisaInstrument):
             x=self.GRPX.field(), y=self.GRPY.field(), z=self.GRPZ.field()
         )
 
-        self.magnet_temp_addr = 'DEV:MB1.T1:TEMP'
-        self.pt1_temp_addr = 'DEV:DB8.T1:TEMP'
-        self.pt2_temp_addr = 'DEV:DB7.T1:TEMP'
+        self._magnet_temp_addr = 'DEV:MB1.T1:TEMP'
+        self._pt1_temp_addr = 'DEV:DB8.T1:TEMP'
+        self._pt2_temp_addr = 'DEV:DB7.T1:TEMP'
 
         self.magnet_temp: Parameter = self.add_parameter(
                            name='magnet_temp',
                            label='Magnet Temperature',
                            unit='K',
                            docstring='Temperature of the magnet sensor',
-                           get_cmd="READ:" + self.magnet_temp_addr + ":SIG:TEMP?",
+                           get_cmd="READ:" + self._magnet_temp_addr + ":SIG:TEMP?",
                            get_parser=_temp_parser
                            )
         """Parameter magnet temperature"""
@@ -377,7 +377,7 @@ class OxfordMercuryiPS(VisaInstrument):
                            label='pt1 Temperature',
                            unit='K',
                            docstring='Temperature of the pt1',
-                           get_cmd="READ:" + self.pt1_temp_addr + ":SIG:TEMP?",
+                           get_cmd="READ:" + self._pt1_temp_addr + ":SIG:TEMP?",
                            get_parser=_temp_parser
                            )
         """Parameter pt1 temperature"""
@@ -387,7 +387,7 @@ class OxfordMercuryiPS(VisaInstrument):
             label='pt2 Temperature',
             unit='K',
             docstring='Temperature of the pt2',
-            get_cmd="READ:" + self.pt2_temp_addr + ":SIG:TEMP?",
+            get_cmd="READ:" + self._pt2_temp_addr + ":SIG:TEMP?",
             get_parser=_temp_parser
         )
         """Parameter pt2 temperature"""
