@@ -93,7 +93,7 @@ h5netcdf==1.5.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-h5py==3.12.1
+h5py==3.13.0
     # via
     #   qcodes (pyproject.toml)
     #   h5netcdf
@@ -102,7 +102,7 @@ h5py==3.12.1
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.125.3
+hypothesis==6.126.0
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -191,7 +191,7 @@ matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mistune==3.1.1
+mistune==3.1.2
     # via nbconvert
 mypy==1.15.0
     # via qcodes (pyproject.toml)
@@ -279,7 +279,7 @@ psutil==7.0.0
     # via ipykernel
 pure-eval==0.2.3
     # via stack-data
-pyarrow==19.0.0
+pyarrow==19.0.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes

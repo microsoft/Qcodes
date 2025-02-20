@@ -102,11 +102,11 @@ jobs:
       if: ${{ !matrix.min-version }}
     - name: Run parallel tests
       run: |
-        pytest -m "not serial" --cov=qcodes --cov-report xml --hypothesis-profile ci  --durations=20 $PYTEST_OPT tests
+        pytest -m "not serial" --cov --cov-report xml --hypothesis-profile ci  --durations=20 $PYTEST_OPT tests
 # a subset of the tests fails when run in parallel on Windows so run those in serial here
     - name: Run serial tests
       run: |
-        pytest -m "serial" -n 0 --dist no --cov=qcodes --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT tests
+        pytest -m "serial" -n 0 --dist no --cov --cov-report xml --cov-append --hypothesis-profile ci $PYTEST_OPT tests
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
       with:
