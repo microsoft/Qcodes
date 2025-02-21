@@ -1,0 +1,8 @@
+Added several parameters into the oxford MercuryiPS driver,
+enabling the control of the heaters and the sensing of internal temperatures
+(magnet, PT1, and PT2 stage of cryogenic system).
+Added `heater_switch` parameter to manage the heater switch status and settings.
+The heater switch control is bound to each WorkerPS, accepting "ON" and "OFF" as inputs.
+Added `magnet_temp`, `pt1_temp`, and `pt2_temp` parameters for reading temperatures
+from different sensors, utilizing the new `_temp_parser` function.
+Currently, the addresses of temperature sensors are written statically in the driver.
