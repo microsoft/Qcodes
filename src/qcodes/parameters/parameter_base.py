@@ -13,7 +13,6 @@ from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
 from qcodes.validators import Enum, Ints, Validator
 
-from ..utils.types import NumberType
 from .cache import _Cache, _CacheProtocol
 from .named_repr import named_repr
 from .permissive_range import permissive_range
@@ -191,7 +190,6 @@ class ParameterBase(MetadatableWithName):
             using a different name than the parameter's full_name
 
     """
-    _database_callback: Callable[[ParameterBase, Any], None] | None = None
 
     def __init__(
         self,
@@ -214,6 +212,7 @@ class ParameterBase(MetadatableWithName):
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
+        value_changed_callback: Callable[[ParameterBase, Any], None] | None = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -344,6 +343,8 @@ class ParameterBase(MetadatableWithName):
 
             instrument.parameters[name] = self
 
+        self._value_changed_callback = value_changed_callback
+
     @property
     def _implements_get_raw(self) -> bool:
         implements_get_raw = hasattr(self, "get_raw") and not getattr(
@@ -384,10 +385,9 @@ class ParameterBase(MetadatableWithName):
             RuntimeError: If removing the first validator when more than one validator is set.
 
         """
-        validators = self.validators
 
-        if len(validators):
-            return validators[0]
+        if len(self._vals):
+            return self._vals[0]
         else:
             return None
 
@@ -779,13 +779,7 @@ class ParameterBase(MetadatableWithName):
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
-                    if ParameterBase._database_callback is not None:
-                        try:
-                            ParameterBase._database_callback(self, value)
-                        except Exception as e:
-                            LOG.exception(
-                                f"Exception while running parameter callback: {e}"
-                            )
+                    self._invoke_callback(value)
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
@@ -794,8 +788,8 @@ class ParameterBase(MetadatableWithName):
         return set_wrapper
 
     def get_ramp_values(
-        self, value: NumberType | Sized, step: NumberType | None = None
-    ) -> Sequence[NumberType | Sized]:
+        self, value: float | Sized, step: float | None = None
+    ) -> Sequence[float | Sized]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -820,7 +814,8 @@ class ParameterBase(MetadatableWithName):
                 self.get()
             start_value = self.get_latest()
             if not (
-                isinstance(start_value, NumberType) and isinstance(value, NumberType)
+                isinstance(start_value, (int, float))
+                and isinstance(value, (int, float))
             ):
                 # parameter is numeric but either one of the endpoints
                 # is not or the starting point is unknown. The later
@@ -869,7 +864,7 @@ class ParameterBase(MetadatableWithName):
                 validator.validate(value, self._validate_context)
 
     @property
-    def step(self) -> NumberType | None:
+    def step(self) -> float | None:
         """
         Stepsize that this Parameter uses during set operation.
         Stepsize must be a positive number or None.
@@ -893,12 +888,12 @@ class ParameterBase(MetadatableWithName):
         return self._step
 
     @step.setter
-    def step(self, step: NumberType | None) -> None:
+    def step(self, step: float | None) -> None:
         if step is None:
-            self._step: NumberType | None = step
+            self._step: float | None = step
         elif not all(getattr(vals, "is_numeric", True) for vals in self._vals):
             raise TypeError("you can only step numeric parameters")
-        elif not isinstance(step, NumberType):
+        elif not isinstance(step, (int, float)):
             raise TypeError("step must be a number")
         elif step == 0:
             self._step = None
@@ -938,7 +933,7 @@ class ParameterBase(MetadatableWithName):
 
     @post_delay.setter
     def post_delay(self, post_delay: float) -> None:
-        if not isinstance(post_delay, NumberType):
+        if not isinstance(post_delay, (int, float)):
             raise TypeError(f"post_delay ({post_delay}) must be a number")
         if post_delay < 0:
             raise ValueError(f"post_delay ({post_delay}) must not be negative")
@@ -967,7 +962,7 @@ class ParameterBase(MetadatableWithName):
 
     @inter_delay.setter
     def inter_delay(self, inter_delay: float) -> None:
-        if not isinstance(inter_delay, NumberType):
+        if not isinstance(inter_delay, (int, float)):
             raise TypeError(f"inter_delay ({inter_delay}) must be a number")
         if inter_delay < 0:
             raise ValueError(f"inter_delay ({inter_delay}) must not be negative")
@@ -1131,6 +1126,35 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
+
+    def _invoke_callback(self, value: Any) -> None:
+        """
+        Invoke the instance-specific callback if it exists.
+
+        Args:
+            value: The new parameter value
+
+        """
+        try:
+            if self._value_changed_callback is not None:
+                self._value_changed_callback(self, value)
+        except Exception as e:
+            LOG.exception(f"Exception while running parameter callback: {e}")
+
+    def set_value_changed_callback(
+        self, callback: Callable[[ParameterBase, Any], None] | None
+    ) -> None:
+        """
+        Set the callback for this specific parameter instance.
+
+        Args:
+            callback: The callback function to be called when the parameter
+                     value changes, or None to remove the callback.
+
+        """
+        if callback is not None and not callable(callback):
+            raise TypeError("Callback must be type callable or None")
+        self._value_changed_callback = callback
 
 
 class GetLatest(DelegateAttributes):
