@@ -64,7 +64,7 @@ dask==2025.2.0
     #   qcodes
 debugpy==1.8.12
     # via ipykernel
-decorator==5.2.0
+decorator==5.2.1
     # via ipython
 deepdiff==8.2.0
     # via qcodes (pyproject.toml)
