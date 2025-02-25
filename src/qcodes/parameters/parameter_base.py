@@ -13,6 +13,7 @@ from qcodes.metadatable import Metadatable, MetadatableWithName
 from qcodes.utils import DelegateAttributes, full_class, qcodes_abstractmethod
 from qcodes.validators import Enum, Ints, Validator
 
+from ..utils.types import NumberType
 from .cache import _Cache, _CacheProtocol
 from .named_repr import named_repr
 from .permissive_range import permissive_range
@@ -385,9 +386,10 @@ class ParameterBase(MetadatableWithName):
             RuntimeError: If removing the first validator when more than one validator is set.
 
         """
+        validators = self.validators
 
-        if len(self._vals):
-            return self._vals[0]
+        if len(validators):
+            return validators[0]
         else:
             return None
 
@@ -788,8 +790,8 @@ class ParameterBase(MetadatableWithName):
         return set_wrapper
 
     def get_ramp_values(
-        self, value: float | Sized, step: float | None = None
-    ) -> Sequence[float | Sized]:
+        self, value: NumberType | Sized, step: NumberType | None = None
+    ) -> Sequence[NumberType | Sized]:
         """
         Return values to sweep from current value to target value.
         This method can be overridden to have a custom sweep behaviour.
@@ -814,8 +816,7 @@ class ParameterBase(MetadatableWithName):
                 self.get()
             start_value = self.get_latest()
             if not (
-                isinstance(start_value, (int, float))
-                and isinstance(value, (int, float))
+                isinstance(start_value, NumberType) and isinstance(value, NumberType)
             ):
                 # parameter is numeric but either one of the endpoints
                 # is not or the starting point is unknown. The later
@@ -864,7 +865,7 @@ class ParameterBase(MetadatableWithName):
                 validator.validate(value, self._validate_context)
 
     @property
-    def step(self) -> float | None:
+    def step(self) -> NumberType | None:
         """
         Stepsize that this Parameter uses during set operation.
         Stepsize must be a positive number or None.
@@ -888,12 +889,12 @@ class ParameterBase(MetadatableWithName):
         return self._step
 
     @step.setter
-    def step(self, step: float | None) -> None:
+    def step(self, step: NumberType | None) -> None:
         if step is None:
-            self._step: float | None = step
+            self._step: NumberType | None = step
         elif not all(getattr(vals, "is_numeric", True) for vals in self._vals):
             raise TypeError("you can only step numeric parameters")
-        elif not isinstance(step, (int, float)):
+        elif not isinstance(step, NumberType):
             raise TypeError("step must be a number")
         elif step == 0:
             self._step = None
@@ -933,7 +934,7 @@ class ParameterBase(MetadatableWithName):
 
     @post_delay.setter
     def post_delay(self, post_delay: float) -> None:
-        if not isinstance(post_delay, (int, float)):
+        if not isinstance(post_delay, NumberType):
             raise TypeError(f"post_delay ({post_delay}) must be a number")
         if post_delay < 0:
             raise ValueError(f"post_delay ({post_delay}) must not be negative")
@@ -962,7 +963,7 @@ class ParameterBase(MetadatableWithName):
 
     @inter_delay.setter
     def inter_delay(self, inter_delay: float) -> None:
-        if not isinstance(inter_delay, (int, float)):
+        if not isinstance(inter_delay, NumberType):
             raise TypeError(f"inter_delay ({inter_delay}) must be a number")
         if inter_delay < 0:
             raise ValueError(f"inter_delay ({inter_delay}) must not be negative")
