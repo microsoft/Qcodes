@@ -110,8 +110,6 @@ imagesize==1.4.1
     # via sphinx
 importlib-metadata==8.5.0
     # via opentelemetry-api
-incremental==24.7.2
-    # via towncrier
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
@@ -361,8 +359,6 @@ schema==0.7.7
     # via broadbean
 scipy==1.15.2
     # via qcodes (pyproject.toml)
-setuptools==75.8.2
-    # via incremental
 six==1.17.0
     # via python-dateutil
 snowballstemmer==2.2.0
@@ -463,6 +459,7 @@ types-tqdm==4.67.0.20250228
 typing-extensions==4.12.2
     # via
     #   qcodes (pyproject.toml)
+    #   beautifulsoup4
     #   mypy
     #   pyvisa
     #   pyvisa-sim
