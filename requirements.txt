@@ -401,7 +401,7 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-sphinxcontrib-towncrier==0.4.0a0
+sphinxcontrib-towncrier==0.5.0a0
     # via qcodes (pyproject.toml)
 stack-data==0.6.3
     # via ipython
@@ -423,7 +423,7 @@ tornado==6.4.2
     #   ipykernel
     #   jupyter-client
     #   qcodes
-towncrier==23.11.0
+towncrier==24.8.0
     # via
     #   qcodes (pyproject.toml)
     #   sphinxcontrib-towncrier
