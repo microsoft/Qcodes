@@ -90,7 +90,6 @@ test = [
     "sphinx>=4.5.0",  # sphinx extension tests
     "types-jsonschema>=4.16.0",
     "types_requests>=0.1.8",
-    "types-setuptools>=57.0.0",
     "types-tabulate>=0.1.0",
     "types-tqdm>=4.64.6",
     "types_pywin32>=305.0.0.7",
