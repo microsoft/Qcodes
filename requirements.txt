@@ -446,7 +446,7 @@ types-pytz==2025.1.0.20250204
     # via pandas-stubs
 types-pywin32==308.0.0.20250128
     # via qcodes (pyproject.toml)
-types-requests==2.32.0.20241016
+types-requests==2.32.0.20250301
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm
