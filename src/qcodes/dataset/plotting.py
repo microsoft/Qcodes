@@ -105,7 +105,7 @@ def plot_dataset(
     **kwargs: Any,
 ) -> AxesTupleList:
     """
-    Construct all plots for a given dataset
+    Construct plots for a given dataset
 
     Implemented so far:
 
@@ -151,8 +151,8 @@ def plot_dataset(
         complex_plot_phase: Format of phase for plotting complex-valued data,
             either ``"radians"`` or ``"degrees"``. Applicable only for the
             cases where the dataset contains complex numbers
-        parameters: Optional names of dependent parameters to plot in the case 
-            that the plotting of all is not desired
+        parameters: Names of dependent parameters to plot if the plotting of 
+            all is not desired
         **kwargs: Keyword arguments passed to the plotting function.
 
     Returns:
