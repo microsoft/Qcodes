@@ -116,7 +116,8 @@ ipykernel==6.29.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==8.33.0
+ipython==8.33.0; python_version < '3.11'
+ipython==9.0.1; python_version >= '3.11'
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
