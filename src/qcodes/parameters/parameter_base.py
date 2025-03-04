@@ -192,6 +192,8 @@ class ParameterBase(MetadatableWithName):
 
     """
 
+    _value_changed_callback: Callable[[ParameterBase, Any], None] | None = None
+
     def __init__(
         self,
         name: str,
@@ -213,7 +215,6 @@ class ParameterBase(MetadatableWithName):
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
-        value_changed_callback: Callable[[ParameterBase, Any], None] | None = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -343,8 +344,6 @@ class ParameterBase(MetadatableWithName):
                         )
 
             instrument.parameters[name] = self
-
-        self._value_changed_callback = value_changed_callback
 
     @property
     def _implements_get_raw(self) -> bool:
@@ -781,7 +780,13 @@ class ParameterBase(MetadatableWithName):
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
-                    self._invoke_callback(value)
+                    if ParameterBase._value_changed_callback is not None:
+                        try:
+                            ParameterBase._value_changed_callback(self, val_step)
+                        except Exception as e:
+                            LOG.warning(
+                                f"{e} in value_changed_callback for {self.full_name} and its value {val_step}"
+                            )
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
@@ -1127,35 +1132,6 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
-
-    def _invoke_callback(self, value: Any) -> None:
-        """
-        Invoke the instance-specific callback if it exists.
-
-        Args:
-            value: The new parameter value
-
-        """
-        try:
-            if self._value_changed_callback is not None:
-                self._value_changed_callback(self, value)
-        except Exception as e:
-            LOG.exception(f"Exception while running parameter callback: {e}")
-
-    def set_value_changed_callback(
-        self, callback: Callable[[ParameterBase, Any], None] | None
-    ) -> None:
-        """
-        Set the callback for this specific parameter instance.
-
-        Args:
-            callback: The callback function to be called when the parameter
-                     value changes, or None to remove the callback.
-
-        """
-        if callback is not None and not callable(callback):
-            raise TypeError("Callback must be type callable or None")
-        self._value_changed_callback = callback
 
 
 class GetLatest(DelegateAttributes):
