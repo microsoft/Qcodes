@@ -64,7 +64,7 @@ dask==2025.2.0
     #   qcodes
 debugpy==1.8.12
     # via ipykernel
-decorator==5.2.0
+decorator==5.2.1
     # via ipython
 deepdiff==8.2.0
     # via qcodes (pyproject.toml)
@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.127.1
+hypothesis==6.127.6
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -110,15 +110,14 @@ imagesize==1.4.1
     # via sphinx
 importlib-metadata==8.5.0
     # via opentelemetry-api
-incremental==24.7.2
-    # via towncrier
 iniconfig==2.0.0
     # via pytest
 ipykernel==6.29.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==8.32.0
+ipython==8.33.0; python_version < '3.11'
+ipython==9.0.1; python_version >= '3.11'
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
@@ -181,7 +180,7 @@ markupsafe==3.0.2
     # via
     #   jinja2
     #   nbconvert
-matplotlib==3.10.0
+matplotlib==3.10.1
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -293,7 +292,7 @@ pygments==2.19.1
     #   sphinx
 pyparsing==3.2.1
     # via matplotlib
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   qcodes (pyproject.toml)
     #   pytest-asyncio
@@ -361,8 +360,6 @@ schema==0.7.7
     # via broadbean
 scipy==1.15.2
     # via qcodes (pyproject.toml)
-setuptools==75.8.0
-    # via incremental
 six==1.17.0
     # via python-dateutil
 snowballstemmer==2.2.0
@@ -371,7 +368,8 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.6
     # via beautifulsoup4
-sphinx==8.1.3
+sphinx==8.1.3; python_version < '3.11'
+sphinx==8.2.3; python_version >= '3.11'
     # via
     #   qcodes (pyproject.toml)
     #   autodocsumm
@@ -401,7 +399,7 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-sphinxcontrib-towncrier==0.4.0a0
+sphinxcontrib-towncrier==0.5.0a0
     # via qcodes (pyproject.toml)
 stack-data==0.6.3
     # via ipython
@@ -423,7 +421,7 @@ tornado==6.4.2
     #   ipykernel
     #   jupyter-client
     #   qcodes
-towncrier==23.11.0
+towncrier==24.8.0
     # via
     #   qcodes (pyproject.toml)
     #   sphinxcontrib-towncrier
@@ -450,19 +448,18 @@ types-pytz==2025.1.0.20250204
     # via pandas-stubs
 types-pywin32==308.0.0.20250128
     # via qcodes (pyproject.toml)
-types-requests==2.32.0.20241016
+types-requests==2.32.0.20250301
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm
-types-setuptools==75.8.0.20250210
-    # via qcodes (pyproject.toml)
 types-tabulate==0.9.0.20241207
     # via qcodes (pyproject.toml)
-types-tqdm==4.67.0.20241221
+types-tqdm==4.67.0.20250301
     # via qcodes (pyproject.toml)
 typing-extensions==4.12.2
     # via
     #   qcodes (pyproject.toml)
+    #   beautifulsoup4
     #   mypy
     #   pyvisa
     #   pyvisa-sim
