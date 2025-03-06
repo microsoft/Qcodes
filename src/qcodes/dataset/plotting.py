@@ -151,7 +151,7 @@ def plot_dataset(
         complex_plot_phase: Format of phase for plotting complex-valued data,
             either ``"radians"`` or ``"degrees"``. Applicable only for the
             cases where the dataset contains complex numbers
-        parameters: Names of dependent parameters to plot if the plotting of 
+        parameters: Names of dependent parameters to plot if the plotting of
             all is not desired
         **kwargs: Keyword arguments passed to the plotting function.
 
@@ -250,7 +250,7 @@ def plot_dataset(
         colorbars = len(axeslist) * [None]
     new_colorbars: list[Colorbar | None] = []
 
-    if parameters == None:
+    if parameters is None:
         log.debug("No data specified - plotting all.")
         
     else: 
