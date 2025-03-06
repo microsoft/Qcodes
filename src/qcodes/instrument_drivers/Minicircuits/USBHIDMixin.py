@@ -12,7 +12,9 @@ from typing_extensions import deprecated
 from qcodes.utils import QCoDeSDeprecationWarning
 
 try:
-    from pywinusb import hid  # pyright: ignore[reportMissingModuleSource]
+    from pywinusb import (  # pyright: ignore[reportMissingModuleSource,reportMissingImports]
+        hid,
+    )
 
     imported_hid = True
 except ImportError:

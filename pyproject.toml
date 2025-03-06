@@ -202,7 +202,6 @@ ignore = [
     ]
 reportMissingTypeStubs = true
 reportDeprecated = true
-stubPath = "typings/stubs"
 
 typeCheckingMode = "standard"
 
