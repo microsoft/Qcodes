@@ -101,7 +101,7 @@ def plot_dataset(
     cutoff_percentile: tuple[float, float] | float | None = None,
     complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
     complex_plot_phase: Literal["radians", "degrees"] = "radians",
-    parameters: list[str] | str | None = None, 
+    parameters: Sequence[str] | str | None = None, 
     **kwargs: Any,
 ) -> AxesTupleList:
     """
