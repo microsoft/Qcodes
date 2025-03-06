@@ -101,7 +101,7 @@ def plot_dataset(
     cutoff_percentile: tuple[float, float] | float | None = None,
     complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
     complex_plot_phase: Literal["radians", "degrees"] = "radians",
-    parameters: Sequence[str] | str | None = None, 
+    parameters: Sequence[str] | str | None = None,
     **kwargs: Any,
 ) -> AxesTupleList:
     """
@@ -209,10 +209,10 @@ def plot_dataset(
         alldata, conversion=complex_plot_type, degrees=degrees
     )
 
-    if isinstance(parameters, str): 
+    if isinstance(parameters, str):
         parameters = [parameters]
 
-    nplots = len(alldata) if parameters is None else len(parameters) 
+    nplots = len(alldata) if parameters is None else len(parameters)
 
     if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
@@ -235,7 +235,7 @@ def plot_dataset(
                 f"Provided arguments: {subplots_kwargs}"
             )
         if len(axeslist) != nplots:
-            if parameters is not None: 
+            if parameters is not None:
                 raise RuntimeError(
                     f"Trying to plot {len(parameters)} parameters "
                     f"but received {len(axeslist)} axes objects. "
@@ -252,28 +252,28 @@ def plot_dataset(
 
     if parameters is None:
         log.debug("No data specified - plotting all.")
-        
-    else: 
-        # validate parameters 
-        dependents = [] 
-        for i in range(len(dataset.dependent_parameters)): 
-            dependents.append(dataset.dependent_parameters[i].name)   
-        for param in parameters: 
-            if param not in dependents: 
+
+    else:
+        # validate parameters
+        dependents = []
+        for i in range(len(dataset.dependent_parameters)):
+            dependents.append(dataset.dependent_parameters[i].name)
+        for param in parameters:
+            if param not in dependents:
                 raise ValueError(
                     f"Invalid parameter(s) given. Received {parameters} "
                     f"but can only accept elements from {dependents}. "
-                ) 
+                )
 
         log.debug(f"Plotting data for {parameters}.")
-        
-        for i, data in enumerate(alldata): 
-            if len(data) == 2: # 1D PLOTTING 
-                if data[1]['name'] not in parameters:
+
+        for i, data in enumerate(alldata):
+            if len(data) == 2:  # 1D PLOTTING
+                if data[1]["name"] not in parameters:
                     alldata.pop(i)
-            elif len(data) == 3: # 2D PLOTTING 
-                if data[2]['name'] not in parameters: 
-                    alldata.pop(i) 
+            elif len(data) == 3:  # 2D PLOTTING
+                if data[2]["name"] not in parameters:
+                    alldata.pop(i)
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
         if len(data) == 2:  # 1D PLOTTING
