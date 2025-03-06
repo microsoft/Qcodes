@@ -62,11 +62,11 @@ dask==2025.2.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-debugpy==1.8.12
+debugpy==1.8.13
     # via ipykernel
 decorator==5.2.1
     # via ipython
-deepdiff==8.2.0
+deepdiff==8.3.0
     # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.127.4
+hypothesis==6.127.7
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -116,7 +116,8 @@ ipykernel==6.29.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==8.33.0
+ipython==8.33.0; python_version < '3.11'
+ipython==9.0.1; python_version >= '3.11'
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
@@ -129,7 +130,7 @@ ipywidgets==8.1.5
     #   qcodes
 jedi==0.19.2
     # via ipython
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   qcodes (pyproject.toml)
     #   nbconvert
@@ -447,7 +448,7 @@ types-pytz==2025.1.0.20250204
     # via pandas-stubs
 types-pywin32==308.0.0.20250128
     # via qcodes (pyproject.toml)
-types-requests==2.32.0.20250301
+types-requests==2.32.0.20250306
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm
@@ -489,7 +490,7 @@ webencodings==0.5.1
     # via
     #   bleach
     #   tinycss2
-websockets==15.0
+websockets==15.0.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
