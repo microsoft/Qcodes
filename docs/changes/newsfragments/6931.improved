@@ -1,4 +1,4 @@
-Added 'parameters' argument to the 'plot_dataset' (and 'plot_by_id') 
-functions. This enables a choice of which dependent parameters to plot 
-(in the case that the plotting of all dependent parameters is not 
+Added 'parameters' argument to the 'plot_dataset' (and 'plot_by_id')
+functions. This enables a choice of which dependent parameters to plot
+(in the case that the plotting of all dependent parameters is not
 desired).
