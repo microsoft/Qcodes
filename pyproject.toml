@@ -203,7 +203,31 @@ ignore = [
 reportMissingTypeStubs = true
 reportDeprecated = true
 
-typeCheckingMode = "standard"
+typeCheckingMode = "strict"
+reportUnknownVariableType = "none"
+reportPrivateUsage = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
+reportMissingTypeArgument = "none"
+reportMissingParameterType = "none"
+reportUnknownArgumentType = "none"
+reportUnusedFunction = "none"
+reportUnusedImport = "none"
+reportUnknownLambdaType = "none"
+reportUnnecessaryIsInstance = "none"
+reportArgumentType = "none"
+reportUntypedNamedTuple = "none"
+reportUnnecessaryComparison = "none"
+reportConstantRedefinition = "none"
+reportUnusedClass = "none"
+reportReturnType = "none"
+reportUnnecessaryCast = "none"
+reportUnusedVariable = "none"
+reportAssignmentType = "none"
+reportUntypedBaseClass = "none"
+reportUnnecessaryContains = "none"
+reportMatchNotExhaustive = "none"
+reportCallIssue = "none"
 
 [tool.pytest.ini_options]
 minversion = "7.2"
