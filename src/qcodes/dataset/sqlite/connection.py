@@ -7,6 +7,7 @@ performing nested atomic transactions on an SQLite database.
 from __future__ import annotations
 
 import logging
+import sqlite3
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
@@ -15,7 +16,6 @@ import wrapt  # type: ignore[import-untyped]
 from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
-    import sqlite3
     from collections.abc import Iterator
 
 log = logging.getLogger(__name__)
@@ -55,6 +55,36 @@ class ConnectionPlus(wrapt.ObjectProxy):  # pyright: ignore[reportUntypedBaseCla
             )
 
         self.path_to_dbfile = path_to_dbfile(sqlite3_connection)
+
+
+class ConnectionPlusPlus(sqlite3.Connection):
+    """
+    A class to extend the sqlite3.Connection object. Since sqlite3.Connection
+    has no __dict__, we can not directly add attributes to its instance
+    directly.
+
+    It is not allowed to instantiate a new `ConnectionPlus` object from a
+    `ConnectionPlus` object.
+
+    It is recommended to create a ConnectionPlus using the function :func:`connect`
+
+    """
+
+    atomic_in_progress: bool = False
+    """
+    a bool describing whether the connection is
+    currently in the middle of an atomic block of transactions, thus
+    allowing to nest `atomic` context managers
+    """
+    path_to_dbfile: str = ""
+    """
+    Path to the database file of the connection.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.path_to_dbfile = path_to_dbfile(self)
 
 
 def make_connection_plus_from(
@@ -97,7 +127,7 @@ def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
 
     """
     with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
-        if not isinstance(conn, ConnectionPlus):
+        if not isinstance(conn, ConnectionPlus | ConnectionPlusPlus):
             raise ValueError(
                 "atomic context manager only accepts "
                 "ConnectionPlus database connection objects."
