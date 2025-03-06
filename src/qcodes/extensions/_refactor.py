@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 from ast import literal_eval
 from dataclasses import dataclass
@@ -15,6 +16,8 @@ except ImportError as er:
     raise ImportError(
         "qcodes-refactor requires that QCoDeS is installed with refactor extra dependencies."
     ) from er
+
+_LOG = logging.getLogger(__name__)
 
 
 @dataclass
@@ -88,6 +91,9 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
             case cst.Arg(keyword=cst.Name("parameter_class"), value=cst.Name(e_value)):
                 # arg is parameter class
                 self.annotations.parameter_class = e_value
+            case cst.Arg():
+                _LOG.info("Unexpcted node %s", str(node))
+                pass
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
         call_name = _get_call_name(updated_node)
