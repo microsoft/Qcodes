@@ -225,7 +225,6 @@ reportUnusedVariable = "none"
 reportAssignmentType = "none"
 reportUntypedBaseClass = "none"
 reportUnnecessaryContains = "none"
-reportCallIssue = "none"
 
 [tool.pytest.ini_options]
 minversion = "7.2"
