@@ -19,11 +19,6 @@ class KeysightP5004B(N52xx.KeysightPNAxBase):
             max_freq=20e9,
             min_power=-80,
             max_power=10,
-            nports=2,    
+            nports=2,
             **kwargs,
         )
-
-
-
-
-     
