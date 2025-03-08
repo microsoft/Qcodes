@@ -221,7 +221,6 @@ reportUnnecessaryComparison = "none"
 reportConstantRedefinition = "none"
 reportUnusedClass = "none"
 reportUnnecessaryCast = "none"  # mypy already checks this. It it fails for pyright its because mypy requires it
-reportUnusedVariable = "none"
 reportAssignmentType = "none"
 reportUntypedBaseClass = "none"
 reportUnnecessaryContains = "none"
