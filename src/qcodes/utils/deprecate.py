@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast
 
 import wrapt  # type: ignore[import-untyped]
+from typing_extensions import deprecated
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -17,6 +18,10 @@ class QCoDeSDeprecationWarning(RuntimeWarning):
     """
 
 
+@deprecated(
+    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    category=QCoDeSDeprecationWarning,
+)
 def deprecation_message(
     what: str, reason: str | None = None, alternative: str | None = None
 ) -> str:
@@ -29,6 +34,10 @@ def deprecation_message(
     return msg
 
 
+@deprecated(
+    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    category=QCoDeSDeprecationWarning,
+)
 def issue_deprecation_warning(
     what: str,
     reason: str | None = None,
@@ -39,12 +48,16 @@ def issue_deprecation_warning(
     Issue a `QCoDeSDeprecationWarning` with a consistently formatted message
     """
     warnings.warn(
-        deprecation_message(what, reason, alternative),
+        deprecation_message(what, reason, alternative),  # pyright: ignore[reportDeprecated]
         QCoDeSDeprecationWarning,
         stacklevel=stacklevel,
     )
 
 
+@deprecated(
+    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    category=QCoDeSDeprecationWarning,
+)
 def deprecate(
     reason: str | None = None, alternative: str | None = None
 ) -> Callable[..., Any]:
@@ -71,7 +84,7 @@ def deprecate(
             if func.__name__ == "__init__"
             else ("function", func.__name__)
         )
-        issue_deprecation_warning(f"{t} <{n}>", reason, alternative, stacklevel=3)
+        issue_deprecation_warning(f"{t} <{n}>", reason, alternative, stacklevel=3)  # pyright: ignore[reportDeprecated]
         return func(*args, **kwargs)
 
     def actual_decorator(obj: Any) -> Any:
@@ -113,6 +126,10 @@ def _catch_deprecation_warnings() -> "Iterator[list[warnings.WarningMessage]]":
         yield ws
 
 
+@deprecated(
+    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    category=QCoDeSDeprecationWarning,
+)
 @contextmanager
 def assert_not_deprecated() -> "Iterator[None]":
     with _catch_deprecation_warnings() as ws:
@@ -120,11 +137,14 @@ def assert_not_deprecated() -> "Iterator[None]":
     assert len(ws) == 0
 
 
+@deprecated(
+    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    category=QCoDeSDeprecationWarning,
+)
 @contextmanager
 def assert_deprecated(message: str) -> "Iterator[None]":
     with _catch_deprecation_warnings() as ws:
         yield
-    assert len(ws) == 1
     recorded_message = ws[0].message
     assert isinstance(recorded_message, Warning)
     assert recorded_message.args[0] == message
