@@ -17,7 +17,7 @@ from qcodes.parameters import Parameter
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
+    from qcodes.dataset.sqlite.connection import ConnectionPlusPlus
 
 
 def test_guids_from_dir(tmp_path: "Path") -> None:
@@ -92,7 +92,7 @@ def test_many_guids_from_list_str() -> None:
 
 
 def test_get_guids_from_multiple_run_ids(tmp_path: "Path") -> None:
-    def generate_local_exp(dbpath: "Path") -> tuple[list[str], "ConnectionPlus"]:
+    def generate_local_exp(dbpath: "Path") -> tuple[list[str], "ConnectionPlusPlus"]:
         with initialised_database_at(str(dbpath)):
             guids = []
             exp = load_or_create_experiment(experiment_name="test_guid")
