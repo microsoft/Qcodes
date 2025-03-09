@@ -23,7 +23,7 @@ from qcodes.dataset.descriptions.versioning.converters import new_to_old
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
+from qcodes.dataset.sqlite.connection import ConnectionPlusPlus, atomic
 from qcodes.dataset.sqlite.database import conn_from_dbpath_or_conn
 from qcodes.dataset.sqlite.queries import (
     RUNS_TABLE_COLUMNS,
@@ -302,7 +302,7 @@ class DataSetInMem(BaseDataSet):
         return ds
 
     @classmethod
-    def _load_from_db(cls, conn: ConnectionPlus, guid: str) -> DataSetInMem:
+    def _load_from_db(cls, conn: ConnectionPlusPlus, guid: str) -> DataSetInMem:
         run_attributes = get_raw_run_attributes(conn, guid)
         if run_attributes is None:
             raise RuntimeError(

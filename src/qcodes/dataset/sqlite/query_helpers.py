@@ -14,7 +14,7 @@ from numpy import ndarray
 from packaging import version
 
 from qcodes.dataset.sqlite.connection import (
-    ConnectionPlus,
+    ConnectionPlusPlus,
     atomic,
     atomic_transaction,
     transaction,
@@ -140,7 +140,11 @@ def many_many(curr: sqlite3.Cursor, *columns: str) -> list[tuple[Any, ...]]:
 
 
 def select_one_where(
-    conn: ConnectionPlus, table: str, column: str, where_column: str, where_value: VALUE
+    conn: ConnectionPlusPlus,
+    table: str,
+    column: str,
+    where_column: str,
+    where_value: VALUE,
 ) -> VALUE:
     """
     Select a value from a given column given a match of a value in a
@@ -176,7 +180,7 @@ def select_one_where(
 
 
 def select_many_where(
-    conn: ConnectionPlus,
+    conn: ConnectionPlusPlus,
     table: str,
     *columns: str,
     where_column: str,
@@ -208,7 +212,7 @@ def _massage_dict(metadata: Mapping[str, Any]) -> tuple[str, list[Any]]:
 
 
 def update_where(
-    conn: ConnectionPlus,
+    conn: ConnectionPlusPlus,
     table: str,
     where_column: str,
     where_value: Any,
@@ -227,7 +231,7 @@ def update_where(
 
 
 def insert_values(
-    conn: ConnectionPlus,
+    conn: ConnectionPlusPlus,
     formatted_name: str,
     columns: list[str],
     values: VALUES,
@@ -253,7 +257,7 @@ def insert_values(
 
 
 def insert_many_values(
-    conn: ConnectionPlus,
+    conn: ConnectionPlusPlus,
     formatted_name: str,
     columns: Sequence[str],
     values: Sequence[VALUES],
@@ -331,7 +335,7 @@ def insert_many_values(
     return return_value
 
 
-def length(conn: ConnectionPlus, formatted_name: str) -> int:
+def length(conn: ConnectionPlusPlus, formatted_name: str) -> int:
     """
     Return the length of the table
 
@@ -358,7 +362,7 @@ def length(conn: ConnectionPlus, formatted_name: str) -> int:
 
 
 def insert_column(
-    conn: ConnectionPlus, table: str, name: str, paramtype: str | None = None
+    conn: ConnectionPlusPlus, table: str, name: str, paramtype: str | None = None
 ) -> None:
     """Insert new column to a table
 
@@ -388,7 +392,7 @@ def insert_column(
             transaction(atomic_conn, f'ALTER TABLE "{table}" ADD COLUMN "{name}"')
 
 
-def is_column_in_table(conn: ConnectionPlus, table: str, column: str) -> bool:
+def is_column_in_table(conn: ConnectionPlusPlus, table: str, column: str) -> bool:
     """
     A look-before-you-leap function to look up if a table has a certain column.
 
