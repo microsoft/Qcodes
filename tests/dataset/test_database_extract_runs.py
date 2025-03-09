@@ -579,13 +579,13 @@ def test_combine_runs(
 
     source_1_exp = Experiment(conn=source_conn_1, name="exp1", sample_name="no_sample")
     source_1_datasets = [
-        DataSet(conn=source_conn_1, exp_id=source_1_exp.exp_id) for i in range(10)
+        DataSet(conn=source_conn_1, exp_id=source_1_exp.exp_id) for _ in range(10)
     ]
 
     source_2_exp = Experiment(conn=source_conn_2, name="exp2", sample_name="no_sample")
 
     source_2_datasets = [
-        DataSet(conn=source_conn_2, exp_id=source_2_exp.exp_id) for i in range(10)
+        DataSet(conn=source_conn_2, exp_id=source_2_exp.exp_id) for _ in range(10)
     ]
 
     guids_1 = {dataset.guid for dataset in source_1_datasets}
@@ -664,10 +664,10 @@ def test_copy_datasets_and_add_new(
     source_exp_1 = Experiment(conn=source_conn, name="exp1", sample_name="no_sample")
     source_exp_2 = Experiment(conn=source_conn, name="exp2", sample_name="no_sample")
     source_datasets_1 = [
-        DataSet(conn=source_conn, exp_id=source_exp_1.exp_id) for i in range(5)
+        DataSet(conn=source_conn, exp_id=source_exp_1.exp_id) for _ in range(5)
     ]
     source_datasets_2 = [
-        DataSet(conn=source_conn, exp_id=source_exp_2.exp_id) for i in range(5)
+        DataSet(conn=source_conn, exp_id=source_exp_2.exp_id) for _ in range(5)
     ]
     source_datasets = source_datasets_1 + source_datasets_2
 
@@ -708,7 +708,7 @@ def test_copy_datasets_and_add_new(
 
     # add additional runs and verify that the ids and counters increase as
     # expected
-    new_datasets = [DataSet(conn=target_conn, exp_id=exp.exp_id) for i in range(3)]
+    new_datasets = [DataSet(conn=target_conn, exp_id=exp.exp_id) for _ in range(3)]
 
     for ds in new_datasets:
         ds.set_interdependencies(some_interdeps[1])

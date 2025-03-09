@@ -251,7 +251,7 @@ def test_makeSEQXFile(awg2, random_wfm_m1_m2_package) -> None:
     event_jumps = [0] * seqlen
     event_jump_to = [0] * seqlen
     go_to = [0] * seqlen
-    wfms = [[wfmpkg() for i in range(seqlen)] for j in range(chans)]
+    wfms = [[wfmpkg() for _ in range(seqlen)] for __ in range(chans)]
     amplitudes = [0.5] * chans
     seqname = "testseq"
 

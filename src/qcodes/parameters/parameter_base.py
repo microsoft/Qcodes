@@ -748,7 +748,7 @@ class ParameterBase(MetadatableWithName):
                 # a list containing only `value`.
                 steps = self.get_ramp_values(value, step=self.step)
 
-                for step_index, val_step in enumerate(steps):
+                for val_step in steps:
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
                     self.validate(val_step)

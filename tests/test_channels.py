@@ -26,9 +26,6 @@ def _make_dci() -> Generator[DummyChannelInstrument, None, None]:
 
 @pytest.fixture(scope="function", name="dci_with_list")
 def _make_dci_with_list() -> Generator[Instrument, None, None]:
-    for i in range(10):
-        pass
-
     dci = Instrument(name="dciwl")
     channels = ChannelList(dci, "ListElem", DummyChannel, snapshotable=False)
     for chan_name in ("A", "B", "C", "D", "E", "F"):

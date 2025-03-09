@@ -85,7 +85,7 @@ def parse_module_query_response(response: str) -> dict[SlotNr, str]:
 
     return {
         SlotNr(slot_nr): model
-        for slot_nr, (model, rev) in enumerate(moduleinfo, start=1)
+        for slot_nr, (model, _) in enumerate(moduleinfo, start=1)
         if model != "0"
     }
 
@@ -271,7 +271,7 @@ def convert_dummy_val_to_nan(param: _FMTResponse) -> None:
         param: This must be of type named tuple _FMTResponse.
 
     """
-    for index, value in enumerate(param.value):
+    for index, _ in enumerate(param.value):
         param.value[index] = _convert_to_nan_if_dummy_value(param.value[index])
 
 

@@ -100,7 +100,7 @@ def test_aggregator(
     )
 
     results = []
-    for i, value in enumerate(sweep_values):
+    for value in sweep_values:
         res = sweep_values.set(value)
         results.append(sweep_values._aggregate(*res))
 

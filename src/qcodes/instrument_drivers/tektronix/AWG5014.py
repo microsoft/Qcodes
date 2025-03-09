@@ -964,7 +964,7 @@ class TektronixAWG5014(VisaInstrument):
         """
         log.info("Generating sequence_cfg")
 
-        AWG_sequence_cfg = {
+        AWG_sequence_cfg: dict[str, float] = {
             "SAMPLING_RATE": self.clock_freq.get(),
             "CLOCK_SOURCE": (
                 1 if self.clock_source().startswith("INT") else 2
