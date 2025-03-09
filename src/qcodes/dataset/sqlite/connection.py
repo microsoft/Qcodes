@@ -81,7 +81,7 @@ class ConnectionPlusPlus(sqlite3.Connection):
     Path to the database file of the connection.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
         self.path_to_dbfile = path_to_dbfile(self)
@@ -111,7 +111,7 @@ def make_connection_plus_from(
 
 
 @contextmanager
-def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
+def atomic(conn: ConnectionPlusPlus) -> Iterator[ConnectionPlusPlus]:
     """
     Guard a series of transactions as atomic.
 
@@ -165,7 +165,7 @@ def atomic(conn: ConnectionPlus) -> Iterator[ConnectionPlus]:
             conn.atomic_in_progress = old_atomic_in_progress
 
 
-def transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cursor:
+def transaction(conn: ConnectionPlusPlus, sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
     The transaction needs to be committed or rolled back.
 
@@ -187,7 +187,9 @@ def transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cursor:
     return c
 
 
-def atomic_transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cursor:
+def atomic_transaction(
+    conn: ConnectionPlusPlus, sql: str, *args: Any
+) -> sqlite3.Cursor:
     """Perform an **atomic** transaction.
     The transaction is committed if there are no exceptions else the
     transaction is rolled back.
@@ -209,7 +211,7 @@ def atomic_transaction(conn: ConnectionPlus, sql: str, *args: Any) -> sqlite3.Cu
     return c
 
 
-def path_to_dbfile(conn: ConnectionPlus | sqlite3.Connection) -> str:
+def path_to_dbfile(conn: ConnectionPlusPlus | sqlite3.Connection) -> str:
     """
     Return the path of the database file that the conn object is connected to
     """

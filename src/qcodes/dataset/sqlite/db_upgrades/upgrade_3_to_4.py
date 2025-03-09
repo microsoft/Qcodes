@@ -7,7 +7,11 @@ import sys
 from tqdm import tqdm
 
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlusPlus,
+    atomic,
+    atomic_transaction,
+)
 from qcodes.dataset.sqlite.db_upgrades.upgrade_2_to_3 import (
     _2to3_get_dependencies,
     _2to3_get_deps,
@@ -22,7 +26,7 @@ from qcodes.dataset.sqlite.query_helpers import one
 log = logging.getLogger(__name__)
 
 
-def upgrade_3_to_4(conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
+def upgrade_3_to_4(conn: ConnectionPlusPlus, show_progress_bar: bool = True) -> None:
     """
     Perform the upgrade from version 3 to version 4. This really
     repeats the version 3 upgrade as it originally had two bugs in

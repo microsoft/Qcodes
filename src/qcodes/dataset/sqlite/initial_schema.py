@@ -6,10 +6,10 @@ in :mod:`db_upgrades` module.
 
 from __future__ import annotations
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, transaction
+from qcodes.dataset.sqlite.connection import ConnectionPlusPlus, atomic, transaction
 
 
-def init_db(conn: ConnectionPlus) -> None:
+def init_db(conn: ConnectionPlusPlus) -> None:
     with atomic(conn) as atomic_conn:
         transaction(atomic_conn, _experiment_table_schema)
         transaction(atomic_conn, _runs_table_schema)

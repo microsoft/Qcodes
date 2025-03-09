@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from qcodes.dataset.sqlite.connection import ConnectionPlus, path_to_dbfile
+from qcodes.dataset.sqlite.connection import ConnectionPlusPlus, path_to_dbfile
 from qcodes.dataset.sqlite.queries import get_last_experiment
 
 _default_experiment: dict[str, int | None] = {}
@@ -38,7 +38,7 @@ def _get_latest_default_experiment_id(db_path: str) -> int | None:
     return _default_experiment.get(db_path, None)
 
 
-def reset_default_experiment_id(conn: ConnectionPlus | None = None) -> None:
+def reset_default_experiment_id(conn: ConnectionPlusPlus | None = None) -> None:
     """
     Resets the default experiment id to to the last experiment in the db.
     """
@@ -50,7 +50,7 @@ def reset_default_experiment_id(conn: ConnectionPlus | None = None) -> None:
         _default_experiment[db_path] = None
 
 
-def get_default_experiment_id(conn: ConnectionPlus) -> int:
+def get_default_experiment_id(conn: ConnectionPlusPlus) -> int:
     """
     Returns the latest created/ loaded experiment's exp_id as the default
     experiment. If it is not set the maximum exp_id returned as the default.
