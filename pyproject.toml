@@ -222,7 +222,6 @@ reportConstantRedefinition = "none"
 reportUnusedClass = "none"
 reportUnnecessaryCast = "none"  # mypy already checks this. It it fails for pyright its because mypy requires it
 reportAssignmentType = "none"
-reportUntypedBaseClass = "none"
 reportUnnecessaryContains = "none"
 
 [tool.pytest.ini_options]
