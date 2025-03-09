@@ -199,6 +199,7 @@ ignore_missing_imports = true
 include = ["src","tests"]
 ignore = [
     "src/qcodes/instrument_drivers/Harvard/Decadac.py",
+    "tests/test_deprecate.py"
     ]
 reportMissingTypeStubs = true
 reportDeprecated = true
@@ -218,6 +219,7 @@ markers = "serial"
 # and error on all other warnings
 filterwarnings = [
     'error',
+    'ignore:QCoDeS deprecation logic is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning', # deprecation of internal qcodes deprecated.
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
     'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+

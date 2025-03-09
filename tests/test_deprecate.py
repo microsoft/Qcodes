@@ -1,22 +1,34 @@
 import warnings
+from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qcodes.utils.deprecate import (
     QCoDeSDeprecationWarning,
     _catch_deprecation_warnings,
-    assert_deprecated,
     assert_not_deprecated,
     deprecate,
     issue_deprecation_warning,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+
+@contextmanager
+def assert_deprecated(message: str, n_warnings: int = 1) -> "Iterator[None]":
+    with _catch_deprecation_warnings() as ws:
+        yield
+    assert len(ws) == n_warnings
 
 
 def test_assert_deprecated_raises() -> None:
     with assert_deprecated(
         "The use of this function is deprecated, because "
         'of this being a test. Use "a real function" as an '
-        "alternative."
+        "alternative.",
+        3,
     ):
         issue_deprecation_warning(
             "use of this function", "of this being a test", "a real function"
@@ -57,7 +69,8 @@ def test_similar_output() -> None:
 
     with assert_deprecated(
         "The function <add_one> is deprecated, because "
-        "this function is for private use only."
+        "this function is for private use only.",
+        n_warnings=3,
     ):
         assert add_one(1) == _add_one(1)
 
@@ -68,12 +81,12 @@ def test_deprecated_context_manager() -> None:
         issue_deprecation_warning("something")
         issue_deprecation_warning("something more")
         warnings.warn("Some other warning")
-    assert len(ws) == 2
+    assert len(ws) == 6
 
     with pytest.warns(expected_warning=QCoDeSDeprecationWarning) as ws_2:
         issue_deprecation_warning("something")
         warnings.warn("Some other warning")
-    assert len(ws_2) == 2
+    assert len(ws_2) == 4
 
 
 @deprecate(reason="this is a test")
@@ -108,7 +121,7 @@ def test_init_uninhibited() -> None:
 
 
 def test_init_raises() -> None:
-    with assert_deprecated("The class <C> is deprecated, because this is a test."):
+    with assert_deprecated("The class <C> is deprecated, because this is a test.", 3):
         C("pristine")
 
 
@@ -124,7 +137,7 @@ def test_method_raises() -> None:
         c = C("pristine")
 
     with assert_deprecated(
-        "The function <method> is deprecated, because this is a test."
+        "The function <method> is deprecated, because this is a test.", 3
     ):
         c.method()
 
