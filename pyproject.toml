@@ -220,7 +220,7 @@ reportUntypedNamedTuple = "none"
 reportUnnecessaryComparison = "none"
 reportConstantRedefinition = "none"
 reportUnusedClass = "none"
-reportUnnecessaryCast = "none"  # mypy already checks this. It it fails for pyright its because mypy requires it
+reportUnnecessaryCast = "none"  # mypy already checks this. If it fails for pyright its because mypy requires it
 reportAssignmentType = "none"
 reportUnnecessaryContains = "none"
 

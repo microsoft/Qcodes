@@ -92,7 +92,7 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
                 # arg is parameter class
                 self.annotations.parameter_class = e_value
             case cst.Arg():
-                _LOG.info("Unexpcted node %s", str(node))
+                _LOG.info("Unexpected node %s", str(node))
                 pass
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.Call:
