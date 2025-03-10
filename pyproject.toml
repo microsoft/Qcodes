@@ -203,7 +203,26 @@ ignore = [
 reportMissingTypeStubs = true
 reportDeprecated = true
 
-typeCheckingMode = "standard"
+typeCheckingMode = "strict"
+reportUnknownVariableType = "none"
+reportPrivateUsage = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
+reportMissingTypeArgument = "none"
+reportMissingParameterType = "none"
+reportUnknownArgumentType = "none"
+reportUnusedFunction = "none"
+reportUnusedImport = "none"
+reportUnknownLambdaType = "none"
+reportUnnecessaryIsInstance = "none"
+reportArgumentType = "none"
+reportUntypedNamedTuple = "none"
+reportUnnecessaryComparison = "none"
+reportConstantRedefinition = "none"
+reportUnusedClass = "none"
+reportUnnecessaryCast = "none"  # mypy already checks this. If it fails for pyright its because mypy requires it
+reportAssignmentType = "none"
+reportUnnecessaryContains = "none"
 
 [tool.pytest.ini_options]
 minversion = "7.2"

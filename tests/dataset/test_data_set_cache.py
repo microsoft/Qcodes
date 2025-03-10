@@ -329,7 +329,7 @@ def test_cache_1d(
             _assert_parameter_data_is_identical(
                 dataset2.get_parameter_data(), dataset2.cache.data()
             )
-            for i, v in enumerate(setpoints_values):
+            for v in setpoints_values:
                 setpoints_param.set(v)
 
                 meas_vals1 = [(param, param.get()) for param in meas_parameters1]
@@ -808,7 +808,7 @@ def test_cache_1d_shape(
         _assert_parameter_data_is_identical(
             dataset.get_parameter_data(), dataset.cache.data()
         )
-        for i, v in enumerate(setpoints_values):
+        for v in setpoints_values:
             n_points_measured += 1
             setpoints_param.set(v)
 
