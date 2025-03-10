@@ -11,12 +11,12 @@ from qcodes.dataset.sqlite.queries import (
 
 if TYPE_CHECKING:
     from qcodes.dataset.data_set_protocol import DataSetProtocol
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
+    from qcodes.dataset.sqlite.connection import ConnectionPlusPlus
 
 
 def _add_run_to_runs_table(
     dataset: DataSetProtocol,
-    target_conn: ConnectionPlus,
+    target_conn: ConnectionPlusPlus,
     target_exp_id: int,
     create_run_table: bool = True,
 ) -> tuple[int, int, str | None]:
