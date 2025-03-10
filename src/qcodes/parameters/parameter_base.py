@@ -192,6 +192,8 @@ class ParameterBase(MetadatableWithName):
 
     """
 
+    _value_changed_callback: Callable[[ParameterBase, Any], None] | None = None
+
     def __init__(
         self,
         name: str,
@@ -777,6 +779,14 @@ class ParameterBase(MetadatableWithName):
                         time.sleep(self.post_delay - t_elapsed)
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
+
+                    if ParameterBase._value_changed_callback is not None:
+                        try:
+                            ParameterBase._value_changed_callback(self, val_step)
+                        except Exception as e:
+                            LOG.warning(
+                                f"{e} in value_changed_callback for {self.full_name} and its value {val_step}"
+                            )
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
