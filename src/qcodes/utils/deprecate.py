@@ -19,7 +19,7 @@ class QCoDeSDeprecationWarning(RuntimeWarning):
 
 
 @deprecated(
-    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    "QCoDeS deprecation logic is deprecated. Use `deprecated` decorator from `typing_extensions`/`warnings` modules as an alternative.",
     category=QCoDeSDeprecationWarning,
 )
 def deprecation_message(
@@ -35,7 +35,7 @@ def deprecation_message(
 
 
 @deprecated(
-    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    "QCoDeS deprecation logic is deprecated. Use `deprecated` decorator from `typing_extensions`/`warnings` as an alternative.",
     category=QCoDeSDeprecationWarning,
 )
 def issue_deprecation_warning(
@@ -55,7 +55,7 @@ def issue_deprecation_warning(
 
 
 @deprecated(
-    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    "QCoDeS deprecation logic is deprecated. Use `deprecated` decorator from `typing_extensions`/`warnings` as an alternative.",
     category=QCoDeSDeprecationWarning,
 )
 def deprecate(
@@ -127,7 +127,7 @@ def _catch_deprecation_warnings() -> "Iterator[list[warnings.WarningMessage]]":
 
 
 @deprecated(
-    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    "QCoDeS deprecation logic is deprecated. Use `deprecated` decorator from `typing_extensions`/`warnings` as an alternative.",
     category=QCoDeSDeprecationWarning,
 )
 @contextmanager
@@ -138,7 +138,7 @@ def assert_not_deprecated() -> "Iterator[None]":
 
 
 @deprecated(
-    "QCoDeS deprecation logic is deprecated. Use deprecated decorator from typing_extensions/warnings as an alternative.",
+    "QCoDeS deprecation logic is deprecated. Use `deprecated` decorator from `typing_extensions`/`warnings` as an alternative.",
     category=QCoDeSDeprecationWarning,
 )
 @contextmanager
