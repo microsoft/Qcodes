@@ -41,6 +41,7 @@ from .Keysight_N9030B import (
     KeysightN9030BSpectrumAnalyzerMode,
 )
 from .Keysight_P5004B import KeysightP5004B
+from .Keysight_P5002B import KeysightP5002B
 from .Keysight_P9374A import KeysightP9374A
 from .KeysightAgilent_33XXX import (
     Keysight33xxx,
