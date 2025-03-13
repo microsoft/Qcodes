@@ -5,6 +5,7 @@ import pytest
 
 from qcodes.dataset.sqlite.connection import (
     ConnectionPlus,
+    ConnectionPlusPlus,
     atomic,
     atomic_transaction,
     make_connection_plus_from,
@@ -20,8 +21,8 @@ def sqlite_conn_in_transaction(conn: sqlite3.Connection):
     return True
 
 
-def conn_plus_in_transaction(conn: ConnectionPlus):
-    assert isinstance(conn, ConnectionPlus)
+def conn_plus_in_transaction(conn: ConnectionPlusPlus):
+    assert isinstance(conn, ConnectionPlusPlus | ConnectionPlus)
     assert True is conn.atomic_in_progress
     assert None is conn.isolation_level
     assert True is conn.in_transaction
@@ -35,8 +36,8 @@ def sqlite_conn_is_idle(conn: sqlite3.Connection, isolation=None):
     return True
 
 
-def conn_plus_is_idle(conn: ConnectionPlus, isolation=None):
-    assert isinstance(conn, ConnectionPlus)
+def conn_plus_is_idle(conn: ConnectionPlus | ConnectionPlusPlus, isolation=None):
+    assert isinstance(conn, ConnectionPlus | ConnectionPlusPlus)
     assert False is conn.atomic_in_progress
     assert isolation == conn.isolation_level
     assert False is conn.in_transaction
@@ -339,6 +340,6 @@ def test_connect() -> None:
     conn = connect(":memory:")
 
     assert isinstance(conn, sqlite3.Connection)
-    assert isinstance(conn, ConnectionPlus)
+    assert isinstance(conn, ConnectionPlus | ConnectionPlusPlus)
     assert False is conn.atomic_in_progress
     assert None is conn.row_factory

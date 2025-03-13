@@ -35,7 +35,11 @@ from qcodes.dataset.export_config import (
 )
 from qcodes.dataset.guids import filter_guids_by_parts, generate_guid, parse_guid
 from qcodes.dataset.linked_datasets.links import Link, links_to_str, str_to_links
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic, atomic_transaction
+from qcodes.dataset.sqlite.connection import (
+    ConnectionPlusPlus,
+    atomic,
+    atomic_transaction,
+)
 from qcodes.dataset.sqlite.database import (
     conn_from_dbpath_or_conn,
     connect,
@@ -128,7 +132,7 @@ class _BackgroundWriter(Thread):
     Write the results from the DataSet's dataqueue in a new thread
     """
 
-    def __init__(self, queue: Queue[Any], conn: ConnectionPlus):
+    def __init__(self, queue: Queue[Any], conn: ConnectionPlusPlus):
         super().__init__(daemon=True)
         self.queue = queue
         self.path = conn.path_to_dbfile
@@ -206,7 +210,7 @@ class DataSet(BaseDataSet):
         self,
         path_to_db: str | None = None,
         run_id: int | None = None,
-        conn: ConnectionPlus | None = None,
+        conn: ConnectionPlusPlus | None = None,
         exp_id: int | None = None,
         name: str | None = None,
         specs: SpecsOrInterDeps | None = None,
@@ -1556,7 +1560,7 @@ def load_by_run_spec(
     sample_id: int | None = None,
     location: int | None = None,
     work_station: int | None = None,
-    conn: ConnectionPlus | None = None,
+    conn: ConnectionPlusPlus | None = None,
 ) -> DataSetProtocol:
     """
     Load a run from one or more pieces of runs specification. All
@@ -1635,7 +1639,7 @@ def get_guids_by_run_spec(
     sample_id: int | None = None,
     location: int | None = None,
     work_station: int | None = None,
-    conn: ConnectionPlus | None = None,
+    conn: ConnectionPlusPlus | None = None,
 ) -> list[str]:
     """
     Get a list of matching guids from one or more pieces of runs specification. All
@@ -1677,7 +1681,7 @@ def get_guids_by_run_spec(
     return matched_guids
 
 
-def load_by_id(run_id: int, conn: ConnectionPlus | None = None) -> DataSetProtocol:
+def load_by_id(run_id: int, conn: ConnectionPlusPlus | None = None) -> DataSetProtocol:
     """
     Load a dataset by run id
 
@@ -1723,7 +1727,7 @@ def load_by_id(run_id: int, conn: ConnectionPlus | None = None) -> DataSetProtoc
     return d
 
 
-def load_by_guid(guid: str, conn: ConnectionPlus | None = None) -> DataSetProtocol:
+def load_by_guid(guid: str, conn: ConnectionPlusPlus | None = None) -> DataSetProtocol:
     """
     Load a dataset by its GUID
 
@@ -1763,7 +1767,7 @@ def load_by_guid(guid: str, conn: ConnectionPlus | None = None) -> DataSetProtoc
 
 
 def load_by_counter(
-    counter: int, exp_id: int, conn: ConnectionPlus | None = None
+    counter: int, exp_id: int, conn: ConnectionPlusPlus | None = None
 ) -> DataSetProtocol:
     """
     Load a dataset given its counter in a given experiment
@@ -1807,7 +1811,9 @@ def load_by_counter(
     return d
 
 
-def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetProtocol:
+def _get_datasetprotocol_from_guid(
+    guid: str, conn: ConnectionPlusPlus
+) -> DataSetProtocol:
     run_id = get_runid_from_guid(conn, guid)
     if run_id is None:
         raise NameError(
@@ -1840,7 +1846,9 @@ def _get_datasetprotocol_from_guid(guid: str, conn: ConnectionPlus) -> DataSetPr
     return d
 
 
-def _get_datasetprotocol_export_info(run_id: int, conn: ConnectionPlus) -> ExportInfo:
+def _get_datasetprotocol_export_info(
+    run_id: int, conn: ConnectionPlusPlus
+) -> ExportInfo:
     metadata = get_metadata_from_run_id(conn=conn, run_id=run_id)
     export_info_str = metadata.get("export_info", "")
     export_info = ExportInfo.from_str(export_info_str)
@@ -1853,7 +1861,7 @@ def new_data_set(
     specs: SPECS | None = None,
     values: VALUES | None = None,
     metadata: Any | None = None,
-    conn: ConnectionPlus | None = None,
+    conn: ConnectionPlusPlus | None = None,
     in_memory_cache: bool = True,
 ) -> DataSet:
     """
@@ -1894,7 +1902,7 @@ def new_data_set(
 
 
 def generate_dataset_table(
-    guids: Sequence[str], conn: ConnectionPlus | None = None
+    guids: Sequence[str], conn: ConnectionPlusPlus | None = None
 ) -> str:
     """
     Generate an ASCII art table of information about the runs attached to the
