@@ -189,8 +189,11 @@ class ParameterBase(MetadatableWithName):
 
         register_name: Specifies if the parameter should be registered in datasets
             using a different name than the parameter's full_name
-
     """
+
+    global_value_changed_callback: ClassVar[
+        Callable[[ParameterBase, Any], None] | None
+    ] = None
 
     def __init__(
         self,
@@ -778,6 +781,16 @@ class ParameterBase(MetadatableWithName):
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
+                    if self.__class__.global_value_changed_callback is not None:
+                        try:
+                            self.__class__.global_value_changed_callback(self, val_step)
+                        except Exception as e:
+                            LOG.warning(
+                                f"Exception {e} in global value_changed_callback "
+                                f"for {self.full_name} with value {val_step}",
+                                exc_info=True,
+                            )
+
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
                 raise e
@@ -1122,6 +1135,20 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
+
+    @classmethod
+    def set_global_value_changed_callback(
+        cls, callback: Callable[[ParameterBase, Any], None] | None
+    ) -> None:
+        """
+        Set (or clear, if None) a single global callback that will be called
+        after *any* ParameterBase instance changes value.
+
+        The callback must accept two arguments:
+          - The ParameterBase instance whose value changed
+          - The new value of that parameter
+        """
+        cls.global_value_changed_callback = callback
 
 
 class GetLatest(DelegateAttributes):
