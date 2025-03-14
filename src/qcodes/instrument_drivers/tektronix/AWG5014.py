@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import array as arr
 import logging
 import re
 import struct
 from collections import abc
-from collections.abc import Sequence
 from io import BytesIO
 from time import localtime, sleep
 from typing import (
@@ -22,6 +23,8 @@ from qcodes import validators as vals
 from qcodes.instrument import VisaInstrument, VisaInstrumentKWArgs
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from typing_extensions import Unpack
 
     from qcodes.parameters import Parameter
@@ -155,7 +158,7 @@ class TektronixAWG5014(VisaInstrument):
         address: str,
         *,
         num_channels: int = 4,
-        **kwargs: "Unpack[VisaInstrumentKWArgs]",
+        **kwargs: Unpack[VisaInstrumentKWArgs],
     ):
         """
         Initializes the AWG5014.
@@ -1420,14 +1423,18 @@ class TektronixAWG5014(VisaInstrument):
         waveform_names = []
         if not isinstance(waveforms[0], abc.Sequence):
             waveforms_int: Sequence[Sequence[np.ndarray]] = [
-                cast(Sequence[np.ndarray], waveforms)
+                cast("Sequence[np.ndarray]", waveforms)
             ]
-            m1s_int: Sequence[Sequence[np.ndarray]] = [cast(Sequence[np.ndarray], m1s)]
-            m2s_int: Sequence[Sequence[np.ndarray]] = [cast(Sequence[np.ndarray], m2s)]
+            m1s_int: Sequence[Sequence[np.ndarray]] = [
+                cast("Sequence[np.ndarray]", m1s)
+            ]
+            m2s_int: Sequence[Sequence[np.ndarray]] = [
+                cast("Sequence[np.ndarray]", m2s)
+            ]
         else:
-            waveforms_int = cast(Sequence[Sequence[np.ndarray]], waveforms)
-            m1s_int = cast(Sequence[Sequence[np.ndarray]], m1s)
-            m2s_int = cast(Sequence[Sequence[np.ndarray]], m2s)
+            waveforms_int = cast("Sequence[Sequence[np.ndarray]]", waveforms)
+            m1s_int = cast("Sequence[Sequence[np.ndarray]]", m1s)
+            m2s_int = cast("Sequence[Sequence[np.ndarray]]", m2s)
 
         for ii in range(len(waveforms_int)):
             namelist = []

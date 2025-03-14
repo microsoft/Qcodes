@@ -542,7 +542,7 @@ class HarvardDecadac(VisaInstrument, DacReader):
         for i in range(5):  # Create the 6 DAC slots
             slots.append(self.DAC_SLOT_CLASS(self, f"Slot{i}", i, min_val, max_val))
             slot_channels = slots[i].channels
-            slot_channels = cast(ChannelList, slot_channels)
+            slot_channels = cast("ChannelList", slot_channels)
             channels.extend(slot_channels)
         self.add_submodule("slots", slots.to_channel_tuple())
         self.add_submodule("channels", channels.to_channel_tuple())

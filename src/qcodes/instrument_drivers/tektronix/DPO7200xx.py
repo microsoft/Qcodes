@@ -776,7 +776,7 @@ class TektronixDPOMeasurementParameter(Parameter):
     """
 
     def _get(self, metric: str) -> float:
-        measurement_channel = cast(TektronixDPOMeasurement, self.instrument)
+        measurement_channel = cast("TektronixDPOMeasurement", self.instrument)
         if measurement_channel.type.get_latest() != self.name:
             measurement_channel.type(self.name)
 
