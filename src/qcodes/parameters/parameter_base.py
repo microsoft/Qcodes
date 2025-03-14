@@ -189,10 +189,11 @@ class ParameterBase(MetadatableWithName):
 
         register_name: Specifies if the parameter should be registered in datasets
             using a different name than the parameter's full_name
-
     """
 
-    _value_changed_callback: Callable[[ParameterBase, Any], None] | None = None
+    global_value_changed_callback: ClassVar[
+        Callable[[ParameterBase, Any], None] | None
+    ] = None
 
     def __init__(
         self,
@@ -780,12 +781,14 @@ class ParameterBase(MetadatableWithName):
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
-                    if ParameterBase._value_changed_callback is not None:
+                    if self.__class__.global_value_changed_callback is not None:
                         try:
-                            ParameterBase._value_changed_callback(self, val_step)
+                            self.__class__.global_value_changed_callback(self, val_step)
                         except Exception as e:
                             LOG.warning(
-                                f"{e} in value_changed_callback for {self.full_name} and its value {val_step}"
+                                f"Exception {e} in global value_changed_callback "
+                                f"for {self.full_name} with value {val_step}",
+                                exc_info=True,
                             )
 
             except Exception as e:
@@ -1132,6 +1135,20 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
+
+    @classmethod
+    def set_global_value_changed_callback(
+        cls, callback: Callable[[ParameterBase, Any], None] | None
+    ) -> None:
+        """
+        Set (or clear, if None) a single global callback that will be called
+        after *any* ParameterBase instance changes value.
+
+        The callback must accept two arguments:
+          - The ParameterBase instance whose value changed
+          - The new value of that parameter
+        """
+        cls.global_value_changed_callback = callback
 
 
 class GetLatest(DelegateAttributes):
