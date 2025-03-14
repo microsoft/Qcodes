@@ -50,7 +50,7 @@ class DacReader:
             )
 
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
-        val = int(round(frac * 65535))
+        val = round(frac * 65535)
         # extra check to be absolutely sure that the instrument does nothing
         # receive an out-of-bounds value
         if val > 65535 or val < 0:

@@ -474,7 +474,7 @@ class Enum(Validator[Hashable]):
     """
 
     def __init__(self, *values: Hashable | None) -> None:
-        if not len(values):
+        if not len(values) > 0:
             raise TypeError("Enum needs at least one value")
 
         self._values = set(values)

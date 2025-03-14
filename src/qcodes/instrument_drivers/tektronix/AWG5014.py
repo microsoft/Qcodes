@@ -274,7 +274,7 @@ class TektronixAWG5014(VisaInstrument):
             get_cmd="AWGControl:SEQuencer:POSition?",
             set_cmd="SEQuence:JUMP:IMMediate {}",
             vals=vals.PermissiveInts(1),
-            set_parser=lambda x: int(round(x)),
+            set_parser=lambda x: round(x),
         )
         """Parameter sequence_pos"""
 
