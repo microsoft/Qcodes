@@ -6,7 +6,7 @@ alabaster==1.0.0
     # via sphinx
 asttokens==3.0.0
     # via stack-data
-attrs==25.1.0
+attrs==25.3.0
     # via
     #   hypothesis
     #   jsonschema
@@ -27,7 +27,7 @@ broadbean==0.14.0
     #   qcodes
 certifi==2025.1.31
     # via requests
-cf-xarray==0.10.0
+cf-xarray==0.10.2
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -85,11 +85,11 @@ fastjsonschema==2.21.1
     # via nbformat
 fonttools==4.56.0
     # via matplotlib
-fsspec==2025.2.0
+fsspec==2025.3.0
     # via dask
 furo==2024.8.6
     # via qcodes (pyproject.toml)
-h5netcdf==1.5.0
+h5netcdf==1.6.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -102,13 +102,13 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.127.7
+hypothesis==6.129.1
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.5.0
+importlib-metadata==8.6.1
     # via opentelemetry-api
 iniconfig==2.0.0
     # via pytest
@@ -117,7 +117,7 @@ ipykernel==6.29.5
     #   qcodes (pyproject.toml)
     #   qcodes
 ipython==8.33.0; python_version < '3.11'
-ipython==9.0.1; python_version >= '3.11'
+ipython==9.0.2; python_version >= '3.11'
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
@@ -168,7 +168,7 @@ kiwisolver==1.4.8
     # via matplotlib
 lazy-loader==0.4
     # via qcodes-loop
-libcst==1.6.0
+libcst==1.7.0
     # via qcodes (pyproject.toml)
 locket==1.0.0
     # via partd
@@ -228,7 +228,7 @@ numpy==2.2.3
     #   zhinst-timing-models
     #   zhinst-toolkit
     #   zhinst-utils
-opentelemetry-api==1.30.0
+opentelemetry-api==1.31.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -255,7 +255,7 @@ pandas==2.2.3
     #   qcodes
     #   qcodes-loop
     #   xarray
-pandas-stubs==2.2.3.241126
+pandas-stubs==2.2.3.250308
     # via qcodes (pyproject.toml)
 pandocfilters==1.5.1
     # via nbconvert
@@ -324,7 +324,7 @@ pyvisa==1.14.1
     #   qcodes
 pyvisa-sim==0.6.0
     # via qcodes (pyproject.toml)
-pywin32==308; sys_platform == 'win32'
+pywin32==309; sys_platform == 'win32'
     # via jupyter-core
 pyyaml==6.0.2
     # via
@@ -333,7 +333,7 @@ pyyaml==6.0.2
     #   pyvisa-sim
     #   sphinx-jsonschema
     #   zhinst-timing-models
-pyzmq==26.2.1
+pyzmq==26.3.0
     # via
     #   ipykernel
     #   jupyter-client
@@ -446,7 +446,7 @@ types-jsonschema==4.23.0.20241208
     # via qcodes (pyproject.toml)
 types-pytz==2025.1.0.20250204
     # via pandas-stubs
-types-pywin32==308.0.0.20250128
+types-pywin32==309.0.0.20250311
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20250306
     # via

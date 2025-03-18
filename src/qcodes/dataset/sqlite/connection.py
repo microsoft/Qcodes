@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-class ConnectionPlus(wrapt.ObjectProxy):
+class ConnectionPlus(wrapt.ObjectProxy):  # pyright: ignore[reportUntypedBaseClass]
     """
     A class to extend the sqlite3.Connection object. Since sqlite3.Connection
     has no __dict__, we can not directly add attributes to its instance

@@ -40,6 +40,7 @@ from .Keysight_N9030B import (
     KeysightN9030BPhaseNoiseMode,
     KeysightN9030BSpectrumAnalyzerMode,
 )
+from .Keysight_P5004B import KeysightP5004B
 from .Keysight_P9374A import KeysightP9374A
 from .KeysightAgilent_33XXX import (
     Keysight33xxx,
@@ -132,6 +133,7 @@ __all__ = [
     "KeysightN9030B",
     "KeysightN9030BPhaseNoiseMode",
     "KeysightN9030BSpectrumAnalyzerMode",
+    "KeysightP5004B",
     "KeysightP9374A",
     "KeysightPNABase",
     "KeysightPNAPort",
