@@ -189,6 +189,7 @@ class ParameterBase(MetadatableWithName):
 
         register_name: Specifies if the parameter should be registered in datasets
             using a different name than the parameter's full_name
+
     """
 
     global_value_changed_callback: ClassVar[
@@ -751,7 +752,7 @@ class ParameterBase(MetadatableWithName):
                 # a list containing only `value`.
                 steps = self.get_ramp_values(value, step=self.step)
 
-                for step_index, val_step in enumerate(steps):
+                for val_step in steps:
                     # even if the final value is valid we may be generating
                     # steps that are not so validate them too
                     self.validate(val_step)
@@ -1143,7 +1144,6 @@ class ParameterBase(MetadatableWithName):
         """
         Set (or clear, if None) a single global callback that will be called
         after *any* ParameterBase instance changes value.
-
         The callback must accept two arguments:
           - The ParameterBase instance whose value changed
           - The new value of that parameter
