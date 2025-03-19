@@ -10,7 +10,11 @@ from .attribute_helpers import (
 )
 from .deep_update_utils import deep_update
 from .delaykeyboardinterrupt import DelayedKeyboardInterrupt
-from .deprecate import QCoDeSDeprecationWarning, deprecate, issue_deprecation_warning
+from .deprecate import (
+    QCoDeSDeprecationWarning,
+    deprecate,  # pyright: ignore[reportDeprecated]
+    issue_deprecation_warning,  # pyright: ignore[reportDeprecated]
+)
 from .full_class import full_class
 from .function_helpers import is_function
 from .installation_info import (

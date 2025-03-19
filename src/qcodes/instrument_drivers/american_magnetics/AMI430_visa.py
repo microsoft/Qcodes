@@ -1099,11 +1099,11 @@ class AMIModel4303D(Instrument):
             raise ValueError("_set_fields aborted; field would exceed limit")
 
         # Check if the individual instruments are ready
-        for name, value in zip(["x", "y", "z"], values):
+        for name in ("x", "y", "z"):
             instrument = getattr(self, f"_instrument_{name}")
             if instrument.ramping_state() == "ramping":
-                msg = "_set_fields aborted; magnet {} is already ramping"
-                raise AMI430Exception(msg.format(instrument))
+                msg = f"_set_fields aborted; magnet {instrument} is already ramping"
+                raise AMI430Exception(msg)
 
         # Now that we know we can proceed, call the individual instruments
 
