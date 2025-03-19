@@ -1,8 +1,10 @@
+import gc
+import sqlite3
 import threading
 import time
 from collections import Counter
 from contextlib import nullcontext
-from typing import Any, Callable  # noqa: UP035
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -10,31 +12,37 @@ from qcodes import validators
 from qcodes.parameters import Parameter
 from qcodes.parameters.parameter_base import ParameterBase
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator
+
+
 DEFAULT_VALUE = 42
 DELAY_TIME = 0.1
 STEP_SIZE = 0.1
 THREAD_SLEEP = 0.01
 
 
-@pytest.fixture(autouse=True)
-def _reset_callback():
+@pytest.fixture(autouse=True)  # type: ignore[misc]
+def _reset_callback() -> "Generator[None, None, None]":
     """Reset the callback after each test"""
     yield
-    ParameterBase._value_changed_callback = None
+    ParameterBase.set_global_value_changed_callback(None)
 
 
-@pytest.fixture
-def basic_parameter(basic_callback: Callable[[ParameterBase, Any], None]) -> Parameter:
+@pytest.fixture()  # type: ignore[misc]
+def basic_parameter(
+    basic_callback: "Callable[[ParameterBase, Any], None]",
+) -> Parameter:
     """Fixture providing a basic parameter with callback"""
     param = Parameter("test_param", set_cmd=None, get_cmd=None)
-    ParameterBase._value_changed_callback = basic_callback
+    ParameterBase.set_global_value_changed_callback(basic_callback)
     return param
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function")  # type: ignore[misc]
 def basic_callback(
     captured_params: list[tuple[ParameterBase, Any]],
-) -> Callable[[ParameterBase, Any], None]:
+) -> "Callable[[ParameterBase, Any], None]":
     """Fixture providing a standard callback function"""
 
     def callback(param: ParameterBase, value: Any) -> None:
@@ -43,10 +51,29 @@ def basic_callback(
     return callback
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function")  # type: ignore[misc]
 def captured_params() -> list[tuple[ParameterBase, Any]]:
     """Fixture for capturing callback parameters"""
     return []
+
+
+@pytest.fixture(autouse=True, scope="function")  # type: ignore[misc]
+def cleanup_db_connections():
+    """Clean up any open SQLite connections after each test"""
+    yield
+    gc.collect()
+
+    open_connections = [
+        obj for obj in gc.get_objects() if isinstance(obj, sqlite3.Connection)
+    ]
+
+    for conn in open_connections:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    gc.collect()
 
 
 class TestBasicCallbackBehavior:
@@ -74,11 +101,28 @@ class TestBasicCallbackBehavior:
             basic_parameter(val)
         assert len(captured_params) == len(values)
 
+    def test_set_global_callback(self) -> None:
+        """Test setting and clearing global callback"""
+        param = Parameter("test_param", set_cmd=None, get_cmd=None)
+        captured = []
+
+        def test_callback(p: ParameterBase, value: Any) -> None:
+            captured.append((p, value))
+
+        ParameterBase.set_global_value_changed_callback(test_callback)
+        param(1)
+        assert len(captured) == 1
+        assert captured[0] == (param, 1)
+
+        ParameterBase.set_global_value_changed_callback(None)
+        param(2)
+        assert len(captured) == 1
+
 
 class TestValidationBehavior:
     """Tests for validation-related functionality"""
 
-    @pytest.mark.parametrize(
+    @pytest.mark.parametrize(  # type: ignore[misc]
         "test_input,validator,should_callback",
         [
             pytest.param(5, validators.Numbers(0, 10), True, id="valid_number"),
@@ -90,14 +134,14 @@ class TestValidationBehavior:
     def test_callback_with_different_validators(
         self,
         captured_params: list[tuple[ParameterBase, Any]],
-        basic_callback: Callable[[ParameterBase, Any], None],
+        basic_callback: "Callable[[ParameterBase, Any], None]",
         test_input: Any,
         validator: Any,
         should_callback: bool,
     ) -> None:
         """Test callback behavior with different validator types"""
         param = Parameter("test_param", set_cmd=None, get_cmd=None, vals=validator)
-        ParameterBase._value_changed_callback = basic_callback
+        ParameterBase.set_global_value_changed_callback(basic_callback)
 
         with pytest.raises(ValueError) if not should_callback else nullcontext():
             param(test_input)
@@ -108,15 +152,17 @@ class TestValidationBehavior:
 class TestErrorHandling:
     """Tests for error handling and edge cases"""
 
-    def test_callback_exception_handling(self, basic_parameter: Parameter) -> None:
+    def test_callback_exception_handling(self) -> None:
         """Test that callback exceptions are handled gracefully"""
 
         def failing_callback(param: ParameterBase, value: Any) -> None:
             raise RuntimeError("Intentional failure")
 
-        ParameterBase._value_changed_callback = failing_callback
-        basic_parameter(DEFAULT_VALUE)
-        assert basic_parameter() == DEFAULT_VALUE
+        param = Parameter("test_param", set_cmd=None, get_cmd=None)
+        ParameterBase.set_global_value_changed_callback(failing_callback)
+
+        param(DEFAULT_VALUE)
+        assert param() == DEFAULT_VALUE
 
     def test_callback_with_none_value(
         self,
@@ -152,8 +198,8 @@ class TestAdvancedFeatures:
             with lock:
                 captured_values.append(value)
 
-        ParameterBase._value_changed_callback = thread_safe_callback
         param = Parameter("test_param", set_cmd=None, get_cmd=None)
+        ParameterBase.set_global_value_changed_callback(thread_safe_callback)
 
         threads = [
             threading.Thread(
@@ -178,7 +224,7 @@ class TestAdvancedFeatures:
 
     def test_callback_with_steps(
         self,
-        basic_callback: Callable[[ParameterBase, Any], None],
+        basic_callback: "Callable[[ParameterBase, Any], None]",
         captured_params: list[tuple[ParameterBase, Any]],
     ) -> None:
         """Test stepped parameter setting
@@ -197,7 +243,7 @@ class TestAdvancedFeatures:
             step=STEP_SIZE,
             initial_value=START_VALUE,
         )
-        ParameterBase._value_changed_callback = basic_callback
+        ParameterBase.set_global_value_changed_callback(basic_callback)
 
         param(TARGET_VALUE)
 
@@ -218,7 +264,7 @@ class TestAdvancedFeatures:
         def callback(param: ParameterBase, value: Any) -> None:
             param.cache.set(value)
 
-        ParameterBase._value_changed_callback = callback
+        ParameterBase.set_global_value_changed_callback(callback)
         param(1)
         assert param.cache.get() == 1
 
@@ -234,7 +280,7 @@ class TestAdvancedFeatures:
             captured_times.append(time.time() - start_time)
 
         basic_parameter.post_delay = DELAY_TIME
-        ParameterBase._value_changed_callback = timing_callback
+        ParameterBase.set_global_value_changed_callback(timing_callback)
 
         basic_parameter(1)
         basic_parameter(2)
