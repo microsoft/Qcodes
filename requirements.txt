@@ -110,7 +110,7 @@ imagesize==1.4.1
     # via sphinx
 importlib-metadata==8.6.1
     # via opentelemetry-api
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 ipykernel==6.29.5
     # via
