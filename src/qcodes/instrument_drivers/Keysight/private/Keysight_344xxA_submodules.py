@@ -1213,11 +1213,11 @@ mode."""
         return _raw_vals_to_array(raw_vals)
 
     def _ask_with_sense_function(self, cmd: str) -> str:
-        function = self.sense_function.get_latest.get_raw().strip("\"")
+        function = self.sense_function.cache.raw_value.strip("\"")
         return self.ask(f"SENSe:{function}:{cmd}?")
 
     def _write_with_sense_function(self, cmd: str, value: str) -> None:
-        function = self.sense_function.get_latest.get_raw().strip("\"")
+        function = self.sense_function.cache.raw_value.strip("\"")
         self.write(f"SENSe:{function}:{cmd} {value}")
 
     def _get_with_sense_function(self, cmd: str) -> "Callable[[], str]":
