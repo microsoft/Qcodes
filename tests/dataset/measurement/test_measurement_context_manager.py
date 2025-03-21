@@ -24,8 +24,14 @@ from qcodes.dataset.experiment_container import new_experiment
 from qcodes.dataset.export_config import DataExportType
 from qcodes.dataset.measurements import Measurement
 from qcodes.dataset.sqlite.connection import atomic_transaction
-from qcodes.parameters import ManualParameter, Parameter, expand_setpoints_helper
+from qcodes.parameters import (
+    DelegateParameter,
+    ManualParameter,
+    Parameter,
+    expand_setpoints_helper,
+)
 from qcodes.station import Station
+from qcodes.validators import ComplexNumbers
 from tests.common import retry_until_does_not_throw
 
 
@@ -199,6 +205,65 @@ def test_register_custom_parameter(DAC) -> None:
         meas.register_custom_parameter(
             "double dependence", "label", "unit", setpoints=(name,)
         )
+
+
+def test_register_delegate_parameters() -> None:
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_param = DelegateParameter("delegate", source=complex_param)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+    meas.register_parameter(delegate_param, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
+
+
+def test_register_delegate_parameters_with_late_source() -> None:
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_param = DelegateParameter("delegate", source=None)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+
+    delegate_param.source = complex_param
+
+    meas.register_parameter(delegate_param, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
+
+
+def test_register_delegate_parameters_with_late_source_chain():
+    x_param = Parameter("x", set_cmd=None, get_cmd=None)
+
+    complex_param = Parameter(
+        "complex_param", get_cmd=None, set_cmd=None, vals=ComplexNumbers()
+    )
+    delegate_inner = DelegateParameter("delegate_inner", source=None)
+    delegate_outer = DelegateParameter("delegate_outer", source=None)
+
+    meas = Measurement()
+
+    meas.register_parameter(x_param)
+
+    delegate_outer.source = delegate_inner
+    delegate_inner.source = complex_param
+
+    meas.register_parameter(delegate_outer, setpoints=(x_param,))
+    assert len(meas.parameters) == 2
+    assert meas.parameters["delegate_outer"].type == "complex"
+    assert meas.parameters["x"].type == "numeric"
 
 
 def test_unregister_parameter(DAC, DMM) -> None:
@@ -965,7 +1030,7 @@ def test_datasaver_arrayparams(
     SpectrumAnalyzer, DAC, N, M, param_type, storage_type, seed, bg_writing
 ) -> None:
     """
-    test that data is stored correctly for array parameters that
+    Test that data is stored correctly for array parameters that
     return numpy arrays, lists and tuples. Stored both as arrays and
     numeric
     """

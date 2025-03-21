@@ -24,7 +24,7 @@ def test_safety_interlock_during_init(
     request: FixtureRequest, caplog: LogCaptureFixture
 ) -> None:
     """
-    to check if a warning would show when initialize the instrument with a
+    To check if a warning would show when initialize the instrument with a
     module in safety interlock state.
     """
     with caplog.at_level(logging.WARNING):
@@ -40,7 +40,7 @@ def test_safety_interlock_during_init(
 
 def test_get_idn(switch_driver: Keysight34980A) -> None:
     """
-    to check if the instrument attributes are set correctly after getting
+    To check if the instrument attributes are set correctly after getting
     the IDN
     """
     assert switch_driver.IDN() == {
@@ -53,7 +53,7 @@ def test_get_idn(switch_driver: Keysight34980A) -> None:
 
 def test_scan_slots(switch_driver: Keysight34980A) -> None:
     """
-    to check if the submodule attributes are set correctly after scanning
+    To check if the submodule attributes are set correctly after scanning
     every slot
     """
     assert len(switch_driver.system_slots_info) == 2
@@ -77,7 +77,7 @@ def test_safety_interlock(
     switch_driver: Keysight34980A, caplog: LogCaptureFixture
 ) -> None:
     """
-    to check if a warning would show when talk to a module that is in safety
+    To check if a warning would show when talk to a module that is in safety
     interlock state
     """
     module = switch_driver.module[3]

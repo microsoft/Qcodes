@@ -52,7 +52,7 @@ class GroupParameter(Parameter):
         self,
         name: str,
         instrument: InstrumentBase | None = None,
-        initial_value: float | int | str | None = None,
+        initial_value: float | str | None = None,
         **kwargs: Any,
     ) -> None:
         if "set_cmd" in kwargs or "get_cmd" in kwargs:

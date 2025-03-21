@@ -186,10 +186,7 @@ class InterDependencies_:
                 if not isinstance(value, ParamSpecBase):
                     return (
                         TypeError,
-                        (
-                            "ParamSpecTree can only have tuples of "
-                            "ParamSpecs as values"
-                        ),
+                        ("ParamSpecTree can only have tuples of ParamSpecs as values"),
                     )
 
         # check for cycles
@@ -549,7 +546,7 @@ class InterDependencies_:
         )
         return rep
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         def sorter(inp: Iterable[ParamSpecBase]) -> list[ParamSpecBase]:
             return sorted(inp, key=lambda ps: ps.name)
 

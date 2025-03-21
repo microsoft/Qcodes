@@ -356,7 +356,7 @@ class FrequencySweep(ArrayParameter):
 
     def set_sweep(self, start: float, stop: float, npts: int) -> None:
         """
-        sets the shapes and setpoint arrays of the parameter to
+        Sets the shapes and setpoint arrays of the parameter to
         correspond with the sweep
 
         Args:
@@ -442,11 +442,29 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             "ZNB8": -80,
             "ZNB20": -60,
             "ZNB40": -60,
+            "ZNLE3": -10,
+            "ZNLE4": -10,
+            "ZNLE6": -10,
+            "ZNLE14": -10,
+            "ZNLE18": -10,
+        }
+        self._model_max_source_power = {
+            "ZNB4": 25,
+            "ZNB8": 25,
+            "ZNB20": 25,
+            "ZNB40": 25,
+            "ZNLE3": 0,
+            "ZNLE4": 0,
+            "ZNLE6": 0,
+            "ZNLE14": 0,
+            "ZNLE18": 0,
         }
         if model not in self._model_min_source_power.keys():
             raise RuntimeError(f"Unsupported ZNB model: {model}")
         self._min_source_power: float
         self._min_source_power = self._model_min_source_power[model]
+        self._max_source_power: float
+        self._max_source_power = self._model_max_source_power[model]
 
         self.vna_parameter: Parameter = self.add_parameter(
             name="vna_parameter",
@@ -462,7 +480,7 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
             get_cmd=f"SOUR{n}:POW?",
             set_cmd=f"SOUR{n}:POW {{:.4f}}",
             get_parser=float,
-            vals=vals.Numbers(self._min_source_power, 25),
+            vals=vals.Numbers(self._min_source_power, self._max_source_power),
         )
         """Parameter power"""
         self.bandwidth: Parameter = self.add_parameter(
@@ -901,12 +919,10 @@ class RohdeSchwarzZNBChannel(InstrumentChannel):
                     for _ in range(self.avg()):
                         self.write(f"INIT{self._instrument_channel}:IMM; *WAI")
                     self.write(
-                        f"CALC{self._instrument_channel}:PAR:SEL "
-                        f"'{self._tracename}'"
+                        f"CALC{self._instrument_channel}:PAR:SEL '{self._tracename}'"
                     )
                     data_str = self.ask(
-                        f"CALC{self._instrument_channel}:DATA?"
-                        f" {data_format_command}"
+                        f"CALC{self._instrument_channel}:DATA? {data_format_command}"
                     )
                 data = np.array(data_str.rstrip().split(",")).astype("float64")
                 if self.format() in ["Polar", "Complex", "Smith", "Inverse Smith"]:
@@ -1009,10 +1025,10 @@ ZNBChannel = RohdeSchwarzZNBChannel
 
 class RohdeSchwarzZNBBase(VisaInstrument):
     """
-    Base class for QCoDeS driver for the Rohde & Schwarz ZNB8 and ZNB20
-    virtual network analyser. It can probably be extended to ZNB4 and 40
-    without too much work. This class should not be instantiated directly
-    the RohdeSchwarzZNB8 and RohdeSchwarzZNB20 should be used instead.
+    Base class for QCoDeS driver for the Rohde & Schwarz
+    ZNB4, ZNB8, ZNB20, ZNB40, ZNLE3, ZNLE4, ZNLE6, ZNLE14 and ZNLE18.
+    This class should not be instantiated directly
+    the ZNB and ZNLE should be used instead.
 
     Requires FrequencySweep parameter for taking a trace
 
@@ -1059,6 +1075,11 @@ class RohdeSchwarzZNBBase(VisaInstrument):
             "ZNB8": (9e3, 8.5e9),
             "ZNB20": (100e3, 20e9),
             "ZNB40": (10e6, 40e9),
+            "ZNLE3": (1e6, 3e9),
+            "ZNLE4": (1e6, 4e9),
+            "ZNLE6": (1e6, 6e9),
+            "ZNLE14": (1e6, 14e9),
+            "ZNLE18": (1e6, 18e9),
         }
         if model not in m_frequency.keys():
             raise RuntimeError(f"Unsupported ZNB model {model}")

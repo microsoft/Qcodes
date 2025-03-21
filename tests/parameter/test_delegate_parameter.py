@@ -473,16 +473,12 @@ def test_gettable_settable_snapshotget_delegate_parameter_2(
 def test_initial_value_and_none_source_raises() -> None:
     with pytest.raises(
         KeyError,
-        match="It is not allowed to supply"
-        " 'initial_value' or"
-        " 'initial_cache_value'",
+        match="It is not allowed to supply 'initial_value' or 'initial_cache_value'",
     ):
         DelegateParameter("delegate", source=None, initial_value=1)
     with pytest.raises(
         KeyError,
-        match="It is not allowed to supply"
-        " 'initial_value' or "
-        "'initial_cache_value'",
+        match="It is not allowed to supply 'initial_value' or 'initial_cache_value'",
     ):
         DelegateParameter("delegate", source=None, initial_cache_value=1)
 
@@ -578,18 +574,23 @@ def test_value_validation() -> None:
     source_param = Parameter("source", set_cmd=None, get_cmd=None)
     delegate_param = DelegateParameter("delegate", source=source_param)
 
+    # Test case where source parameter validator is None and delegate parameter validator is
+    # specified.
     delegate_param.vals = vals.Numbers(-10, 10)
     source_param.vals = None
     delegate_param.validate(1)
     with pytest.raises(ValueError):
         delegate_param.validate(11)
 
+    # Test where delegate parameter validator is None and source parameter validator is
+    # specified.
     delegate_param.vals = None
     source_param.vals = vals.Numbers(-5, 5)
     delegate_param.validate(1)
     with pytest.raises(ValueError):
         delegate_param.validate(6)
 
+    # Test case where source parameter validator is more restricted than delegate parameter.
     delegate_param.vals = vals.Numbers(-10, 10)
     source_param.vals = vals.Numbers(-5, 5)
     delegate_param.validate(1)
@@ -597,6 +598,115 @@ def test_value_validation() -> None:
         delegate_param.validate(6)
     with pytest.raises(ValueError):
         delegate_param.validate(11)
+
+    # Test case that the order of setting validator on source and delegate parameters does not matter.
+    source_param.vals = vals.Numbers(-5, 5)
+    delegate_param.vals = vals.Numbers(-10, 10)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+    # Test case where delegate parameter validator is more restricted than source parameter.
+    delegate_param.vals = vals.Numbers(-5, 5)
+    source_param.vals = vals.Numbers(-10, 10)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+    # Test case that the order of setting validator on source and delegate parameters does not matter.
+    source_param.vals = vals.Numbers(-10, 10)
+    delegate_param.vals = vals.Numbers(-5, 5)
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+
+
+def test_validator_delegates_as_expected() -> None:
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+    some_validator = vals.Numbers(-10, 10)
+    source_param.vals = some_validator
+    delegate_param.vals = None
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(11)
+    assert delegate_param.validators == (some_validator,)
+    assert delegate_param.vals == some_validator
+
+
+def test_validator_delegates_and_source() -> None:
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_param = DelegateParameter("delegate", source=source_param)
+    some_validator = vals.Numbers(-10, 10)
+    some_other_validator = vals.Numbers(-5, 5)
+    source_param.vals = some_validator
+    delegate_param.vals = some_other_validator
+    delegate_param.validate(1)
+    with pytest.raises(ValueError):
+        delegate_param.validate(6)
+    assert delegate_param.validators == (some_other_validator, some_validator)
+    assert delegate_param.vals == some_other_validator
+
+    assert delegate_param.source is not None
+    delegate_param.source.vals = None
+
+    assert delegate_param.validators == (some_other_validator,)
+    assert delegate_param.vals == some_other_validator
+
+
+def test_validator_delegates_and_source_chain() -> None:
+    source_param = Parameter("source", set_cmd=None, get_cmd=None)
+    delegate_inner = DelegateParameter("delegate_inner", source=source_param)
+    delegate_outer = DelegateParameter("delegate_outer", source=delegate_inner)
+    source_validator = vals.Numbers(-10, 10)
+    delegate_inner_validator = vals.Numbers(-7, 7)
+    delegate_outer_validator = vals.Numbers(-5, 5)
+
+    source_param.vals = source_validator
+    delegate_inner.vals = delegate_inner_validator
+    delegate_outer.vals = delegate_outer_validator
+
+    delegate_outer.validate(1)
+    with pytest.raises(ValueError):
+        delegate_outer.validate(6)
+
+    delegate_inner.validate(6)
+    source_param.validate(6)
+
+    assert delegate_outer.validators == (
+        delegate_outer_validator,
+        delegate_inner_validator,
+        source_validator,
+    )
+    assert delegate_outer.vals == delegate_outer_validator
+
+    assert delegate_inner.validators == (
+        delegate_inner_validator,
+        source_validator,
+    )
+    assert delegate_inner.vals == delegate_inner_validator
+
+    assert delegate_outer.source is not None
+    delegate_outer.source.vals = None
+
+    assert delegate_outer.validators == (
+        delegate_outer_validator,
+        source_validator,
+    )
+    assert delegate_outer.vals == delegate_outer_validator
+
+    assert isinstance(delegate_outer.source, DelegateParameter)
+    assert delegate_outer.source.source is not None
+    delegate_outer.source.source.vals = None
+
+    assert delegate_outer.validators == (delegate_outer_validator,)
+    assert delegate_outer.vals == delegate_outer_validator
 
 
 def test_value_validation_with_offset_and_scale() -> None:

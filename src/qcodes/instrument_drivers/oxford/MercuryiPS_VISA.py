@@ -65,6 +65,17 @@ def _signal_parser(our_scaling: float, response: str) -> float:
     return float(digits) * their_scaling * our_scaling
 
 
+def _temp_parser(response: str) -> float:
+    """
+    Parse a response string into a correct SI temperature value.
+
+    Args:
+        response: What comes back from instrument.ask
+
+    """
+    return float(response.split(":")[-1][:-1])
+
+
 class OxfordMercuryWorkerPS(InstrumentChannel):
     """
     Class to hold a worker power supply for the Oxford MercuryiPS
@@ -101,6 +112,15 @@ class OxfordMercuryWorkerPS(InstrumentChannel):
             self.psu_string = "SPSU"
         else:
             self.psu_string = "PSU"
+
+        self.heater_switch: Parameter = self.add_parameter(
+            "heater_switch",
+            label="Heater switch status/set",
+            get_cmd=partial(self._param_getter, "SIG:SWHT"),
+            set_cmd=partial(self._param_setter, "SIG:SWHT"),
+            get_parser=_response_preparser,
+        )
+        """Parameter heater switch"""
 
         self.voltage: Parameter = self.add_parameter(
             "voltage",
@@ -339,6 +359,40 @@ class OxfordMercuryiPS(VisaInstrument):
             x=self.GRPX.field(), y=self.GRPY.field(), z=self.GRPZ.field()
         )
 
+        self._magnet_temp_addr = "DEV:MB1.T1:TEMP"
+        self._pt1_temp_addr = "DEV:DB8.T1:TEMP"
+        self._pt2_temp_addr = "DEV:DB7.T1:TEMP"
+
+        self.magnet_temp: Parameter = self.add_parameter(
+            name="magnet_temp",
+            label="Magnet Temperature",
+            unit="K",
+            docstring="Temperature of the magnet sensor",
+            get_cmd="READ:" + self._magnet_temp_addr + ":SIG:TEMP?",
+            get_parser=_temp_parser,
+        )
+        """Parameter magnet temperature"""
+
+        self.pt1_temp: Parameter = self.add_parameter(
+            name="pt1_temp",
+            label="pt1 Temperature",
+            unit="K",
+            docstring="Temperature of the pt1",
+            get_cmd="READ:" + self._pt1_temp_addr + ":SIG:TEMP?",
+            get_parser=_temp_parser,
+        )
+        """Parameter pt1 temperature"""
+
+        self.pt2_temp: Parameter = self.add_parameter(
+            name="pt2_temp",
+            label="pt2 Temperature",
+            unit="K",
+            docstring="Temperature of the pt2",
+            get_cmd="READ:" + self._pt2_temp_addr + ":SIG:TEMP?",
+            get_parser=_temp_parser,
+        )
+        """Parameter pt2 temperature"""
+
         for coord, unit in zip(
             ["x", "y", "z", "r", "theta", "phi", "rho"],
             ["T", "T", "T", "T", "degrees", "degrees", "T"],
@@ -372,8 +426,7 @@ class OxfordMercuryiPS(VisaInstrument):
                     name=f"{coord}_simulramp",
                     label=f"{coord.upper()} ramp field",
                     unit=unit,
-                    docstring="A simultaneous blocking ramp for"
-                    " a combined coordinate",
+                    docstring="A simultaneous blocking ramp for a combined coordinate",
                     get_cmd=partial(self._get_component, coord),
                     set_cmd=partial(self._set_target_and_ramp, coord, "simul_block"),
                 )

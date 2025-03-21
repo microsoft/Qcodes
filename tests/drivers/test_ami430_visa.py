@@ -281,7 +281,7 @@ def test_instantiation_from_name_of_nonexistent_ami_instrument(
 def test_instantiation_from_name_of_existing_non_ami_instrument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
-    mag_x, mag_y, mag_z = magnet_axes_instances
+    mag_x, _mag_y, mag_z = magnet_axes_instances
     request.addfinalizer(Instrument.close_all)
 
     non_ami_existing_instrument = Instrument("foo")
@@ -306,7 +306,7 @@ def test_instantiation_from_name_of_existing_non_ami_instrument(
 def test_instantiation_from_badly_typed_argument(
     magnet_axes_instances, request: FixtureRequest
 ) -> None:
-    mag_x, mag_y, mag_z = magnet_axes_instances
+    mag_x, mag_y, _mag_z = magnet_axes_instances
     request.addfinalizer(Instrument.close_all)
 
     badly_typed_instrument_z_argument = 123
@@ -710,17 +710,17 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     messages_with_expected_fragment = tuple(
         message for message in messages if expected_log_fragment in message
     )
-    assert (
-        len(messages_with_expected_fragment) == 1
-    ), f"found: {messages_with_expected_fragment}"
+    assert len(messages_with_expected_fragment) == 1, (
+        f"found: {messages_with_expected_fragment}"
+    )
 
     unexpected_log_fragment = "Restoring individual axes ramp rates"
     messages_with_unexpected_fragment = tuple(
         message for message in messages if unexpected_log_fragment in message
     )
-    assert (
-        len(messages_with_unexpected_fragment) == 0
-    ), f"found: {messages_with_unexpected_fragment}"
+    assert len(messages_with_unexpected_fragment) == 0, (
+        f"found: {messages_with_unexpected_fragment}"
+    )
 
     # However, calling ``wait_while_all_axes_ramping`` DOES restore the
     # individual ramp rates
@@ -734,9 +734,9 @@ def test_simultaneous_ramp_mode_does_not_reset_individual_axis_ramp_rates_if_non
     messages_with_expected_fragment_2 = tuple(
         message for message in messages_2 if expected_log_fragment_2 in message
     )
-    assert (
-        len(messages_with_expected_fragment_2) == 1
-    ), f"found: {messages_with_expected_fragment_2}"
+    assert len(messages_with_expected_fragment_2) == 1, (
+        f"found: {messages_with_expected_fragment_2}"
+    )
 
     # Assert calling ``wait_while_all_axes_ramping`` is possible
 
@@ -792,25 +792,25 @@ def test_simultaneous_ramp_mode_resets_individual_axis_ramp_rates_if_blocking_ra
     messages_with_expected_fragment = tuple(
         message for message in messages if expected_log_fragment in message
     )
-    assert (
-        len(messages_with_expected_fragment) == 1
-    ), f"found: {messages_with_expected_fragment}"
+    assert len(messages_with_expected_fragment) == 1, (
+        f"found: {messages_with_expected_fragment}"
+    )
 
     expected_log_fragment_2 = "Simultaneous ramp: blocking until ramp is finished"
     messages_with_expected_fragment_2 = tuple(
         message for message in messages if expected_log_fragment_2 in message
     )
-    assert (
-        len(messages_with_expected_fragment_2) == 1
-    ), f"found: {messages_with_expected_fragment_2}"
+    assert len(messages_with_expected_fragment_2) == 1, (
+        f"found: {messages_with_expected_fragment_2}"
+    )
 
     unexpected_log_fragment = "Simultaneous ramp: not blocking until ramp is finished"
     messages_with_unexpected_fragment = tuple(
         message for message in messages if unexpected_log_fragment in message
     )
-    assert (
-        len(messages_with_unexpected_fragment) == 0
-    ), f"found: {messages_with_unexpected_fragment}"
+    assert len(messages_with_unexpected_fragment) == 0, (
+        f"found: {messages_with_unexpected_fragment}"
+    )
 
 
 def test_reducing_field_ramp_limit_reduces_a_higher_ramp_rate(ami430) -> None:

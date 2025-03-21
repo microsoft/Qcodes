@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
@@ -64,16 +64,7 @@ multiples: list[int | np.integer | bool] = [
     np.int64(2),
 ]
 not_multiples: tuple[
-    float
-    | Literal[""]
-    | None
-    | str
-    | list
-    | dict
-    | bytes
-    | type[AClass]
-    | AClass
-    | Callable,
+    float | None | str | list | dict | bytes | type[AClass] | AClass | Callable,
     ...,
 ] = (
     0.1,

@@ -109,7 +109,7 @@ class DelegateGroup(Group):
             self._formatter = formatter
 
     def _namedtuple(self, *args: Any, **kwargs: Any) -> tuple[Any, ...]:
-        return namedtuple(self.name, self._parameter_names)(*args, **kwargs)
+        return namedtuple(self.name, self._parameter_names)(*args, **kwargs)  # noqa: PYI024
 
     def set(self, value: ParamDataType | Mapping[str, ParamDataType]) -> None:
         if self._set_fn is not None:

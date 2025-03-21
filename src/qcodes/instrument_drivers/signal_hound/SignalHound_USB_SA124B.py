@@ -389,8 +389,7 @@ class SignalHoundUSBSA124B(Instrument):
             initial_value=0.1,
             get_cmd=None,
             set_cmd=None,
-            docstring="Time to sleep before and after "
-            "getting data from the instrument",
+            docstring="Time to sleep before and after getting data from the instrument",
             vals=vals.Numbers(0),
         )
         """Time to sleep before and after getting data from the instrument"""
@@ -743,7 +742,7 @@ class SignalHoundUSBSA124B(Instrument):
 
         data = np.zeros(sweep_len)
         Navg = self.avg()
-        for i in range(Navg):
+        for _ in range(Navg):
             datamin = np.zeros((sweep_len), dtype=np.float32)
             datamax = np.zeros((sweep_len), dtype=np.float32)
 
@@ -798,14 +797,13 @@ class SignalHoundUSBSA124B(Instrument):
                 log.warning(msg)
             else:
                 msg = (
-                    f"During call of {source} the following Error: "
-                    f"{err_str} was raised"
+                    f"During call of {source} the following Error: {err_str} was raised"
                 )
                 if extrainfo is not None:
                     msg = msg + f"\n Extra info: {extrainfo}"
                 raise OSError(msg)
         else:
-            msg = "Call to {source} was successful"
+            msg = f"Call to {source} was successful"
             if extrainfo is not None:
                 msg = msg + f"\n Extra info: {extrainfo}"
             log.info(msg)

@@ -1150,7 +1150,7 @@ class KeysightB1517A(KeysightB1500Module):
     def source_config(
         self,
         output_range: constants.OutputRange,
-        compliance: float | int | None = None,
+        compliance: float | None = None,
         compl_polarity: constants.CompliancePolarityMode | None = None,
         min_compliance_range: constants.MeasureRange | None = None,
     ) -> None:

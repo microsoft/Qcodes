@@ -82,7 +82,7 @@ _azure_monitor_opentelemetry_exporter_filter = logging.Filter(
 )
 def filter_out_telemetry_log_records(record: logging.LogRecord) -> bool:
     """
-    here we filter any message that is likely to be thrown from
+    Here we filter any message that is likely to be thrown from
     opencensus/opentelemetry so it is not shown in the user console
     """
     return (
@@ -287,9 +287,7 @@ def start_command_history_logger(log_dir: str | None = None) -> None:
             to ``~/.qcodes/logs/command_history.log``
 
     """
-    # get_ipython is part of the public api but IPython does
-    # not use __all__ to mark this
-    from IPython import get_ipython  # type: ignore[attr-defined]
+    from IPython.core.getipython import get_ipython
 
     ipython = get_ipython()
     if ipython is None:
@@ -300,8 +298,8 @@ def start_command_history_logger(log_dir: str | None = None) -> None:
     filename = os.path.join(log_dir, HISTORY_LOG_NAME)
     os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    ipython.magic("%logstop")
-    ipython.magic("%logstart -t -o {} {}".format(filename, "append"))
+    ipython.run_line_magic("logstop", "")
+    ipython.run_line_magic("logstart", f"-t -o {filename} append")
     log.info("Started logging IPython history")
 
 

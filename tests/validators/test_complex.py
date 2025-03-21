@@ -24,7 +24,7 @@ def test_complex(complex_val: complex) -> None:
 
 
 @given(val=hst.one_of(hst.floats(), hst.integers(), hst.characters()))
-def test_complex_raises(val: float | int | str) -> None:
+def test_complex_raises(val: float | str) -> None:
     n = ComplexNumbers()
 
     with pytest.raises(TypeError, match=r"is not complex;"):

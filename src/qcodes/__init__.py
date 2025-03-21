@@ -70,7 +70,7 @@ from qcodes.parameters import (
     combine,
 )
 from qcodes.station import Station
-from qcodes.utils import deprecate
+from qcodes.utils import deprecate  # pyright: ignore[reportDeprecated]
 
 # ensure to close all instruments when interpreter is closed
 atexit.register(Instrument.close_all)

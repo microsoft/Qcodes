@@ -26,9 +26,6 @@ def _make_dci() -> Generator[DummyChannelInstrument, None, None]:
 
 @pytest.fixture(scope="function", name="dci_with_list")
 def _make_dci_with_list() -> Generator[Instrument, None, None]:
-    for i in range(10):
-        pass
-
     dci = Instrument(name="dciwl")
     channels = ChannelList(dci, "ListElem", DummyChannel, snapshotable=False)
     for chan_name in ("A", "B", "C", "D", "E", "F"):
@@ -121,7 +118,7 @@ def test_channel_access_is_identical(dci, value, channel) -> None:
 def test_invalid_channel_type_raises(empty_instrument: Instrument) -> None:
     with pytest.raises(
         ValueError,
-        match="ChannelTuple can only hold instances of type InstrumentChannel",
+        match="ChannelTuple can only hold instances of type InstrumentModule",
     ):
         ChannelList(
             parent=empty_instrument,

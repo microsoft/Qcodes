@@ -148,9 +148,7 @@ def test_dataset_states() -> None:
 
     with pytest.raises(
         RuntimeError,
-        match="Can not mark DataSet as complete "
-        "before it has "
-        "been marked as started.",
+        match="Can not mark DataSet as complete before it has been marked as started.",
     ):
         ds.mark_completed()
 
@@ -276,9 +274,7 @@ def test_dataset_read_only_properties(dataset) -> None:
 def test_create_dataset_from_non_existing_run_id(non_existing_run_id) -> None:
     with pytest.raises(
         ValueError,
-        match=f"Run with run_id "
-        f"{non_existing_run_id} does not "
-        f"exist in the database",
+        match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
         _ = DataSet(run_id=non_existing_run_id)
 
@@ -305,9 +301,7 @@ def test_load_by_id(dataset) -> None:
 def test_load_by_id_for_nonexisting_run_id(non_existing_run_id) -> None:
     with pytest.raises(
         ValueError,
-        match=f"Run with run_id "
-        f"{non_existing_run_id} does not "
-        f"exist in the database",
+        match=f"Run with run_id {non_existing_run_id} does not exist in the database",
     ):
         _ = load_by_id(non_existing_run_id)
 

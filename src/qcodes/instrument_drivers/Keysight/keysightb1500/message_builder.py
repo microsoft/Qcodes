@@ -335,7 +335,7 @@ class MessageBuilder:
         self,
         adc_type: constants.AIT.Type | int,
         mode: constants.AIT.Mode | int,
-        coeff: int | float | None = None,
+        coeff: float | None = None,
     ) -> "MessageBuilder":
         """
         This command is used to set the operation mode and the setup
@@ -659,7 +659,7 @@ class MessageBuilder:
         self,
         chnum: constants.ChNr | int,
         searchmode: constants.BinarySearchMode | int,
-        stop_condition: float | int,
+        stop_condition: float,
         i_range: constants.IMeasRange | int,
         target: float,
     ) -> "MessageBuilder":
@@ -732,7 +732,7 @@ class MessageBuilder:
         self,
         chnum: constants.ChNr | int,
         searchmode: constants.BinarySearchMode | int,
-        stop_condition: float | int,
+        stop_condition: float,
         v_range: constants.VMeasRange | int,
         target: float,
     ) -> "MessageBuilder":
@@ -1219,7 +1219,7 @@ class MessageBuilder:
         elif len(channels) > 15:
             raise ValueError("A maximum of 15 channels can be set.")
         else:
-            cmd = f"CL { as_csv(channels)}"
+            cmd = f"CL {as_csv(channels)}"
 
         self._msg.append(cmd)
         return self
@@ -2752,8 +2752,7 @@ class MessageBuilder:
         self, enable_data_output: bool, enable_leakage_current_compensation: bool
     ) -> "MessageBuilder":
         cmd = (
-            f"QSL {int(enable_data_output)},"
-            f"{int(enable_leakage_current_compensation)}"
+            f"QSL {int(enable_data_output)},{int(enable_leakage_current_compensation)}"
         )
 
         self._msg.append(cmd)
@@ -3533,7 +3532,7 @@ class MessageBuilder:
         return self
 
     def var(
-        self, variable_type: constants.VAR.Type | int, n: int, value: int | float
+        self, variable_type: constants.VAR.Type | int, n: int, value: float
     ) -> "MessageBuilder":
         cmd = f"VAR {variable_type},{n},{value}"
 

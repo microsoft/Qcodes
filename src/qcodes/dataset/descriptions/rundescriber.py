@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import cast
 
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 
@@ -100,7 +100,7 @@ class RunDescriber:
 
         return rundesc
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, RunDescriber):
             return False
         if self.interdeps != other.interdeps:

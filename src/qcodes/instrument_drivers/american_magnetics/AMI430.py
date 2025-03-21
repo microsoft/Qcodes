@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import collections.abc
 import logging
-import numbers
 import time
 import warnings
 from collections import defaultdict
@@ -20,6 +19,7 @@ from qcodes.instrument import Instrument, InstrumentChannel, IPInstrument
 from qcodes.math_utils import FieldVector
 from qcodes.parameters import Parameter
 from qcodes.utils import QCoDeSDeprecationWarning
+from qcodes.utils.types import NumberType
 from qcodes.validators import Anything, Bool, Enum, Ints, Numbers
 
 if TYPE_CHECKING:
@@ -199,8 +199,7 @@ class AMI430(IPInstrument):
     ):
         if "has_current_rating" in kwargs.keys():
             warnings.warn(
-                "'has_current_rating' kwarg to AMI430 "
-                "is deprecated and has no effect",
+                "'has_current_rating' kwarg to AMI430 is deprecated and has no effect",
                 category=QCoDeSDeprecationWarning,
             )
             kwargs.pop("has_current_rating")
@@ -636,7 +635,7 @@ class AMI430_3D(Instrument):
         self._field_limit: float | Iterable[CartesianFieldLimitFunction]
         if isinstance(field_limit, collections.abc.Iterable):
             self._field_limit = field_limit
-        elif isinstance(field_limit, numbers.Real):
+        elif isinstance(field_limit, NumberType):
             # Conversion to float makes related driver logic simpler
             self._field_limit = float(field_limit)
         else:
@@ -979,7 +978,7 @@ class AMI430_3D(Instrument):
     def _verify_safe_setpoint(
         self, setpoint_values: tuple[float, float, float]
     ) -> bool:
-        if isinstance(self._field_limit, (int, float)):
+        if isinstance(self._field_limit, NumberType):
             return bool(np.linalg.norm(setpoint_values) < self._field_limit)
 
         answer = any(
@@ -1005,11 +1004,11 @@ class AMI430_3D(Instrument):
             raise ValueError("_set_fields aborted; field would exceed limit")
 
         # Check if the individual instruments are ready
-        for name, value in zip(["x", "y", "z"], values):
+        for name in ("x", "y", "z"):
             instrument = getattr(self, f"_instrument_{name}")
             if instrument.ramping_state() == "ramping":
-                msg = "_set_fields aborted; magnet {} is already ramping"
-                raise AMI430Exception(msg.format(instrument))
+                msg = f"_set_fields aborted; magnet {instrument} is already ramping"
+                raise AMI430Exception(msg)
 
         # Now that we know we can proceed, call the individual instruments
 

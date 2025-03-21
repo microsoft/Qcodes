@@ -912,7 +912,7 @@ class TektronixAWG5014(VisaInstrument):
         self, name: str, value: float | str | Sequence[Any] | np.ndarray, dtype: str
     ) -> bytes:
         """
-        packs awg_file record into a struct in the folowing way:
+        Packs awg_file record into a struct in the folowing way:
             struct.pack(fmtstring, namesize, datasize, name, data)
         where fmtstring = '<IIs"dtype"'
 
@@ -964,7 +964,7 @@ class TektronixAWG5014(VisaInstrument):
         """
         log.info("Generating sequence_cfg")
 
-        AWG_sequence_cfg = {
+        AWG_sequence_cfg: dict[str, float] = {
             "SAMPLING_RATE": self.clock_freq.get(),
             "CLOCK_SOURCE": (
                 1 if self.clock_source().startswith("INT") else 2
@@ -1151,7 +1151,7 @@ class TektronixAWG5014(VisaInstrument):
     @staticmethod
     def parse_marker_channel_name(name: str) -> _MarkerDescriptor:
         """
-        returns from the channel index and marker index from a marker
+        Returns from the channel index and marker index from a marker
         descriptor string e.g. '1M1'->(1,1)
         """
         res = re.match(r"^(?P<channel>\d+)M(?P<marker>\d+)$", name)

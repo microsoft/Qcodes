@@ -280,13 +280,12 @@ class HP8753D(VisaInstrument):
 
         with self.timeout.set_to(new_timeout):
             log.debug(
-                f"Making {N} blocking sweeps."
-                f" Setting VISA timeout to {new_timeout} s."
+                f"Making {N} blocking sweeps. Setting VISA timeout to {new_timeout} s."
             )
 
             self.ask(f"OPC?;NUMG{N}")
 
-    def invalidate_trace(self, cmd: str, value: float | int | str) -> None:
+    def invalidate_trace(self, cmd: str, value: float | str) -> None:
         """
         Wrapper for set_cmds that make the trace not ready
         """

@@ -23,7 +23,7 @@ from qcodes.dataset.data_set_protocol import (
     DataSetProtocol,
     ParameterData,
     SpecsOrInterDeps,
-    values_type,
+    ValuesType,
 )
 from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.rundescriber import RunDescriber
@@ -499,8 +499,7 @@ class DataSet(BaseDataSet):
         """
         if not self.pristine:
             raise RuntimeError(
-                "Can not set parent dataset links on a dataset "
-                "that has been started."
+                "Can not set parent dataset links on a dataset that has been started."
             )
 
         if not all(isinstance(link, Link) for link in links):
@@ -715,8 +714,7 @@ class DataSet(BaseDataSet):
             return
         if self.pristine:
             raise RuntimeError(
-                "Can not mark DataSet as complete before it "
-                "has been marked as started."
+                "Can not mark DataSet as complete before it has been marked as started."
             )
 
         self._perform_completion_actions()
@@ -1294,7 +1292,7 @@ class DataSet(BaseDataSet):
 
     @staticmethod
     def _finalize_res_dict_array(
-        result_dict: Mapping[ParamSpecBase, values_type], all_params: set[ParamSpecBase]
+        result_dict: Mapping[ParamSpecBase, ValuesType], all_params: set[ParamSpecBase]
     ) -> list[dict[str, VALUE]]:
         """
         Make a list of res_dicts out of the results for a 'array' type
