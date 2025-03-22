@@ -81,7 +81,7 @@ def make_observable_parameter(
                 set_cmd=set_cmd,
                 get_cmd=get_cmd,
             )
-            param = cast(ObservableParam, p)
+            param = cast("ObservableParam", p)
             param.get_instr_val = get_cmd  # type: ignore[method-assign]
         return param
 

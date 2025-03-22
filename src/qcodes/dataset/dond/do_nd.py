@@ -88,7 +88,7 @@ class _Sweeper:
     ) -> tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]:
         sweeps = tuple(sweep.get_setpoints() for sweep in self._sweeps)
         return cast(
-            tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...],
+            "tuple[tuple[tuple[SweepVarType, ...] | SweepVarType, ...], ...]",
             tuple(itertools.product(*sweeps)),
         )
 
@@ -533,7 +533,7 @@ class _Measurements:
                 param for param in dataset_parameters if param in self.measured_all
             )
             setpoint_parameters = cast(
-                Sequence[ParameterBase],
+                "Sequence[ParameterBase]",
                 tuple(
                     param
                     for param in dataset_parameters
@@ -732,7 +732,7 @@ def dond(
 
     """
     if do_plot is None:
-        do_plot = cast(bool, config.dataset.dond_plot)
+        do_plot = cast("bool", config.dataset.dond_plot)
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 

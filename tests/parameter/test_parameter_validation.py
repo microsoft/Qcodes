@@ -47,7 +47,7 @@ def test_setting_int_with_float() -> None:
         name="foobar",
         set_cmd=None,
         get_cmd=None,
-        set_parser=lambda x: int(round(x)),
+        set_parser=lambda x: round(x),
         vals=vals.PermissiveInts(0),
     )
 
@@ -65,7 +65,7 @@ def test_setting_int_with_float_not_close() -> None:
         name="foobar",
         set_cmd=None,
         get_cmd=None,
-        set_parser=lambda x: int(round(x)),
+        set_parser=lambda x: round(x),
         vals=vals.PermissiveInts(0),
     )
 

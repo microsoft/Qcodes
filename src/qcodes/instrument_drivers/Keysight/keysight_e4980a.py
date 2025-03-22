@@ -378,7 +378,7 @@ class KeysightE4980A(VisaInstrument):
     @property
     def correction(self) -> KeysightE4980ACorrection:
         submodule = self.submodules["_correction"]
-        return cast(KeysightE4980ACorrection, submodule)
+        return cast("KeysightE4980ACorrection", submodule)
 
     @property
     def measure_impedance(self) -> KeysightE4980AMeasurementPair:

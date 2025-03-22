@@ -28,7 +28,7 @@ def generate_some_links(N: int) -> list[Link]:
         one day in the past.
         """
         timestamp = datetime.now() - timedelta(days=1, seconds=random.randint(1, 1000))
-        return int(round(timestamp.timestamp() * 1000))
+        return round(timestamp.timestamp() * 1000)
 
     known_types = ("fit", "analysis", "step")
     known_descs = (

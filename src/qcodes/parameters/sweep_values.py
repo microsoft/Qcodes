@@ -81,7 +81,7 @@ def make_sweep(
         )
 
     output_list = np.linspace(start, stop, num=num_steps).tolist()
-    return cast(list[float], output_list)
+    return cast("list[float]", output_list)
 
 
 class SweepValues(Metadatable):

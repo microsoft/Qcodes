@@ -161,7 +161,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
 
         """
         if parameter_class is None:
-            parameter_class = cast(type[TParameter], Parameter)
+            parameter_class = cast("type[TParameter]", Parameter)
 
         if "bind_to_instrument" not in kwargs.keys():
             kwargs["bind_to_instrument"] = True

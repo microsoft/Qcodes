@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import logging
 import signal
 import threading
 from collections.abc import Callable
-from types import FrameType, TracebackType
 from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import deprecated
@@ -11,6 +12,7 @@ from qcodes.utils.deprecate import QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping
+    from types import FrameType, TracebackType
 
     from opentelemetry.util.types import (  # pyright: ignore[reportMissingTypeStubs]
         AttributeValue,
@@ -22,9 +24,9 @@ class DelayedKeyboardInterrupt:
     signal_received: tuple[int, FrameType | None] | None = None
     # the handler type is seemingly only defined in typesheeed so copy it here
     # manually https://github.com/python/typeshed/blob/main/stdlib/signal.pyi
-    old_handler: "Callable[[int, FrameType | None], Any] | int | None" = None
+    old_handler: Callable[[int, FrameType | None], Any] | int | None = None
 
-    def __init__(self, context: "Mapping[str, AttributeValue] | None" = None) -> None:
+    def __init__(self, context: Mapping[str, AttributeValue] | None = None) -> None:
         """
         A context manager to wrap a piece of code to ensure that a
         KeyboardInterrupt is not triggered by a SIGINT during the execution of
@@ -56,8 +58,8 @@ class DelayedKeyboardInterrupt:
 
     def handler(self, sig: int, frame: FrameType | None) -> None:
         def create_forceful_handler(
-            context: "Mapping[str, AttributeValue]",
-        ) -> "Callable[[int, FrameType | None], None]":
+            context: Mapping[str, AttributeValue],
+        ) -> Callable[[int, FrameType | None], None]:
             def forceful_handler(sig: int, frame: FrameType | None) -> None:
                 print(
                     "Second SIGINT received. Triggering KeyboardInterrupt immediately."
@@ -70,7 +72,7 @@ class DelayedKeyboardInterrupt:
                 # since handlers must be types to take an optional frame
                 # but default_int_handler does not take None.
                 # see https://github.com/python/typeshed/pull/6599
-                frame = cast(FrameType, frame)
+                frame = cast("FrameType", frame)
                 signal.default_int_handler(sig, frame)
 
             return forceful_handler
@@ -101,7 +103,7 @@ class DelayedKeyboardInterrupt:
         # since handlers must be types to take an optional frame
         # but default_int_handler does not take None.
         # see https://github.com/python/typeshed/pull/6599
-        frame = cast(FrameType, frame)
+        frame = cast("FrameType", frame)
         signal.default_int_handler(sig, frame)
 
     def __exit__(

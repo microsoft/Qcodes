@@ -118,5 +118,5 @@ def guids_from_list_str(s: str) -> tuple[str, ...] | None:
     if not all(isinstance(e, ast.Constant) for e in parsed.elts):
         return None
 
-    str_elts = cast(tuple[ast.Constant, ...], tuple(parsed.elts))
+    str_elts = cast("tuple[ast.Constant, ...]", tuple(parsed.elts))
     return tuple(s.value for s in str_elts)

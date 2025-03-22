@@ -262,7 +262,7 @@ class SR86xBuffer(InstrumentChannel):
         """
         max_rate = self.capture_rate_max()
         n = np.log2(max_rate / capture_rate_hz)
-        n_round = int(round(n))
+        n_round = round(n)
 
         if not 0 <= n_round <= 20:
             raise ValueError(

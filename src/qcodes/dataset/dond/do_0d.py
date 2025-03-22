@@ -60,7 +60,7 @@ def do0d(
 
     """
     if do_plot is None:
-        do_plot = cast(bool, config.dataset.dond_plot)
+        do_plot = cast("bool", config.dataset.dond_plot)
     meas = Measurement(name=measurement_name, exp=exp)
     if log_info is not None:
         meas._extra_log_info = log_info

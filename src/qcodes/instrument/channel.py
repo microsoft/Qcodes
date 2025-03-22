@@ -472,14 +472,14 @@ class ChannelTuple(MetadatableWithName, Sequence[InstrumentModuleType]):
                 "Slicing is currently not supported for MultiParameters"
             )
         parameters = cast(
-            list[Parameter | ArrayParameter],
+            "list[Parameter | ArrayParameter]",
             [chan.parameters[name] for chan in self._channels],
         )
         names = tuple(f"{chan.name}_{name}" for chan in self._channels)
         labels = tuple(parameter.label for parameter in parameters)
         units = tuple(parameter.unit for parameter in parameters)
         if isinstance(parameters[0], ArrayParameter):
-            arrayparameters = cast(list[ArrayParameter], parameters)
+            arrayparameters = cast("list[ArrayParameter]", parameters)
             shapes = tuple(parameter.shape for parameter in arrayparameters)
             if arrayparameters[0].setpoints:
                 setpoints = tuple(parameter.setpoints for parameter in arrayparameters)

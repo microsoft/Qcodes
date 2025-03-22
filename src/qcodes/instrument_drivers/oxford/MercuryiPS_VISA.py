@@ -665,7 +665,7 @@ class OxfordMercuryiPS(VisaInstrument):
 
         meas_vals = self._get_measured(["x", "y", "z"])
         # we asked for three coordinates, so we know that we got a list
-        meas_vals = cast(list[float], meas_vals)
+        meas_vals = cast("list[float]", meas_vals)
 
         for cur, worker in zip(meas_vals, self.submodules.values()):
             if not isinstance(worker, OxfordMercuryWorkerPS):

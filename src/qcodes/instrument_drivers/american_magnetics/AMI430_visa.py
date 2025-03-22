@@ -1311,7 +1311,7 @@ class AMIModel4303D(Instrument):
             set_point.set_component(**kwargs)
 
         setpoint_values = cast(
-            tuple[float, float, float], set_point.get_components("x", "y", "z")
+            "tuple[float, float, float]", set_point.get_components("x", "y", "z")
         )
         self._adjust_child_instruments(setpoint_values)
 

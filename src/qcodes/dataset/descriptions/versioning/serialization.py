@@ -51,16 +51,17 @@ from .converters import (
     v3_to_v1,
     v3_to_v2,
 )
-from .rundescribertypes import (
-    RunDescriberDicts,
-    RunDescriberV0Dict,
-    RunDescriberV1Dict,
-    RunDescriberV2Dict,
-    RunDescriberV3Dict,
-)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from .rundescribertypes import (
+        RunDescriberDicts,
+        RunDescriberV0Dict,
+        RunDescriberV1Dict,
+        RunDescriberV2Dict,
+        RunDescriberV3Dict,
+    )
 
 STORAGE_VERSION = 3
 # the version of :class:`RunDescriber` object that is used by the data storage
@@ -93,13 +94,13 @@ def from_dict_to_current(dct: RunDescriberDicts) -> current.RunDescriber:
     """
     dct_version = dct["version"]
     if dct_version == 0:
-        return current.RunDescriber._from_dict(cast(RunDescriberV0Dict, dct))
+        return current.RunDescriber._from_dict(cast("RunDescriberV0Dict", dct))
     elif dct_version == 1:
-        return current.RunDescriber._from_dict(cast(RunDescriberV1Dict, dct))
+        return current.RunDescriber._from_dict(cast("RunDescriberV1Dict", dct))
     elif dct_version == 2:
-        return current.RunDescriber._from_dict(cast(RunDescriberV2Dict, dct))
+        return current.RunDescriber._from_dict(cast("RunDescriberV2Dict", dct))
     elif dct_version >= 3:
-        return current.RunDescriber._from_dict(cast(RunDescriberV3Dict, dct))
+        return current.RunDescriber._from_dict(cast("RunDescriberV3Dict", dct))
     else:
         raise RuntimeError(
             f"Unknown version of run describer dictionary, can't deserialize. The dictionary is {dct!r}"
@@ -190,5 +191,5 @@ def from_yaml_to_current(yaml_str: str) -> current.RunDescriber:
 
     yaml = ruamel.yaml.YAML()
     # yaml.load returns an OrderedDict, but we need a dict
-    ser = cast(RunDescriberDicts, dict(yaml.load(yaml_str)))
+    ser = cast("RunDescriberDicts", dict(yaml.load(yaml_str)))
     return from_dict_to_current(ser)

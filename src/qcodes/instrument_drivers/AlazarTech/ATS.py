@@ -390,9 +390,9 @@ class AlazarTechATS(Instrument):
 
         # -----set final configurations-----
 
-        buffers_per_acquisition = cast(int, self.buffers_per_acquisition())
-        samples_per_record = cast(int, self.samples_per_record())
-        records_per_buffer = cast(int, self.records_per_buffer())
+        buffers_per_acquisition = cast("int", self.buffers_per_acquisition())
+        samples_per_record = cast("int", self.samples_per_record())
+        records_per_buffer = cast("int", self.records_per_buffer())
 
         # bits per sample
         _, bits_per_sample = self.api.get_channel_info_(self._handle)
@@ -480,7 +480,7 @@ class AlazarTechATS(Instrument):
                     "records_per_buffer should be 1 in TS mode, defauling to 1"
                 )
                 self.records_per_buffer.set(1)
-            records_per_buffer = cast(int, self.records_per_buffer())
+            records_per_buffer = cast("int", self.records_per_buffer())
 
             self.api.before_async_read(
                 self._handle,
@@ -495,8 +495,8 @@ class AlazarTechATS(Instrument):
         self.clear_buffers()
 
         # make sure that allocated_buffers <= buffers_per_acquisition
-        allocated_buffers = cast(int, self.allocated_buffers())
-        buffers_per_acquisition = cast(int, self.buffers_per_acquisition())
+        allocated_buffers = cast("int", self.allocated_buffers())
+        buffers_per_acquisition = cast("int", self.buffers_per_acquisition())
 
         if allocated_buffers > buffers_per_acquisition:
             self.log.warning(
@@ -507,7 +507,7 @@ class AlazarTechATS(Instrument):
             )
             self.allocated_buffers.set(buffers_per_acquisition)
 
-        allocated_buffers = cast(int, self.allocated_buffers())
+        allocated_buffers = cast("int", self.allocated_buffers())
         buffer_recycling = buffers_per_acquisition > allocated_buffers
 
         # post buffers to Alazar
@@ -526,7 +526,7 @@ class AlazarTechATS(Instrument):
             # buffer handling from acquisition
             buffers_completed = 0
             bytes_transferred = 0
-            buffer_timeout = cast(int, self.buffer_timeout())
+            buffer_timeout = cast("int", self.buffer_timeout())
 
             done_setup = time.perf_counter()
 

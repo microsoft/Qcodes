@@ -795,7 +795,7 @@ class DataSetInMem(BaseDataSet):
             subvals = tuple(val.size for val in sub_dataset.values() if val is not None)
             values.extend(subvals)
 
-        if len(values):
+        if len(values) > 0:
             return sum(values)
         else:
             return 0

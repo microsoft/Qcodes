@@ -27,7 +27,7 @@ def final_command(f: MessageBuilderMethodT) -> MessageBuilderMethodT:
 
         return res
 
-    return cast(MessageBuilderMethodT, wrapper)
+    return cast("MessageBuilderMethodT", wrapper)
 
 
 class CommandList(list[Any]):

@@ -113,7 +113,7 @@ def parse_dcv_measurement_response(response: str) -> dict[str, str | float]:
         raise ValueError(f"{response!r} didn't match {_pattern_lrn!r} pattern")
 
     dd = match.groupdict()
-    d = cast(dict[str, str | float], dd)
+    d = cast("dict[str, str | float]", dd)
     return d
 
 

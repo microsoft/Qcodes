@@ -50,7 +50,7 @@ class DacReader:
             )
 
         frac = (volt - self.min_val) / (self.max_val - self.min_val)
-        val = int(round(frac * 65535))
+        val = round(frac * 65535)
         # extra check to be absolutely sure that the instrument does nothing
         # receive an out-of-bounds value
         if val > 65535 or val < 0:
@@ -542,7 +542,7 @@ class HarvardDecadac(VisaInstrument, DacReader):
         for i in range(5):  # Create the 6 DAC slots
             slots.append(self.DAC_SLOT_CLASS(self, f"Slot{i}", i, min_val, max_val))
             slot_channels = slots[i].channels
-            slot_channels = cast(ChannelList, slot_channels)
+            slot_channels = cast("ChannelList", slot_channels)
             channels.extend(slot_channels)
         self.add_submodule("slots", slots.to_channel_tuple())
         self.add_submodule("channels", channels.to_channel_tuple())
