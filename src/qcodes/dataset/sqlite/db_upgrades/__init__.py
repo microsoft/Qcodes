@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 from qcodes.dataset.guids import generate_guid
 from qcodes.dataset.sqlite.connection import (
-    ConnectionPlus,
+    ConnectionPlusPlus,
     atomic,
     atomic_transaction,
     transaction,
@@ -41,7 +41,7 @@ log = logging.getLogger(__name__)
 # see https://mypy.readthedocs.io/en/stable/protocols.html#callback-protocols
 class TUpgraderFunction(Protocol):
     def __call__(
-        self, conn: ConnectionPlus, show_progress_bar: bool = True
+        self, conn: ConnectionPlusPlus, show_progress_bar: bool = True
     ) -> None: ...
 
     @property
@@ -60,7 +60,7 @@ def _latest_available_version() -> int:
     return len(_UPGRADE_ACTIONS)
 
 
-def _get_no_of_runs(conn: ConnectionPlus) -> int:
+def _get_no_of_runs(conn: ConnectionPlusPlus) -> int:
     no_of_runs_query = "SELECT max(run_id) FROM runs"
     no_of_runs = one(atomic_transaction(conn, no_of_runs_query), "max(run_id)")
     no_of_runs = no_of_runs or 0
@@ -104,7 +104,7 @@ def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
         )
 
     @wraps(func)
-    def do_upgrade(conn: ConnectionPlus, show_progress_bar: bool = True) -> None:
+    def do_upgrade(conn: ConnectionPlusPlus, show_progress_bar: bool = True) -> None:
         log.info(f"Starting database upgrade version {from_version} to {to_version}")
 
         start_version = get_user_version(conn)
@@ -126,7 +126,7 @@ def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     return do_upgrade
 
 
-def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
+def perform_db_upgrade(conn: ConnectionPlusPlus, version: int = -1) -> None:
     """
     This is intended to perform all upgrades as needed to bring the
     db from version 0 to the most current version (or the version specified).
@@ -156,7 +156,7 @@ def perform_db_upgrade(conn: ConnectionPlus, version: int = -1) -> None:
 
 @upgrader
 def perform_db_upgrade_0_to_1(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 0 to version 1
@@ -205,7 +205,7 @@ def perform_db_upgrade_0_to_1(
 
 @upgrader
 def perform_db_upgrade_1_to_2(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 1 to version 2
@@ -243,7 +243,7 @@ def perform_db_upgrade_1_to_2(
 
 @upgrader
 def perform_db_upgrade_2_to_3(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 2 to version 3
@@ -260,7 +260,7 @@ def perform_db_upgrade_2_to_3(
 
 @upgrader
 def perform_db_upgrade_3_to_4(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 3 to version 4. This really
@@ -278,7 +278,7 @@ def perform_db_upgrade_3_to_4(
 
 @upgrader
 def perform_db_upgrade_4_to_5(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 4 to version 5.
@@ -299,7 +299,7 @@ def perform_db_upgrade_4_to_5(
 
 @upgrader
 def perform_db_upgrade_5_to_6(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 5 to version 6.
@@ -315,7 +315,7 @@ def perform_db_upgrade_5_to_6(
 
 @upgrader
 def perform_db_upgrade_6_to_7(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 6 to version 7
@@ -352,7 +352,7 @@ def perform_db_upgrade_6_to_7(
 
 @upgrader
 def perform_db_upgrade_7_to_8(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 7 to version 8.
@@ -370,7 +370,7 @@ def perform_db_upgrade_7_to_8(
 
 @upgrader
 def perform_db_upgrade_8_to_9(
-    conn: ConnectionPlus, show_progress_bar: bool = True
+    conn: ConnectionPlusPlus, show_progress_bar: bool = True
 ) -> None:
     """
     Perform the upgrade from version 8 to version 9.
