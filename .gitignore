@@ -108,5 +108,10 @@ qcodes/tests/dataset/fixtures/db_files/*
 qcodes/tests/output
 qcodes/tests/*.db
 
+# examples output folder
+docs/examples/example_output/*
+!docs/examples/example_output/README.md
+
+
 # Do not ignore pyright npm version file
 !.github/package.json
