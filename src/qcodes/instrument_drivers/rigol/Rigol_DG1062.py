@@ -261,7 +261,9 @@ class RigolDG1062Channel(InstrumentChannel):
         For other waveforms it will give the user an error
         """
 
-        burst = RigolDG1062Burst(cast(RigolDG1062, self.parent), "burst", self.channel)
+        burst = RigolDG1062Burst(
+            cast("RigolDG1062", self.parent), "burst", self.channel
+        )
         self.add_submodule("burst", burst)
 
         # We want to be able to do the following:

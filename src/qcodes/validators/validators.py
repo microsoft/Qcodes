@@ -474,7 +474,7 @@ class Enum(Validator[Hashable]):
     """
 
     def __init__(self, *values: Hashable | None) -> None:
-        if not len(values):
+        if not len(values) > 0:
             raise TypeError("Enum needs at least one value")
 
         self._values = set(values)
@@ -507,7 +507,7 @@ class OnOff(Validator[str]):
 
     def __init__(self) -> None:
         self._validator = Enum("on", "off")
-        self._valid_values = cast(tuple[str, ...], self._validator._valid_values)
+        self._valid_values = cast("tuple[str, ...]", self._validator._valid_values)
 
     def validate(self, value: str, context: str = "") -> None:
         self._validator.validate(value, context)

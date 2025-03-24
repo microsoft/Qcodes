@@ -211,7 +211,7 @@ def plot_dataset(
     if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
     else:
-        axeslist = cast(list[matplotlib.axes.Axes], axes)
+        axeslist = cast("list[matplotlib.axes.Axes]", axes)
     if isinstance(colorbars, matplotlib.colorbar.Colorbar):
         colorbars = [colorbars]
 

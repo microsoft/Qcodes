@@ -344,7 +344,7 @@ class DynaCool(VisaInstrument):
 
     def _measured_field_getter(self) -> float:
         resp = self.ask("FELD?")
-        number_in_oersted = cast(float, DynaCool._pick_one(1, float, resp))
+        number_in_oersted = cast("float", DynaCool._pick_one(1, float, resp))
         number_in_tesla = number_in_oersted * 1e-4
         return number_in_tesla
 
@@ -372,7 +372,7 @@ class DynaCool(VisaInstrument):
         field_setpoint, field_rate, and field_approach
         """
         temporary_values = list(self.parameters[p].raw_value for p in self.field_params)
-        values = cast(list[int | float], temporary_values)
+        values = cast("list[int | float]", temporary_values)
         values[self.field_params.index(param)] = value
 
         self.write(f"FELD {values[0]}, {values[1]}, {values[2]}, 0")
@@ -406,7 +406,7 @@ class DynaCool(VisaInstrument):
         with the same call to the instrument API
         """
         temp_values = list(self.parameters[par].raw_value for par in self.temp_params)
-        values = cast(list[int | float], temp_values)
+        values = cast("list[int | float]", temp_values)
         values[self.temp_params.index(param)] = value
 
         self.write(f"TEMP {values[0]}, {values[1]}, {values[2]}")

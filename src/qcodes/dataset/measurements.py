@@ -293,7 +293,7 @@ class DataSaver:
         standard results dict form and return that dict
         """
         array_param, values_array = partial_result
-        array_param = cast(ArrayParameter, array_param)
+        array_param = cast("ArrayParameter", array_param)
 
         if array_param.setpoints is None:
             raise RuntimeError(
@@ -333,7 +333,7 @@ class DataSaver:
         """
 
         parameter, data = partial_result
-        parameter = cast(MultiParameter, parameter)
+        parameter = cast("MultiParameter", parameter)
 
         result_dict = {}
 
@@ -345,7 +345,7 @@ class DataSaver:
             )
         for i in range(len(parameter.shapes)):
             # if this loop runs, then 'data' is a Sequence
-            data = cast(Sequence[str | int | float | Any], data)
+            data = cast("Sequence[str | int | float | Any]", data)
 
             shape = parameter.shapes[i]
 
@@ -555,7 +555,7 @@ class Runner:
     ) -> None:
         if in_memory_cache is None:
             in_memory_cache = qc.config.dataset.in_memory_cache
-            in_memory_cache = cast(bool, in_memory_cache)
+            in_memory_cache = cast("bool", in_memory_cache)
 
         self._dataset_class = dataset_class
         self.write_period = self._calculate_write_period(
@@ -598,7 +598,7 @@ class Runner:
         if write_in_background:
             return 0.0
         if write_period is None:
-            write_period = cast(float, qc.config.dataset.write_period)
+            write_period = cast("float", qc.config.dataset.write_period)
         return float(write_period)
 
     def __enter__(self) -> DataSaver:
@@ -1419,7 +1419,7 @@ class Measurement:
 
         """
         if write_in_background is None:
-            write_in_background = cast(bool, qc.config.dataset.write_in_background)
+            write_in_background = cast("bool", qc.config.dataset.write_in_background)
         return Runner(
             self.enteractions,
             self.exitactions,
