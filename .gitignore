@@ -119,3 +119,6 @@ docs/examples/driver_examples/instrument_group_example.yaml
 
 # Do not ignore pyright npm version file
 !.github/package.json
+
+# we are not currently checking in uv.lock
+uv.lock
