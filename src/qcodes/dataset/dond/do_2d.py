@@ -129,7 +129,7 @@ def do2d(
     """
 
     if do_plot is None:
-        do_plot = cast(bool, config.dataset.dond_plot)
+        do_plot = cast("bool", config.dataset.dond_plot)
     if show_progress is None:
         show_progress = config.dataset.dond_show_progress
 

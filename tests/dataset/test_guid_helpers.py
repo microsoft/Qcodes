@@ -37,7 +37,7 @@ def test_guids_from_dir(tmp_path: "Path") -> None:
                 for v in np.linspace(0, 2, 250):
                     p1(v)
                     datasaver.add_result(
-                        (p1, cast(float, p1())), (p2, cast(float, p2()))
+                        (p1, cast("float", p1())), (p2, cast("float", p2()))
                     )
             guid = datasaver.dataset.guid
             datasaver.flush_data_to_database(block=True)
@@ -110,7 +110,7 @@ def test_get_guids_from_multiple_run_ids(tmp_path: "Path") -> None:
                     for v in np.linspace(0 * run, 2 * run, 50):
                         p1(v)
                         datasaver.add_result(
-                            (p1, cast(float, p1())), (p2, cast(float, p2()))
+                            (p1, cast("float", p1())), (p2, cast("float", p2()))
                         )
                 guid = datasaver.dataset.guid
                 guids.append(guid)

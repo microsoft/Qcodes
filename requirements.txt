@@ -27,7 +27,7 @@ broadbean==0.14.0
     #   qcodes
 certifi==2025.1.31
     # via requests
-cf-xarray==0.10.2
+cf-xarray==0.10.4
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -52,13 +52,13 @@ comm==0.2.2
     #   ipywidgets
 contourpy==1.3.1
     # via matplotlib
-coverage==7.6.12
+coverage==7.7.1
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.2.0
+dask==2025.3.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -66,7 +66,7 @@ debugpy==1.8.13
     # via ipykernel
 decorator==5.2.1
     # via ipython
-deepdiff==8.3.0
+deepdiff==8.4.2
     # via qcodes (pyproject.toml)
 defusedxml==0.7.1
     # via nbconvert
@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.129.1
+hypothesis==6.130.3
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -110,13 +110,13 @@ imagesize==1.4.1
     # via sphinx
 importlib-metadata==8.6.1
     # via opentelemetry-api
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 ipykernel==6.29.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==8.33.0; python_version < '3.11'
+ipython==8.34.0; python_version < '3.11'
 ipython==9.0.2; python_version >= '3.11'
     # via
     #   qcodes (pyproject.toml)
@@ -190,7 +190,7 @@ matplotlib-inline==0.1.7
     # via
     #   ipykernel
     #   ipython
-mistune==3.1.2
+mistune==3.1.3
     # via nbconvert
 mypy==1.15.0
     # via qcodes (pyproject.toml)
@@ -209,7 +209,7 @@ nbsphinx==0.9.6
     # via qcodes (pyproject.toml)
 nest-asyncio==1.6.0
     # via ipykernel
-numpy==2.2.3
+numpy==2.2.4
     # via
     #   qcodes (pyproject.toml)
     #   broadbean
@@ -228,7 +228,7 @@ numpy==2.2.3
     #   zhinst-timing-models
     #   zhinst-toolkit
     #   zhinst-utils
-opentelemetry-api==1.31.0
+opentelemetry-api==1.31.1
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -268,7 +268,7 @@ pillow==11.1.0
     #   qcodes (pyproject.toml)
     #   matplotlib
     #   qcodes
-platformdirs==4.3.6
+platformdirs==4.3.7
     # via jupyter-core
 pluggy==1.5.0
     # via pytest
@@ -290,7 +290,7 @@ pygments==2.19.1
     #   ipython
     #   nbconvert
     #   sphinx
-pyparsing==3.2.1
+pyparsing==3.2.2
     # via matplotlib
 pytest==8.3.5
     # via
@@ -315,7 +315,7 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-pytz==2025.1
+pytz==2025.2
     # via pandas
 pyvisa==1.14.1
     # via
@@ -324,7 +324,7 @@ pyvisa==1.14.1
     #   qcodes
 pyvisa-sim==0.6.0
     # via qcodes (pyproject.toml)
-pywin32==309; sys_platform == 'win32'
+pywin32==310; sys_platform == 'win32'
     # via jupyter-core
 pyyaml==6.0.2
     # via
@@ -444,9 +444,9 @@ traitlets==5.14.3
     #   nbsphinx
 types-jsonschema==4.23.0.20241208
     # via qcodes (pyproject.toml)
-types-pytz==2025.1.0.20250204
+types-pytz==2025.1.0.20250318
     # via pandas-stubs
-types-pywin32==309.0.0.20250311
+types-pywin32==310.0.0.20250319
     # via qcodes (pyproject.toml)
 types-requests==2.32.0.20250306
     # via
@@ -454,7 +454,7 @@ types-requests==2.32.0.20250306
     #   types-tqdm
 types-tabulate==0.9.0.20241207
     # via qcodes (pyproject.toml)
-types-tqdm==4.67.0.20250301
+types-tqdm==4.67.0.20250319
     # via qcodes (pyproject.toml)
 typing-extensions==4.12.2
     # via
@@ -468,7 +468,7 @@ typing-extensions==4.12.2
     #   zhinst-core
     #   zhinst-qcodes
     #   zhinst-toolkit
-tzdata==2025.1
+tzdata==2025.2
     # via pandas
 uncertainties==3.2.2
     # via
@@ -501,7 +501,7 @@ wrapt==1.17.2
     #   qcodes (pyproject.toml)
     #   deprecated
     #   qcodes
-xarray==2025.1.2
+xarray==2025.3.0
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
