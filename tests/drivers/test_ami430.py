@@ -6,7 +6,7 @@ import re
 import time
 import warnings
 from contextlib import ExitStack
-from typing import Any, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np
 import pytest
@@ -28,6 +28,9 @@ from qcodes.utils.types import (
     numpy_non_concrete_ints_instantiable,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=QCoDeSDeprecationWarning)
 
@@ -40,11 +43,10 @@ _time_resolution = time.get_clock_info("time").resolution
 
 # If any of the field limit functions are satisfied we are in the safe zone.
 # We can have higher field along the z-axis if x and y are zero.
-field_limit = [
+field_limit: list["Callable[[float, float, float], bool]"] = [
     lambda x, y, z: x == 0 and y == 0 and z < 3,
-    lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
+    lambda x, y, z: bool(np.linalg.norm([x, y, z]) < 2),
 ]
-
 LOG_NAME = "qcodes.instrument.instrument_base"
 
 

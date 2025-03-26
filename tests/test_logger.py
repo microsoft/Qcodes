@@ -20,7 +20,7 @@ from qcodes.logger.log_analysis import capture_dataframe
 from tests.drivers.test_lakeshore import Model_372_Mock
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
 TEST_LOG_MESSAGE = "test log message"
 
@@ -95,9 +95,9 @@ def AMI430_3D() -> (
         pyvisa_sim_file="AMI430.yaml",
         terminator="\n",
     )
-    field_limit = [
+    field_limit: list[Callable[[float, float, float], bool]] = [
         lambda x, y, z: x == 0 and y == 0 and z < 3,
-        lambda x, y, z: np.linalg.norm([x, y, z]) < 2,
+        lambda x, y, z: bool(np.linalg.norm([x, y, z]) < 2),
     ]
     driver = AMIModel4303D("AMI430_3D", mag_x, mag_y, mag_z, field_limit)
     try:
