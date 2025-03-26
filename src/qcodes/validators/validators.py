@@ -9,7 +9,7 @@ import math
 import typing
 from collections import abc
 from collections.abc import Hashable
-from typing import Any, Generic, Literal, TypeVar, cast
+from typing import Any, Generic, Literal, TypeVar, cast, get_args
 
 import numpy as np
 
@@ -498,6 +498,56 @@ class Enum(Validator[Hashable]):
     @property
     def values(self) -> set[Hashable]:
         return self._values.copy()
+
+
+class LiteralValidator(Validator[T]):
+    """
+
+    A validator that allows users to check that values supplied are in set of members
+    of some typing.Literal.
+
+
+    .. code-block:: python
+
+        from typing import Literal
+
+        A123 = Literal[1,2,3]
+        A123Val = LiteralValidator[A123]
+        a123 = A123()
+
+        a123().validate(1)  # pass
+
+        a123().validate(5)  # fails
+        a123().validate("some_str") # fails
+
+    """
+
+    def __init__(self) -> None:
+        self._orig_class = getattr(self, "__orig_class__", None)
+
+    @property
+    def valid_values(self) -> tuple[Any, ...]:
+        # self__orig_class__ is available when init is executed so
+        # looking up the concrete type of T has to be postponed to here
+        orig_class = getattr(self, "__orig_class__", None)
+
+        if orig_class is None:
+            raise TypeError(
+                "Cannot find valid literal members for Validator."
+                " Did you remember to instantiate as `LiteralValidator[SomeLiteralType]()"
+            )
+
+        valid_args = get_args(get_args(orig_class)[0])
+        return valid_args
+
+    def validate(self, value: T, context: str = "") -> None:
+        if value not in self.valid_values:
+            raise ValueError(
+                f"{value} is not a member of {self.valid_values}; {context}"
+            )
+
+    def __repr__(self) -> str:
+        return f"<Literal{list(self.valid_values)}>"
 
 
 class OnOff(Validator[str]):
