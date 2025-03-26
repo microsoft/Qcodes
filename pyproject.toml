@@ -245,7 +245,6 @@ filterwarnings = [
 [tool.ruff]
 
 extend-include = ["*.ipynb"]
-extend-exclude = ["typings"]
 
 [tool.ruff.lint]
 
