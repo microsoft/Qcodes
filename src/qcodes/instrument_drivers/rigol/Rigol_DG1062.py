@@ -301,7 +301,7 @@ class RigolDG1062Channel(InstrumentChannel):
         """Public interface to get the current waveform"""
         return self._get_waveform_params()
 
-    def _get_waveform_param(self, param: str) -> float:
+    def _get_waveform_param(self, param: str) -> float | None:
         """
         Get a parameter of the current waveform. Valid param names are
         dependent on the waveform type (e.g. "DC" does not have a "phase")

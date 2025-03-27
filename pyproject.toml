@@ -216,18 +216,15 @@ reportUnusedFunction = "none"
 reportUnusedImport = "none"
 reportUnknownLambdaType = "none"
 reportUnnecessaryIsInstance = "none"
-reportArgumentType = "none"
 reportUntypedNamedTuple = "none"
 reportUnnecessaryComparison = "none"
 reportConstantRedefinition = "none"
 reportUnusedClass = "none"
 reportUnnecessaryCast = "none"  # mypy already checks this. If it fails for pyright its because mypy requires it
-reportAssignmentType = "none"
 reportUnnecessaryContains = "none"
 
 [tool.pytest.ini_options]
 minversion = "7.2"
-junit_family = "legacy"
 testpaths = "tests"
 addopts = "-n auto --dist=loadfile --cov-config=pyproject.toml"
 asyncio_default_fixture_loop_scope = "function"
@@ -248,7 +245,6 @@ filterwarnings = [
 [tool.ruff]
 
 extend-include = ["*.ipynb"]
-extend-exclude = ["typings"]
 
 [tool.ruff.lint]
 
