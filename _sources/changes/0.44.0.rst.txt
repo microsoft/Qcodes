@@ -1,0 +1,103 @@
+QCoDeS 0.44.0 (2024-01-24)
+==========================
+
+Breaking Changes:
+-----------------
+
+- The deprecated method `DataSetProtocol.cache.to_pandas` has been removed. Use the to_pandas_dataframe or to_pandas_dataframe_dict methods as an alternative. (:pr:`5626`)
+- The following long deprecated functions and methods and functionalities have been removed.
+  Here ordered by top level module for clarity.
+
+  * ``qcodes.dataset``
+
+      * ``flatten_1D_data_for_plot``
+
+      * ``get_shaped_data_by_runid``
+
+      * ``get_guids_from_run_spec``
+
+      * ``dataset.get_data_as_pandas_dataframe``
+
+      * ``dataset.export_path``
+
+      * ``_conditional_parameter_set``
+
+      * ``_make_nested_setpoints``
+
+      * ``_select_active_actions_delays``
+
+      * ``_create_measurements``
+
+      * ``_extract_paramters_by_type_and_group``
+
+      * ``_build_data_query``
+
+      * ``get_data``
+
+      * ``get_interdeps_from_result_table_name``
+
+      * ``get_values``
+
+      * ``get_setpoints``
+
+      * ``get_guids_from_run_spec``
+
+      * ``data_sets``
+
+      * ``modify_values``
+
+      * ``modify_many_values``
+
+  * ``qcodes.instrument_drivers.devices`` / ``codes.parameters``
+
+    * ``VoltageDivider``
+
+  * ``qcodes.station``
+
+      * Support for driver kwarg in yaml config
+
+      * Support for limits as a string.
+
+  * ``qcodes.utils``
+
+      * ``get_qcodes_version`` (:pr:`5651`)
+- The following deprecated instrument drivers have been removed:
+
+  * ``QDevil.QDac`` Use driver from qcodes_contrib_drivers instead.
+
+  * ``Agilent_34400A`` Use Keysight 344xxA drivers or Agilent34401A, Agilent34410A, Agilent34411A instead.
+
+  * ``E8267`` use  ``AgilentE8267C`` instead.
+
+  * ``Agilent_E8527D`` use AgilentE8257D instead.
+
+  The following deprecated instrument driver methods have been removed:
+
+  *  ``KeysightInfiniium``  ``DSOTimeAxisParam.prepare_curvedata``
+
+  *  ``KeysightB1517A.measure_config`` replaced by ``v_measure_range_config`` and ``i_measure_range_config``
+
+  * ``RohdeSchwarz ZNB`` ``RohdeSchwarzZNBChannel.update_traces`` use ``update_lin_traces``
+
+
+  ``qcodes.utils.deprecate`` decorator has been soft deprecated. In the future qcodes will use the ``deprecated`` decorator from
+  the ``typing_extensions`` package (to be part of the std library warnings module from Python 3.13). We recommend anyone else to
+  do the same. (:pr:`5655`)
+
+
+Improved:
+---------
+
+- `load_by_run_spec` and `load_by_id` may now optionally load the dataset as a DataSetInMem from an exported netcdf file. This avoids reading
+  from the database potentially resulting in better performance. This option is off by default at the moment but can be turned on by setting
+  `qcodes.config.dataset.load_from_exported_file` to True. (:pr:`5320`)
+- When loading a QCoDeS dataset from a netcdf file using load_from_netcdf and converted to a Xarray dataset using
+  ``to_xarray_dataset`` or ``cache.to_xarray_dataset`` we avoid converting the data to QCoDeS format and back to Xarray format.
+  This should save time and avoid any potential corner cases when roundtripping the data. (:pr:`5627`)
+- Fixed an issue where datasets with categorical setpoints could fail to correctly export to Pandas dataframes or Xarray dataset. (:pr:`5641`)
+
+
+Improved Drivers:
+-----------------
+
+- Lakeshore 335: Add parameter mapping for thermocouple input when using 3060-H option (:pr:`5652`)
