@@ -11,7 +11,7 @@ from tqdm import tqdm
 from qcodes.dataset.descriptions.param_spec import ParamSpec
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.sqlite.connection import (
-    ConnectionPlusPlus,
+    AtomicConnection,
     atomic,
     atomic_transaction,
     transaction,
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-def _2to3_get_result_tables(conn: ConnectionPlusPlus) -> dict[int, str]:
+def _2to3_get_result_tables(conn: AtomicConnection) -> dict[int, str]:
     rst_query = "SELECT run_id, result_table_name FROM runs"
     cur = conn.cursor()
     cur.execute(rst_query)
@@ -37,7 +37,7 @@ def _2to3_get_result_tables(conn: ConnectionPlusPlus) -> dict[int, str]:
     return results
 
 
-def _2to3_get_layout_ids(conn: ConnectionPlusPlus) -> defaultdict[int, list[int]]:
+def _2to3_get_layout_ids(conn: AtomicConnection) -> defaultdict[int, list[int]]:
     query = """
             select runs.run_id, layouts.layout_id
             FROM layouts
@@ -56,7 +56,7 @@ def _2to3_get_layout_ids(conn: ConnectionPlusPlus) -> defaultdict[int, list[int]
     return results
 
 
-def _2to3_get_indeps(conn: ConnectionPlusPlus) -> defaultdict[int, list[int]]:
+def _2to3_get_indeps(conn: AtomicConnection) -> defaultdict[int, list[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -75,7 +75,7 @@ def _2to3_get_indeps(conn: ConnectionPlusPlus) -> defaultdict[int, list[int]]:
     return results
 
 
-def _2to3_get_deps(conn: ConnectionPlusPlus) -> defaultdict[int, list[int]]:
+def _2to3_get_deps(conn: AtomicConnection) -> defaultdict[int, list[int]]:
     query = """
             SELECT layouts.run_id, layouts.layout_id
             FROM layouts
@@ -94,7 +94,7 @@ def _2to3_get_deps(conn: ConnectionPlusPlus) -> defaultdict[int, list[int]]:
     return results
 
 
-def _2to3_get_dependencies(conn: ConnectionPlusPlus) -> defaultdict[int, list[int]]:
+def _2to3_get_dependencies(conn: AtomicConnection) -> defaultdict[int, list[int]]:
     query = """
             SELECT dependent, independent
             FROM dependencies
@@ -115,7 +115,7 @@ def _2to3_get_dependencies(conn: ConnectionPlusPlus) -> defaultdict[int, list[in
     return results
 
 
-def _2to3_get_layouts(conn: ConnectionPlusPlus) -> dict[int, tuple[str, str, str, str]]:
+def _2to3_get_layouts(conn: AtomicConnection) -> dict[int, tuple[str, str, str, str]]:
     query = """
             SELECT layout_id, parameter, label, unit, inferred_from
             FROM layouts
@@ -130,7 +130,7 @@ def _2to3_get_layouts(conn: ConnectionPlusPlus) -> dict[int, tuple[str, str, str
 
 
 def _2to3_get_paramspecs(
-    conn: ConnectionPlusPlus,
+    conn: AtomicConnection,
     layout_ids: list[int],
     layouts: Mapping[int, tuple[str, str, str, str]],
     dependencies: Mapping[int, Sequence[int]],
@@ -186,7 +186,7 @@ def _2to3_get_paramspecs(
     return paramspecs
 
 
-def upgrade_2_to_3(conn: ConnectionPlusPlus, show_progress_bar: bool = True) -> None:
+def upgrade_2_to_3(conn: AtomicConnection, show_progress_bar: bool = True) -> None:
     """
     Perform the upgrade from version 2 to version 3
 

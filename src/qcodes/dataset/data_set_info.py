@@ -16,7 +16,7 @@ from .descriptions.versioning import serialization
 
 if TYPE_CHECKING:
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
-    from qcodes.dataset.sqlite.connection import ConnectionPlusPlus
+    from qcodes.dataset.sqlite.connection import AtomicConnection
 
 
 class RunAttributesDict(TypedDict):
@@ -34,7 +34,7 @@ class RunAttributesDict(TypedDict):
     snapshot: dict[str, Any] | None
 
 
-def get_run_attributes(conn: ConnectionPlusPlus, guid: str) -> RunAttributesDict | None:
+def get_run_attributes(conn: AtomicConnection, guid: str) -> RunAttributesDict | None:
     """
     Look up all information and metadata about a given dataset captured
     in the database.

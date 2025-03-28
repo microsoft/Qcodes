@@ -16,7 +16,7 @@ from qcodes.dataset.descriptions.rundescriber import RunDescriber
 from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import old_to_new
 from qcodes.dataset.sqlite.connection import (
-    ConnectionPlusPlus,
+    AtomicConnection,
     atomic,
     atomic_transaction,
 )
@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
-def fix_version_4a_run_description_bug(conn: ConnectionPlusPlus) -> dict[str, int]:
+def fix_version_4a_run_description_bug(conn: AtomicConnection) -> dict[str, int]:
     """
     Fix function to fix a bug where the RunDescriber accidentally wrote itself
     to string using the (new) InterDependencies_ object instead of the (old)
@@ -128,9 +128,7 @@ def _convert_run_describer_v1_like_dict_to_v0_like_dict(
     return old_desc_dict
 
 
-def fix_wrong_run_descriptions(
-    conn: ConnectionPlusPlus, run_ids: Sequence[int]
-) -> None:
+def fix_wrong_run_descriptions(conn: AtomicConnection, run_ids: Sequence[int]) -> None:
     """
     NB: This is a FIX function. Do not use it unless your database has been
     diagnosed with the problem that this function fixes.
