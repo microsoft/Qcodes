@@ -1908,7 +1908,7 @@ def generate_dataset_table(
 
     Args:
         guids: Sequence of one or more guids
-        conn: A ConnectionPlus object with a connection to the database.
+        conn: An AtomicConnection object with a connection to the database.
 
     Returns: ASCII art table of information about the supplied guids.
 

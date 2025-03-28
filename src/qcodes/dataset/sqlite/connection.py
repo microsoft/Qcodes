@@ -12,8 +12,9 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 import wrapt  # type: ignore[import-untyped]
+from typing_extensions import deprecated
 
-from qcodes.utils import DelayedKeyboardInterrupt
+from qcodes.utils import DelayedKeyboardInterrupt, QCoDeSDeprecationWarning
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -21,8 +22,14 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 
+@deprecated(
+    "ConnectionPlus is deprecated. Please use connect to create an AtomicConnection.",
+    category=QCoDeSDeprecationWarning,
+)
 class ConnectionPlus(wrapt.ObjectProxy):  # pyright: ignore[reportUntypedBaseClass]
     """
+    Note this is a legacy class. Please refer to ``AtomicConnection``
+
     A class to extend the sqlite3.Connection object. Since sqlite3.Connection
     has no __dict__, we can not directly add attributes to its instance
     directly.
@@ -48,7 +55,7 @@ class ConnectionPlus(wrapt.ObjectProxy):  # pyright: ignore[reportUntypedBaseCla
     def __init__(self, sqlite3_connection: sqlite3.Connection):
         super().__init__(sqlite3_connection)
 
-        if isinstance(sqlite3_connection, ConnectionPlus):
+        if isinstance(sqlite3_connection, ConnectionPlus):  # pyright: ignore[reportDeprecated]
             raise ValueError(
                 "Attempted to create `ConnectionPlus` from a "
                 "`ConnectionPlus` object which is not allowed."
@@ -59,14 +66,10 @@ class ConnectionPlus(wrapt.ObjectProxy):  # pyright: ignore[reportUntypedBaseCla
 
 class AtomicConnection(sqlite3.Connection):
     """
-    A class to extend the sqlite3.Connection object. Since sqlite3.Connection
-    has no __dict__, we can not directly add attributes to its instance
-    directly.
+    A class to extend the sqlite3.Connection object. This extends
+    Connection to allow addition operations to be performed atomically.
 
-    It is not allowed to instantiate a new `ConnectionPlus` object from a
-    `ConnectionPlus` object.
-
-    It is recommended to create a ConnectionPlus using the function :func:`connect`
+    It is recommended to create an AtomicConnection using the function :func:`connect`
 
     """
 
@@ -87,9 +90,13 @@ class AtomicConnection(sqlite3.Connection):
         self.path_to_dbfile = path_to_dbfile(self)
 
 
+@deprecated(
+    "make_connection_plus_from is deprecated. Please use connect to create an AtomicConnection",
+    category=QCoDeSDeprecationWarning,
+)
 def make_connection_plus_from(
-    conn: sqlite3.Connection | ConnectionPlus,
-) -> ConnectionPlus:
+    conn: sqlite3.Connection | ConnectionPlus,  # pyright: ignore[reportDeprecated]
+) -> ConnectionPlus:  # pyright: ignore[reportDeprecated]
     """
     Makes a ConnectionPlus connection object out of a given argument.
 
@@ -103,8 +110,8 @@ def make_connection_plus_from(
         the "same" connection but as ConnectionPlus object
 
     """
-    if not isinstance(conn, ConnectionPlus):
-        conn_plus = ConnectionPlus(conn)
+    if not isinstance(conn, ConnectionPlus):  # pyright: ignore[reportDeprecated]
+        conn_plus = ConnectionPlus(conn)  # pyright: ignore[reportDeprecated]
     else:
         conn_plus = conn
     return conn_plus
@@ -127,10 +134,10 @@ def atomic(conn: AtomicConnection) -> Iterator[AtomicConnection]:
 
     """
     with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
-        if not isinstance(conn, ConnectionPlus | AtomicConnection):
+        if not isinstance(conn, ConnectionPlus | AtomicConnection):  # pyright: ignore[reportDeprecated]
             raise ValueError(
                 "atomic context manager only accepts "
-                "ConnectionPlus database connection objects."
+                "AtomicConnection or ConnectionPlus database connection objects."
             )
 
         is_outmost = not (conn.atomic_in_progress)

@@ -135,7 +135,7 @@ def connect(
 
     Returns:
         connection object to the database (note, it is
-        :class:`ConnectionPlus`, not :class:`sqlite3.Connection`)
+        :class:`AtomicConnection`, not :class:`sqlite3.Connection`)
 
     """
     # register numpy->binary(TEXT) adapter
@@ -299,16 +299,16 @@ def conn_from_dbpath_or_conn(
 ) -> AtomicConnection:
     """
     A small helper function to abstract the logic needed for functions
-    that take either a `ConnectionPlus` or the path to a db file.
+    that take either an `AtomicConnection` or the path to a db file.
     If neither is given this will fall back to the default db location.
     It is an error to supply both.
 
     Args:
-        conn: A ConnectionPlus object pointing to a sqlite database
+        conn: A AtomicConnection object pointing to a sqlite database
         path_to_db: The path to a db file.
 
     Returns:
-        A `ConnectionPlus` object
+        A `AtomicConnection` object
 
     """
 
