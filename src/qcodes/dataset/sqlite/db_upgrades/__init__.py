@@ -72,7 +72,7 @@ def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
     Decorator for database version upgrade functions. An upgrade function
     must have the name `perform_db_upgrade_N_to_M` where N = M-1. For
     simplicity, an upgrade function must take a single argument of type
-    `ConnectionPlus`. The upgrade function must either perform the upgrade
+    `AtomicConnection`. The upgrade function must either perform the upgrade
     and return (no return values allowed) or fail to perform the upgrade,
     in which case it must raise a RuntimeError. A failed upgrade must be
     completely rolled back before the RuntimeError is raises.

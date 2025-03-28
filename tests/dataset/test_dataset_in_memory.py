@@ -1,7 +1,6 @@
 import contextlib
 import os
 import shutil
-import sqlite3
 from pathlib import Path
 
 import hypothesis.strategies as hst
@@ -15,7 +14,7 @@ import qcodes
 from qcodes.dataset import load_by_id, load_by_run_spec
 from qcodes.dataset.data_set_in_memory import DataSetInMem, load_from_file
 from qcodes.dataset.data_set_protocol import DataSetType
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic_transaction
+from qcodes.dataset.sqlite.connection import AtomicConnection, atomic_transaction
 from qcodes.station import Station
 
 
@@ -362,7 +361,7 @@ def test_dataset_in_memory_does_not_create_runs_table(
     ds = datasaver.dataset
     dbfile = datasaver.dataset._path_to_db
 
-    conn = ConnectionPlus(sqlite3.connect(dbfile))
+    conn = AtomicConnection(dbfile)
 
     tables_query = 'SELECT * FROM sqlite_master WHERE TYPE = "table"'
     tables = list(atomic_transaction(conn, tables_query).fetchall())
