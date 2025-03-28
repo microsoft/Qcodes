@@ -296,8 +296,8 @@ def test_set_callback_for_instance(
     captured_instance_params = []
 
     def callback(param: ParameterBase, val):
-        if param.global_on_set_callback:
-            param.global_on_set_callback(val)
+        if ParameterBase.global_on_set_callback:
+            ParameterBase.global_on_set_callback(param, val)
         captured_instance_params.append(val)
 
     ParameterBase.global_on_set_callback = basic_callback

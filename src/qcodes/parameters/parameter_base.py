@@ -794,8 +794,8 @@ class ParameterBase(MetadatableWithName):
         try:
             if self.on_set_callback is not None:
                 self.on_set_callback(self, value)
-            elif self.global_on_set_callback is not None:
-                self.global_on_set_callback(value)
+            elif self.__class__.global_on_set_callback is not None:
+                self.__class__.global_on_set_callback(self, value)
         except Exception as e:
             LOG.warning(
                 f"Exception {e} in on set callback "
