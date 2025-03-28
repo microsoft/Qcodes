@@ -377,7 +377,6 @@ class ParameterBase(MetadatableWithName):
     @property
     def vals(self) -> Validator | None:
         """
-        N
         The first validator of the parameter. None
         if no validators are set for this parameter.
 
