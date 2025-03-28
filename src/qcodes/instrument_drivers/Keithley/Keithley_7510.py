@@ -850,7 +850,7 @@ class Keithley7510(VisaInstrument):
         """
         sense_function = self.sense_function.get_latest() or self.sense_function()
         submodule = self.submodules[f"_sense_{sense_function}"]
-        return cast(Keithley7510Sense, submodule)
+        return cast("Keithley7510Sense", submodule)
 
     @property
     def digi_sense(self) -> Keithley7510DigitizeSense:
@@ -867,14 +867,14 @@ class Keithley7510(VisaInstrument):
             self.digi_sense_function.get_latest() or self.digi_sense_function()
         )
         submodule = self.submodules[f"_digi_sense_{sense_function}"]
-        return cast(Keithley7510DigitizeSense, submodule)
+        return cast("Keithley7510DigitizeSense", submodule)
 
     def buffer(
         self, name: str, size: int | None = None, style: str = ""
     ) -> Keithley7510Buffer:
         self.buffer_name(name)
         if f"_buffer_{name}" in self.submodules:
-            return cast(Keithley7510Buffer, self.submodules[f"_buffer_{name}"])
+            return cast("Keithley7510Buffer", self.submodules[f"_buffer_{name}"])
         new_buffer = Keithley7510Buffer(parent=self, name=name, size=size, style=style)
         self.add_submodule(f"_buffer_{name}", new_buffer)
         return new_buffer

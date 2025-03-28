@@ -52,13 +52,13 @@ comm==0.2.2
     #   ipywidgets
 contourpy==1.3.1
     # via matplotlib
-coverage==7.7.0
+coverage==7.7.1
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
 cycler==0.12.1
     # via matplotlib
-dask==2025.2.0
+dask==2025.3.0
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.129.4
+hypothesis==6.130.4
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -290,7 +290,7 @@ pygments==2.19.1
     #   ipython
     #   nbconvert
     #   sphinx
-pyparsing==3.2.1
+pyparsing==3.2.3
     # via matplotlib
 pytest==8.3.5
     # via
@@ -300,7 +300,7 @@ pytest==8.3.5
     #   pytest-mock
     #   pytest-rerunfailures
     #   pytest-xdist
-pytest-asyncio==0.25.3
+pytest-asyncio==0.26.0
     # via qcodes (pyproject.toml)
 pytest-cov==6.0.0
     # via qcodes (pyproject.toml)
@@ -315,7 +315,7 @@ python-dateutil==2.9.0.post0
     #   jupyter-client
     #   matplotlib
     #   pandas
-pytz==2025.1
+pytz==2025.2
     # via pandas
 pyvisa==1.14.1
     # via
@@ -348,7 +348,7 @@ requests==2.32.3
     # via
     #   sphinx
     #   sphinx-jsonschema
-rpds-py==0.23.1
+rpds-py==0.24.0
     # via
     #   jsonschema
     #   referencing
@@ -444,7 +444,7 @@ traitlets==5.14.3
     #   nbsphinx
 types-jsonschema==4.23.0.20241208
     # via qcodes (pyproject.toml)
-types-pytz==2025.1.0.20250318
+types-pytz==2025.2.0.20250326
     # via pandas-stubs
 types-pywin32==310.0.0.20250319
     # via qcodes (pyproject.toml)
@@ -468,7 +468,7 @@ typing-extensions==4.12.2
     #   zhinst-core
     #   zhinst-qcodes
     #   zhinst-toolkit
-tzdata==2025.1
+tzdata==2025.2
     # via pandas
 uncertainties==3.2.2
     # via

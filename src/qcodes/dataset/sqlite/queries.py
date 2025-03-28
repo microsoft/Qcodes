@@ -1957,7 +1957,7 @@ def get_sample_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str
     # there may be a few cases for very old db where None is returned as a sample name
     # however, these probably do not exist in relaity outside that test so here we
     # cast to str. See test_experiments_with_NULL_sample_name
-    return cast(str, sample_name)
+    return cast("str", sample_name)
 
 
 def get_run_timestamp_from_run_id(conn: ConnectionPlus, run_id: int) -> float | None:

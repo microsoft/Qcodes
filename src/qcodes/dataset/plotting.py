@@ -211,7 +211,7 @@ def plot_dataset(
     if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
     else:
-        axeslist = cast(list[matplotlib.axes.Axes], axes)
+        axeslist = cast("list[matplotlib.axes.Axes]", axes)
     if isinstance(colorbars, matplotlib.colorbar.Colorbar):
         colorbars = [colorbars]
 
@@ -524,7 +524,8 @@ def _convert_complex_to_real(
         "name": new_names[1],
         "label": new_labels[1],
         "unit": new_units[1],
-        "data": new_data[1],
+        "data": new_data[1],  # pyright: ignore[reportAssignmentType]
+        # the type of the converter cannot be infered due to the nested dict converters
         "shape": parameter["shape"],
     }
 

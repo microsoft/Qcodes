@@ -393,7 +393,7 @@ class LakeshoreModel325Sensor(InstrumentChannel):
 
     @property
     def curve(self) -> LakeshoreModel325Curve:
-        parent = cast(LakeshoreModel325, self.parent)
+        parent = cast("LakeshoreModel325", self.parent)
         return LakeshoreModel325Curve(parent, self.curve_index())
 
 

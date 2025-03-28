@@ -1,6 +1,5 @@
 import types
 import warnings
-from collections.abc import Callable
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast
 
@@ -8,7 +7,7 @@ import wrapt  # type: ignore[import-untyped]
 from typing_extensions import deprecated
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
 
 class QCoDeSDeprecationWarning(RuntimeWarning):
@@ -60,7 +59,7 @@ def issue_deprecation_warning(
 )
 def deprecate(
     reason: str | None = None, alternative: str | None = None
-) -> Callable[..., Any]:
+) -> "Callable[..., Any]":
     """
     A utility function to decorate deprecated functions and classes.
 
@@ -77,7 +76,7 @@ def deprecate(
 
     @wrapt.decorator  # type: ignore[misc]
     def decorate_callable(
-        func: Callable[..., Any], instance: object, args: Any, kwargs: Any
+        func: "Callable[..., Any]", instance: object, args: Any, kwargs: Any
     ) -> Any:
         t, n = (
             ("class", instance.__class__.__name__)
@@ -89,7 +88,7 @@ def deprecate(
 
     def actual_decorator(obj: Any) -> Any:
         if isinstance(obj, (types.FunctionType, types.MethodType)):
-            func = cast(Callable[..., Any], obj)
+            func = cast("Callable[..., Any]", obj)
 
             return decorate_callable(func)  # pyright: ignore[reportCallIssue]
         else:
