@@ -1,0 +1,5 @@
+Added a global callback mechanism to `ParameterBase` that enables users to
+supply custom callback functions to handle parameter changes. This new feature
+allows for flexible integrations—such as logging changes, updating dashboards, or
+other custom processing—without modifying full snapshot behavior.
+See the PR for details on a usage example.
