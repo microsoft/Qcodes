@@ -18,7 +18,7 @@ import numpy as np
 
 import qcodes
 from qcodes.dataset.experiment_settings import reset_default_experiment_id
-from qcodes.dataset.sqlite.connection import ConnectionPlusPlus
+from qcodes.dataset.sqlite.connection import AtomicConnection
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
     perform_db_upgrade,
@@ -121,7 +121,7 @@ def _adapt_complex(value: complex | np.complexfloating) -> sqlite3.Binary:
 
 def connect(
     name: str | Path, debug: bool = False, version: int = -1
-) -> ConnectionPlusPlus:
+) -> AtomicConnection:
     """
     Connect or create  database. If debug the queries will be echoed back.
     This function takes care of registering the numpy/sqlite type
@@ -147,7 +147,7 @@ def connect(
         name,
         detect_types=sqlite3.PARSE_DECLTYPES,
         check_same_thread=True,
-        factory=ConnectionPlusPlus,
+        factory=AtomicConnection,
     )
 
     latest_supported_version = _latest_available_version()
@@ -236,7 +236,7 @@ def initialise_database(journal_mode: JournalMode | None = "WAL") -> None:
     del conn
 
 
-def set_journal_mode(conn: ConnectionPlusPlus, journal_mode: JournalMode) -> None:
+def set_journal_mode(conn: AtomicConnection, journal_mode: JournalMode) -> None:
     """
     Set the ``atomic commit and rollback mode`` of the sqlite database.
     See https://www.sqlite.org/pragma.html#pragma_journal_mode for details.
@@ -295,8 +295,8 @@ def initialised_database_at(db_file_with_abs_path: str | Path) -> Iterator[None]
 
 
 def conn_from_dbpath_or_conn(
-    conn: ConnectionPlusPlus | None, path_to_db: str | Path | None
-) -> ConnectionPlusPlus:
+    conn: AtomicConnection | None, path_to_db: str | Path | None
+) -> AtomicConnection:
     """
     A small helper function to abstract the logic needed for functions
     that take either a `ConnectionPlus` or the path to a db file.

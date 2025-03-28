@@ -57,7 +57,7 @@ class ConnectionPlus(wrapt.ObjectProxy):  # pyright: ignore[reportUntypedBaseCla
         self.path_to_dbfile = path_to_dbfile(sqlite3_connection)
 
 
-class ConnectionPlusPlus(sqlite3.Connection):
+class AtomicConnection(sqlite3.Connection):
     """
     A class to extend the sqlite3.Connection object. Since sqlite3.Connection
     has no __dict__, we can not directly add attributes to its instance
@@ -111,7 +111,7 @@ def make_connection_plus_from(
 
 
 @contextmanager
-def atomic(conn: ConnectionPlusPlus) -> Iterator[ConnectionPlusPlus]:
+def atomic(conn: AtomicConnection) -> Iterator[AtomicConnection]:
     """
     Guard a series of transactions as atomic.
 
@@ -127,7 +127,7 @@ def atomic(conn: ConnectionPlusPlus) -> Iterator[ConnectionPlusPlus]:
 
     """
     with DelayedKeyboardInterrupt(context={"reason": "sqlite atomic operation"}):
-        if not isinstance(conn, ConnectionPlus | ConnectionPlusPlus):
+        if not isinstance(conn, ConnectionPlus | AtomicConnection):
             raise ValueError(
                 "atomic context manager only accepts "
                 "ConnectionPlus database connection objects."
@@ -165,7 +165,7 @@ def atomic(conn: ConnectionPlusPlus) -> Iterator[ConnectionPlusPlus]:
             conn.atomic_in_progress = old_atomic_in_progress
 
 
-def transaction(conn: ConnectionPlusPlus, sql: str, *args: Any) -> sqlite3.Cursor:
+def transaction(conn: AtomicConnection, sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform a transaction.
     The transaction needs to be committed or rolled back.
 
@@ -187,9 +187,7 @@ def transaction(conn: ConnectionPlusPlus, sql: str, *args: Any) -> sqlite3.Curso
     return c
 
 
-def atomic_transaction(
-    conn: ConnectionPlusPlus, sql: str, *args: Any
-) -> sqlite3.Cursor:
+def atomic_transaction(conn: AtomicConnection, sql: str, *args: Any) -> sqlite3.Cursor:
     """Perform an **atomic** transaction.
     The transaction is committed if there are no exceptions else the
     transaction is rolled back.
@@ -211,7 +209,7 @@ def atomic_transaction(
     return c
 
 
-def path_to_dbfile(conn: ConnectionPlusPlus | sqlite3.Connection) -> str:
+def path_to_dbfile(conn: AtomicConnection | sqlite3.Connection) -> str:
     """
     Return the path of the database file that the conn object is connected to
     """
