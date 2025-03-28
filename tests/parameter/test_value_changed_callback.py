@@ -26,7 +26,7 @@ THREAD_SLEEP = 0.01
 def _reset_callback() -> "Generator[None, None, None]":
     """Reset the callback after each test"""
     yield
-    ParameterBase.set_global_value_changed_callback(None)
+    ParameterBase.global_on_set_callback = None
 
 
 @pytest.fixture()  # type: ignore[misc]
@@ -35,7 +35,7 @@ def basic_parameter(
 ) -> Parameter:
     """Fixture providing a basic parameter with callback"""
     param = Parameter("test_param", set_cmd=None, get_cmd=None)
-    ParameterBase.set_global_value_changed_callback(basic_callback)
+    ParameterBase.global_on_set_callback = basic_callback
     return param
 
 
@@ -109,12 +109,12 @@ class TestBasicCallbackBehavior:
         def test_callback(p: ParameterBase, value: Any) -> None:
             captured.append((p, value))
 
-        ParameterBase.set_global_value_changed_callback(test_callback)
+        ParameterBase.global_on_set_callback = test_callback
         param(1)
         assert len(captured) == 1
         assert captured[0] == (param, 1)
 
-        ParameterBase.set_global_value_changed_callback(None)
+        ParameterBase.global_on_set_callback = None
         param(2)
         assert len(captured) == 1
 
@@ -141,7 +141,7 @@ class TestValidationBehavior:
     ) -> None:
         """Test callback behavior with different validator types"""
         param = Parameter("test_param", set_cmd=None, get_cmd=None, vals=validator)
-        ParameterBase.set_global_value_changed_callback(basic_callback)
+        ParameterBase.global_on_set_callback = basic_callback
 
         with pytest.raises(ValueError) if not should_callback else nullcontext():
             param(test_input)
@@ -159,7 +159,7 @@ class TestErrorHandling:
             raise RuntimeError("Intentional failure")
 
         param = Parameter("test_param", set_cmd=None, get_cmd=None)
-        ParameterBase.set_global_value_changed_callback(failing_callback)
+        ParameterBase.global_on_set_callback = failing_callback
 
         param(DEFAULT_VALUE)
         assert param() == DEFAULT_VALUE
@@ -199,7 +199,7 @@ class TestAdvancedFeatures:
                 captured_values.append(value)
 
         param = Parameter("test_param", set_cmd=None, get_cmd=None)
-        ParameterBase.set_global_value_changed_callback(thread_safe_callback)
+        ParameterBase.global_on_set_callback = thread_safe_callback
 
         threads = [
             threading.Thread(
@@ -243,7 +243,7 @@ class TestAdvancedFeatures:
             step=STEP_SIZE,
             initial_value=START_VALUE,
         )
-        ParameterBase.set_global_value_changed_callback(basic_callback)
+        ParameterBase.global_on_set_callback = basic_callback
 
         param(TARGET_VALUE)
 
@@ -255,16 +255,14 @@ class TestAdvancedFeatures:
             f"Expected steps {expected_steps}, got {actual_values}"
         )
 
-    def test_nested_callbacks(
-        self,
-    ) -> None:
+    def test_nested_callbacks(self) -> None:
         """Test nested callback behavior"""
         param = Parameter("test_param", set_cmd=None, get_cmd=None)
 
         def callback(param: ParameterBase, value: Any) -> None:
             param.cache.set(value)
 
-        ParameterBase.set_global_value_changed_callback(callback)
+        ParameterBase.global_on_set_callback = callback
         param(1)
         assert param.cache.get() == 1
 
@@ -280,10 +278,32 @@ class TestAdvancedFeatures:
             captured_times.append(time.time() - start_time)
 
         basic_parameter.post_delay = DELAY_TIME
-        ParameterBase.set_global_value_changed_callback(timing_callback)
+        ParameterBase.global_on_set_callback = timing_callback
 
         basic_parameter(1)
         basic_parameter(2)
 
         assert len(captured_times) == 2
         assert captured_times[1] - captured_times[0] >= DELAY_TIME
+
+
+def test_set_callback_for_instance(
+    basic_callback: "Callable[[ParameterBase, Any], None]",
+    captured_params: list[tuple[ParameterBase, Any]],
+):
+    param_a = Parameter("test_param_a", set_cmd=None, get_cmd=None)
+    param_b = Parameter("test_param_b", set_cmd=None, get_cmd=None)
+    captured_instance_params = []
+
+    def callback(param: ParameterBase, val):
+        if param.global_on_set_callback:
+            param.global_on_set_callback(val)
+        captured_instance_params.append(val)
+
+    ParameterBase.global_on_set_callback = basic_callback
+    param_a.on_set_callback = callback
+    param_a(1)
+    param_b(2)
+
+    assert captured_params == [(param_a, 1), (param_b, 2)]
+    assert captured_instance_params == [1]

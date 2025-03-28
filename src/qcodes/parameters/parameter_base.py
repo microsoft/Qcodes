@@ -192,9 +192,7 @@ class ParameterBase(MetadatableWithName):
 
     """
 
-    global_value_changed_callback: ClassVar[
-        Callable[[ParameterBase, Any], None] | None
-    ] = None
+    global_on_set_callback: ClassVar[Callable[[ParameterBase, Any], None] | None] = None
 
     def __init__(
         self,
@@ -217,6 +215,7 @@ class ParameterBase(MetadatableWithName):
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
+        on_set_callback: Callable[[ParameterBase, Any], None] | None = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -232,6 +231,7 @@ class ParameterBase(MetadatableWithName):
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
         self.snapshot_exclude = snapshot_exclude
+        self.on_set_callback = on_set_callback
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
@@ -377,6 +377,7 @@ class ParameterBase(MetadatableWithName):
     @property
     def vals(self) -> Validator | None:
         """
+        N
         The first validator of the parameter. None
         if no validators are set for this parameter.
 
@@ -782,21 +783,26 @@ class ParameterBase(MetadatableWithName):
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
-                    if self.__class__.global_value_changed_callback is not None:
-                        try:
-                            self.__class__.global_value_changed_callback(self, val_step)
-                        except Exception as e:
-                            LOG.warning(
-                                f"Exception {e} in global value_changed_callback "
-                                f"for {self.full_name} with value {val_step}",
-                                exc_info=True,
-                            )
+                    self._call_on_set_callback(val_step)
 
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
                 raise e
 
         return set_wrapper
+
+    def _call_on_set_callback(self, value: NumberType | Sized) -> None:
+        try:
+            if self.on_set_callback is not None:
+                self.on_set_callback(self, value)
+            elif self.global_on_set_callback is not None:
+                self.global_on_set_callback(value)
+        except Exception as e:
+            LOG.warning(
+                f"Exception {e} in on set callback "
+                f"for {self.full_name} with value {value}",
+                exc_info=True,
+            )
 
     def get_ramp_values(
         self, value: NumberType | Sized, step: NumberType | None = None
@@ -1136,19 +1142,6 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
-
-    @classmethod
-    def set_global_value_changed_callback(
-        cls, callback: Callable[[ParameterBase, Any], None] | None
-    ) -> None:
-        """
-        Set (or clear, if None) a single global callback that will be called
-        after *any* ParameterBase instance changes value.
-        The callback must accept two arguments:
-          - The ParameterBase instance whose value changed
-          - The new value of that parameter
-        """
-        cls.global_value_changed_callback = callback
 
 
 class GetLatest(DelegateAttributes):
