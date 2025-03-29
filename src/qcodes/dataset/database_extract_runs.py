@@ -9,7 +9,7 @@ import numpy as np
 from qcodes.dataset.data_set import DataSet
 from qcodes.dataset.dataset_helpers import _add_run_to_runs_table
 from qcodes.dataset.experiment_container import _create_exp_if_needed
-from qcodes.dataset.sqlite.connection import ConnectionPlus, atomic
+from qcodes.dataset.sqlite.connection import AtomicConnection, atomic
 from qcodes.dataset.sqlite.database import (
     connect,
     get_db_version_and_newest_available_version,
@@ -128,7 +128,7 @@ def extract_runs_into_db(
 
 
 def _extract_single_dataset_into_db(
-    dataset: DataSet, target_conn: ConnectionPlus, target_exp_id: int
+    dataset: DataSet, target_conn: AtomicConnection, target_exp_id: int
 ) -> None:
     """
     NB: This function should only be called from within

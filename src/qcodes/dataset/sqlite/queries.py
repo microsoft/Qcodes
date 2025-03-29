@@ -27,7 +27,7 @@ from qcodes.dataset.descriptions.versioning import v0
 from qcodes.dataset.descriptions.versioning.converters import new_to_old, old_to_new
 from qcodes.dataset.guids import build_guid_from_components, parse_guid
 from qcodes.dataset.sqlite.connection import (
-    ConnectionPlus,
+    AtomicConnection,
     atomic,
     atomic_transaction,
     transaction,
@@ -89,7 +89,7 @@ RUNS_TABLE_COLUMNS = (
 )
 
 
-def is_run_id_in_database(conn: ConnectionPlus, *run_ids: int) -> dict[int, bool]:
+def is_run_id_in_database(conn: AtomicConnection, *run_ids: int) -> dict[int, bool]:
     """
     Look up run_ids and return a dictionary with the answers to the question
     "is this run_id in the database?"
@@ -120,7 +120,7 @@ def is_run_id_in_database(conn: ConnectionPlus, *run_ids: int) -> dict[int, bool
 
 
 def get_parameter_data(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     table_name: str,
     columns: Sequence[str] = (),
     start: int | None = None,
@@ -170,7 +170,7 @@ def get_parameter_data(
 
 
 def get_shaped_parameter_data_for_one_paramtree(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     table_name: str,
     rundescriber: RunDescriber,
     output_param: str,
@@ -214,7 +214,7 @@ def get_shaped_parameter_data_for_one_paramtree(
 
 
 def get_rundescriber_from_result_table_name(
-    conn: ConnectionPlus, result_table_name: str
+    conn: AtomicConnection, result_table_name: str
 ) -> RunDescriber:
     sql = """
     SELECT run_id FROM runs WHERE result_table_name = ?
@@ -226,7 +226,7 @@ def get_rundescriber_from_result_table_name(
 
 
 def get_parameter_data_for_one_paramtree(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     table_name: str,
     rundescriber: RunDescriber,
     output_param: str,
@@ -328,7 +328,7 @@ def _expand_data_to_arrays(
 
 
 def _get_data_for_one_param_tree(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     table_name: str,
     interdeps: InterDependencies_,
     output_param: str,
@@ -355,7 +355,9 @@ def _get_data_for_one_param_tree(
     return res, paramspecs, n_rows
 
 
-def get_parameter_db_row(conn: ConnectionPlus, table_name: str, param_name: str) -> int:
+def get_parameter_db_row(
+    conn: AtomicConnection, table_name: str, param_name: str
+) -> int:
     """
     Get the total number of not-null values of a parameter
 
@@ -377,7 +379,7 @@ def get_parameter_db_row(conn: ConnectionPlus, table_name: str, param_name: str)
     return one(c, 0)
 
 
-def get_table_max_id(conn: ConnectionPlus, table_name: str) -> int:
+def get_table_max_id(conn: AtomicConnection, table_name: str) -> int:
     """
     Get the max id of a table
 
@@ -399,7 +401,7 @@ def get_table_max_id(conn: ConnectionPlus, table_name: str) -> int:
 
 
 def _get_offset_limit_for_callback(
-    conn: ConnectionPlus, table_name: str, param_name: str
+    conn: AtomicConnection, table_name: str, param_name: str
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Since sqlite3 does not allow to keep track of the data loading progress,
@@ -450,7 +452,7 @@ def _get_offset_limit_for_callback(
 
 
 def get_parameter_tree_values(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     result_table_name: str,
     toplevel_param_name: str,
     *other_param_names: str,
@@ -545,7 +547,7 @@ def get_parameter_tree_values(
 
 
 def get_runid_from_expid_and_counter(
-    conn: ConnectionPlus, exp_id: int, counter: int
+    conn: AtomicConnection, exp_id: int, counter: int
 ) -> int:
     """
     Get the run_id of a run in the specified experiment with the specified
@@ -569,7 +571,7 @@ def get_runid_from_expid_and_counter(
 
 
 def get_guid_from_expid_and_counter(
-    conn: ConnectionPlus, exp_id: int, counter: int
+    conn: AtomicConnection, exp_id: int, counter: int
 ) -> str:
     """
     Get the guid of a run in the specified experiment with the specified
@@ -592,7 +594,7 @@ def get_guid_from_expid_and_counter(
     return run_id
 
 
-def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> int | None:
+def get_runid_from_guid(conn: AtomicConnection, guid: str) -> int | None:
     """
     Get the run_id of a run based on the guid
 
@@ -632,7 +634,7 @@ def get_runid_from_guid(conn: ConnectionPlus, guid: str) -> int | None:
 
 
 def _query_guids_from_run_spec(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     captured_run_id: int | None = None,
     captured_counter: int | None = None,
     experiment_name: str | None = None,
@@ -702,7 +704,7 @@ def _query_guids_from_run_spec(
 
 
 def _get_layout_id(
-    conn: ConnectionPlus, parameter: ParamSpec | str, run_id: int
+    conn: AtomicConnection, parameter: ParamSpec | str, run_id: int
 ) -> int:
     """
     Get the layout id of a parameter in a given run
@@ -736,7 +738,7 @@ def _get_layout_id(
     return res
 
 
-def _get_dependents(conn: ConnectionPlus, run_id: int) -> list[int]:
+def _get_dependents(conn: AtomicConnection, run_id: int) -> list[int]:
     """
     Get dependent layout_ids for a certain run_id, i.e. the layout_ids of all
     the dependent variables
@@ -750,7 +752,7 @@ def _get_dependents(conn: ConnectionPlus, run_id: int) -> list[int]:
     return res
 
 
-def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[tuple[int, int]]:
+def _get_dependencies(conn: AtomicConnection, layout_id: int) -> list[tuple[int, int]]:
     """
     Get the dependencies of a certain dependent variable (indexed by its
     layout_id)
@@ -771,7 +773,7 @@ def _get_dependencies(conn: ConnectionPlus, layout_id: int) -> list[tuple[int, i
 
 
 def new_experiment(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     name: str,
     sample_name: str,
     format_string: str | None = "{}-{}-{}",
@@ -818,7 +820,7 @@ def new_experiment(
 # TODO(WilliamHPNielsen): we should remove the redundant
 # is_completed
 def mark_run_complete(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     run_id: int,
     timestamp: float | None = None,
     override: bool = False,
@@ -853,7 +855,7 @@ def mark_run_complete(
     atomic_transaction(conn, query, timestamp, True, run_id)
 
 
-def completed(conn: ConnectionPlus, run_id: int) -> bool:
+def completed(conn: AtomicConnection, run_id: int) -> bool:
     """Check if the run is complete
 
     Args:
@@ -865,7 +867,7 @@ def completed(conn: ConnectionPlus, run_id: int) -> bool:
 
 
 def get_completed_timestamp_from_run_id(
-    conn: ConnectionPlus, run_id: int
+    conn: AtomicConnection, run_id: int
 ) -> float | None:
     """
     Retrieve the timestamp when the given measurement run was completed
@@ -889,7 +891,7 @@ def get_completed_timestamp_from_run_id(
     return ts
 
 
-def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str | None:
+def get_guid_from_run_id(conn: AtomicConnection, run_id: int) -> str | None:
     """
     Get the guid of the given run. Returns None if the run is not found
 
@@ -910,7 +912,7 @@ def get_guid_from_run_id(conn: ConnectionPlus, run_id: int) -> str | None:
 
 
 def get_guids_from_multiple_run_ids(
-    conn: ConnectionPlus, run_ids: Iterable[int]
+    conn: AtomicConnection, run_ids: Iterable[int]
 ) -> list[str]:
     """
     Retrieve guids of runs in the connected database specified by their run ids.
@@ -937,7 +939,7 @@ def get_guids_from_multiple_run_ids(
     return guids
 
 
-def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:
+def finish_experiment(conn: AtomicConnection, exp_id: int) -> None:
     """Finish experiment
 
     Args:
@@ -951,7 +953,7 @@ def finish_experiment(conn: ConnectionPlus, exp_id: int) -> None:
     atomic_transaction(conn, query, time.time(), exp_id)
 
 
-def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
+def get_run_counter(conn: AtomicConnection, exp_id: int) -> int:
     """Get the experiment run counter
 
     Args:
@@ -971,7 +973,7 @@ def get_run_counter(conn: ConnectionPlus, exp_id: int) -> int:
     return counter
 
 
-def get_experiments(conn: ConnectionPlus) -> list[int]:
+def get_experiments(conn: AtomicConnection) -> list[int]:
     """
     Get a list of experiments
 
@@ -988,7 +990,7 @@ def get_experiments(conn: ConnectionPlus) -> list[int]:
     return [exp_id for (exp_id,) in c.fetchall()]
 
 
-def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions: Any) -> list[int]:
+def get_matching_exp_ids(conn: AtomicConnection, **match_conditions: Any) -> list[int]:
     """
     Get exp_ids for experiments matching the match_conditions
 
@@ -1036,7 +1038,9 @@ def get_matching_exp_ids(conn: ConnectionPlus, **match_conditions: Any) -> list[
     return [exp_id for (exp_id,) in cursor.fetchall()]
 
 
-def get_exp_ids_from_run_ids(conn: ConnectionPlus, run_ids: Sequence[int]) -> list[int]:
+def get_exp_ids_from_run_ids(
+    conn: AtomicConnection, run_ids: Sequence[int]
+) -> list[int]:
     """
     Get the corresponding exp_id for a sequence of run_ids
 
@@ -1061,7 +1065,7 @@ def get_exp_ids_from_run_ids(conn: ConnectionPlus, run_ids: Sequence[int]) -> li
     return [exp_id for row in rows for exp_id in row]
 
 
-def get_last_experiment(conn: ConnectionPlus) -> int | None:
+def get_last_experiment(conn: AtomicConnection) -> int | None:
     """
     Return last started experiment id
 
@@ -1072,7 +1076,7 @@ def get_last_experiment(conn: ConnectionPlus) -> int | None:
     return c.fetchall()[0][0]
 
 
-def get_runs(conn: ConnectionPlus, exp_id: int | None = None) -> list[int]:
+def get_runs(conn: AtomicConnection, exp_id: int | None = None) -> list[int]:
     """Get a list of runs.
 
     Args:
@@ -1098,7 +1102,7 @@ def get_runs(conn: ConnectionPlus, exp_id: int | None = None) -> list[int]:
     return [run_id for (run_id,) in c.fetchall()]
 
 
-def get_last_run(conn: ConnectionPlus, exp_id: int | None = None) -> int | None:
+def get_last_run(conn: AtomicConnection, exp_id: int | None = None) -> int | None:
     """
     Get run_id of the last run in experiment with exp_id
 
@@ -1128,7 +1132,7 @@ def get_last_run(conn: ConnectionPlus, exp_id: int | None = None) -> int | None:
     return one(c, "run_id")
 
 
-def run_exists(conn: ConnectionPlus, run_id: int) -> bool:
+def run_exists(conn: AtomicConnection, run_id: int) -> bool:
     # the following query always returns a single tuple with an integer
     # value of `1` or `0` for existing and non-existing run_id in the database
     query = """
@@ -1160,7 +1164,7 @@ def format_table_name(fmt_str: str, name: str, exp_id: int, run_counter: int) ->
 
 
 def _insert_run(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     exp_id: int,
     name: str,
     guid: str,
@@ -1324,7 +1328,7 @@ def _insert_run(
 
 
 def _update_experiment_run_counter(
-    conn: ConnectionPlus, exp_id: int, run_counter: int
+    conn: AtomicConnection, exp_id: int, run_counter: int
 ) -> None:
     query = """
     UPDATE experiments
@@ -1334,7 +1338,7 @@ def _update_experiment_run_counter(
     atomic_transaction(conn, query, run_counter, exp_id)
 
 
-def _get_parameters(conn: ConnectionPlus, run_id: int) -> list[ParamSpec]:
+def _get_parameters(conn: AtomicConnection, run_id: int) -> list[ParamSpec]:
     """
     Get the list of param specs for run
 
@@ -1358,7 +1362,7 @@ def _get_parameters(conn: ConnectionPlus, run_id: int) -> list[ParamSpec]:
     ]
 
 
-def _get_paramspec(conn: ConnectionPlus, run_id: int, param_name: str) -> ParamSpec:
+def _get_paramspec(conn: AtomicConnection, run_id: int, param_name: str) -> ParamSpec:
     """
     Get the ParamSpec object for the given parameter name
     in the given run
@@ -1427,7 +1431,9 @@ def _get_paramspec(conn: ConnectionPlus, run_id: int, param_name: str) -> ParamS
     return parspec
 
 
-def update_run_description(conn: ConnectionPlus, run_id: int, description: str) -> None:
+def update_run_description(
+    conn: AtomicConnection, run_id: int, description: str
+) -> None:
     """
     Update the run_description field for the given run_id. The description
     string must be a valid JSON string representation of a RunDescriber object
@@ -1444,7 +1450,7 @@ def update_run_description(conn: ConnectionPlus, run_id: int, description: str) 
 
 
 def _update_run_description(
-    conn: ConnectionPlus, run_id: int, description: str
+    conn: AtomicConnection, run_id: int, description: str
 ) -> None:
     """
     Update the run_description field for the given run_id. The description
@@ -1459,7 +1465,7 @@ def _update_run_description(
         atomic_conn.cursor().execute(sql, (description, run_id))
 
 
-def update_parent_datasets(conn: ConnectionPlus, run_id: int, links_str: str) -> None:
+def update_parent_datasets(conn: AtomicConnection, run_id: int, links_str: str) -> None:
     """
     Update (i.e. overwrite) the parent_datasets field for the given run_id
     """
@@ -1476,7 +1482,7 @@ def update_parent_datasets(conn: ConnectionPlus, run_id: int, links_str: str) ->
 
 
 def set_run_timestamp(
-    conn: ConnectionPlus, run_id: int, timestamp: float | None = None
+    conn: AtomicConnection, run_id: int, timestamp: float | None = None
 ) -> None:
     """
     Set the run_timestamp for the run with the given run_id. If the
@@ -1518,7 +1524,7 @@ def set_run_timestamp(
 
 def add_parameter(
     *parameter: ParamSpec,
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     run_id: int,
     insert_into_results_table: bool,
 ) -> None:
@@ -1567,7 +1573,7 @@ def add_parameter(
 
 
 def _add_parameters_to_layout_and_deps(
-    conn: ConnectionPlus, run_id: int, *parameter: ParamSpec
+    conn: AtomicConnection, run_id: int, *parameter: ParamSpec
 ) -> sqlite3.Cursor:
     layout_args: list[int | str] = []
     for p in parameter:
@@ -1619,7 +1625,7 @@ def _validate_table_name(table_name: str) -> bool:
 
 
 def _create_run_table(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     formatted_name: str,
     parameters: Sequence[ParamSpecBase] | None = None,
     values: VALUES | None = None,
@@ -1668,7 +1674,7 @@ def _create_run_table(
 
 
 def create_run(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     exp_id: int,
     name: str,
     guid: str,
@@ -1763,7 +1769,7 @@ def create_run(
     return run_counter, run_id, formatted_name
 
 
-def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
+def get_run_description(conn: AtomicConnection, run_id: int) -> str:
     """
     Return the (JSON string) run description of the specified run
     """
@@ -1772,7 +1778,7 @@ def get_run_description(conn: ConnectionPlus, run_id: int) -> str:
     return rds
 
 
-def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
+def get_parent_dataset_links(conn: AtomicConnection, run_id: int) -> str:
     """
     Return the (JSON string) of the parent-child dataset links for the
     specified run
@@ -1802,7 +1808,7 @@ def get_parent_dataset_links(conn: ConnectionPlus, run_id: int) -> str:
 
 
 def get_data_by_tag_and_table_name(
-    conn: ConnectionPlus, tag: str, table_name: str
+    conn: AtomicConnection, tag: str, table_name: str
 ) -> VALUE | None:
     """
     Get data from the "tag" column for the row in "runs" table where
@@ -1825,7 +1831,7 @@ def get_data_by_tag_and_table_name(
     return data
 
 
-def get_metadata_from_run_id(conn: ConnectionPlus, run_id: int) -> dict[str, Any]:
+def get_metadata_from_run_id(conn: AtomicConnection, run_id: int) -> dict[str, Any]:
     """
     Get all metadata associated with the specified run
     """
@@ -1879,7 +1885,7 @@ def validate_dynamic_column_data(data: Mapping[str, Any]) -> None:
 
 
 def insert_data_in_dynamic_columns(
-    conn: ConnectionPlus, row_id: int, table_name: str, data: Mapping[str, Any]
+    conn: AtomicConnection, row_id: int, table_name: str, data: Mapping[str, Any]
 ) -> None:
     """
     Insert new data column and add values. Note that None is not a valid
@@ -1900,7 +1906,7 @@ def insert_data_in_dynamic_columns(
 
 
 def update_columns(
-    conn: ConnectionPlus, row_id: int, table_name: str, data: Mapping[str, Any]
+    conn: AtomicConnection, row_id: int, table_name: str, data: Mapping[str, Any]
 ) -> None:
     """
     Updates data in columns matching the given keys (they must exist already)
@@ -1917,7 +1923,10 @@ def update_columns(
 
 
 def add_data_to_dynamic_columns(
-    conn: ConnectionPlus, row_id: int, data: Mapping[str, Any], table_name: str = "runs"
+    conn: AtomicConnection,
+    row_id: int,
+    data: Mapping[str, Any],
+    table_name: str = "runs",
 ) -> None:
     """
     Add columns from keys and insert values.
@@ -1945,13 +1954,13 @@ def add_data_to_dynamic_columns(
             raise e
 
 
-def get_experiment_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
+def get_experiment_name_from_experiment_id(conn: AtomicConnection, exp_id: int) -> str:
     exp_name = select_one_where(conn, "experiments", "name", "exp_id", exp_id)
     assert isinstance(exp_name, str)
     return exp_name
 
 
-def get_sample_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str:
+def get_sample_name_from_experiment_id(conn: AtomicConnection, exp_id: int) -> str:
     sample_name = select_one_where(conn, "experiments", "sample_name", "exp_id", exp_id)
     assert isinstance(sample_name, (str, type(None)))
     # there may be a few cases for very old db where None is returned as a sample name
@@ -1960,7 +1969,7 @@ def get_sample_name_from_experiment_id(conn: ConnectionPlus, exp_id: int) -> str
     return cast("str", sample_name)
 
 
-def get_run_timestamp_from_run_id(conn: ConnectionPlus, run_id: int) -> float | None:
+def get_run_timestamp_from_run_id(conn: AtomicConnection, run_id: int) -> float | None:
     time_stamp = select_one_where(conn, "runs", "run_timestamp", "run_id", run_id)
     # sometimes it happens that the timestamp is saved as an integer in the database
     if isinstance(time_stamp, int):
@@ -1969,7 +1978,7 @@ def get_run_timestamp_from_run_id(conn: ConnectionPlus, run_id: int) -> float | 
     return time_stamp
 
 
-def update_GUIDs(conn: ConnectionPlus) -> None:
+def update_GUIDs(conn: AtomicConnection) -> None:
     """
     Update all GUIDs in this database where either the location code or the
     work_station code is zero to use the location and work_station code from
@@ -2023,7 +2032,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
         )
 
     def _both_zero(
-        run_id: int, conn: ConnectionPlus, guid_comps: dict[str, Any]
+        run_id: int, conn: AtomicConnection, guid_comps: dict[str, Any]
     ) -> None:
         guid_str = build_guid_from_components(guid_comps)
         with atomic(conn) as atomic_conn:
@@ -2037,7 +2046,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
         log.info(f"Succesfully updated run number {run_id}.")
 
     actions: dict[
-        tuple[bool, bool], Callable[[int, ConnectionPlus, dict[str, Any]], None]
+        tuple[bool, bool], Callable[[int, AtomicConnection, dict[str, Any]], None]
     ]
     actions = {
         (True, True): _both_zero,
@@ -2060,7 +2069,7 @@ def update_GUIDs(conn: ConnectionPlus) -> None:
         actions[(old_loc == 0, old_ws == 0)](run_id, conn, guid_comps)
 
 
-def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
+def remove_trigger(conn: AtomicConnection, trigger_id: str) -> None:
     """
     Removes a trigger with a given id if it exists.
 
@@ -2075,7 +2084,7 @@ def remove_trigger(conn: ConnectionPlus, trigger_id: str) -> None:
 
 
 def load_new_data_for_rundescriber(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     table_name: str,
     rundescriber: RunDescriber,
     read_status: Mapping[str, int],
@@ -2125,7 +2134,7 @@ class ExperimentAttributeDict(TypedDict):
 
 
 def get_experiment_attributes_by_exp_id(
-    conn: ConnectionPlus, exp_id: int
+    conn: AtomicConnection, exp_id: int
 ) -> ExperimentAttributeDict:
     """
     Return a dict of all attributes describing an experiment from the exp_id.
@@ -2163,8 +2172,8 @@ def get_experiment_attributes_by_exp_id(
 
 
 def _populate_results_table(
-    source_conn: ConnectionPlus,
-    target_conn: ConnectionPlus,
+    source_conn: AtomicConnection,
+    target_conn: AtomicConnection,
     source_table_name: str,
     target_table_name: str,
 ) -> None:
@@ -2194,7 +2203,7 @@ def _populate_results_table(
 
 
 def _rewrite_timestamps(
-    target_conn: ConnectionPlus,
+    target_conn: AtomicConnection,
     target_run_id: int,
     correct_run_timestamp: float | None,
     correct_completed_timestamp: float | None,
@@ -2235,7 +2244,7 @@ class RawRunAttributesDict(TypedDict):
 
 
 def get_raw_run_attributes(
-    conn: ConnectionPlus, guid: str
+    conn: AtomicConnection, guid: str
 ) -> RawRunAttributesDict | None:
     run_id = get_runid_from_guid(conn, guid)
 
@@ -2285,13 +2294,13 @@ def raw_time_to_str_time(
         return time.strftime(fmt, time.localtime(raw_timestamp))
 
 
-def _check_if_table_found(conn: ConnectionPlus, table_name: str) -> bool:
+def _check_if_table_found(conn: AtomicConnection, table_name: str) -> bool:
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name=?"
     cursor = conn.cursor()
     return not many_many(cursor.execute(query, (table_name,)), "name") == []
 
 
-def _get_result_table_name_by_guid(conn: ConnectionPlus, guid: str) -> str:
+def _get_result_table_name_by_guid(conn: AtomicConnection, guid: str) -> str:
     sql = "SELECT result_table_name FROM runs WHERE guid=?"
     formatted_name = one(transaction(conn, sql, guid), "result_table_name")
     return formatted_name

@@ -44,7 +44,10 @@ from .measurement_extensions import (
 )
 from .measurements import Measurement
 from .plotting import plot_by_id, plot_dataset
-from .sqlite.connection import ConnectionPlus
+from .sqlite.connection import (
+    AtomicConnection,
+    ConnectionPlus,  # pyright: ignore[reportDeprecated]
+)
 from .sqlite.database import (
     connect,
     initialise_database,
@@ -61,6 +64,7 @@ from .threading import (
 __all__ = [
     "AbstractSweep",
     "ArraySweep",
+    "AtomicConnection",
     "BreakConditionInterrupt",
     "ConnectionPlus",
     "DataSetDefinition",
