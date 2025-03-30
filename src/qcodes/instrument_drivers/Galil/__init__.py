@@ -3,6 +3,7 @@ from .dmc_41x3 import (
     GalilDMC4133Controller,
     GalilDMC4133Motor,
     GalilDMC4133VectorMode,
+    GalilMotionController,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     "GalilDMC4133Controller",
     "GalilDMC4133Motor",
     "GalilDMC4133VectorMode",
+    "GalilMotionController",
 ]
