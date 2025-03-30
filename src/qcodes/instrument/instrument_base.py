@@ -28,7 +28,10 @@ from qcodes.utils import QCoDeSDeprecationWarning
 
 log = logging.getLogger(__name__)
 
-TParameter = TypeVar("TParameter", bound=ParameterBase, default=Parameter)
+TParameter = TypeVar("TParameter", bound="ParameterBase", default="Parameter")
+TSubmodule = TypeVar(
+    "TSubmodule", bound="InstrumentModule | ChannelTuple", default="InstrumentModule"
+)
 
 
 class InstrumentBaseKWArgs(TypedDict):
@@ -159,6 +162,9 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
                 unit of the new parameter is inconsistent with the existing
                 one.
 
+        Returns:
+            The created Parameter.
+
         """
         if parameter_class is None:
             parameter_class = cast("type[TParameter]", Parameter)
@@ -263,9 +269,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
         func = Function(name=name, instrument=self, **kwargs)
         self.functions[name] = func
 
-    def add_submodule(
-        self, name: str, submodule: InstrumentModule | ChannelTuple
-    ) -> None:
+    def add_submodule(self, name: str, submodule: TSubmodule) -> TSubmodule:
         """
         Bind one submodule to this instrument.
 
@@ -291,6 +295,9 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             TypeError: If the submodule that we are trying to add is
                 not an instance of an ``Metadatable`` object.
 
+        Returns:
+            The submodule.
+
         """
         if name in self.submodules:
             raise KeyError(f"Duplicate submodule name {name}")
@@ -305,6 +312,7 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             self._channel_lists[name] = submodule
         else:
             self.instrument_modules[name] = submodule
+        return submodule
 
     def get_component(self, full_name: str) -> MetadatableWithName:
         """
