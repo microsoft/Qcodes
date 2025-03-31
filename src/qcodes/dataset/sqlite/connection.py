@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 )
 class ConnectionPlus(wrapt.ObjectProxy):  # pyright: ignore[reportUntypedBaseClass]
     """
-    Note this is a legacy class. Please refer to ``AtomicConnection``
+    Note this is a legacy class. Please refer to :class:`AtomicConnection`
 
     A class to extend the sqlite3.Connection object. Since sqlite3.Connection
     has no __dict__, we can not directly add attributes to its instance

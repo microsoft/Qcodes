@@ -135,7 +135,7 @@ def connect(
 
     Returns:
         connection object to the database (note, it is
-        :class:`AtomicConnection`, not :class:`sqlite3.Connection`)
+        :class:`AtomicConnection`, which is a subclass of :class:`sqlite3.Connection`)
 
     """
     # register numpy->binary(TEXT) adapter
