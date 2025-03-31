@@ -308,7 +308,9 @@ class InstrumentBase(MetadatableWithName, DelegateAttributes):
             # this is channel_list like:
             # We cannot check against ChannelsList itself since that
             # would introduce a circular dependency.
-            self._channel_lists[name] = submodule
+            # ignore since mypy's type narrowing is not smart enough to understand
+            # that a TSubmodule that is s Sequence must be a ChannelTuple
+            self._channel_lists[name] = submodule  # type: ignore[assignment]
         else:
             self.instrument_modules[name] = submodule
         return submodule
