@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     import xarray as xr
 
     from qcodes.dataset.descriptions.rundescriber import RunDescriber
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
+    from qcodes.dataset.sqlite.connection import AtomicConnection
 
     # used in forward refs that cannot be detected
     from .data_set import DataSet  # noqa F401
@@ -201,7 +201,7 @@ class DataSetCache(Generic[DatasetType_co]):
 
 
 def load_new_data_from_db_and_append(
-    conn: ConnectionPlus,
+    conn: AtomicConnection,
     table_name: str,
     rundescriber: RunDescriber,
     write_status: Mapping[str, int | None],
