@@ -52,7 +52,7 @@ comm==0.2.2
     #   ipywidgets
 contourpy==1.3.1
     # via matplotlib
-coverage==7.7.1
+coverage==7.8.0
     # via
     #   qcodes (pyproject.toml)
     #   pytest-cov
@@ -85,7 +85,7 @@ fastjsonschema==2.21.1
     # via nbformat
 fonttools==4.56.0
     # via matplotlib
-fsspec==2025.3.0
+fsspec==2025.3.1
     # via dask
 furo==2024.8.6
     # via qcodes (pyproject.toml)
@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.130.4
+hypothesis==6.130.5
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -448,7 +448,7 @@ types-pytz==2025.2.0.20250326
     # via pandas-stubs
 types-pywin32==310.0.0.20250319
     # via qcodes (pyproject.toml)
-types-requests==2.32.0.20250306
+types-requests==2.32.0.20250328
     # via
     #   qcodes (pyproject.toml)
     #   types-tqdm
@@ -501,7 +501,7 @@ wrapt==1.17.2
     #   qcodes (pyproject.toml)
     #   deprecated
     #   qcodes
-xarray==2025.3.0
+xarray==2025.3.1
     # via
     #   qcodes (pyproject.toml)
     #   cf-xarray
