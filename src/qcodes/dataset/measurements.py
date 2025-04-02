@@ -670,9 +670,13 @@ class Runner:
             snapshot = {}
         if self._registered_parameters is not None:
             parameter_snapshot = {
-                param.register_name: param.snapshot()
+                param.short_name: param.snapshot()
                 for param in self._registered_parameters
             }
+            parameter_snapshot.update({
+                param.register_name: param.snapshot()
+                for param in self._registered_parameters
+            })
             snapshot["parameters"] = parameter_snapshot
 
         self.ds.prepare(
