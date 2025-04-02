@@ -157,33 +157,8 @@ class ParameterWithSetpoints(Parameter):
         super().validate(value)
 
     @property
-    def depends_on(self) -> tuple[ParamSpecBase, ...] | None:
-        setpoints_param_specs: list[ParamSpecBase] = []
-        for setpoint in self.setpoints:
-            setpoint_param_spec = setpoint.param_spec
-            # This can only happen if the setpoint inherits only from ParameterBase and
-            # not Parameter
-            if setpoint_param_spec is None:
-                warn(f"Can not get param spec from {setpoint}, using defaults")
-                match setpoint.vals:
-                    case Arrays():
-                        paramtype = "array"
-                    case Strings():
-                        paramtype = "text"
-                    case ComplexNumbers():
-                        paramtype = "complex"
-                    case _:
-                        paramtype = "numeric"
-                splabel = getattr(setpoint, "label")
-                spunit = getattr(setpoint, "unit")
-                setpoint_param_spec = ParamSpecBase(
-                    name=setpoint.register_name,
-                    paramtype=paramtype,
-                    label=splabel,
-                    unit=spunit,
-                )
-            setpoints_param_specs.append(setpoint_param_spec)
-        return tuple(setpoints_param_specs)
+    def register_before(self) -> tuple[ParameterBase, ...]:
+        return tuple(self.setpoints)
 
 
 def expand_setpoints_helper(

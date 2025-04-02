@@ -1129,12 +1129,12 @@ class ParameterBase(MetadatableWithName):
         return None
 
     @property
-    def depends_on(self) -> tuple[ParamSpecBase, ...] | None:
-        return None
+    def register_before(self) -> tuple[ParameterBase, ...]:
+        return ()
 
     @property
-    def inferred_from(self) -> tuple[ParamSpecBase, ...] | None:
-        return None
+    def register_after(self) -> tuple[ParameterBase, ...]:
+        return ()
 
 
 class GetLatest(DelegateAttributes):
