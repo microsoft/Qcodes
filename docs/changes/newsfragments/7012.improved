@@ -1,0 +1,2 @@
+Save the parameter snapshot under the long name key in the parameters snapshot in datasets (not the station snapshot), to avoid overwritting the snapshot multiple parameters have identical short names.
+The parameter snapshot saved under the short name key is kept for backwards compatibility, but will be removed at a later time.

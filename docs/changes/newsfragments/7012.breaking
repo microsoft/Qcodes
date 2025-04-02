@@ -1,1 +1,0 @@
-Use the register_name of the parameter instead of short_name as key in the parameters snapshot in datasets (not the station snapshot).
