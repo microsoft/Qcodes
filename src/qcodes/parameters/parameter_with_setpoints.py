@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING, Any
+from warnings import warn
 
 import numpy as np
 
-from qcodes.validators import Arrays, Validator
+from qcodes.dataset.descriptions.param_spec import ParamSpecBase
+from qcodes.validators import Arrays, Validator, Strings, ComplexNumbers
 
 from .parameter import Parameter
 
@@ -153,6 +155,35 @@ class ParameterWithSetpoints(Parameter):
         if isinstance(self.vals, Arrays):
             self.validate_consistent_shape()
         super().validate(value)
+
+    @property
+    def depends_on(self) -> tuple[ParamSpecBase, ...] | None:
+        setpoints_param_specs: list[ParamSpecBase] = []
+        for setpoint in self.setpoints:
+            setpoint_param_spec = setpoint.param_spec
+            # This can only happen if the setpoint inherits only from ParameterBase and
+            # not Parameter
+            if setpoint_param_spec is None:
+                warn(f"Can not get param spec from {setpoint}, using defaults")
+                match setpoint.vals:
+                    case Arrays():
+                        paramtype = "array"
+                    case Strings():
+                        paramtype = "text"
+                    case ComplexNumbers():
+                        paramtype = "complex"
+                    case _:
+                        paramtype = "numeric"
+                splabel = getattr(setpoint, "label")
+                spunit = getattr(setpoint, "unit")
+                setpoint_param_spec = ParamSpecBase(
+                    name=setpoint.register_name,
+                    paramtype=paramtype,
+                    label=splabel,
+                    unit=spunit,
+                )
+            setpoints_param_specs.append(setpoint_param_spec)
+        return tuple(setpoints_param_specs)
 
 
 def expand_setpoints_helper(

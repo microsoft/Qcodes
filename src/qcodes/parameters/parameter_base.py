@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable, Mapping, Sequence, Sized
     from types import TracebackType
 
+    from qcodes.dataset.descriptions.param_spec import ParamSpecBase
     from qcodes.instrument.base import InstrumentBase
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter
 
@@ -1122,6 +1123,18 @@ class ParameterBase(MetadatableWithName):
     @property
     def abstract(self) -> bool | None:
         return self._abstract
+
+    @property
+    def param_spec(self) -> ParamSpecBase | None:
+        return None
+
+    @property
+    def depends_on(self) -> tuple[ParamSpecBase, ...] | None:
+        return None
+
+    @property
+    def inferred_from(self) -> tuple[ParamSpecBase, ...] | None:
+        return None
 
 
 class GetLatest(DelegateAttributes):
