@@ -317,7 +317,7 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.2
     # via pandas
-pyvisa==1.14.1
+pyvisa==1.15.0
     # via
     #   qcodes (pyproject.toml)
     #   pyvisa-sim
