@@ -192,7 +192,9 @@ class ParameterBase(MetadatableWithName):
 
     """
 
-    global_on_set_callback: ClassVar[Callable[[ParameterBase, Any], None] | None] = None
+    global_on_set_callback: ClassVar[
+        Callable[[ParameterBase, ParamDataType], None] | None
+    ] = None
 
     def __init__(
         self,
@@ -215,7 +217,7 @@ class ParameterBase(MetadatableWithName):
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
-        on_set_callback: Callable[[ParameterBase, Any], None] | None = None,
+        on_set_callback: Callable[[ParameterBase, ParamDataType], None] | None = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -790,7 +792,7 @@ class ParameterBase(MetadatableWithName):
 
         return set_wrapper
 
-    def _call_on_set_callback(self, value: NumberType | Sized) -> None:
+    def _call_on_set_callback(self, value: ParamDataType) -> None:
         try:
             if self.on_set_callback is not None:
                 self.on_set_callback(self, value)
