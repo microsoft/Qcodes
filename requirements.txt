@@ -102,7 +102,7 @@ h5py==3.13.0
     #   qcodes-loop
 hickle==5.0.3
     # via qcodes-loop
-hypothesis==6.130.6
+hypothesis==6.130.8
     # via qcodes (pyproject.toml)
 idna==3.10
     # via requests
@@ -263,7 +263,7 @@ parso==0.8.4
     # via jedi
 partd==1.4.2
     # via dask
-pillow==11.1.0
+pillow==11.2.0
     # via
     #   qcodes (pyproject.toml)
     #   matplotlib
@@ -302,7 +302,7 @@ pytest==8.3.5
     #   pytest-xdist
 pytest-asyncio==0.26.0
     # via qcodes (pyproject.toml)
-pytest-cov==6.0.0
+pytest-cov==6.1.0
     # via qcodes (pyproject.toml)
 pytest-mock==3.14.0
     # via qcodes (pyproject.toml)
@@ -317,12 +317,12 @@ python-dateutil==2.9.0.post0
     #   pandas
 pytz==2025.2
     # via pandas
-pyvisa==1.14.1
+pyvisa==1.15.0
     # via
     #   qcodes (pyproject.toml)
     #   pyvisa-sim
     #   qcodes
-pyvisa-sim==0.6.0
+pyvisa-sim==0.7.0
     # via qcodes (pyproject.toml)
 pywin32==310; sys_platform == 'win32'
     # via jupyter-core
@@ -517,7 +517,7 @@ zhinst-timing-models==25.1.0
     # via zhinst-utils
 zhinst-toolkit==0.7.1
     # via zhinst-qcodes
-zhinst-utils==0.6.0
+zhinst-utils==0.7.0
     # via zhinst-toolkit
 zipp==3.21.0
     # via importlib-metadata
