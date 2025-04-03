@@ -907,6 +907,34 @@ class Measurement:
 
         return self
 
+    def _self_register_parameter(
+        self: Self,
+        parameter: ParameterBase,
+        setpoints: SetpointsType | None = None,
+        basis: SetpointsType | None = None,
+        paramtype: str | None = None,
+    ) -> Self:
+        if parameter.param_spec is None:
+            raise ValueError("This shouldn't happen")
+
+        for before_param in parameter.register_before:
+            self._self_register_parameter(before_param)
+
+        register_setpoints = list(setpoints) if setpoints is not None else []
+        register_setpoints += parameter.register_before
+        self._register_parameter(
+            name=parameter.param_spec.name,
+            label=parameter.param_spec.label,
+            unit=parameter.param_spec.unit,
+            paramtype=paramtype or parameter.param_spec.type,
+            setpoints=register_setpoints,
+            basis=basis,
+        )
+
+        for after_param in parameter.register_after:
+            self._self_register_parameter(parameter=after_param, basis=(parameter,))
+        return self
+
     def register_parameter(
         self: Self,
         parameter: ParameterBase,
@@ -936,6 +964,12 @@ class Measurement:
                 f"Can not register object of type {type(parameter)}. Can only "
                 "register a QCoDeS Parameter."
             )
+        if setpoints is not None:
+            self._check_setpoints_type(setpoints, "setpoints")
+
+        if basis is not None:
+            self._check_setpoints_type(basis, "basis")
+
         paramtype = self._infer_paramtype(parameter, paramtype)
         # default to numeric
         if paramtype is None:
@@ -948,48 +982,31 @@ class Measurement:
                 f"{paramtype}. However, only "
                 f"{ParamSpec.allowed_types} are supported."
             )
-
-        if setpoints is not None:
-            self._check_setpoints_type(setpoints, "setpoints")
-
-        if basis is not None:
-            self._check_setpoints_type(basis, "basis")
-
-        if isinstance(parameter, ArrayParameter):
-            self._register_arrayparameter(parameter, setpoints, basis, paramtype)
-        elif isinstance(parameter, ParameterWithSetpoints):
-            self._register_parameter_with_setpoints(
-                parameter, setpoints, basis, paramtype
-            )
-        elif isinstance(parameter, MultiParameter):
-            self._register_multiparameter(
-                parameter,
-                setpoints,
-                basis,
-                paramtype,
-            )
-        elif isinstance(parameter, Parameter):
-            self._register_parameter(
-                parameter.register_name,
-                parameter.label,
-                parameter.unit,
-                setpoints,
-                basis,
-                paramtype,
-            )
-        elif isinstance(parameter, GroupedParameter):
-            self._register_parameter(
-                parameter.register_name,
-                parameter.label,
-                parameter.unit,
-                setpoints,
-                basis,
-                paramtype,
-            )
-        else:
-            raise RuntimeError(
-                f"Does not know how to register a parameter of type {type(parameter)}"
-            )
+        match parameter:
+            case Parameter() | ParameterWithSetpoints():
+                self._self_register_parameter(parameter)
+            case ArrayParameter():
+                self._register_arrayparameter(parameter, setpoints, basis, paramtype)
+            case MultiParameter():
+                self._register_multiparameter(
+                    parameter,
+                    setpoints,
+                    basis,
+                    paramtype,
+                )
+            case GroupedParameter():
+                self._register_parameter(
+                    parameter.register_name,
+                    parameter.label,
+                    parameter.unit,
+                    setpoints,
+                    basis,
+                    paramtype,
+                )
+            case _:
+                raise RuntimeError(
+                    f"Does not know how to register a parameter of type {type(parameter)}"
+                )
         self._registered_parameters.append(parameter)
 
         return self
