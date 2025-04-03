@@ -970,24 +970,14 @@ class Measurement:
         if basis is not None:
             self._check_setpoints_type(basis, "basis")
 
-        paramtype = self._infer_paramtype(parameter, paramtype)
-        # default to numeric
-        if paramtype is None:
-            paramtype = "numeric"
-
-        # now the parameter type must be valid
-        if paramtype not in ParamSpec.allowed_types:
-            raise RuntimeError(
-                "Trying to register a parameter with type "
-                f"{paramtype}. However, only "
-                f"{ParamSpec.allowed_types} are supported."
-            )
         match parameter:
             case Parameter() | ParameterWithSetpoints():
-                self._self_register_parameter(parameter)
+                self._self_register_parameter(parameter, setpoints, basis)
             case ArrayParameter():
+                paramtype = self._infer_paramtype(parameter, paramtype)
                 self._register_arrayparameter(parameter, setpoints, basis, paramtype)
             case MultiParameter():
+                paramtype = self._infer_paramtype(parameter, paramtype)
                 self._register_multiparameter(
                     parameter,
                     setpoints,
@@ -995,6 +985,7 @@ class Measurement:
                     paramtype,
                 )
             case GroupedParameter():
+                paramtype = self._infer_paramtype(parameter, paramtype)
                 self._register_parameter(
                     parameter.register_name,
                     parameter.label,
@@ -1023,7 +1014,7 @@ class Measurement:
             )
 
     @staticmethod
-    def _infer_paramtype(parameter: ParameterBase, paramtype: str | None) -> str | None:
+    def _infer_paramtype(parameter: ParameterBase, paramtype: str | None) -> str:
         """
         Infer the best parameter type to store the parameter supplied.
 
@@ -1037,20 +1028,29 @@ class Measurement:
             Returns None if a parameter type could not be inferred
 
         """
-        if paramtype is not None:
-            return paramtype
-
-        if isinstance(parameter.vals, vals.Arrays):
-            paramtype = "array"
+        return_paramtype: str
+        if paramtype is not None:  # override with argument
+            return_paramtype = paramtype
+        elif isinstance(parameter.vals, vals.Arrays):
+            return_paramtype = "array"
         elif isinstance(parameter, ArrayParameter):
-            paramtype = "array"
+            return_paramtype = "array"
         elif isinstance(parameter.vals, vals.Strings):
-            paramtype = "text"
+            return_paramtype = "text"
         elif isinstance(parameter.vals, vals.ComplexNumbers):
-            paramtype = "complex"
+            return_paramtype = "complex"
+        else:  # Default to this if nothing else matches
+            return_paramtype = "numeric"
+
+        if return_paramtype not in ParamSpec.allowed_types:
+            raise RuntimeError(
+                "Trying to register a parameter with type "
+                f"{return_paramtype}. However, only "
+                f"{ParamSpec.allowed_types} are supported."
+            )
         # TODO should we try to figure out if parts of a multiparameter are
         # arrays or something else?
-        return paramtype
+        return return_paramtype
 
     def _register_parameter(
         self: Self,
