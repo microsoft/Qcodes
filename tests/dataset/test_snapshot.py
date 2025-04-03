@@ -44,8 +44,14 @@ def test_station_snapshot_during_measurement(
     measurement.register_parameter(dac.ch1)
     measurement.register_parameter(dmm.v1, setpoints=[dac.ch1])
     snapshot_of_parameters = {
-        parameter.register_name: parameter.snapshot() for parameter in (dac.ch1, dmm.v1)
+        parameter.short_name: parameter.snapshot() for parameter in (dac.ch1, dmm.v1)
     }
+    snapshot_of_parameters.update(
+        {
+            parameter.register_name: parameter.snapshot()
+            for parameter in (dac.ch1, dmm.v1)
+        }
+    )
     with measurement.run() as data_saver:
         data_saver.add_result((dac.ch1, 7), (dmm.v1, 5))
 
