@@ -1,2 +1,0 @@
-QCoDeS no longer ships a ``setup.py`` script and all package config is done in ``pyproject.toml``
-A version of `pip` or other package manager supporting ``PEP621`` is required to build from source.
