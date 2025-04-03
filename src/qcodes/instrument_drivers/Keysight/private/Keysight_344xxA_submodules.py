@@ -1213,10 +1213,18 @@ mode."""
         return _raw_vals_to_array(raw_vals)
 
     def _ask_with_sense_function(self, cmd: str) -> str:
+        # cache.raw_value currently lacks a way to trigger an update
+        # force this by calling get on the cache first which will trigger
+        # the update if required
+        self.sense_function.cache.get(get_if_invalid=True)
         function = self.sense_function.cache.raw_value.strip('"')
         return self.ask(f"SENSe:{function}:{cmd}?")
 
     def _write_with_sense_function(self, cmd: str, value: str) -> None:
+        # cache.raw_value currently lacks a way to trigger an update
+        # force this by calling get on the cache first which will trigger
+        # the update if required
+        self.sense_function.cache.get(get_if_invalid=True)
         function = self.sense_function.cache.raw_value.strip('"')
         self.write(f"SENSe:{function}:{cmd} {value}")
 
