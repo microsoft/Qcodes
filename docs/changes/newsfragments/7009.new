@@ -1,0 +1,1 @@
+A new Validator ``LiteralValidator`` was added. This allows validating against the members of a ``typing.Literal``.

@@ -34,7 +34,7 @@ dependencies = [
     "packaging>=20.0",
     "pandas>=1.4.0",
     "pyarrow>=11.0.0", # will become a requirement of pandas. Installing explicitly silences a warning
-    "pyvisa>=1.11.0, <1.15.0",
+    "pyvisa>=1.11.0, <1.16.0",
     "ruamel.yaml>=0.16.0,!=0.16.6",
     "tabulate>=0.9.0",
     "typing_extensions>=4.6.0",
@@ -216,18 +216,15 @@ reportUnusedFunction = "none"
 reportUnusedImport = "none"
 reportUnknownLambdaType = "none"
 reportUnnecessaryIsInstance = "none"
-reportArgumentType = "none"
 reportUntypedNamedTuple = "none"
 reportUnnecessaryComparison = "none"
 reportConstantRedefinition = "none"
 reportUnusedClass = "none"
 reportUnnecessaryCast = "none"  # mypy already checks this. If it fails for pyright its because mypy requires it
-reportAssignmentType = "none"
 reportUnnecessaryContains = "none"
 
 [tool.pytest.ini_options]
 minversion = "7.2"
-junit_family = "legacy"
 testpaths = "tests"
 addopts = "-n auto --dist=loadfile --cov-config=pyproject.toml"
 asyncio_default_fixture_loop_scope = "function"
@@ -242,13 +239,14 @@ filterwarnings = [
     'ignore:open_binary is deprecated:DeprecationWarning', # pyvisa-sim
     'ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning', # jupyter
     'ignore:Parsing dates involving a day of month without a year specified is ambiguious:DeprecationWarning', # ipykernel 3.13+
-    'ignore:unclosed database in:ResourceWarning' # internal should be fixed
+    'ignore:unclosed database in:ResourceWarning', # internal should be fixed
+    'ignore:ConnectionPlus is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
+    'ignore:make_connection_plus_from is deprecated:qcodes.utils.deprecate.QCoDeSDeprecationWarning',  # remove once deprecated ConnectionPlus has been removed
 ]
 
 [tool.ruff]
 
 extend-include = ["*.ipynb"]
-extend-exclude = ["typings"]
 
 [tool.ruff.lint]
 

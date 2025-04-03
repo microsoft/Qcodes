@@ -883,7 +883,7 @@ def test_cache_2d_shape(
     if cache_size == "too_small":
         meas.set_shapes(
             detect_shape_of_measurement(
-                meas_parameters, (int(ceil(n_points_outer / 2)), n_points_inner)
+                meas_parameters, (ceil(n_points_outer / 2), n_points_inner)
             )
         )
     elif cache_size == "too_large":

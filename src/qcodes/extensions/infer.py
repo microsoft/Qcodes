@@ -230,7 +230,7 @@ def get_chain_links_of_type(
 ) -> tuple[C, ...]:
     """Gets all parameters in a chain of linked parameters that match a given type"""
     chain_links: list[C] = [
-        cast(C, param)
+        cast("C", param)
         for param in get_parameter_chain(parameter)
         if isinstance(param, link_param_type)
     ]
@@ -265,7 +265,7 @@ def get_parent_instruments_from_chain_of_type(
     param_chain = get_parameter_chain(parameter)
     return tuple(
         [
-            cast(TInstrument, param.instrument)
+            cast("TInstrument", param.instrument)
             for param in param_chain
             if isinstance(param.instrument, instrument_type)
         ]

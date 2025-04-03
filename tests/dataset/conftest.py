@@ -729,6 +729,7 @@ class ArrayshapedParam(Parameter):
 
     def get_raw(self):
         assert isinstance(self.vals, Arrays)
+        assert self.vals.shape is not None
         shape = self.vals.shape
 
         return np.random.rand(*shape)
