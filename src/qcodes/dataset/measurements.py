@@ -673,10 +673,12 @@ class Runner:
                 param.short_name: param.snapshot()
                 for param in self._registered_parameters
             }
-            parameter_snapshot.update({
-                param.register_name: param.snapshot()
-                for param in self._registered_parameters
-            })
+            parameter_snapshot.update(
+                {
+                    param.register_name: param.snapshot()
+                    for param in self._registered_parameters
+                }
+            )
             snapshot["parameters"] = parameter_snapshot
 
         self.ds.prepare(
