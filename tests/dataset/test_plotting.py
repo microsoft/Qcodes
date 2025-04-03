@@ -5,6 +5,8 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.strategies import data, floats, just, lists, one_of, sampled_from, text
 from matplotlib.collections import QuadMesh
+from matplotlib.lines import Line2D
+from numpy.testing import assert_allclose
 from pytest import FixtureRequest
 
 import qcodes as qc
@@ -395,7 +397,7 @@ def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) ->
 
     dataset = datasaver.dataset
 
-    axes, cbaxes = plot_dataset(dataset=dataset, parameters=params)
+    axes, _ = plot_dataset(dataset=dataset, parameters=params)
 
     # None is default for parameters
     # so if parameters is None all dependent parameters should be plotted
@@ -406,21 +408,22 @@ def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) ->
 
         for i, param in enumerate(["y", "y2"]):
             data = dataset.get_parameter_data()[param][param]
-            plotted = axes[i].get_children()[0].get_ydata()
+            artist = axes[i].get_children()[0]
+            assert isinstance(artist, Line2D)
+            plotted = artist.get_ydata()
             # actual data and plotted not exactly equal (?)
             # so check for very small diff
-            for k in range(len(plotted)):
-                diff = (abs(plotted[k] - data[k])) / data[k]
-                assert diff < 0.0000000001
+            assert_allclose(np.array(plotted), data, rtol=1e-10)
 
     # check only 'requested' parameter has been plotted
     elif params == "y" or "y2":
+        assert isinstance(params, str)
         assert len(axes) == 1
-
-        data = dataset.get_parameter_data()[params][params]
-        plotted = axes[0].get_children()[0].get_ydata()
+        dsdata = dataset.get_parameter_data()
+        data = dsdata[params][params]
+        artist = axes[0].get_children()[0]
+        assert isinstance(artist, Line2D)
+        plotted = artist.get_ydata()
         # actual data and plotted not exactly equal (?)
         # so check for very small diff
-        for k in range(len(plotted)):
-            diff = (abs(plotted[k] - data[k])) / data[k]
-            assert diff < 0.0000000001
+        assert_allclose(np.array(plotted), data, rtol=1e-10)
