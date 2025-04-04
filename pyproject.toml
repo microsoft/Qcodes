@@ -247,6 +247,10 @@ filterwarnings = [
 [tool.ruff]
 
 extend-include = ["*.ipynb"]
+# tests and docs are not packages so it's
+# fine that init is missing and we therefor
+# mark them as namespace packages
+namespace-packages = ["tests", "docs"]
 
 [tool.ruff.lint]
 
@@ -285,6 +289,7 @@ ignore = ["E501", "G004", "NPY002", "PLR2004", "PLR0913", "PLR0911", "PLR0912", 
 # we want to explicitly use the micro symbol
 # not the greek letter
 allowed-confusables = ["µ"]
+
 
 [tool.ruff.lint.isort]
 
@@ -327,9 +332,8 @@ known-first-party = ["qcodes"]
 
 # TID253 these imports are fine at module level
 # in tests and examples
-# tests is not a package so don't require __init__.py files
 "docs/*" = ["TID253"]
-"tests/*" = ["TID253", "INP"]
+"tests/*" = ["TID253"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 # There modules are relatively slow to import

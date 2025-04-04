@@ -1,4 +1,0 @@
-The QCoDeS dataset sqlite connection class `ConnectionPlus` has been deprecated and replace with `AtomicConnection`.
-Unlike `ConnectionPlus` `AtomicConnection` is a direct subclass of `sqlite3.Connection` which enables better type checking
-and will allow QCoDeS to drop the dependency on `wrapt`. The function `make_connection_plus_from` is also deprecated and
-it is no longer supported to convert a connection from a sqlite3 connection to a QCoDeS specific connection.
