@@ -86,7 +86,7 @@ def upgrader(func: TUpgraderFunction) -> TUpgraderFunction:
             "Decorated function not a valid upgrader. "
             'Must have name "perform_db_upgrade_N_to_M"'
         )
-    if not "".join(name_comps[:3] + [name_comps[4]]) == "performdbupgradeto":
+    if not "".join([*name_comps[:3], name_comps[4]]) == "performdbupgradeto":
         raise NameError(
             "Decorated function not a valid upgrader. "
             'Must have name "perform_db_upgrade_N_to_M"'

@@ -832,10 +832,10 @@ class KeysightB1520A(KeysightB1500Module):
         ) -> tuple[np.floating, ...]:
             if steps % 2 == 0:
                 half_list = list(np.linspace(start, end, steps // 2))
-                sweep_val = half_list + half_list[::-1]
+                sweep_val = [*half_list, *half_list[::-1]]
             else:
                 half_list = list(np.linspace(start, end, steps // 2, endpoint=False))
-                sweep_val = half_list + [np.float64(end)] + half_list[::-1]
+                sweep_val = [*half_list, np.float64(end), *half_list[::-1]]
             return tuple(sweep_val)
 
         def log_2way_sweep(
@@ -852,7 +852,7 @@ class KeysightB1520A(KeysightB1500Module):
                         np.log10(start), np.log10(end), steps // 2, endpoint=False
                     )
                 )
-                sweep_val = half_list + [end] + half_list[::-1]
+                sweep_val = [*half_list, np.float64(end), *half_list[::-1]]
             return tuple(sweep_val)
 
         modes = {1: linear_sweep, 2: log_sweep, 3: linear_2way_sweep, 4: log_2way_sweep}
