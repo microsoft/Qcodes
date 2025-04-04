@@ -5,7 +5,7 @@ Keithly drivers have moved to the Keithley module
 
 import logging
 import sys
-from enum import Enum
+from enum import Enum, StrEnum
 
 from qcodes.instrument_drivers.Keithley._Keithley_2600 import (
     Keithley2600,
@@ -18,14 +18,6 @@ from qcodes.instrument_drivers.Keithley._Keithley_2600 import (
     _MeasurementVoltageParameter,
     _ParameterWithStatus,
 )
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-
-    class StrEnum(str, Enum):
-        pass
-
 
 log = logging.getLogger(__name__)
 

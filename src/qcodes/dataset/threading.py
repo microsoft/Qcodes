@@ -17,8 +17,7 @@ from qcodes.utils import RespondingThread
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from types import TracebackType
-
-    from typing_extensions import Self
+    from typing import Self
 
     from qcodes.dataset.data_set_protocol import ValuesType
     from qcodes.parameters import ParamDataType, ParameterBase
