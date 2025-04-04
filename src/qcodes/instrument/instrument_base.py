@@ -18,8 +18,7 @@ from qcodes.utils import DelegateAttributes, full_class
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
-
-    from typing_extensions import NotRequired
+    from typing import NotRequired
 
     from qcodes.instrument.channel import ChannelTuple, InstrumentModule
     from qcodes.logger.instrument_logger import InstrumentLoggerAdapter

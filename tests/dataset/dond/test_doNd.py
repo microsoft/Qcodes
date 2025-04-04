@@ -4,6 +4,7 @@ These are the basic black box tests for the doNd functions.
 
 import logging
 import re
+from typing import assert_type
 
 import hypothesis.strategies as hst
 import matplotlib
@@ -14,7 +15,6 @@ import numpy as np
 import pytest
 from hypothesis import HealthCheck, given, settings
 from pytest import FixtureRequest, LogCaptureFixture
-from typing_extensions import assert_type
 
 import qcodes as qc
 from qcodes import config, validators

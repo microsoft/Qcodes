@@ -13,8 +13,7 @@ from qcodes.utils.types import NumberType
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Self
+    from typing import Self
 
 AllCoordsType = tuple[float, float, float, float, float, float, float]
 NormOrder = Literal["fro", "nuc"] | None | float

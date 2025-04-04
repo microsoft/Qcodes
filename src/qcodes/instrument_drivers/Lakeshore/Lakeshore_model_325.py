@@ -22,8 +22,9 @@ from qcodes.validators import Enum, Numbers
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+    from typing import Self
 
-    from typing_extensions import Buffer, Self, Unpack
+    from typing_extensions import Buffer, Unpack
 
 
 def _read_curve_file(curve_file: TextIO) -> dict[Any, Any]:
