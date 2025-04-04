@@ -54,8 +54,7 @@ from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
     from types import TracebackType
-
-    from typing_extensions import Self
+    from typing import Self
 
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.experiment_container import Experiment

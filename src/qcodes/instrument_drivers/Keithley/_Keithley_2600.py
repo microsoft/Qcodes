@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import logging
 import struct
-import sys
 import warnings
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
@@ -29,14 +28,6 @@ if TYPE_CHECKING:
 
     from qcodes_loop.data.data_set import DataSet
     from typing_extensions import Unpack
-
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-
-    class StrEnum(str, Enum):
-        pass
 
 
 log = logging.getLogger(__name__)

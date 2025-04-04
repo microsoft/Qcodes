@@ -1,9 +1,9 @@
 import re
 import textwrap
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, NotRequired, cast, overload
 
 import numpy as np
-from typing_extensions import NotRequired, TypedDict, Unpack
+from typing_extensions import TypedDict, Unpack
 
 import qcodes.validators as vals
 from qcodes.instrument import InstrumentBaseKWArgs, InstrumentChannel
