@@ -845,7 +845,7 @@ class ParameterBase(MetadatableWithName):
                 return [value]
 
             # drop the initial value, we're already there
-            return permissive_range(start_value, value, step)[1:] + [value]
+            return [*permissive_range(start_value, value, step)[1:], value]
 
     @cached_property
     def _validate_context(self) -> str:
