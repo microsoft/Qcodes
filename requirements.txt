@@ -116,8 +116,7 @@ ipykernel==6.29.5
     # via
     #   qcodes (pyproject.toml)
     #   qcodes
-ipython==8.35.0; python_version < '3.11'
-ipython==9.0.2; python_version >= '3.11'
+ipython==9.0.2
     # via
     #   qcodes (pyproject.toml)
     #   ipykernel
@@ -368,8 +367,7 @@ sortedcontainers==2.4.0
     # via hypothesis
 soupsieve==2.6
     # via beautifulsoup4
-sphinx==8.1.3; python_version < '3.11'
-sphinx==8.2.3; python_version >= '3.11'
+sphinx==8.2.3
     # via
     #   qcodes (pyproject.toml)
     #   autodocsumm
