@@ -9,12 +9,11 @@ import gc
 import io
 import re
 import weakref
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, assert_type
 from weakref import WeakValueDictionary
 
 import pytest
 from pytest import FixtureRequest
-from typing_extensions import assert_type
 
 from qcodes.instrument import (
     Instrument,

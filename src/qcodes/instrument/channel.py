@@ -20,7 +20,9 @@ from qcodes.validators import Validator
 from .instrument_base import InstrumentBase
 
 if TYPE_CHECKING:
-    from typing_extensions import Self, Unpack
+    from typing import Self
+
+    from typing_extensions import Unpack
 
     from .instrument import Instrument
     from .instrument_base import InstrumentBaseKWArgs

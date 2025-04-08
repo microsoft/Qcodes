@@ -13,8 +13,7 @@ from .sequence_helpers import is_sequence
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
-
-    from typing_extensions import Self
+    from typing import Self
 
     from qcodes.parameters import ParameterBase
 
