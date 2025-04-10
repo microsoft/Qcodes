@@ -1243,7 +1243,11 @@ class DataSet(BaseDataSet):
         self._raise_if_not_writable()
         interdeps = self._rundescriber.interdeps
 
-        toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
+        toplevel_params = (
+            set(interdeps.inferences)
+            .union(set(interdeps.dependencies))
+            .intersection(set(result_dict))
+        )
 
         new_results: dict[str, dict[str, numpy.ndarray]] = {}
 
