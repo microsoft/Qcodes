@@ -1,0 +1,5 @@
+``InstrumentBase.add_submodule`` now returns the added submodule. This similar to changes made in ``add_parameter`` earlier.
+This makes it possible to assign this to an attribute which enables static code checkers, IDEs and documentation to
+discover submodules. The ``Galil`` drivers have been updated to make use of this. Consult the ``Galil`` driver or ``Creating-Instrument-Drivers``
+notebook for examples of how to use this. It is planed that QCoDeS in the future will ship with a tool to automatically perform this refactor
+and updates to all included drivers.

@@ -399,7 +399,10 @@ class AMIModel430(VisaInstrument):
 
         # Add persistent switch
         switch_heater = AMI430SwitchHeater(self)
-        self.add_submodule("switch_heater", switch_heater)
+        self.switch_heater: AMI430SwitchHeater = self.add_submodule(
+            "switch_heater", switch_heater
+        )
+        """Submodule the switch heater submodule."""
 
         # Add interaction functions
         self.add_function("get_error", call_cmd="SYST:ERR?")
