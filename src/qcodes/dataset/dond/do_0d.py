@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, cast
 
 from opentelemetry import trace
 
@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
     from .do_nd_utils import (
         AxesTupleListWithDataSet,
-        MultiAxesTupleListWithDataSet,
         ParamMeasT,
     )
 
@@ -20,28 +19,10 @@ LOG = logging.getLogger(__name__)
 TRACER = trace.get_tracer(__name__)
 
 
-@overload
-def do0d(
-    *param_meas: ParamMeasT, squeeze: Literal[False], **kwargs: Unpack[DondKWargs]
-) -> MultiAxesTupleListWithDataSet: ...
-
-
-@overload
-def do0d(
-    *param_meas: ParamMeasT, squeeze: Literal[True], **kwargs: Unpack[DondKWargs]
-) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet: ...
-
-
-@overload
-def do0d(
-    *param_meas: ParamMeasT, squeeze: bool = True, **kwargs: Unpack[DondKWargs]
-) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet: ...
-
-
 @TRACER.start_as_current_span("qcodes.dataset.do0d")
 def do0d(
-    *param_meas: ParamMeasT, squeeze: bool = True, **kwargs: Unpack[DondKWargs]
-) -> AxesTupleListWithDataSet | MultiAxesTupleListWithDataSet:
+    *param_meas: ParamMeasT, **kwargs: Unpack[DondKWargs]
+) -> AxesTupleListWithDataSet:
     """
     Perform a measurement of a single parameter. This is probably most
     useful for a ParameterWithSetpoints that already returns an array of data points.
@@ -51,21 +32,16 @@ def do0d(
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
           supplied.
-        squeeze: If True, will return a tuple of QCoDeS DataSet, Matplotlib axis,
-            Matplotlib colorbar if only one group of measurements was performed
-            and a tuple of tuples of these if more than one group of measurements
-            was performed. If False, will always return a tuple where the first
-            member is a tuple of QCoDeS DataSet(s) and the second member is a tuple
-            of Matplotlib axis(es) and the third member is a tuple of Matplotlib
-            colorbar(s).
         **kwargs: kwargs are the same as for dond and forwarded directly to dond.
 
     Returns:
         The QCoDeS dataset.
 
     """
-    return dond(
-        *param_meas,
-        squeeze=squeeze,
-        **kwargs,
+    # since we only support entering parameters
+    # as a simple list or args we are sure to always
+    # get back a AxesTupleListWithDataSet and cast is safe
+    return cast(
+        "AxesTupleListWithDataSet",
+        dond(*param_meas, **kwargs, squeeze=True),
     )
