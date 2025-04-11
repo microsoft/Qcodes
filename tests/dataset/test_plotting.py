@@ -5,6 +5,8 @@ import pytest
 from hypothesis import HealthCheck, assume, example, given, settings
 from hypothesis.strategies import data, floats, just, lists, one_of, sampled_from, text
 from matplotlib.collections import QuadMesh
+from matplotlib.lines import Line2D
+from numpy.testing import assert_allclose
 from pytest import FixtureRequest
 
 import qcodes as qc
@@ -18,6 +20,7 @@ from qcodes.dataset.plotting import (
     plot_dataset,
 )
 from qcodes.instrument_drivers.mock_instruments import DummyInstrument
+from qcodes.parameters import Parameter
 from qcodes.plotting.axis_labels import _ENGINEERING_PREFIXES, _UNITS_FOR_RESCALING
 
 if TYPE_CHECKING:
@@ -367,3 +370,60 @@ def test__complex_to_real_preparser_complex_setpoint() -> None:
     assert measured_param["label"] == "measured voltage"
     assert measured_param["unit"] == "V"
     assert all(measured_param["data"] == np.array([0, 1, 2]))
+
+
+@pytest.mark.parametrize("params", [None, "y", "y2", ["y", "y2"]])
+def test_plot_dataset_parameters(experiment, request: FixtureRequest, params) -> None:
+    """
+    Test plotting of specified parameters with plot_dataset
+    function.
+    """
+    # Generate some data
+    x = Parameter(name="x", label="Voltage", unit="V", set_cmd=None, get_cmd=None)
+    y = Parameter(name="y", label="Voltage", unit="V", set_cmd=None, get_cmd=None)
+    y2 = Parameter(name="y2", label="Current", unit="A", set_cmd=None, get_cmd=None)
+
+    meas = Measurement()
+    meas.register_parameter(x)
+    meas.register_parameter(y, setpoints=[x])
+    meas.register_parameter(y2, setpoints=[x])
+
+    xvals = np.linspace(-5, 5, 250)
+
+    with meas.run() as datasaver:
+        for xnum in xvals:
+            datasaver.add_result((x, xnum), (y, xnum**2))
+            datasaver.add_result((x, xnum), (y2, -(xnum**2)))
+
+    dataset = datasaver.dataset
+
+    axes, _ = plot_dataset(dataset=dataset, parameters=params)
+
+    # None is default for parameters
+    # so if parameters is None all dependent parameters should be plotted
+    params = ["y", "y2"] if params is None else params
+
+    if params == ["y", "y2"]:
+        assert len(axes) == 2
+
+        for i, param in enumerate(["y", "y2"]):
+            data = dataset.get_parameter_data()[param][param]
+            artist = axes[i].get_children()[0]
+            assert isinstance(artist, Line2D)
+            plotted = artist.get_ydata()
+            # actual data and plotted not exactly equal (?)
+            # so check for very small diff
+            assert_allclose(np.array(plotted), data, rtol=1e-10)
+
+    # check only 'requested' parameter has been plotted
+    elif params == "y" or "y2":
+        assert isinstance(params, str)
+        assert len(axes) == 1
+        dsdata = dataset.get_parameter_data()
+        data = dsdata[params][params]
+        artist = axes[0].get_children()[0]
+        assert isinstance(artist, Line2D)
+        plotted = artist.get_ydata()
+        # actual data and plotted not exactly equal (?)
+        # so check for very small diff
+        assert_allclose(np.array(plotted), data, rtol=1e-10)

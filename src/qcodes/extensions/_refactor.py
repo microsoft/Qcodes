@@ -61,9 +61,7 @@ class AddParameterTransformer(VisitorBasedCodemodCommand):
             ):
                 # first positional arg is str
                 self.annotations.name = e_value.strip("\"'")
-            case cst.Arg(
-                keyword=cst.Name(value="name"), value=cst.SimpleString(e_value)
-            ):
+            case cst.Arg(keyword=cst.Name("name"), value=cst.SimpleString(e_value)):
                 # arg is name
                 self.annotations.name = e_value.strip("\"'")
             case cst.Arg(

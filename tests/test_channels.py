@@ -416,7 +416,7 @@ def test_combine_channels(dci, setpoints) -> None:
     for i, chan in enumerate(mychannels):
         chan.temperature(setpoints[i])
 
-    expected = tuple(setpoints[0:2] + [0, 0] + setpoints[2:])
+    expected = (*setpoints[0:2], 0, 0, *setpoints[2:])
     assert dci.channels.temperature() == expected
 
 

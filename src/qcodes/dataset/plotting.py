@@ -101,10 +101,11 @@ def plot_dataset(
     cutoff_percentile: tuple[float, float] | float | None = None,
     complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
     complex_plot_phase: Literal["radians", "degrees"] = "radians",
+    parameters: Sequence[str] | str | None = None,
     **kwargs: Any,
 ) -> AxesTupleList:
     """
-    Construct all plots for a given dataset
+    Construct plots for a given dataset
 
     Implemented so far:
 
@@ -150,6 +151,8 @@ def plot_dataset(
         complex_plot_phase: Format of phase for plotting complex-valued data,
             either ``"radians"`` or ``"degrees"``. Applicable only for the
             cases where the dataset contains complex numbers
+        parameters: Names of dependent parameters to plot if the plotting of
+            all is not desired
         **kwargs: Keyword arguments passed to the plotting function.
 
     Returns:
@@ -206,7 +209,10 @@ def plot_dataset(
         alldata, conversion=complex_plot_type, degrees=degrees
     )
 
-    nplots = len(alldata)
+    if isinstance(parameters, str):
+        parameters = [parameters]
+
+    nplots = len(alldata) if parameters is None else len(parameters)
 
     if isinstance(axes, matplotlib.axes.Axes):
         axeslist = [axes]
@@ -229,14 +235,45 @@ def plot_dataset(
                 f"Provided arguments: {subplots_kwargs}"
             )
         if len(axeslist) != nplots:
-            raise RuntimeError(
-                f"Trying to make {nplots} plots, but"
-                f"received {len(axeslist)} axes objects."
-            )
+            if parameters is not None:
+                raise RuntimeError(
+                    f"Trying to plot {len(parameters)} parameters "
+                    f"but received {len(axeslist)} axes objects. "
+                )
+            else:
+                raise RuntimeError(
+                    f"Trying to make {nplots} plots, but"
+                    f"received {len(axeslist)} axes objects."
+                )
 
     if colorbars is None:
         colorbars = len(axeslist) * [None]
     new_colorbars: list[Colorbar | None] = []
+
+    if parameters is None:
+        log.debug("No data specified - plotting all.")
+
+    else:
+        # validate parameters
+        dependents = []
+        for i in range(len(dataset.dependent_parameters)):
+            dependents.append(dataset.dependent_parameters[i].name)
+        for param in parameters:
+            if param not in dependents:
+                raise ValueError(
+                    f"Invalid parameter(s) given. Received {parameters} "
+                    f"but can only accept elements from {dependents}. "
+                )
+
+        log.debug(f"Plotting data for {parameters}.")
+
+        for i, data in enumerate(alldata):
+            if len(data) == 2:  # 1D PLOTTING
+                if data[1]["name"] not in parameters:
+                    alldata.pop(i)
+            elif len(data) == 3:  # 2D PLOTTING
+                if data[2]["name"] not in parameters:
+                    alldata.pop(i)
 
     for data, ax, colorbar in zip(alldata, axeslist, colorbars):
         if len(data) == 2:  # 1D PLOTTING
@@ -383,6 +420,7 @@ def plot_by_id(
     cutoff_percentile: tuple[float, float] | float | None = None,
     complex_plot_type: Literal["real_and_imag", "mag_and_phase"] = "real_and_imag",
     complex_plot_phase: Literal["radians", "degrees"] = "radians",
+    parameters: Sequence[str] | str | None = None,
     **kwargs: Any,
 ) -> AxesTupleList:
     """
@@ -403,6 +441,7 @@ def plot_by_id(
         cutoff_percentile,
         complex_plot_type,
         complex_plot_phase,
+        parameters,
         **kwargs,
     )
 
