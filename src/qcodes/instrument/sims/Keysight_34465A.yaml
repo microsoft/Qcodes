@@ -231,7 +231,7 @@ devices:
         setter:
           q: "SENSe:VOLT:ZERO:AUTO {}"
       current_ac_NPLC:
-        default: 0
+        default: 10.0
         getter:
           q: "SENSe:CURR:AC:NPLC?"
           r: "{}"
@@ -241,7 +241,7 @@ devices:
           valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
           type: float
       current_dc_NPLC:
-        default: 0
+        default: 10.0
         getter:
           q: "SENSe:CURR:NPLC?"
           r: "{}"
@@ -251,7 +251,7 @@ devices:
           valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
           type: float
       fresistance_NPLC:
-        default: 0
+        default: 10.0
         getter:
           q: "SENSe:FRES:NPLC?"
           r: "{}"
@@ -261,7 +261,7 @@ devices:
           valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
           type: float
       resistance_NPLC:
-        default: 0
+        default: 10.0
         getter:
           q: "SENSe:RES:NPLC?"
           r: "{}"
@@ -271,7 +271,7 @@ devices:
           valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
           type: float
       voltage_ac_NPLC:
-        default: 0
+        default: 10.0
         getter:
           q: "SENSe:VOLT:AC:NPLC?"
           r: "{}"
@@ -281,7 +281,7 @@ devices:
           valid: [0.001, 0.002, 0.006, 0.02, 0.06, 0.2, 1, 10, 100]
           type: float
       voltage_dc_NPLC:
-        default: 0
+        default: 10.0
         getter:
           q: "SENSe:VOLT:NPLC?"
           r: "{}"
