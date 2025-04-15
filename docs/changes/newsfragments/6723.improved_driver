@@ -1,0 +1,2 @@
+The Keysight 344xxA drivers have been updated to ensure that ``NPLC``, ``autorange``, ``autozero``, ``apature_time`` and ```apature_mode``
+parameters use the correct instrument commends for the sense mode selected by the ``sense_function`` parameter.
