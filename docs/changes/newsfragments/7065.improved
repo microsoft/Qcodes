@@ -1,0 +1,3 @@
+The implementation of ``do0d`` and ``do1d`` have been replaced with a wrapper around `dond`.
+This aligns the keyword arguments with ``dond`` and ensures that these function support
+the same features as ``dond``. The same change is planned for ``do2d`` in the future.
