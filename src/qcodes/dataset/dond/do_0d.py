@@ -38,6 +38,9 @@ def do0d(
         The QCoDeS dataset.
 
     """
+
+    kwargs.setdefault("log_info", "Using 'qcodes.dataset.do0d'")
+
     # since we only support entering parameters
     # as a simple list or args we are sure to always
     # get back a AxesTupleListWithDataSet and cast is safe

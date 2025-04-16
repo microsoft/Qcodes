@@ -52,6 +52,8 @@ def do1d(
         The QCoDeS dataset.
 
     """
+    kwargs.setdefault("log_info", "Using 'qcodes.dataset.do1d'")
+
     return cast(
         "AxesTupleListWithDataSet",
         dond(
