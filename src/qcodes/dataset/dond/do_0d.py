@@ -32,7 +32,7 @@ def do0d(
           will be called at each step. The function should take no arguments.
           The parameters and functions are called in the order they are
           supplied.
-        **kwargs: kwargs are the same as for dond and forwarded directly to dond.
+        **kwargs: kwargs are the same as for :func:`dond` and forwarded directly to :func:`dond`.
 
     Returns:
         The QCoDeS dataset.
