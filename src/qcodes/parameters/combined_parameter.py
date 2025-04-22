@@ -177,7 +177,7 @@ class CombinedParameter(Metadatable):
         # anything can be the dtype of the array which is not allowed
         # the user is responsible for calling this method with a
         # dtype that makes sense
-        new.setpoints = nparray.tolist()  # type: ignore[assignment]
+        new.setpoints = nparray.tolist()
         return new
 
     def _aggregate(self, *vals: Any) -> Any:
