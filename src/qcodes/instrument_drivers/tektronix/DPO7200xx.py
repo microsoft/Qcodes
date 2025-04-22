@@ -10,6 +10,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import Unpack, deprecated
 
 from qcodes.instrument import (
@@ -324,7 +325,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         return inner
 
-    def _get_trace_data(self) -> np.ndarray:
+    def _get_trace_data(self) -> npt.NDArray:
         self.root_instrument.data.source(self._identifier)
         waveform = self.root_instrument.waveform
 
@@ -350,7 +351,7 @@ class TektronixDPOWaveform(InstrumentChannel):
 
         return (raw_data - self.raw_data_offset()) * self.scale() + self.offset()
 
-    def _get_trace_setpoints(self) -> np.ndarray:
+    def _get_trace_setpoints(self) -> npt.NDArray:
         """
         Infer the set points of the waveform
         """

@@ -6,6 +6,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.instrument import (
     ChannelList,
@@ -939,8 +940,8 @@ class DummyParameterWithSetpointsComplex(ParameterWithSetpoints):
 
 
 def setpoint_generator(
-    *sp_bases: Sequence[float | np.floating] | np.ndarray,
-) -> tuple[np.ndarray, ...]:
+    *sp_bases: Sequence[float | np.floating] | npt.NDArray,
+) -> tuple[npt.NDArray, ...]:
     """
     Helper function to generate setpoints in the format that ArrayParameter
     (and MultiParameter) expects
@@ -952,7 +953,7 @@ def setpoint_generator(
         tuple of setpoints in the expected format.
 
     """
-    setpoints: list[np.ndarray] = []
+    setpoints: list[npt.NDArray] = []
     for i, sp_base in enumerate(sp_bases):
         if i == 0:
             setpoints.append(np.array(sp_base))

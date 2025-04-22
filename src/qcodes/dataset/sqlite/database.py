@@ -15,6 +15,7 @@ from os.path import expanduser, normpath
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
+import numpy.typing as npt
 
 import qcodes
 from qcodes.dataset.experiment_settings import reset_default_experiment_id
@@ -35,7 +36,7 @@ JournalMode = Literal["DELETE", "TRUNCATE", "PERSIST", "MEMORY", "WAL", "OFF"]
 
 
 # utility function to allow sqlite/numpy type
-def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
+def _adapt_array(arr: npt.NDArray) -> sqlite3.Binary:
     """
     See this:
     https://stackoverflow.com/questions/3425320/sqlite3-programmingerror-you-must-not-use-8-bit-bytestrings-unless-you-use-a-te
@@ -50,7 +51,7 @@ def _adapt_array(arr: np.ndarray) -> sqlite3.Binary:
     return sqlite3.Binary(out.read())
 
 
-def _convert_array(text: bytes) -> np.ndarray:
+def _convert_array(text: bytes) -> npt.NDArray:
     # Using np.lib.format.read_array (counterpart of np.lib.format.write_array)
     # npy format version 3.0 is 3 times faster than previous verions (no clean up step
     # for python 2 backward compatibility)

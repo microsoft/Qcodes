@@ -14,6 +14,7 @@ from textwrap import wrap
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 import numpy as np
+import numpy.typing as npt
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -317,7 +318,7 @@ def plot_dataset(
             if data[2]["shape"] is None:
                 xpoints = data[0]["data"].flatten()
                 ypoints = data[1]["data"].flatten()
-                zpoints = data[2]["data"].flatten()
+                zpoints: npt.NDArray = data[2]["data"].flatten()
                 plottype = get_2D_plottype(xpoints, ypoints, zpoints)
                 log.debug(f"Determined plottype: {plottype}")
             else:
@@ -601,9 +602,9 @@ def _set_data_axes_labels(
 
 
 def plot_2d_scatterplot(
-    x: np.ndarray,
-    y: np.ndarray,
-    z: np.ndarray,
+    x: npt.NDArray,
+    y: npt.NDArray,
+    z: npt.NDArray,
     ax: Axes,
     colorbar: Colorbar | None = None,
     **kwargs: Any,
@@ -666,9 +667,9 @@ def plot_2d_scatterplot(
 
 
 def plot_on_a_plain_grid(
-    x: np.ndarray,
-    y: np.ndarray,
-    z: np.ndarray,
+    x: npt.NDArray,
+    y: npt.NDArray,
+    z: npt.NDArray,
     ax: Axes,
     colorbar: Colorbar | None = None,
     **kwargs: Any,
@@ -780,9 +781,11 @@ def plot_on_a_plain_grid(
 
 
 def _clip_nan_from_shaped_data(
-    x: np.ndarray, y: np.ndarray, z: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    def _on_rectilinear_grid_except_nan(x_data: np.ndarray, y_data: np.ndarray) -> bool:
+    x: npt.NDArray, y: npt.NDArray, z: npt.NDArray
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
+    def _on_rectilinear_grid_except_nan(
+        x_data: npt.NDArray, y_data: npt.NDArray
+    ) -> bool:
         """
         Check that data is on a rectilinear grid. e.g. all points are the same as the first
         row and column with the exception of nans. Those represent points not yet measured.
@@ -908,7 +911,7 @@ def _rescale_ticks_and_units(
             cax.update_ticks()
 
 
-def _is_string_valued_array(values: np.ndarray) -> bool:
+def _is_string_valued_array(values: npt.NDArray) -> bool:
     """
     Check if the given 1D numpy array contains categorical data, or, in other
     words, if it is string-valued.

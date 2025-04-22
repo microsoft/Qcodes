@@ -5,6 +5,7 @@ import struct
 from typing import Any
 
 import numpy as np
+import numpy.typing as npt
 
 AWG_FILE_FORMAT = {
     "MAGIC": "h",
@@ -307,8 +308,8 @@ _parser3_output = tuple[
 
 
 def _unpacker(
-    binaryarray: np.ndarray, dacbitdepth: int = 14
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    binaryarray: npt.NDArray, dacbitdepth: int = 14
+) -> tuple[npt.NDArray, npt.NDArray, npt.NDArray]:
     """
     Unpacks an awg-file integer wave into a waveform and two markers
     in the same way as the AWG does. This can be useful for checking
@@ -473,7 +474,7 @@ def _parser1(
     return instdict, waveformlist, sequencelist
 
 
-def _parser2(waveformlist: list[list[Any]]) -> dict[str, dict[str, np.ndarray]]:
+def _parser2(waveformlist: list[list[Any]]) -> dict[str, dict[str, npt.NDArray]]:
     """
     Cast the waveformlist from _parser1 into a dict used by _parser3.
 

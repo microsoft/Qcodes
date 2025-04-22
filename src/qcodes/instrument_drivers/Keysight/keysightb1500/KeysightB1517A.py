@@ -3,6 +3,7 @@ import textwrap
 from typing import TYPE_CHECKING, Any, Literal, NotRequired, cast, overload
 
 import numpy as np
+import numpy.typing as npt
 from typing_extensions import TypedDict, Unpack
 
 import qcodes.validators as vals
@@ -1070,10 +1071,10 @@ class KeysightB1517A(KeysightB1500Module):
         else:
             raise Exception("set timing parameters first")
 
-    def _get_time_axis(self) -> np.ndarray:
+    def _get_time_axis(self) -> npt.NDArray:
         sample_rate = self._timing_parameters["interval"]
         total_time = self._total_measurement_time()
-        time_xaxis: np.ndarray = np.arange(0, total_time, sample_rate)
+        time_xaxis: npt.NDArray = np.arange(0, total_time, sample_rate)
         return time_xaxis
 
     def _total_measurement_time(self) -> float:

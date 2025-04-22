@@ -5,6 +5,7 @@ from string import ascii_uppercase
 
 import hypothesis.strategies as hst
 import numpy as np
+import numpy.typing as npt
 import pytest
 from hypothesis import HealthCheck, given, settings
 
@@ -697,7 +698,7 @@ def test_cache_complex_array_param_in_1d(
     meas = Measurement()
     if outer_param_type == "numeric":
         outer_param = DAC.ch1
-        outer_setpoints: np.ndarray | list[str] = np.linspace(-1, 1, n_points)
+        outer_setpoints: npt.NDArray | list[str] = np.linspace(-1, 1, n_points)
         outer_storage_type = storage_type
     else:
         outer_param = channel_array_instrument.A.dummy_text

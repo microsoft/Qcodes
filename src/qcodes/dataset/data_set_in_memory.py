@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
+import numpy.typing as npt
 
 from qcodes.dataset.data_set_protocol import (
     SPECS,
@@ -377,8 +378,8 @@ class DataSetInMem(BaseDataSet):
     @staticmethod
     def _from_xarray_dataset_to_qcodes_raw_data(
         xr_data: xr.Dataset,
-    ) -> dict[str, dict[str, np.ndarray]]:
-        output: dict[str, dict[str, np.ndarray]] = {}
+    ) -> dict[str, dict[str, npt.NDArray]]:
+        output: dict[str, dict[str, npt.NDArray]] = {}
         for datavar in xr_data.data_vars:
             output[str(datavar)] = {}
             data = xr_data[datavar]
@@ -639,7 +640,9 @@ class DataSetInMem(BaseDataSet):
 
         self._export_info = export_info
 
-    def _enqueue_results(self, result_dict: Mapping[ParamSpecBase, np.ndarray]) -> None:
+    def _enqueue_results(
+        self, result_dict: Mapping[ParamSpecBase, npt.NDArray]
+    ) -> None:
         """
         Enqueue the results, for this dataset directly into cache
 
@@ -656,7 +659,7 @@ class DataSetInMem(BaseDataSet):
         interdeps = self._rundescriber.interdeps
 
         toplevel_params = set(interdeps.dependencies).intersection(set(result_dict))
-        new_results: dict[str, dict[str, np.ndarray]] = {}
+        new_results: dict[str, dict[str, npt.NDArray]] = {}
         for toplevel_param in toplevel_params:
             inff_params = set(interdeps.inferences.get(toplevel_param, ()))
             deps_params = set(interdeps.dependencies.get(toplevel_param, ()))

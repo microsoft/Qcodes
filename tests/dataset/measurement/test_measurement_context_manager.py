@@ -10,6 +10,7 @@ from typing import Any
 
 import hypothesis.strategies as hst
 import numpy as np
+import numpy.typing as npt
 import pytest
 import xarray as xr
 from hypothesis import HealthCheck, given, settings
@@ -2123,10 +2124,10 @@ def test_datasaver_2d_multi_parameters_array(
     ds = load_by_id(datasaver.run_id)
 
     # 30 points in each setpoint value list
-    this_sp_val: np.ndarray = np.array(
+    this_sp_val: npt.NDArray = np.array(
         reduce(list.__add__, [[n] * 3 for n in range(5, 10)], [])  # type: ignore[arg-type]
     )
-    that_sp_val: np.ndarray = np.array(
+    that_sp_val: npt.NDArray = np.array(
         reduce(list.__add__, [[n] for n in range(9, 12)], []) * 5  # type: ignore[arg-type]
     )
 

@@ -5,6 +5,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 
 import qcodes.validators as vals
 from qcodes.instrument import Instrument, InstrumentBaseKWArgs
@@ -159,7 +160,7 @@ class FrequencySweep(ArrayParameter):
         self.shape = (sweep_len,)
         self.instrument._trace_updated = True
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         if self.instrument is None:
             raise RuntimeError("No instrument is attached to 'FrequencySweep'")
         if not isinstance(self.instrument, SignalHoundUSBSA124B):
@@ -727,7 +728,7 @@ class SignalHoundUSBSA124B(Instrument):
         self.check_for_error(err, "saQuerySweepInfo")
         return sweep_len.value, start_freq.value, stepsize.value
 
-    def _get_sweep_data(self) -> np.ndarray:
+    def _get_sweep_data(self) -> npt.NDArray:
         """
         This function performs a sweep over the configured ranges.
         The result of the sweep is returned along with the sweep points
@@ -825,7 +826,7 @@ class SignalHoundUSBSA124B(Instrument):
         output["firmware"] = fw_version.value.decode("ascii")
         return output
 
-    def _get_freq_axis(self) -> np.ndarray:
+    def _get_freq_axis(self) -> npt.NDArray:
         if not self._parameters_synced:
             self.sync_parameters()
         sweep_len, start_freq, stepsize = self.QuerySweep()

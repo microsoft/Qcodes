@@ -5,6 +5,7 @@ from functools import partial
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 from packaging import version
 from typing_extensions import deprecated
 
@@ -548,7 +549,7 @@ class TimeTrace(ParameterWithSetpoints):
         conf = self.instrument.sense_function()
         self.unit, self.label = units_and_labels[conf]
 
-    def _acquire_time_trace(self) -> np.ndarray:
+    def _acquire_time_trace(self) -> npt.NDArray:
         """
         The function that prepares the measurement and fetches the data
         """
@@ -583,7 +584,7 @@ class TimeTrace(ParameterWithSetpoints):
 
         return data  # pyright: ignore[reportPossiblyUnboundVariable]
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         self._validate_dt()
         self._set_units_and_labels()
         data = self._acquire_time_trace()
@@ -597,7 +598,7 @@ class TimeAxis(Parameter):
     measurement start) at which the points of the time trace were acquired.
     """
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         """
         Construct a time axis by querying the number of points and step size
         from the instrument.
@@ -1180,7 +1181,7 @@ mode."""
 
         return float(response)
 
-    def fetch(self) -> np.ndarray:
+    def fetch(self) -> npt.NDArray:
         """
         Waits for measurements to complete and copies all available
         measurements to the instrument's output buffer. The readings remain
@@ -1197,7 +1198,7 @@ mode."""
         raw_vals: str = self.ask("FETCH?")
         return _raw_vals_to_array(raw_vals)
 
-    def read(self) -> np.ndarray:
+    def read(self) -> npt.NDArray:
         """
         Starts a new set of measurements, waits for all measurements to
         complete, and transfers all available measurements.
@@ -1383,7 +1384,7 @@ class Display(Keysight344xxADisplay):
     pass
 
 
-def _raw_vals_to_array(raw_vals: str) -> np.ndarray:
+def _raw_vals_to_array(raw_vals: str) -> npt.NDArray:
     """
     Helper function that converts comma-delimited string of floating-point
     values to a numpy 1D array of them. Most data retrieval command of these

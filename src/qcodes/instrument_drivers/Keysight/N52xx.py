@@ -3,6 +3,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 from pyvisa import constants, errors
 from typing_extensions import deprecated
 
@@ -45,7 +46,7 @@ class PNAAxisParameter(Parameter):
         self._stopparam = stopparam
         self._pointsparam = pointsparam
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         """
         Return the axis values, with values retrieved from the parent instrument
         """
@@ -53,7 +54,7 @@ class PNAAxisParameter(Parameter):
 
 
 class PNALogAxisParamter(PNAAxisParameter):
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         """
         Return the axis values on a log scale, with values retrieved from
         the parent instrument
@@ -62,7 +63,7 @@ class PNALogAxisParamter(PNAAxisParameter):
 
 
 class PNATimeAxisParameter(PNAAxisParameter):
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         """
         Return the axis values on a time scale, with values retrieved from
         the parent instrument
@@ -116,7 +117,7 @@ class FormattedSweep(ParameterWithSetpoints):
         """
         return
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         if self.instrument is None:
             raise RuntimeError("Cannot get data without instrument")
         root_instr = self.instrument.root_instrument
@@ -300,7 +301,7 @@ class KeysightPNATrace(InstrumentChannel):
         self.write(f"DISP:TRAC{self.trace_num}:STAT 0")
 
     @staticmethod
-    def _parse_polar_data(data: np.ndarray) -> np.ndarray:
+    def _parse_polar_data(data: npt.NDArray) -> npt.NDArray:
         """
         Parse the 2*n-length flat array coming from the instrument
         and convert to n-length array of complex numbers

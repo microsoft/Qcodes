@@ -7,6 +7,7 @@ import warnings
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
+import numpy.typing as npt
 from packaging import version
 
 import qcodes.validators as vals
@@ -94,7 +95,7 @@ class ScopeTrace(ArrayParameter):
         # we must ensure that all this took effect before proceeding
         self.root_instrument.ask("*OPC?")
 
-    def get_raw(self) -> np.ndarray:
+    def get_raw(self) -> npt.NDArray:
         """
         Returns a trace
         """

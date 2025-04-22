@@ -126,7 +126,7 @@ def get_parameter_data(
     start: int | None = None,
     end: int | None = None,
     callback: Callable[[float], None] | None = None,
-) -> dict[str, dict[str, np.ndarray]]:
+) -> dict[str, dict[str, npt.NDArray]]:
     """
     Get data for one or more parameters and its dependencies. The data
     is returned as numpy arrays within 2 layers of nested dicts. The keys of
@@ -177,7 +177,7 @@ def get_shaped_parameter_data_for_one_paramtree(
     start: int | None,
     end: int | None,
     callback: Callable[[float], None] | None = None,
-) -> dict[str, np.ndarray]:
+) -> dict[str, npt.NDArray]:
     """
     Get the data for a parameter tree and reshape it according to the
     metadata about the dataset. This will only reshape the loaded data if
@@ -233,7 +233,7 @@ def get_parameter_data_for_one_paramtree(
     start: int | None,
     end: int | None,
     callback: Callable[[float], None] | None = None,
-) -> tuple[dict[str, np.ndarray], int]:
+) -> tuple[dict[str, npt.NDArray], int]:
     interdeps = rundescriber.interdeps
     data, paramspecs, n_rows = _get_data_for_one_param_tree(
         conn, table_name, interdeps, output_param, start, end, callback
@@ -402,7 +402,7 @@ def get_table_max_id(conn: AtomicConnection, table_name: str) -> int:
 
 def _get_offset_limit_for_callback(
     conn: AtomicConnection, table_name: str, param_name: str
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[npt.NDArray, npt.NDArray]:
     """
     Since sqlite3 does not allow to keep track of the data loading progress,
     we compute how many sqlite request correspond to a progress of
@@ -491,9 +491,9 @@ def get_parameter_tree_values(
     cursor = conn.cursor()
 
     # Without callback: int
-    # With callback: np.ndarray
-    offset: int | np.ndarray
-    limit: int | np.ndarray
+    # With callback: npt.NDArray
+    offset: int | npt.NDArray
+    limit: int | npt.NDArray
 
     offset = max((start - 1), 0) if start is not None else 0
     limit = max((end - offset), 0) if end is not None else -1
@@ -2088,7 +2088,7 @@ def load_new_data_for_rundescriber(
     table_name: str,
     rundescriber: RunDescriber,
     read_status: Mapping[str, int],
-) -> tuple[dict[str, dict[str, np.ndarray]], dict[str, int]]:
+) -> tuple[dict[str, dict[str, npt.NDArray]], dict[str, int]]:
     """
     Load all new data for a given rundesciber since the rows given by read_status.
 
@@ -2106,7 +2106,7 @@ def load_new_data_for_rundescriber(
 
     parameters = tuple(ps.name for ps in rundescriber.interdeps.non_dependencies)
     updated_read_status: dict[str, int] = dict(read_status)
-    new_data_dict: dict[str, dict[str, np.ndarray]] = {}
+    new_data_dict: dict[str, dict[str, npt.NDArray]] = {}
 
     for meas_parameter in parameters:
         start = read_status.get(meas_parameter, 0) + 1
