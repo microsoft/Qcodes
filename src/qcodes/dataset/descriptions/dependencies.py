@@ -228,7 +228,7 @@ class InterDependencies_:
             ps: the parameter to look up
 
         Raises:
-            ValueError if the parameter is not part of this object
+            ValueError: If the parameter is not part of this object
 
         """
         if ps not in self:
@@ -245,7 +245,7 @@ class InterDependencies_:
             ps: the parameter to look up
 
         Raises:
-            ValueError if the parameter is not part of this object
+            ValueError: If the parameter is not part of this object
 
         """
         if ps not in self:
@@ -480,8 +480,8 @@ class InterDependencies_:
             parameters: The collection of ParamSpecBases to validate
 
         Raises:
-            DependencyError, if a dependency is missing
-            InferenceError, if an inference is missing
+            DependencyError: If a dependency is missing
+            InferenceError: If an inference is missing
 
         """
         params = {p.name for p in parameters}
