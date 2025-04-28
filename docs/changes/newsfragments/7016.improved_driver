@@ -1,0 +1,2 @@
+Fixed the issue that the units of the parameters "R", "X", "Y" of the SR830 lock-in amplifier were incorrect.
+(should be current "A" but were written as voltage "V")

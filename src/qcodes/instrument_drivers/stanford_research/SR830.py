@@ -544,17 +544,17 @@ class SR830(VisaInstrument):
 
         # Data transfer
         self.X: Parameter = self.add_parameter(
-            "X", get_cmd="OUTP? 1", get_parser=float, unit="V"
+            "X", get_cmd="OUTP? 1", get_parser=float, unit="A"
         )
         """Parameter X"""
 
         self.Y: Parameter = self.add_parameter(
-            "Y", get_cmd="OUTP? 2", get_parser=float, unit="V"
+            "Y", get_cmd="OUTP? 2", get_parser=float, unit="A"
         )
         """Parameter Y"""
 
         self.R: Parameter = self.add_parameter(
-            "R", get_cmd="OUTP? 3", get_parser=float, unit="V"
+            "R", get_cmd="OUTP? 3", get_parser=float, unit="A"
         )
         """Parameter R"""
 
