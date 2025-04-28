@@ -11,7 +11,6 @@ import qcodes as qc
 import qcodes.dataset.descriptions.versioning.serialization as serial
 import tests.dataset
 from qcodes.dataset import (
-    ConnectionPlus,
     connect,
     initialise_database,
     initialise_or_create_database_at,
@@ -26,7 +25,7 @@ from qcodes.dataset.descriptions.dependencies import InterDependencies_
 from qcodes.dataset.descriptions.param_spec import ParamSpecBase
 from qcodes.dataset.descriptions.versioning.v0 import InterDependencies
 from qcodes.dataset.guids import parse_guid
-from qcodes.dataset.sqlite.connection import atomic_transaction
+from qcodes.dataset.sqlite.connection import AtomicConnection, atomic_transaction
 from qcodes.dataset.sqlite.database import get_db_version_and_newest_available_version
 from qcodes.dataset.sqlite.db_upgrades import (
     _latest_available_version,
@@ -703,7 +702,7 @@ def test_perform_actual_upgrade_6_to_7() -> None:
     skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
-        assert isinstance(conn, ConnectionPlus)
+        assert isinstance(conn, AtomicConnection)
         perform_db_upgrade_6_to_7(conn)
         assert get_user_version(conn) == 7
 
@@ -762,7 +761,7 @@ def test_perform_actual_upgrade_6_to_newest_add_new_data() -> None:
     skip_if_no_fixtures(dbname_old)
 
     with temporarily_copied_DB(dbname_old, debug=False, version=6) as conn:
-        assert isinstance(conn, ConnectionPlus)
+        assert isinstance(conn, AtomicConnection)
         perform_db_upgrade(conn)
         assert get_user_version(conn) >= 7
         no_of_runs_query = "SELECT max(run_id) FROM runs"

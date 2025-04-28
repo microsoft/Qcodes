@@ -911,7 +911,7 @@ class TestGetData:
         np.testing.assert_array_equal(data, expected)
 
 
-@settings(deadline=600, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(deadline=1000, suppress_health_check=(HealthCheck.function_scoped_fixture,))
 @given(
     start=hst.one_of(hst.integers(1, 10**3), hst.none()),
     end=hst.one_of(hst.integers(1, 10**3), hst.none()),

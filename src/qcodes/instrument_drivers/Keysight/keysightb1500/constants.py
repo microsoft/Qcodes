@@ -1,13 +1,5 @@
-import sys
 from collections.abc import Sequence
-from enum import Enum, IntEnum, IntFlag
-
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:
-
-    class StrEnum(str, Enum):
-        pass
+from enum import IntEnum, IntFlag, StrEnum
 
 
 class ChannelName(StrEnum):

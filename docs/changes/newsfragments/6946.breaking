@@ -1,4 +1,0 @@
-The QCoDeS deprecation utils including ``qcodes.utils.deprecate.deprecation_message``,
-``qcodes.utils.deprecate.issue_deprecation_warning``,  ``qcodes.utils.deprecate.deprecate``  ``qcodes.utils.deprecate.assert_not_deprecated``
-and ``qcodes.utils.deprecate.assert_deprecated`` along with their reexports in `qcodes`, `qcodes.utils` and `qcodes.utils.helpers`
-are all deprecated and will be removed in QCoDeS 0.54.0. We recommend using `typing_extensions.deprecate` as an alternative.

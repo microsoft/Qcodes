@@ -165,18 +165,7 @@ def get_level_code(level: str | int) -> int:
     if isinstance(level, int):
         return level
     elif isinstance(level, str):
-        if sys.version_info >= (3, 11):
-            return logging.getLevelNamesMapping()[level]
-        else:
-            # The `getLevelNamesMapping` function was introduced in Python 3.11.
-            # It is possible to get the level code from the
-            # `getLevelName` call due to backwards compatibility to an earlier
-            # bug:
-            # >>> import logging
-            # >>> print(logging.getLevelName('DEBUG'))
-            # but this is now deprecated
-            # remove this else block when we drop support for Python 3.10
-            return logging.getLevelName(level)  # pyright: ignore[reportDeprecated]
+        return logging.getLevelNamesMapping()[level]
     else:
         raise RuntimeError(
             "get_level_code: "
@@ -366,8 +355,6 @@ def conditionally_start_all_logging() -> None:
             raise RuntimeError("Error in qcodesrc validation.")
 
     def running_in_test_or_tool() -> bool:
-        import sys
-
         tools = (
             "pytest.py",
             "pytest",

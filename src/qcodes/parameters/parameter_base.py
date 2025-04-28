@@ -192,6 +192,10 @@ class ParameterBase(MetadatableWithName):
 
     """
 
+    global_on_set_callback: ClassVar[
+        Callable[[ParameterBase, ParamDataType], None] | None
+    ] = None
+
     def __init__(
         self,
         name: str,
@@ -213,6 +217,7 @@ class ParameterBase(MetadatableWithName):
         abstract: bool | None = False,
         bind_to_instrument: bool = True,
         register_name: str | None = None,
+        on_set_callback: Callable[[ParameterBase, ParamDataType], None] | None = None,
     ) -> None:
         super().__init__(metadata)
         if not str(name).isidentifier():
@@ -228,6 +233,7 @@ class ParameterBase(MetadatableWithName):
         self._snapshot_get = snapshot_get
         self._snapshot_value = snapshot_value
         self.snapshot_exclude = snapshot_exclude
+        self.on_set_callback = on_set_callback
 
         if not isinstance(vals, (Validator, type(None))):
             raise TypeError("vals must be None or a Validator")
@@ -778,11 +784,26 @@ class ParameterBase(MetadatableWithName):
 
                     self.cache._update_with(value=val_step, raw_value=raw_val_step)
 
+                    self._call_on_set_callback(val_step)
+
             except Exception as e:
                 e.args = (*e.args, f"setting {self} to {value}")
                 raise e
 
         return set_wrapper
+
+    def _call_on_set_callback(self, value: ParamDataType) -> None:
+        try:
+            if self.on_set_callback is not None:
+                self.on_set_callback(self, value)
+            elif self.__class__.global_on_set_callback is not None:
+                self.__class__.global_on_set_callback(self, value)
+        except Exception as e:
+            LOG.warning(
+                f"Exception {e} in on set callback "
+                f"for {self.full_name} with value {value}",
+                exc_info=True,
+            )
 
     def get_ramp_values(
         self, value: NumberType | Sized, step: NumberType | None = None
@@ -824,7 +845,7 @@ class ParameterBase(MetadatableWithName):
                 return [value]
 
             # drop the initial value, we're already there
-            return permissive_range(start_value, value, step)[1:] + [value]
+            return [*permissive_range(start_value, value, step)[1:], value]
 
     @cached_property
     def _validate_context(self) -> str:

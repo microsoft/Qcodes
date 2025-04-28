@@ -526,12 +526,30 @@ class GalilDMC4133Controller(GalilMotionController):
         """controller will wait for the amount of time specified before executing the next command"""
 
         self._set_default_update_time()
-        self.add_submodule("motor_a", GalilDMC4133Motor(self, "A"))
-        self.add_submodule("motor_b", GalilDMC4133Motor(self, "B"))
-        self.add_submodule("motor_c", GalilDMC4133Motor(self, "C"))
-        self.add_submodule("plane_ab", GalilDMC4133VectorMode(self, "AB"))
-        self.add_submodule("plane_bc", GalilDMC4133VectorMode(self, "BC"))
-        self.add_submodule("plane_ac", GalilDMC4133VectorMode(self, "AC"))
+        self.motor_a: GalilDMC4133Motor = self.add_submodule(
+            "motor_a", GalilDMC4133Motor(self, "A")
+        )
+        """Submodule motor_a"""
+        self.motor_b: GalilDMC4133Motor = self.add_submodule(
+            "motor_b", GalilDMC4133Motor(self, "B")
+        )
+        """Submodule motor_b"""
+        self.motor_c: GalilDMC4133Motor = self.add_submodule(
+            "motor_c", GalilDMC4133Motor(self, "C")
+        )
+        """Submodule motor_c"""
+        self.plane_ab: GalilDMC4133VectorMode = self.add_submodule(
+            "plane_ab", GalilDMC4133VectorMode(self, "AB")
+        )
+        """Submodule plane_ab"""
+        self.plane_bc: GalilDMC4133VectorMode = self.add_submodule(
+            "plane_bc", GalilDMC4133VectorMode(self, "BC")
+        )
+        """Submodule plane_bc"""
+        self.plane_ac: GalilDMC4133VectorMode = self.add_submodule(
+            "plane_ac", GalilDMC4133VectorMode(self, "AC")
+        )
+        """Submodule plane_ac"""
 
     def _set_default_update_time(self) -> None:
         """
@@ -643,7 +661,8 @@ class GalilDMC4133Arm:
             controller: an instance of DMC4133Controller
 
         """
-        self.controller = controller
+        self.controller: GalilDMC4133Controller = controller
+        """The controller attached to the arm."""
 
         # initialization (all these points will have values in quadrature
         # counts)

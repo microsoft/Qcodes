@@ -54,12 +54,11 @@ from qcodes.utils import DelayedKeyboardInterrupt
 
 if TYPE_CHECKING:
     from types import TracebackType
-
-    from typing_extensions import Self
+    from typing import Self
 
     from qcodes.dataset.descriptions.versioning.rundescribertypes import Shapes
     from qcodes.dataset.experiment_container import Experiment
-    from qcodes.dataset.sqlite.connection import ConnectionPlus
+    from qcodes.dataset.sqlite.connection import AtomicConnection
     from qcodes.dataset.sqlite.query_helpers import VALUE
 
 log = logging.getLogger(__name__)
@@ -631,7 +630,7 @@ class Runner:
         if self.experiment is not None:
             exp_id: int | None = self.experiment.exp_id
             path_to_db: str | None = self.experiment.path_to_db
-            conn: ConnectionPlus | None = self.experiment.conn
+            conn: AtomicConnection | None = self.experiment.conn
         else:
             exp_id = None
             path_to_db = None
@@ -673,6 +672,12 @@ class Runner:
                 param.short_name: param.snapshot()
                 for param in self._registered_parameters
             }
+            parameter_snapshot.update(
+                {
+                    param.register_name: param.snapshot()
+                    for param in self._registered_parameters
+                }
+            )
             snapshot["parameters"] = parameter_snapshot
 
         self.ds.prepare(
