@@ -164,6 +164,8 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             set_cmd="SOUR:IQ:IMP:LEAK:I {:.2f}",
             get_parser=float,
             vals=vals.Numbers(-10, 10),
+            unit='%',
+            docstring='Carrier offset for I channel in percentage of the peak envelope power.'
         )
         """Parameter I_offset"""
         self.Q_offset: Parameter = self.add_parameter(
@@ -173,6 +175,8 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             set_cmd="SOUR:IQ:IMP:LEAK:Q {:.2f}",
             get_parser=float,
             vals=vals.Numbers(-10, 10),
+            unit='%',
+            docstring='Carrier offset for Q channel in percentage of the peak envelope power.'
         )
         """Parameter Q_offset"""
         self.IQ_gain_imbalance: Parameter = self.add_parameter(
@@ -182,6 +186,8 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             set_cmd="SOUR:IQ:IMP:IQR {:.2f}",
             get_parser=float,
             vals=vals.Numbers(-1, 1),
+            unit='dB',
+            docstring='IQ Gain imbalance. Postive value means the Q vector is amplified more.'
         )
         """Parameter IQ_gain_imbalance"""
         self.IQ_angle: Parameter = self.add_parameter(
@@ -191,6 +197,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             set_cmd="SOUR:IQ:IMP:QUAD {:.2f}",
             get_parser=float,
             vals=vals.Numbers(-8, 8),
+            unit='deg'
         )
         """Parameter IQ_angle"""
         # Determines the signal at the input/output of the multi purpose [TRIG] connector.
