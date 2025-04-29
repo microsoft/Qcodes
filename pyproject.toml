@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools >= 68.1.0",
+    "setuptools >= 77.0.0",
     "versioningit >= 2.2.1",
 ]
 build-backend = 'setuptools.build_meta'
@@ -12,14 +12,13 @@ description = "Python-based data acquisition framework developed by the Copenhag
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering",
 ]
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "broadbean>=0.11.0",
