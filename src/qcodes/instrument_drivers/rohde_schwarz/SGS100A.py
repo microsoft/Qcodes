@@ -167,7 +167,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             unit='%',
             docstring='Carrier offset for I channel in percentage of the peak envelope power.'
         )
-        """Parameter I_offset"""
+        """Parameter I_offset. Carrier offset for I channel in percentage of the peak envelope power."""
         self.Q_offset: Parameter = self.add_parameter(
             "Q_offset",
             label="Q Offset",
@@ -178,7 +178,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             unit='%',
             docstring='Carrier offset for Q channel in percentage of the peak envelope power.'
         )
-        """Parameter Q_offset"""
+        """Parameter Q_offset. Carrier offset for Q channel in percentage of the peak envelope power."""
         self.IQ_gain_imbalance: Parameter = self.add_parameter(
             "IQ_gain_imbalance",
             label="IQ Gain Imbalance",
@@ -189,7 +189,7 @@ class RohdeSchwarzSGS100A(VisaInstrument):
             unit='dB',
             docstring='IQ Gain imbalance. Postive value means the Q vector is amplified more.'
         )
-        """Parameter IQ_gain_imbalance"""
+        """Parameter IQ_gain_imbalance. Postive value means the Q vector is amplified more."""
         self.IQ_angle: Parameter = self.add_parameter(
             "IQ_angle",
             label="IQ Angle Offset",
