@@ -72,6 +72,9 @@ class CryomagneticsModel4G(VisaInstrument):
         coil_constant: float,
         **kwargs: Unpack[VisaInstrumentKWArgs],
     ):
+        self._RETRY_WRITE_ASK = True
+        self._RETRY_TIME = 1
+
         super().__init__(name, address, **kwargs)
 
         self.coil_constant = coil_constant
@@ -298,17 +301,18 @@ class CryomagneticsModel4G(VisaInstrument):
             self.log.debug("Finished blocking ramp")
             # If we are now holding, it was successful
 
-            if not exit_state.holding:
-                msg = "_set_field({}) failed with state: {}"
-                raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
+            if not exit_state.standby:
+                if not exit_state.holding:
+                    msg = "_set_field({}) failed with state: {}"
+                    raise Cryomagnetics4GException(msg.format(field_setpoint, exit_state))
 
     def wait_while_ramping(
         self, value: float, threshold: float = 1e-5
     ) -> CryomagneticsOperatingState:
         """Waits while the magnet is ramping, checking the status byte instead of field value."""
         while True:
-            status_byte = int(self.ask("*STB?"))
-            if not bool(status_byte & 1):  # Check if ramping bit is clear
+            current_field = self._get_field()
+            if abs(value - current_field) < 1e-4:
                 break
             self._sleep(self.ramping_state_check_interval())
         self.write("SWEEP PAUSE")
@@ -355,7 +359,7 @@ class CryomagneticsModel4G(VisaInstrument):
             )
 
         # Return value in Tesla, only converting if necessary
-        if self.units() == "T":
+        if "T" in self.units():
             return numeric_value * self.KG_TO_TESLA
         else:
             return numeric_value
